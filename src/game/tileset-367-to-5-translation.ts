@@ -1,5 +1,3 @@
-import type { NethackRuntimeVersion } from "../runtime/types";
-
 // Adapted from horlogeislux/tileto370 (MIT):
 // https://github.com/horlogeislux/tileto370
 // Original mapping logic converts 3.6.x tile order into 5.0 layout.
@@ -209,7 +207,6 @@ export const nh5ExpectedTileCount =
   NH_TILES_PER_ROW * NH5_OUTPUT_ROWS;
 
 export function shouldTranslateNh367TilesetForNh5Runtime(
-  runtimeVersion: NethackRuntimeVersion,
   atlasTileCount: number,
   tileLayoutVersion: "3.6.7" | "5.0" | "unknown" = "unknown",
 ): boolean {

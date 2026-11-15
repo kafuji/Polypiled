@@ -21,9 +21,9 @@ public/assets/hires/pixelhack-hd/
 ```
 
 Tile keys live in `src/game/hires-tiles/tile-keys.5.generated.ts`, indexed by
-runtime tile number. They come from NetHack's `win/share/*.txt` (copied to
-`imported/nethack-5.0/win-share/` at the commit the bundled runtime is built
-from). Regenerate them with `npm run hires:tile-keys` after a NetHack update.
+runtime tile number. They come from NetHack's `win/share/*.txt` in the
+vendored core (`core/NetHack/win/share/`). Regenerate them with
+`npm run hires:tile-keys` after a core update.
 
 - Object keys combine appearance and identity, for example
   `obj/wire__invisibility`.

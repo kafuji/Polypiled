@@ -37,7 +37,6 @@ window.runMovementWork = async () => {
     s.playerMovement.playerPos=next;
     s.tileUpdates.flushPendingTileUpdatesForPlayerPositionReconcile(old.x,old.y,next.x,next.y);
     s.tileUpdates.refreshTilesAfterPlayerPositionUpdate(old.x,old.y,next.x,next.y);
-    s.tileUpdates.flushPendingDarkCorridorInference(true);
     let frames=0;while(s.tileUpdates.tileFlushScheduled && frames++<100)s.tileUpdates.flushPendingTileUpdatesForFrame();
     timings.push(performance.now()-begin);
   }

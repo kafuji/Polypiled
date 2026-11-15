@@ -1,5 +1,4 @@
 import type { InfoMenuState } from "../../game/ui-types";
-import type { NethackRuntimeVersion } from "../../runtime/types";
 import { getTranslationStrings } from "../../i18n/core";
 
 export type CharacterSheetSectionId =
@@ -465,7 +464,6 @@ const characterCommandCatalog: readonly CharacterCommandAction[] = [
 
 export function resolveCharacterCommandActions(
   availableExtendedCommands: readonly string[],
-  runtimeVersion: NethackRuntimeVersion,
 ): CharacterCommandAction[] {
   const available = new Set<string>();
   for (const command of availableExtendedCommands) {

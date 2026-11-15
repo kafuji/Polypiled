@@ -21,7 +21,7 @@ import {
   type StartupInitOptionValues
 } from "../../../runtime/startup-init-options";
 import {
-  resolveNh3dCompatibleTilesetPathForRuntime
+  resolveNh3dTilesetPathForGame
 } from "../../../game/tilesets";
 import {
   type StartupCharacterPreferences
@@ -113,7 +113,6 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
     const runtimeVersionForLaunch = config.runtimeVersion ?? runtimeVersion;
     const normalizedInitOptions = appendRequiredStartupInitOptionTokens(
       config.initOptions,
-      runtimeVersionForLaunch,
     );
     const requestedCharacterName = normalizeStartupCharacterName(
       config.name || "",
@@ -169,10 +168,7 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
       }
     }
     const currentTilesetPath = String(dependencies.clientOptions.tilesetPath || "").trim();
-    const compatibleTilesetPath = resolveNh3dCompatibleTilesetPathForRuntime(
-      currentTilesetPath,
-      runtimeVersionForLaunch,
-    );
+    const compatibleTilesetPath = resolveNh3dTilesetPathForGame(currentTilesetPath);
     if (compatibleTilesetPath && compatibleTilesetPath !== currentTilesetPath) {
       dependencies.setClientOptions((previous) =>
         normalizeNh3dClientOptions({
@@ -223,7 +219,7 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
 
   const startupInitOptionTokens = useMemo(
     () =>
-      serializeStartupInitOptionTokens(startupInitOptionValues, runtimeVersion),
+      serializeStartupInitOptionTokens(startupInitOptionValues),
     [runtimeVersion, startupInitOptionValues],
   );
 

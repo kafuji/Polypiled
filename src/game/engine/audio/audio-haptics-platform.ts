@@ -204,16 +204,14 @@ export class AudioHapticsPlatform {
   }
 
   notifyBackgroundMusicPlayerStats(stats: PlayerStatsSnapshot): void {
-    const runtimeVersion =
-      this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "5.0";
-    const statusSoundKey = this.statusSoundTracker.update(stats, runtimeVersion);
+    const statusSoundKey = this.statusSoundTracker.update(stats);
     if (statusSoundKey) {
       this.messageSoundHooks?.playStatusEffectSound(statusSoundKey);
     }
     if (!this.backgroundMusic) return;
     const dangerCondition =
       resolveHungerStatusBadge(stats.hunger)?.severity === "danger" ||
-      resolveConditionStatusBadges(stats.conditionMask, runtimeVersion).some(
+      resolveConditionStatusBadges(stats.conditionMask).some(
         (badge) => badge.severity === "danger",
       );
     this.backgroundMusic.notifyPlayerStats(
@@ -225,7 +223,7 @@ export class AudioHapticsPlatform {
         specialLevel: this.resolveMusicSpecialLevel(),
       },
       dangerCondition,
-      resolveMusicStatusEffects(stats.conditionMask, runtimeVersion),
+      resolveMusicStatusEffects(stats.conditionMask),
     );
   }
 
@@ -791,16 +789,15 @@ const musicEffectBySoundKey: Partial<Record<string, MusicStatusEffect>> = {
 
 function resolveMusicStatusEffects(
   conditionMask: unknown,
-  runtimeVersion: Parameters<typeof resolveConditionStatusDefinitions>[0],
 ): MusicStatusEffect[] {
   const effects = new Set<MusicStatusEffect>();
-  for (const key of resolveActiveConditionSoundKeys(conditionMask, runtimeVersion)) {
+  for (const key of resolveActiveConditionSoundKeys(conditionMask)) {
     const effect = musicEffectBySoundKey[key];
     if (effect) effects.add(effect);
   }
   // Deafness has no status sound; read its bit from the condition table.
   const mask = typeof conditionMask === "number" ? conditionMask >>> 0 : 0;
-  const deaf = resolveConditionStatusDefinitions(runtimeVersion).find(
+  const deaf = resolveConditionStatusDefinitions().find(
     (definition) => definition.label === t.statusEffects.deaf,
   );
   if (deaf && (mask & deaf.mask) !== 0) effects.add("deaf");

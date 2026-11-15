@@ -1,5 +1,7 @@
 # Runtime communication: staged contract proposal
 
+> Historical record. This was written while the client also ran NetHack 3.6.7 and SLASH'EM from external WSL checkouts. Both runtimes have since been removed; the game core is now `core/NetHack` (see `core/README.md`).
+
 Status: proposal only, not a plan we've chose to action or committed to code yet. Inspected on `vr-v2` at `3eb7c47186d5f2f6690ef78c10ff02ceac0e0018`. No runtime, imported game, or generated WASM changes accompany this document.
 
 ## Recommendation

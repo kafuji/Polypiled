@@ -6,9 +6,6 @@ import type { CharacterCreationConfig, InfoMenuState, Nh3dClientOptions, Nethack
 import {
   useGameStore
 } from "../../../state/gameStore";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   type Nh3dTilesetEntry
 } from "../../../game/tilesets";
@@ -62,7 +59,6 @@ export interface UseAppVisibilityDependencies {
   readonly gameMessages: string[];
   readonly statusText: string;
   readonly startupFlowStep: StartupFlowStep;
-  readonly runtimeVersion: NethackRuntimeVersion;
   readonly setStartupBuildLabelClickCount: React.Dispatch<React.SetStateAction<number>>;
   readonly setStartupBuildLabelToastVisible: React.Dispatch<React.SetStateAction<boolean>>;
   readonly startupBuildLabelToastTimerRef: React.MutableRefObject<number | null>;
@@ -101,7 +97,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     gameMessages,
     statusText,
     startupFlowStep,
-    runtimeVersion,
     setStartupBuildLabelClickCount,
     setStartupBuildLabelToastVisible,
     startupBuildLabelToastTimerRef,
@@ -277,7 +272,7 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     : "";
 
   const startupSelectedRuntimeVersionLabel = startupMenuVisible
-    ? resolveRuntimeVersionDisplayLabel(runtimeVersion)
+    ? resolveRuntimeVersionDisplayLabel()
     : null;
 
   useEffect(() => {

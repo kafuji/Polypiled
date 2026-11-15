@@ -17,7 +17,6 @@ function fixture() {
     aimHighlights: {},
     camera: { getFpsAimDirectionFromCamera: vi.fn(() => ({ dx: 1, dy: 0 })) },
     controllerGameplay: {},
-    darkCorridorInference: { getKnownTerrainSnapshotForInferenceAtKey: vi.fn(() => null) },
     directionPrompts: { isInDirectionQuestion: false },
     engineMessages: { logClickLookTileDebug: vi.fn() },
     engineState: { session: {}, uiAdapter: { setFpsCrosshairContext } },
@@ -50,12 +49,12 @@ function fixture() {
     },
     questionMenus: { isInQuestion: false },
     renderPipeline: { renderer: {} },
-    terminalRendering: { resolveSlashEmTerminalCmapIndex: vi.fn(), terminalRenderOptionStates: {} },
+    terminalRendering: { terminalRenderOptionStates: {} },
     tileFaceTextureRotationDebug: { cycleRotation: vi.fn(), isEnabled: vi.fn(() => false) },
     tileRendering: { tileMap: new Map([["4,6", selfTile], ["7,6", rayTile], ["9,9", crosshairTile]]) },
     tileUpdates: { tileStateCache: new Map() },
     tilesetAssets: { getWorldTileScaleX: vi.fn(() => 1), resolveRuntimeVersion: vi.fn(), shouldUseVultureTiles: vi.fn(() => false) },
-    worldClassification: { isLootLikeBehavior: vi.fn(() => false), isMonsterLikeBehavior: vi.fn(() => false) },
+    worldClassification: { getKnownTerrainSnapshotAtKey: vi.fn(() => null), isLootLikeBehavior: vi.fn(() => false), isMonsterLikeBehavior: vi.fn(() => false) },
   } as unknown as TileContextActionsDependencies;
   return {
     context: new TileContextActions(dependencies),

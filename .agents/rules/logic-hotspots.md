@@ -299,7 +299,7 @@ Start with the [engine task-to-owner map](../../src/game/engine/README.md#code-h
 - Tile behavior decisions live in `src/game/glyphs/behavior.ts` and are consumed by `updateTile`.
 - Glyph resolution/version selection lives in `src/game/glyphs/registry.ts`.
 - Glyph catalogs are versioned, checked-in generated fallback references. They are useful for static mapping and debugging, but can be wrong for some item-variation tiles; prefer proper live WASM NetHack calls whenever possible.
-- World/terrain helpers and tile classification assumptions should be verified against `src/runtime/displayFileCatalog.ts` and the NetHack data under `imported/nethack-5.0` and `core/NetHack` when behavior depends on canonical game text or object data.
+- World/terrain helpers and tile classification assumptions should be verified against `src/runtime/displayFileCatalog.ts` and the NetHack data under `core/NetHack` when behavior depends on canonical game text or object data.
 
 ## If You Need To Change Startup Options, Saves, Or Updates
 

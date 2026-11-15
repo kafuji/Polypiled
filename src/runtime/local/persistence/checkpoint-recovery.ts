@@ -112,7 +112,7 @@ export class RuntimeCheckpointRecovery {
   buildCheckpointAutosaveResumeUnsupportedReason(
     runtimeVersion = this.deps.coordinator.runtimeVersion,
   ) {
-    if (hasRuntimeCheckpointRecoveryPrimitiveExport(runtimeVersion)) {
+    if (hasRuntimeCheckpointRecoveryPrimitiveExport()) {
       return "Checkpoint autosave resume is disabled for this wasm build. It exports recover_savefile(), but it does not expose a working browser-side resume_checkpoint_save bridge needed before unixunix.c/getlock().";
     }
     return "Checkpoint autosave resume is unavailable for this wasm build.";
@@ -123,7 +123,6 @@ export class RuntimeCheckpointRecovery {
     this.resumeCheckpointSave = null;
 
     const buildHintSupportsBridge = supportsRuntimeCheckpointRecovery(
-      this.deps.coordinator.runtimeVersion,
     );
     if (!buildHintSupportsBridge) {
       console.log(
@@ -218,7 +217,7 @@ export class RuntimeCheckpointRecovery {
             `Checkpoint recovery build hint was enabled for runtime ${this.deps.coordinator.runtimeVersion}, but the instantiated module could not bind resume_checkpoint_save. Treating recovery as unavailable.`,
           );
         } else if (
-          hasRuntimeCheckpointRecoveryPrimitiveExport(this.deps.coordinator.runtimeVersion)
+          hasRuntimeCheckpointRecoveryPrimitiveExport()
         ) {
           console.log(
             `Checkpoint recovery primitive detected for runtime ${this.deps.coordinator.runtimeVersion}, but the instantiated module still lacks a working browser-side resume bridge.`,

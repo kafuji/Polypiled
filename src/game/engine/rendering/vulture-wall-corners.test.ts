@@ -27,27 +27,6 @@ function fixture(cmap: number, floors: VultureWallFaceSlot[]) {
 
 describe("Vulture corner and junction wall faces", () => {
   it.each([
-    ["east", "north"], ["east", "south"],
-    ["west", "north"], ["west", "south"],
-  ] as VultureWallFaceSlot[][])("renders both inferred cave bend faces %s/%s", (first, second) => {
-    const f = fixture(0, [first, second]);
-    f.mesh.userData.isInferredDarkCorridorWall = true;
-    const config = f.config();
-    expect(config?.slices.map(slice => slice.direction).sort()).toEqual([first, second].sort());
-    expect(config?.slices).toHaveLength(2);
-  });
-
-  it("does not infer a cave face from diagonal floor across an unmapped edge", () => {
-    const f = fixture(0, []);
-    f.mesh.userData.isInferredDarkCorridorWall = true;
-    vi.mocked(f.walls.resolveVultureWallNeighborFaceLookup).mockImplementation((face, _wx, _wy, fx, fy) =>
-      fx === 5 && fy === 6
-        ? { category: "wall", name: "WALL_ROUGH_F_E", projection: "sprite", wallFace: face }
-        : null);
-    expect(f.config()).toBeNull();
-  });
-
-  it.each([
     [3, ["east", "south"]], [4, ["west", "south"]],
     [5, ["east", "north"]], [6, ["west", "north"]],
     [7, ["east", "west", "north", "south"]],

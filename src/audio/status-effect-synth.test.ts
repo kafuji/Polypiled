@@ -18,26 +18,26 @@ const snap = (hunger: string, conditionMask: number, time: number) => ({
 describe("Nh3dStatusSoundTracker", () => {
   it("primes on first snapshot and on a new game without playing", () => {
     const t = new Nh3dStatusSoundTracker();
-    expect(t.update(snap("Hungry", 0x2, 500), "5.0")).toBeNull();
-    expect(t.update(snap("Not Hungry", 0, 1), "5.0")).toBeNull();
+    expect(t.update(snap("Hungry", 0x2, 500))).toBeNull();
+    expect(t.update(snap("Not Hungry", 0, 1))).toBeNull();
   });
 
   it("plays hunger escalation and recovery", () => {
     const t = new Nh3dStatusSoundTracker();
-    t.update(snap("Not Hungry", 0, 100), "5.0");
-    expect(t.update(snap("Hungry", 0, 101), "5.0")).toBe("status-hungry");
-    expect(t.update(snap("Weak", 0, 102), "5.0")).toBe("status-weak");
-    expect(t.update(snap("Fainting", 0, 103), "5.0")).toBe("status-fainting");
-    expect(t.update(snap("Fainting", 0, 104), "5.0")).toBeNull();
-    expect(t.update(snap("Not Hungry", 0, 105), "5.0")).toBe("status-recovered");
+    t.update(snap("Not Hungry", 0, 100));
+    expect(t.update(snap("Hungry", 0, 101))).toBe("status-hungry");
+    expect(t.update(snap("Weak", 0, 102))).toBe("status-weak");
+    expect(t.update(snap("Fainting", 0, 103))).toBe("status-fainting");
+    expect(t.update(snap("Fainting", 0, 104))).toBeNull();
+    expect(t.update(snap("Not Hungry", 0, 105))).toBe("status-recovered");
   });
 
   it("maps condition bits and prioritizes danger", () => {
     const t = new Nh3dStatusSoundTracker();
-    t.update(snap("Not Hungry", 0, 100), "5.0");
+    t.update(snap("Not Hungry", 0, 100));
     // blind (0x2) + stoning (0x100000) at once -> stoning wins
-    expect(t.update(snap("Not Hungry", 0x100002, 101), "5.0")).toBe("status-stoning");
-    expect(t.update(snap("Not Hungry", 0x2, 102), "5.0")).toBe("status-recovered");
+    expect(t.update(snap("Not Hungry", 0x100002, 101))).toBe("status-stoning");
+    expect(t.update(snap("Not Hungry", 0x2, 102))).toBe("status-recovered");
   });
 });
 

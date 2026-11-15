@@ -1,5 +1,3 @@
-import type { NethackRuntimeVersion } from "../runtime/types";
-
 /**
  * Procedurally synthesized status-effect sounds (no audio assets required).
  * Each key is exposed to the sound-pack system as a builtin "synth:<key>"
@@ -79,7 +77,6 @@ const conditionSoundMasks5: ReadonlyArray<[number, ConditionSoundKey]> = [
 ];
 
 function resolveConditionSoundMasks(
-  runtimeVersion: NethackRuntimeVersion,
 ): ReadonlyArray<[number, ConditionSoundKey]> {
   return conditionSoundMasks5;
 }
@@ -87,11 +84,10 @@ function resolveConditionSoundMasks(
 /** Condition sound keys whose status bits are set in `rawMask`. */
 export function resolveActiveConditionSoundKeys(
   rawMask: unknown,
-  runtimeVersion: NethackRuntimeVersion,
 ): Set<Nh3dSynthSoundKey> {
   const mask = typeof rawMask === "number" && Number.isFinite(rawMask) ? Math.trunc(rawMask) >>> 0 : 0;
   const active = new Set<Nh3dSynthSoundKey>();
-  for (const [bit, key] of resolveConditionSoundMasks(runtimeVersion)) {
+  for (const [bit, key] of resolveConditionSoundMasks()) {
     if ((mask & bit) !== 0) active.add(key);
   }
   return active;
@@ -150,7 +146,6 @@ export class Nh3dStatusSoundTracker {
 
   update(
     snapshot: Nh3dStatusSoundSnapshot,
-    runtimeVersion: NethackRuntimeVersion,
   ): Nh3dSynthSoundKey | null {
     const hungerRank = hungerSeverityRank(snapshot.hunger);
     const rawMask = snapshot.conditionMask;
@@ -185,7 +180,7 @@ export class Nh3dStatusSoundTracker {
 
     const activeKeys = new Set<ConditionSoundKey>();
     const previousKeys = new Set<ConditionSoundKey>();
-    for (const [bit, key] of resolveConditionSoundMasks(runtimeVersion)) {
+    for (const [bit, key] of resolveConditionSoundMasks()) {
       if (mask & bit) activeKeys.add(key);
       if (previousMask & bit) previousKeys.add(key);
     }

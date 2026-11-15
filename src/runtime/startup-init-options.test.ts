@@ -10,20 +10,17 @@ import {
 } from "./startup-init-options";
 
 describe("terminal-friendly startup defaults", () => {
-  it.each(["5.0"] as const)(
-    "enables NetHack color output for %s",
-    (runtimeVersion) => {
-      expect(getAutomaticRuntimeInitOptionTokens(runtimeVersion)).toContain(
-        "color",
-      );
-    },
-  );
+  it("enables NetHack color output for", () => {
+    expect(getAutomaticRuntimeInitOptionTokens()).toContain(
+      "color",
+    );
+  });
 
   it("selects IBMgraphics by default for supported runtimes", () => {
     const defaults = createDefaultStartupInitOptionValues();
 
     expect(defaults.symset).toBe("IBMgraphics");
-    expect(serializeStartupInitOptionTokens(defaults, "5.0")).toContain(
+    expect(serializeStartupInitOptionTokens(defaults)).toContain(
       "symset:IBMgraphics",
     );
   });
@@ -32,34 +29,33 @@ describe("terminal-friendly startup defaults", () => {
     const defaults = createDefaultStartupInitOptionValues();
 
     expect(
-      getStartupInitOptionDefinitions("5.0").some(
+      getStartupInitOptionDefinitions().some(
         (definition) => definition.key === "tutorial",
       ),
     ).toBe(true);
     expect(defaults.tutorial).toBe(false);
-    expect(serializeStartupInitOptionTokens(defaults, "5.0")).toContain(
+    expect(serializeStartupInitOptionTokens(defaults)).toContain(
       "!tutorial",
     );
     const offeredTutorialTokens = serializeStartupInitOptionTokens(
       { ...defaults, tutorial: true },
-      "5.0",
     );
     expect(offeredTutorialTokens).not.toContain("tutorial");
     expect(offeredTutorialTokens).not.toContain("!tutorial");
-    expect(sanitizeStartupInitOptionTokens(["!tutorial"], "5.0")).toEqual([
+    expect(sanitizeStartupInitOptionTokens(["!tutorial"])).toEqual([
       "!tutorial",
     ]);
-    expect(sanitizeStartupInitOptionTokens(["tutorial"], "5.0")).toEqual([]);
+    expect(sanitizeStartupInitOptionTokens(["tutorial"])).toEqual([]);
   });
 });
 
 describe("NetHack 5 pauper startup mode", () => {
   it("offers a disabled-by-default switch through the startup option definitions", () => {
-    expect(getStartupInitOptionDefinitions("5.0").find(option => option.key === "pauper"))
+    expect(getStartupInitOptionDefinitions().find(option => option.key === "pauper"))
       .toMatchObject({ control: "boolean", defaultValue: false });
     const defaults = createDefaultStartupInitOptionValues();
     expect(defaults.pauper).toBe(false);
-    expect(serializeStartupInitOptionTokens(defaults, "5.0")).toContain("!pauper");
+    expect(serializeStartupInitOptionTokens(defaults)).toContain("!pauper");
   });
 
   it("preserves the saved toggle through normalization and the runtime token sanitizer", () => {
@@ -69,8 +65,7 @@ describe("NetHack 5 pauper startup mode", () => {
     }));
     const restored = normalizeStartupInitOptionValues(saved);
     const runtimeTokens = sanitizeStartupInitOptionTokens(
-      serializeStartupInitOptionTokens(restored, "5.0"),
-      "5.0",
+      serializeStartupInitOptionTokens(restored),
     );
     expect(restored.pauper).toBe(true);
     expect(runtimeTokens).toContain("pauper");

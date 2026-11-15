@@ -169,7 +169,6 @@ export function useCommandActionsCommands(dependencies: UseCommandActionsCommand
     }
     const initOptionTokens = sanitizeStartupInitOptionTokens(
       characterCreationConfig.initOptions,
-      characterCreationConfig.runtimeVersion ?? runtimeVersion,
     );
     for (const token of initOptionTokens) {
       const normalizedToken = String(token || "")
@@ -207,7 +206,6 @@ export function useCommandActionsCommands(dependencies: UseCommandActionsCommand
     () =>
       resolveCharacterCommandActions(
         mobileExtendedCommandNames,
-        activeRuntimeVersion,
       ),
     [activeRuntimeVersion, mobileExtendedCommandNames],
   );

@@ -337,7 +337,7 @@ export function getBlockedInventoryActionIdsForCategory(
   );
 }
 
-// NetHack 3.6.7 #rub accepts:
+// NetHack's #rub accepts:
 // - TOOL_CLASS: oil lamp, magic lamp, brass lantern
 // - GEM_CLASS: graystones (luckstone/loadstone/touchstone/flint, including "gray stone")
 export function inventoryItemSupportsRub(

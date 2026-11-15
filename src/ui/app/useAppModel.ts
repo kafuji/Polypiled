@@ -980,7 +980,6 @@ export function useAppModel() {
     get selectedTileAtlasLoadRequested() { return selectedTileAtlasLoadRequested; },
     get tileAtlasImage() { return tileAtlasImage; },
     get clientOptions() { return clientOptions; },
-    get activeRuntimeVersion() { return activeRuntimeVersion; },
   });
 
   const {
@@ -1118,7 +1117,6 @@ export function useAppModel() {
     get gameMessages() { return gameMessages; },
     get statusText() { return statusText; },
     get startupFlowStep() { return startupFlowStep; },
-    get runtimeVersion() { return runtimeVersion; },
     get setStartupBuildLabelClickCount() { return setStartupBuildLabelClickCount; },
     get setStartupBuildLabelToastVisible() { return setStartupBuildLabelToastVisible; },
     get startupBuildLabelToastTimerRef() { return startupBuildLabelToastTimerRef; },

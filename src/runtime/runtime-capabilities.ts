@@ -1,5 +1,3 @@
-import type { NethackRuntimeVersion } from "./types";
-
 function readDefinedBoolean(value: unknown): boolean {
   if (typeof value === "boolean") {
     return value;
@@ -14,7 +12,6 @@ function readDefinedBoolean(value: unknown): boolean {
 // the only runtime, so the answer depends on the shipped build alone.
 
 export function hasRuntimeCheckpointRecoveryPrimitiveExport(
-  runtimeVersion: NethackRuntimeVersion,
 ): boolean {
   return readDefinedBoolean(
     import.meta.env.VITE_NH3D_WASM_5_HAS_RECOVER_SAVEFILE,
@@ -22,7 +19,6 @@ export function hasRuntimeCheckpointRecoveryPrimitiveExport(
 }
 
 export function supportsRuntimeCheckpointRecovery(
-  runtimeVersion: NethackRuntimeVersion,
 ): boolean {
   return readDefinedBoolean(
     import.meta.env.VITE_NH3D_WASM_5_HAS_CHECKPOINT_RESUME_BRIDGE,
@@ -30,7 +26,6 @@ export function supportsRuntimeCheckpointRecovery(
 }
 
 export function supportsRuntimeTopScores(
-  runtimeVersion: NethackRuntimeVersion,
 ): boolean {
   return true;
 }

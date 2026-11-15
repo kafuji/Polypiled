@@ -378,8 +378,7 @@ export class TerminalRendering {
 
   // Terminal-mode replacement for the 3D tile pipeline: renders one map cell
   // as a flat plane whose texture shows the runtime character and color with
-  // tty-style MG_* highlighting. Slash'EM's legacy symbol-set substitution is
-  // applied client-side because its shim build omits tty graphics. Interaction
+  // tty-style MG_* highlighting. Interaction
   // metadata (userData) is still derived from the glyph catalog so clicking,
   // context menus, and the minimap behave identically to the other modes.
   updateTerminalCell(

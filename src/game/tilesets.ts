@@ -2,7 +2,6 @@ import {
   GENERATED_TILESET_MANIFEST,
   type GeneratedTilesetManifestEntry,
 } from "./tilesets.generated";
-import type { NethackRuntimeVersion } from "../runtime/types";
 
 export type Nh3dTilesetSource = "builtin" | "user" | "vulture";
 // The order of tiles in an atlas image, named after the NetHack version whose
@@ -119,40 +118,6 @@ function normalizeUserTilesetTileLayoutVersion(
     return "3.6.7";
   }
   return "unknown";
-}
-
-export function isNh3dTilesetLayoutCompatibleWithRuntime(
-  tileLayoutVersion: Nh3dTilesetTileLayoutVersion,
-  runtimeVersion: NethackRuntimeVersion,
-): boolean {
-  // NetHack 5.0 draws its own layout directly and the 3.6.7 layout through
-  // tile-index translation, so every supported layout is usable.
-  return true;
-}
-
-function isNh3dTilesetCompatibleWithRuntime(
-  tileset: Nh3dTilesetEntry,
-  runtimeVersion: NethackRuntimeVersion,
-): boolean {
-  return isNh3dTilesetLayoutCompatibleWithRuntime(
-    tileset.tileLayoutVersion,
-    runtimeVersion,
-  );
-}
-
-function findLabelMatchedCompatibleTileset(
-  label: string,
-  runtimeVersion: NethackRuntimeVersion,
-): Nh3dTilesetEntry | null {
-  const normalizedLookupLabel = normalizeTilesetPresetLookupLabel(label).toLowerCase();
-  return (
-    tilesetCatalog.find(
-      (entry) =>
-        isNh3dTilesetCompatibleWithRuntime(entry, runtimeVersion) &&
-        normalizeTilesetPresetLookupLabel(entry.label).toLowerCase() ===
-          normalizedLookupLabel,
-    ) ?? null
-  );
 }
 
 function isBuiltinNh5Tileset(tileset: Nh3dTilesetEntry): boolean {
@@ -390,24 +355,11 @@ export function getNh3dTilesetCatalog(): ReadonlyArray<Nh3dTilesetEntry> {
   return tilesetCatalog;
 }
 
-export function getNh3dCompatibleTilesetCatalog(
-  runtimeVersion: NethackRuntimeVersion,
-): ReadonlyArray<Nh3dTilesetEntry> {
-  return tilesetCatalog.filter((entry) =>
-    isNh3dTilesetCompatibleWithRuntime(entry, runtimeVersion),
-  );
-}
-
 export const nh3dTilesetCatalog: ReadonlyArray<Nh3dTilesetEntry> =
   builtinTilesets;
 
 const preferredDefaultTilesetPath = "assets/3.6/Nevanda.png";
 const preferredDefaultTilesetLabel = "Nevanda";
-const preferredDefaultTilesetPathByRuntime: Readonly<
-  Partial<Record<NethackRuntimeVersion, string>>
-> = {
-  "5.0": builtinPixelHackTilesetPath,
-};
 export const defaultNh3dTilesetPath: string =
   builtinTilesets.find((entry) => entry.path === preferredDefaultTilesetPath)
     ?.path ??
@@ -416,23 +368,11 @@ export const defaultNh3dTilesetPath: string =
   builtinTilesets[0]?.path ??
   "";
 
-function getDefaultNh3dTilesetPathForRuntime(
-  runtimeVersion: NethackRuntimeVersion,
-): string {
-  const preferredPath = preferredDefaultTilesetPathByRuntime[runtimeVersion];
-  const preferredTileset = preferredPath
-    ? builtinTilesets.find((entry) => entry.path === preferredPath)
-    : undefined;
-  if (
-    preferredTileset &&
-    isNh3dTilesetCompatibleWithRuntime(preferredTileset, runtimeVersion)
-  ) {
-    return preferredTileset.path;
-  }
-  return (
-    getNh3dCompatibleTilesetCatalog(runtimeVersion)[0]?.path ??
-    defaultNh3dTilesetPath
-  );
+/** The tileset a player gets until they pick one: PixelHack. */
+function getPreferredNh3dTilesetPath(): string {
+  return builtinTilesets.find((entry) => entry.path === builtinPixelHackTilesetPath)?.path ??
+    tilesetCatalog[0]?.path ??
+    defaultNh3dTilesetPath;
 }
 
 export function findNh3dTilesetByPath(
@@ -483,37 +423,19 @@ export function resolveNh3dTilesetTileLayoutVersion(
   return findNh3dTilesetByPath(path)?.tileLayoutVersion ?? "unknown";
 }
 
-export function resolveNh3dCompatibleTilesetPathForRuntime(
+/**
+ * The tileset to use for a stored choice. An unknown path (a removed or
+ * deleted tileset) and the client-option default (the 3.6 Nevanda sheet, which
+ * means the player never picked one) both resolve to PixelHack.
+ */
+export function resolveNh3dTilesetPathForGame(
   path: string | null | undefined,
-  runtimeVersion: NethackRuntimeVersion,
 ): string {
   const selectedTileset = findNh3dTilesetByPath(path);
-  if (!selectedTileset) {
-    return getDefaultNh3dTilesetPathForRuntime(runtimeVersion);
+  if (!selectedTileset || selectedTileset.path === defaultNh3dTilesetPath) {
+    return getPreferredNh3dTilesetPath();
   }
-  // A user still on the app-wide default tileset has not deliberately picked
-  // one, so honor the runtime's own default rather than keeping the generic
-  // default just because it happens to be layout-compatible. This is what makes
-  // PixelHack the default for a fresh player instead of the cross-compatible
-  // 3.6 Nevanda default.
-  if (selectedTileset.path === defaultNh3dTilesetPath) {
-    const runtimeDefaultPath =
-      getDefaultNh3dTilesetPathForRuntime(runtimeVersion);
-    if (runtimeDefaultPath && runtimeDefaultPath !== selectedTileset.path) {
-      return runtimeDefaultPath;
-    }
-  }
-  if (isNh3dTilesetCompatibleWithRuntime(selectedTileset, runtimeVersion)) {
-    return selectedTileset.path;
-  }
-  const labelMatchedTileset = findLabelMatchedCompatibleTileset(
-    selectedTileset.label,
-    runtimeVersion,
-  );
-  if (labelMatchedTileset) {
-    return labelMatchedTileset.path;
-  }
-  return getDefaultNh3dTilesetPathForRuntime(runtimeVersion);
+  return selectedTileset.path;
 }
 
 export function resolveNh3dFuseBaseTilesetPathForLegacyNh5Runtime(

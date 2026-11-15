@@ -458,7 +458,6 @@ export class TilesetAssets {
     atlasTileCount: number,
   ): boolean {
     return shouldTranslateNh367TilesetForNh5Runtime(
-      this.resolveRuntimeVersion(),
       atlasTileCount,
       tileLayoutVersion,
     );
@@ -756,7 +755,6 @@ export class TilesetAssets {
       return true;
     }
     return shouldTranslateNh367TilesetForNh5Runtime(
-      "5.0",
       this.resolveLoadedAtlasTileCount(),
       this.loadedTilesetTileLayoutVersion,
     );
@@ -857,7 +855,6 @@ export class TilesetAssets {
     try {
       if (
         !shouldTranslateNh367TilesetForNh5Runtime(
-          this.resolveRuntimeVersion(),
           atlasTileCount,
           this.loadedTilesetTileLayoutVersion,
         )
@@ -947,8 +944,7 @@ export class TilesetAssets {
     // refer to the original 3.6.7 pack. Use the same rule in both directions.
     const compiledLegacyAtlas =
       this.loadedTilesetSourceLayoutVersion === "3.6.7" && this.loadedTilesetTileLayoutVersion === "5.0";
-    return compiledLegacyAtlas || shouldTranslateNh367TilesetForNh5Runtime(
-      this.resolveRuntimeVersion(), this.resolveLoadedAtlasTileCount(), this.loadedTilesetSourceLayoutVersion,
+    return compiledLegacyAtlas || shouldTranslateNh367TilesetForNh5Runtime(this.resolveLoadedAtlasTileCount(), this.loadedTilesetSourceLayoutVersion,
     );
   }
 

@@ -31,8 +31,8 @@ describe("live score timeline capture", () => {
   it("keeps dungeon branches at the same depth distinct", () => {
     const dungeon = { ...sampleStats, dungeon: "Dungeons of Doom", dlevel: 3, locationLabel: "Dlvl:3" };
     const mines = { ...dungeon, dungeon: "Gnomish Mines", locationLabel: "Mines:3" };
-    expect(resolveTopScoreLiveLocationKey(dungeon, "5.0", dungeon.locationLabel))
-      .not.toBe(resolveTopScoreLiveLocationKey(mines, "5.0", mines.locationLabel));
+    expect(resolveTopScoreLiveLocationKey(dungeon, dungeon.locationLabel))
+      .not.toBe(resolveTopScoreLiveLocationKey(mines, mines.locationLabel));
     expect(resolveTopScoreLiveLocationLabel(dungeon)).toBe("Dlvl:3");
     expect(resolveTopScoreLiveLocationLabel({ ...dungeon, locationLabel: "" })).toBe("Dungeons of Doom 3");
   });

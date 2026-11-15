@@ -21,11 +21,6 @@ export interface GlyphCatalogEntry {
   ch: number;
   asciiChar: string | null;
   color: number;
-  /**
-   * For NetHack 3.6.7, the `special` flags (e.g. `SP_MON`, `SP_OBJ`, etc).
-   * @see `include/display.h` in the NetHack source for `struct display_how`.
-   */
-  special?: number;
   tileIndex: number;
 
   // NetHack 5.0+ fields from `map_glyphinfo`
@@ -62,7 +57,6 @@ export interface ResolvedGlyph {
   kind: GlyphKind | "unknown";
   char: string | null;
   color: number | null;
-  special: number | null;
   isKnown: boolean;
   tileIndex: number;
 }

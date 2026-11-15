@@ -35,7 +35,6 @@ function fixture(mode: "ascii" | "tiles" = "ascii", fps = false) {
     positionSelection: { isFpsFarLookViewActive: () => false },
     runtimeEntityTracking: { isRuntimeTrackedPlayerEntityId: (id: unknown) => id === 0 },
     tileRendering: { updateTile: draw },
-    darkCorridorInference: { recordNewlyDiscoveredDarkCorridorTileForCurrentInput: vi.fn() },
     worldClassification: {
       classifyTilePayload: classify,
       isMonsterLikeBehavior: WorldClassification.prototype.isMonsterLikeBehavior,

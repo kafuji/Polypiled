@@ -47,7 +47,7 @@ describe("tile face texture rotation debug", () => {
 
   it("rotates only the configured physical face and reuses its geometry", () => {
     const { debug } = createDebug();
-    const variant = "3.6.7:tile:20";
+    const variant = "5.0:tile:20";
     debug.rotationOverrides = { [variant]: { east: 90 } };
     const base = new THREE.BoxGeometry(1, 1, 1);
 

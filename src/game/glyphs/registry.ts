@@ -1,4 +1,3 @@
-import type { NethackRuntimeVersion } from "../../runtime/types";
 import {
   GLYPH_CATALOG,
   GLYPH_CATALOG_META,
@@ -26,7 +25,6 @@ const activeGlyphCatalog: GlyphCatalogModule = {
 };
 
 export async function getGlyphCatalogEntriesForVersion(
-  version: NethackRuntimeVersion,
 ): Promise<readonly GlyphCatalogEntry[]> {
   return activeGlyphCatalog.GLYPH_CATALOG;
 }
@@ -132,7 +130,6 @@ export function resolveGlyph(
       kind: normalizedRuntimeKind ?? "unknown",
       char: normalizedRuntimeChar,
       color: normalizedRuntimeColor,
-      special: null,
       isKnown: false,
       tileIndex: normalizedRuntimeTileIndex ?? -1,
     };
@@ -146,7 +143,6 @@ export function resolveGlyph(
     color:
       normalizedRuntimeColor ??
       (typeof entry.color === "number" ? entry.color : null),
-    special: typeof entry.special === "number" ? entry.special : null,
     isKnown: true,
     tileIndex: normalizedRuntimeTileIndex ?? entry.tileIndex,
   };

@@ -1,9 +1,6 @@
 import type {
   PlayerStatsSnapshot
 } from "../../../game/ui-types";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   t
 } from "../shared/translations";
@@ -150,7 +147,6 @@ export function resolveEncumbranceStatusBadge(
 }
 
 export function resolveConditionStatusDefinitions(
-  runtimeVersion: NethackRuntimeVersion,
 ): ReadonlyArray<{
   mask: number;
   label: string;
@@ -161,7 +157,6 @@ export function resolveConditionStatusDefinitions(
 
 export function resolveConditionStatusBadges(
   rawMask: unknown,
-  runtimeVersion: NethackRuntimeVersion,
 ): PlayerStatusBadge[] {
   const conditionMask =
     typeof rawMask === "number" && Number.isFinite(rawMask)
@@ -170,7 +165,7 @@ export function resolveConditionStatusBadges(
   if (conditionMask === 0) {
     return [];
   }
-  const definitions = resolveConditionStatusDefinitions(runtimeVersion);
+  const definitions = resolveConditionStatusDefinitions();
   return definitions
     .filter((entry) => (conditionMask & entry.mask) !== 0)
     .map((entry) => ({
@@ -180,7 +175,6 @@ export function resolveConditionStatusBadges(
 }
 
 export function resolveConditionStatusLinePatterns(
-  runtimeVersion: NethackRuntimeVersion,
   mask: number,
 ): readonly RegExp[] {
   switch (mask >>> 0) {
@@ -322,7 +316,6 @@ export function resolveEncumbranceStatusLineSeverity(
 export function resolveConditionStatusLineSeverity(
   line: string,
   rawMask: unknown,
-  runtimeVersion: NethackRuntimeVersion,
 ): StatusSeverity | null {
   const conditionMask =
     typeof rawMask === "number" && Number.isFinite(rawMask)
@@ -332,12 +325,11 @@ export function resolveConditionStatusLineSeverity(
     return null;
   }
 
-  for (const definition of resolveConditionStatusDefinitions(runtimeVersion)) {
+  for (const definition of resolveConditionStatusDefinitions()) {
     if ((conditionMask & definition.mask) === 0) {
       continue;
     }
     const patterns = resolveConditionStatusLinePatterns(
-      runtimeVersion,
       definition.mask,
     );
     if (patterns.some((pattern) => pattern.test(line))) {
@@ -351,7 +343,6 @@ export function resolveConditionStatusLineSeverity(
 export function resolveCharacterStatusLineSeverity(
   line: string,
   stats: PlayerStatsSnapshot,
-  runtimeVersion: NethackRuntimeVersion,
 ): StatusSeverity | null {
   const normalizedLine = String(line || "")
     .replace(/\s+/g, " ")
@@ -366,14 +357,12 @@ export function resolveCharacterStatusLineSeverity(
     resolveConditionStatusLineSeverity(
       normalizedLine,
       stats.conditionMask,
-      runtimeVersion,
     )
   );
 }
 
 export function buildPlayerStatusBadges(
   stats: PlayerStatsSnapshot,
-  runtimeVersion: NethackRuntimeVersion,
 ): PlayerStatusBadge[] {
   const badges: PlayerStatusBadge[] = [];
   const seen = new Set<string>();
@@ -393,7 +382,6 @@ export function buildPlayerStatusBadges(
   pushUnique(resolveEncumbranceStatusBadge(stats.encumbrance));
   for (const badge of resolveConditionStatusBadges(
     stats.conditionMask,
-    runtimeVersion,
   )) {
     pushUnique(badge);
   }

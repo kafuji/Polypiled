@@ -1,4 +1,3 @@
-import type { NethackRuntimeVersion } from "./types";
 import { getTranslationStrings } from "../i18n/core";
 import { TRIAL_PLAY_MODE } from "../plus/trial/trial-play-mode";
 
@@ -564,7 +563,6 @@ function extractOptionKey(token: string): string {
 function sanitizePassthroughStartupInitOptionToken(
   optionKey: string,
   rawValue: string,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string | null {
   const definition =
     supportedPassthroughStartupInitOptionDefinitionByKey.get(optionKey);
@@ -581,14 +579,12 @@ function sanitizePassthroughStartupInitOptionToken(
 }
 
 export function getStartupInitOptionDefinitions(
-  runtimeVersion?: NethackRuntimeVersion,
 ): ReadonlyArray<StartupInitOptionDefinition> {
   return startupInitOptionDefinitions;
 }
 
 export function isStartupInitOptionSupported(
   optionKey: string,
-  runtimeVersion?: NethackRuntimeVersion,
 ): boolean {
   const normalizedKey = String(optionKey || "")
     .trim()
@@ -597,7 +593,6 @@ export function isStartupInitOptionSupported(
 }
 
 export function getAutomaticRuntimeInitOptionTokens(
-  runtimeVersion: NethackRuntimeVersion,
 ): string[] {
   return [...automaticRuntimeInitOptionTokens];
 }
@@ -629,10 +624,9 @@ export function normalizeStartupInitOptionValues(
 
 export function serializeStartupInitOptionTokens(
   values: StartupInitOptionValues,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string[] {
   const tokens: string[] = [];
-  for (const definition of getStartupInitOptionDefinitions(runtimeVersion)) {
+  for (const definition of getStartupInitOptionDefinitions()) {
     const normalizedValue = normalizeOptionValue(
       definition,
       values[definition.key],
@@ -658,7 +652,6 @@ export function serializeStartupInitOptionTokens(
 
 export function sanitizeStartupInitOptionToken(
   rawToken: unknown,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string | null {
   if (typeof rawToken !== "string") {
     return null;
@@ -689,7 +682,6 @@ export function sanitizeStartupInitOptionToken(
     return sanitizePassthroughStartupInitOptionToken(
       optionKey,
       rawValue,
-      runtimeVersion,
     );
   }
   if (definition.control === "boolean") {
@@ -717,7 +709,6 @@ export function sanitizeStartupInitOptionToken(
 
 export function sanitizeStartupInitOptionTokens(
   rawTokens: unknown,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string[] {
   if (!Array.isArray(rawTokens) || rawTokens.length === 0) {
     return [];
@@ -726,7 +717,6 @@ export function sanitizeStartupInitOptionTokens(
   for (const rawToken of rawTokens) {
     const sanitizedToken = sanitizeStartupInitOptionToken(
       rawToken,
-      runtimeVersion,
     );
     if (!sanitizedToken) {
       continue;
@@ -738,12 +728,10 @@ export function sanitizeStartupInitOptionTokens(
 
 export function appendRequiredStartupInitOptionTokens(
   rawTokens: unknown,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string[] {
   const tokenByKey = new Map<string, string>();
   for (const token of sanitizeStartupInitOptionTokens(
     rawTokens,
-    runtimeVersion,
   )) {
     tokenByKey.set(extractOptionKey(token), token);
   }

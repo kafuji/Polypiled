@@ -97,7 +97,7 @@ Start here before making changes.
 
 - Vulture source code lives in `third_party/vulture`.
 - Do not modify Vulture source code.
-- If a Vulture asset or reference file is needed at runtime, place it under `imported/vulture` or the app asset tree instead of editing the vendor copy.
+- If a Vulture asset or reference file is needed at runtime, place it in the app asset tree instead of editing the vendor copy.
 - The port is still in progress from 3.60 to 3.6.7, so be careful when reading old assumptions in Vulture code or docs.
 
 ## Current WASM Shim Caveats

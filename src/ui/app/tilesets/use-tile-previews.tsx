@@ -5,9 +5,6 @@ import type {
   Nh3dClientOptions,
   NethackMenuItem
 } from "../../../game/ui-types";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   type TopScoreInventoryItem
 } from "../../../runtime/top-score-storage";
@@ -43,7 +40,6 @@ export interface UseTilePreviewsDependencies {
   readonly selectedTileAtlasLoadRequested: boolean;
   readonly tileAtlasImage: HTMLImageElement | null;
   readonly clientOptions: Nh3dClientOptions;
-  readonly activeRuntimeVersion: NethackRuntimeVersion;
 }
 
 /** Renders tile previews for menus, inventory and archived scores. */
@@ -56,7 +52,6 @@ export function useTilePreviews(dependencies: UseTilePreviewsDependencies) {
     selectedTileAtlasLoadRequested,
     tileAtlasImage,
     clientOptions,
-    activeRuntimeVersion,
   } = dependencies;
 
   const tilePickerEntries = useMemo<TilePickerEntry[]>(() => {
@@ -232,7 +227,6 @@ export function useTilePreviews(dependencies: UseTilePreviewsDependencies) {
       return null;
     }
     const remappedTileId = resolvePreviewAtlasTileIdForRuntime(
-      activeRuntimeVersion,
       tileId,
       tileAtlasState.tileCount,
     );
@@ -244,14 +238,12 @@ export function useTilePreviews(dependencies: UseTilePreviewsDependencies) {
   };
 
   const getTilePreviewDataUrlForRuntimeVersion = (
-    runtimeVersion: NethackRuntimeVersion,
     tileId: number,
   ): string | null => {
     if (tileAtlasState.tileCount <= 0) {
       return null;
     }
     const remappedTileId = resolvePreviewAtlasTileIdForRuntime(
-      runtimeVersion,
       tileId,
       tileAtlasState.tileCount,
     );
@@ -288,11 +280,10 @@ export function useTilePreviews(dependencies: UseTilePreviewsDependencies) {
 
   const renderTopScoreInventoryPreview = (
     item: TopScoreInventoryItem,
-    runtimeVersion: NethackRuntimeVersion,
   ): JSX.Element => {
     const tilePreviewDataUrl =
       typeof item.tileIndex === "number" && Number.isFinite(item.tileIndex)
-        ? getTilePreviewDataUrlForRuntimeVersion(runtimeVersion, item.tileIndex)
+        ? getTilePreviewDataUrlForRuntimeVersion(item.tileIndex)
         : null;
     return (
       <span className="nh3d-top-score-inventory-icon-shell">

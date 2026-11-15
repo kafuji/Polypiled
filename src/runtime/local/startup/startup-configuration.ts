@@ -178,9 +178,8 @@ export class RuntimeStartupConfiguration {
     // nh3d-plus: NetHack runs trial-and-error games as normal ones.
     const tokens = toRuntimePlayModeTokens(appendRequiredStartupInitOptionTokens(
       this.deps.coordinator.startupOptions?.initOptions,
-      this.deps.coordinator.runtimeVersion,
     ));
-    if (!supportsRuntimeCheckpointRecovery(this.deps.coordinator.runtimeVersion)) {
+    if (!supportsRuntimeCheckpointRecovery()) {
       return tokens.filter((token) => !/^!?checkpoint(?:$|:)/i.test(token));
     }
     return tokens;
@@ -189,14 +188,13 @@ export class RuntimeStartupConfiguration {
   resolveStartupExtmenuEnabled(rawTokens) {
     const tokens = sanitizeStartupInitOptionTokens(
       rawTokens,
-      this.deps.coordinator.runtimeVersion,
     );
     return tokens.includes("extmenu");
   }
 
   buildRuntimeModuleStartupOptions(runtimeVersion) {
 
-    const runtimeOptions = getAutomaticRuntimeInitOptionTokens(runtimeVersion);
+    const runtimeOptions = getAutomaticRuntimeInitOptionTokens();
     const characterRuntimeOptions =
       this.buildCharacterCreationRuntimeOptions();
     if (characterRuntimeOptions.length > 0) {

@@ -109,10 +109,9 @@ export function writeSavePresentationMetadataByKeyStrict(
 }
 
 export function resolveStartupPlayModeForSavePresentation(
-  runtimeVersion: NethackRuntimeVersion | undefined,
   initOptions: string[] | undefined,
 ): "normal" | "explore" | "debug" | null {
-  const tokens = sanitizeStartupInitOptionTokens(initOptions, runtimeVersion);
+  const tokens = sanitizeStartupInitOptionTokens(initOptions);
   if (tokens.includes("playmode:debug")) {
     return "debug";
   }
@@ -139,12 +138,10 @@ export function persistSavePresentationMetadataForCharacter(
 
   const metadataByKey = readSavePresentationMetadataByKey();
   const playMode = resolveStartupPlayModeForSavePresentation(
-    runtimeVersion,
     initOptions,
   );
   const sanitizedInitOptions = sanitizeStartupInitOptionTokens(
     initOptions,
-    runtimeVersion,
   );
   const updatedAt = new Date().toISOString();
   const categories: Array<"manual" | "autosave"> = ["manual", "autosave"];

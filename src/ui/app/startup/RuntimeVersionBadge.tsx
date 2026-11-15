@@ -1,10 +1,5 @@
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
-
 /** Runtime version label and badge. */
 export function resolveRuntimeVersionDisplayLabel(
-  runtimeVersion: NethackRuntimeVersion,
 ): string {
   return "NetHack 5.0";
 }

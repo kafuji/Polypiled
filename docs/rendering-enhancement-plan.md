@@ -127,7 +127,7 @@ color = albedo
 - `light_base` の光源リスト（位置・半径・種類: 物体/モンスター）
 
 **まずはグリフ・持ち物・メッセージからの推定で実装し、ネイティブ書き出しは第 2 段階**とする
-（3.6.7 / 5.0 / Slash'EM の 3 ランタイムを再ビルドする必要があるため）。
+（ゲーム本体の再ビルドが必要なため）。
 
 ---
 
@@ -180,7 +180,7 @@ color = albedo
 - `rendering/world-shading.ts` — 共通シェーダーフックと uniform を `Lighting` から分離。既存の呼び出し
   （`patchMaterialForVignette`, `vignetteUniforms`）はそのまま使える。モンスター・アイテム・プレイヤーなど
   未知のマスの上にも描かれるものは `entity: true` を渡し、地形専用の効果を受けない（スプライトは自動で除外）。
-- `rendering/explored-mask.ts` — 地形メッシュがあるマスを毎フレーム集計し（3.6.7 の空白の石は除外）、
+- `rendering/explored-mask.ts` — 地形メッシュがあるマスを毎フレーム集計し、
   1 マス 8×8 テクセルの 1 チャンネルテクスチャにガウスぼかしを解析的に焼く（全マップ再計算で 1ms 未満）。
   境界でちょうど 0.5、内側 0.4 マス程度で 1 になる。新しく見えたマスは 260ms でフェードイン、
   レベル移動では即座にリセット。ターミナル表示と Vulture タイルでは無効。
@@ -237,10 +237,10 @@ color = albedo
 ### 実装済み（P4）
 
 - 光るモンスター（`rendering/glowing-monsters.ts`）: NetHack の emits_light に当たる種族
-  （yellow light、black light、flaming sphere、shocking sphere、fire vortex、fire elemental、5.0 の gold dragon と baby gold dragon）
-  を種族ごとの色で光らせる。判別は、5.0 では高解像度タイルキー、3.6.7 では monst.c の順序から作ったタイル番号で行う。
-  テレパシーで感知したモンスターも光る。SLASH'EM は対象外。
-- 溶岩（3.6.7 は cmap 34、5.0 は 40 と 41）: 各マスから半径 1.8 マスの橙色の光を出す。
+  （yellow light、black light、flaming sphere、shocking sphere、fire vortex、fire elemental、gold dragon と baby gold dragon）
+  を種族ごとの色で光らせる。判別は高解像度タイルキーで行う。
+  テレパシーで感知したモンスターも光る。
+- 溶岩（cmap 40 と 41）: 各マスから半径 1.8 マスの橙色の光を出す。
 - いずれも、光源のマスから視線が通るマスにだけ、ライトフィールドの RGB に加算して焼き込む（揺らぎはない）。
   テクスチャの RGB は「環境光＋部屋＋点光源」の全体を持つように変えた。暗い場所でも色付きの光が見える。
 - 魔法の光: 「A lit field surrounds you!」（光の巻物や呪文）を受けたら、主人公を中心に半径 5 マスの範囲を記録する。

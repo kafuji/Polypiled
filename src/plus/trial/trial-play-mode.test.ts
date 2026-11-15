@@ -4,7 +4,7 @@ import { isTrialPlayMode, toRuntimePlayModeTokens } from "./trial-play-mode";
 
 describe("trial play mode", () => {
   it("survives startup option sanitizing so saves remember the mode", () => {
-    const tokens = sanitizeStartupInitOptionTokens(["playmode:trial", "autopickup"], "5.0");
+    const tokens = sanitizeStartupInitOptionTokens(["playmode:trial", "autopickup"]);
     expect(tokens).toContain("playmode:trial");
     expect(isTrialPlayMode(tokens)).toBe(true);
   });

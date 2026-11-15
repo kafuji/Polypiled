@@ -1,9 +1,6 @@
 import type {
   PlayerStatsSnapshot
 } from "../../../game/ui-types";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 
 /** Live run location, turn and message-delta helpers. */
 export function normalizeTopScoreTimelineTurn(value: number | null | undefined): number {
@@ -33,7 +30,6 @@ export function resolveTopScoreLiveLocationLabel(stats: PlayerStatsSnapshot): st
 
 export function resolveTopScoreLiveLocationKey(
   stats: PlayerStatsSnapshot,
-  runtimeVersion: NethackRuntimeVersion,
   locationLabel: string,
 ): string {
   const dungeonLevel =

@@ -73,7 +73,7 @@ export function useTilePreviewModel(dependencies: UseTilePreviewModelDependencie
 
   useEffect(() => {
     let cancelled = false;
-    void getGlyphCatalogEntriesForVersion(activeRuntimeVersion)
+    void getGlyphCatalogEntriesForVersion()
       .then((glyphCatalog) => {
         if (!cancelled) {
           setTilesetPickerGlyphCatalog(glyphCatalog);

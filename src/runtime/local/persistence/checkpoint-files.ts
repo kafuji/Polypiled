@@ -120,7 +120,7 @@ export class RuntimeCheckpoints {
       typeof mod?.FS?.cwd === "function"
         ? String(mod.FS.cwd() || "/")
         : String(this.deps.coordinator.nethackModule?.FS?.cwd?.() || "/");
-    return getRuntimeCheckpointMountDir(this.deps.coordinator.runtimeVersion, cwd);
+    return getRuntimeCheckpointMountDir(cwd);
   }
 
   removeCheckpointShardsByLockBaseName(mod, saveDir, lockBaseName, reason) {

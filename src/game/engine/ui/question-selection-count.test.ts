@@ -61,7 +61,7 @@ it.each(["Pick up what?", "What would you like to pick up?", "What do you want t
 it.each(["What type of objects?", "Drop what type of items?", "What do you want to eat?", "What do you want to read?", "Choose a role", "Really quit?"])("does not offer an unsupported quantity for %s", text => {
   expect(fixture().questions.isCountableInventorySelectionQuestion(text)).toBe(false);
 });
-it("offers quantity when firing and never for Slash'EM's removed pawn prompt", () => {
+it("offers quantity when firing and not for unrelated prompts", () => {
   expect(fixture().questions.isCountableInventorySelectionQuestion("What do you want to fire?")).toBe(true);
   expect(fixture().questions.isCountableInventorySelectionQuestion("What do you want to pawn?")).toBe(false);
 });

@@ -10,7 +10,7 @@ function fixture() {
   const audio=new AudioHapticsPlatform(deps as unknown as AudioHapticsPlatformDependencies);
   audio.messageSoundHooks={playPlayerFootstepSound:sound} as unknown as MessageSoundHooks;
   const commands=Object.create(InputCommands.prototype);
-  commands.dependencies={engineState:{session:{sendMouseInput:send}},tileContextActions:{closeAnyTileContextMenu:vi.fn()},audioHapticsPlatform:audio,movementInput:{armPlayerCliparoundInputCooldown:cooldown},darkCorridorInference:{beginDarkCorridorDiscoveryWindowFromPlayerInput:vi.fn()}};
+  commands.dependencies={engineState:{session:{sendMouseInput:send}},tileContextActions:{closeAnyTileContextMenu:vi.fn()},audioHapticsPlatform:audio,movementInput:{armPlayerCliparoundInputCooldown:cooldown}};
   commands.dependencies.tilesetAssets = { vultureTilesetTranslator: null };
   return {commands:commands as InputCommands,audio,sound,cooldown,send,deps};
 }
@@ -35,7 +35,7 @@ it("force-fight sequences do not predict walking or arm footsteps",()=>{
  const predict=vi.fn(), footstep=vi.fn(), send=vi.fn();
  const commands=Object.create(InputCommands.prototype);
  commands.numberPadModeEnabled=true;
- commands.dependencies={engineState:{session:{sendInputSequence:send}},combatAttribution:{},tileContextActions:{closeAnyTileContextMenu:vi.fn()},movementInput:{isMovementInput:(input:string)=>input==="6",isRunPrefixInput:()=>false},camera:{},audioHapticsPlatform:{armPendingPlayerFootstepSound:footstep},playerMovement:{setFpsPredictedPlayerTileFromMovementInput:predict},darkCorridorInference:{beginDarkCorridorDiscoveryWindowFromPlayerInput:vi.fn()}};
+ commands.dependencies={engineState:{session:{sendInputSequence:send}},combatAttribution:{},tileContextActions:{closeAnyTileContextMenu:vi.fn()},movementInput:{isMovementInput:(input:string)=>input==="6",isRunPrefixInput:()=>false},camera:{},audioHapticsPlatform:{armPendingPlayerFootstepSound:footstep},playerMovement:{setFpsPredictedPlayerTileFromMovementInput:predict}};
  commands.sendInputSequence(["F","6"]);expect(send).toHaveBeenCalledWith(["F","6"],{delayMs:undefined});expect(predict).not.toHaveBeenCalled();expect(footstep).not.toHaveBeenCalled();
  commands.sendInputSequence(["6","6"]);expect(predict).toHaveBeenCalledWith("6");expect(footstep).toHaveBeenCalledOnce();
 });

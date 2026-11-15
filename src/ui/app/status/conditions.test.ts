@@ -20,22 +20,22 @@ const sampleStats: PlayerStatsSnapshot = {
 
 describe("player status presentation", () => {
   it("interprets condition bits as NetHack 5.0 defines them", () => {
-    // Bit 0x100000 is petrification; bit 1 is bare hands, not the 3.6.7 petrification bit.
-    expect(resolveConditionStatusBadges(0x100000, "5.0")).toEqual([
+    // Bit 0x100000 is petrification; bit 1 is bare hands.
+    expect(resolveConditionStatusBadges(0x100000)).toEqual([
       expect.objectContaining({ severity: "danger" }),
     ]);
-    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 0x100000, "5.0"))
+    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 0x100000))
       .toBe("danger");
-    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 1, "5.0"))
+    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 1))
       .toBeNull();
   });
 
   it("ignores malformed condition masks and unknown bits", () => {
     for (const mask of [undefined, null, "1", Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(resolveConditionStatusBadges(mask, "5.0")).toEqual([]);
+      expect(resolveConditionStatusBadges(mask)).toEqual([]);
     }
-    expect(resolveConditionStatusBadges(0x40000000, "5.0")).toEqual([]);
-    expect(resolveConditionStatusBadges(0x20000000, "5.0")).toHaveLength(1);
+    expect(resolveConditionStatusBadges(0x40000000)).toEqual([]);
+    expect(resolveConditionStatusBadges(0x20000000)).toHaveLength(1);
   });
 
   it("distinguishes normal hunger, satiation and critical hunger", () => {
@@ -62,15 +62,15 @@ describe("player status presentation", () => {
       encumbrance: "Burdened",
       conditionMask: 0x2,
     };
-    expect(resolveCharacterStatusLineSeverity("  You are\n weak. ", stats, "5.0"))
+    expect(resolveCharacterStatusLineSeverity("  You are\n weak. ", stats))
       .toBe("danger");
-    expect(resolveCharacterStatusLineSeverity("You are burdened.", stats, "5.0"))
+    expect(resolveCharacterStatusLineSeverity("You are burdened.", stats))
       .toBe("warning");
-    expect(resolveCharacterStatusLineSeverity("You are blind.", stats, "5.0"))
+    expect(resolveCharacterStatusLineSeverity("You are blind.", stats))
       .toBe("warning");
-    expect(resolveCharacterStatusLineSeverity("You are stunned.", stats, "5.0"))
+    expect(resolveCharacterStatusLineSeverity("You are stunned.", stats))
       .toBeNull();
-    expect(resolveCharacterStatusLineSeverity("Your weakness has passed.", stats, "5.0"))
+    expect(resolveCharacterStatusLineSeverity("Your weakness has passed.", stats))
       .toBeNull();
   });
 
@@ -81,10 +81,10 @@ describe("player status presentation", () => {
       encumbrance: "Burdened",
       conditionMask: 0x2,
     };
-    expect(buildPlayerStatusBadges(stats, "5.0")).toEqual([
+    expect(buildPlayerStatusBadges(stats)).toEqual([
       { label: "Weak", severity: "danger" },
       { label: "Burdened", severity: "warning" },
-      ...resolveConditionStatusBadges(0x2, "5.0"),
+      ...resolveConditionStatusBadges(0x2),
     ]);
   });
 });

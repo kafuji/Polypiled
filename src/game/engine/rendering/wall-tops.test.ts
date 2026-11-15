@@ -16,9 +16,8 @@ const hwall = cmapGlyphForSymbol(2);
 const tree = cmapGlyphForSymbol(18);
 
 describe("wall-top cells", () => {
-  it("darkens walls and inferred rock, keeps doors and other blocks, opens floor", () => {
+  it("darkens walls, keeps doors and other blocks, opens floor", () => {
     expect(classifyWallTopCell({ isWall: true, materialKind: "wall", tileTextureSourceGlyph: hwall })).toBe(WALL_TOP_WALL);
-    expect(classifyWallTopCell({ isWall: true, materialKind: "dark_wall", isInferredDarkCorridorWall: true })).toBe(WALL_TOP_WALL);
     expect(classifyWallTopCell({ isWall: true, materialKind: "door", tileTextureSourceGlyph: cmapGlyphForSymbol(15) })).toBe(WALL_TOP_BLOCKED);
     expect(classifyWallTopCell({ isWall: true, materialKind: "wall", tileTextureSourceGlyph: tree })).toBe(WALL_TOP_BLOCKED);
     expect(classifyWallTopCell({ isWall: false, materialKind: "floor" })).toBe(WALL_TOP_OPEN);

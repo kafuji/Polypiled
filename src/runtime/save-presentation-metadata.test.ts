@@ -22,24 +22,18 @@ describe("save presentation metadata", () => {
     ]);
   });
 
-  it.each(["5.0"] as const)(
-    "preserves both number pad modes when resuming %s",
-    (runtimeVersion) => {
-      expect(
-        resolveSaveResumeInitOptionTokens(["number_pad:0"], runtimeVersion),
-      ).toEqual(["number_pad:0"]);
-      expect(
-        resolveSaveResumeInitOptionTokens(["number_pad:1"], runtimeVersion),
-      ).toEqual(["number_pad:1"]);
-    },
-  );
+  it("preserves both number pad modes when resuming", () => {
+    expect(
+      resolveSaveResumeInitOptionTokens(["number_pad:0"]),
+    ).toEqual(["number_pad:0"]);
+    expect(
+      resolveSaveResumeInitOptionTokens(["number_pad:1"]),
+    ).toEqual(["number_pad:1"]);
+  });
 
-  it.each(["5.0"] as const)(
-    "does not force number pad on when %s legacy metadata has no mode",
-    (runtimeVersion) => {
-      expect(resolveSaveResumeInitOptionTokens([], runtimeVersion)).toEqual([]);
-    },
-  );
+  it("does not force number pad on when legacy metadata has no mode", () => {
+    expect(resolveSaveResumeInitOptionTokens([])).toEqual([]);
+  });
 
   it("uses runtime-scoped keys without losing legacy metadata fallback", () => {
     const runtimeKey = getRuntimeSavePresentationMetadataKey(

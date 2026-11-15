@@ -34,7 +34,7 @@ describe("NetHack 5 Vulture identities", () => {
     expect(lookup(glyph, true, true)).toEqual({ category: "monster", name: "PM_ARCHEOLOGIST", projection: "sprite" });
   });
   it("maps both statue sexes through the legacy species tile identity", async () => {
-    const catalog = await getGlyphCatalogEntriesForVersion("5.0");
+    const catalog = await getGlyphCatalogEntriesForVersion();
     const male = catalog.find(entry => entry.kind === "statue" && entry.tileIndex === translateNh367TileIndexToNh5(1417))!;
     expect(male).toBeDefined();
     expect(lookup(male.glyph, true, true)?.name).toBe("PM_ARCHEOLOGIST");
@@ -44,7 +44,7 @@ describe("NetHack 5 Vulture identities", () => {
   });
   it("preserves randomized object appearance mappings using the native object ID", async () => {
     const legacyTile = [...LEGACY_OBJECT_TOKEN_BY_TILE].find(([, token]) => token === "POT_HEALING")![0];
-    const catalog = await getGlyphCatalogEntriesForVersion("5.0");
+    const catalog = await getGlyphCatalogEntriesForVersion();
     const native = catalog.find(entry => entry.kind === "obj" && entry.tileIndex === translateNh367TileIndexToNh5(legacyTile))!;
     expect(native).toBeDefined();
     expect(lookup(native.glyph, true, true)?.name).toBe("POT_HEALING");
@@ -61,7 +61,7 @@ describe("NetHack 5 Vulture identities", () => {
 
 
 it("normalizes every native 5 wall/corner variant to the original wall symbol", async () => {
-  const variants = (await getGlyphCatalogEntriesForVersion("5.0")).filter(entry => entry.kind === "cmap" && entry.symidx! >= 1 && entry.symidx! <= 11);
+  const variants = (await getGlyphCatalogEntriesForVersion()).filter(entry => entry.kind === "cmap" && entry.symidx! >= 1 && entry.symidx! <= 11);
   expect(variants.length).toBeGreaterThan(11);
   for (const entry of variants) {
     expect(translator.resolveCmapIndexForTileIndex(entry.tileIndex!), `glyph ${entry.glyph}`).toBe(entry.symidx);

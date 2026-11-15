@@ -1,13 +1,13 @@
-import cmdhelpText from "../../imported/nethack-5.0/dat/cmdhelp?raw";
-import helpText from "../../imported/nethack-5.0/dat/help?raw";
-import hhText from "../../imported/nethack-5.0/dat/hh?raw";
-import historyText from "../../imported/nethack-5.0/dat/history?raw";
-import keyhelpText from "../../imported/nethack-5.0/dat/keyhelp?raw";
-import licenseText from "../../imported/nethack-5.0/dat/license?raw";
-import opthelpText from "../../imported/nethack-5.0/dat/opthelp?raw";
-import optmenuText from "../../imported/nethack-5.0/dat/optmenu?raw";
-import usagehlpText from "../../imported/nethack-5.0/dat/usagehlp?raw";
-import wizhelpText from "../../imported/nethack-5.0/dat/wizhelp?raw";
+import cmdhelpText from "../../core/NetHack/dat/cmdhelp?raw";
+import helpText from "../../core/NetHack/dat/help?raw";
+import hhText from "../../core/NetHack/dat/hh?raw";
+import historyText from "../../core/NetHack/dat/history?raw";
+import keyhelpText from "../../core/NetHack/dat/keyhelp?raw";
+import licenseText from "../../core/NetHack/dat/license?raw";
+import opthelpText from "../../core/NetHack/dat/opthelp?raw";
+import optmenuText from "../../core/NetHack/dat/optmenu?raw";
+import usagehlpText from "../../core/NetHack/dat/usagehlp?raw";
+import wizhelpText from "../../core/NetHack/dat/wizhelp?raw";
 
 type DisplayFilePayload = {
   canonicalName: string;
@@ -20,7 +20,7 @@ type CatalogEntry = {
   text: string;
 };
 
-// NetHack 5.0's own help files (core/NetHack/dat).
+// NetHack 5.0's own help files.
 const catalog: Record<string, CatalogEntry> = {
   cmdhelp: { title: "Command Help", text: cmdhelpText },
   help: { title: "NetHack Help", text: helpText },

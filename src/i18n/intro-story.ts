@@ -7,7 +7,7 @@ import { translatePlayerRank } from "./player-title";
 // rewritten and previously unseen versions can fall back to the original.
 const introduction = /^It is written in the Book of (.+?): After the Creation, the cruel god Moloch rebelled against the authority of Marduk the Creator\. Moloch stole from Marduk the most powerful of all the artifacts of the gods, the Amulet of Yendor, and he hid it in the dark cavities of Gehennom, the Under World, where he now lurks, and bides his time\. Your (god|goddess) (.+?) seeks to possess the Amulet, and with it to gain deserved ascendance over the other gods\. You, a newly trained (.+?), have been heralded from birth as the instrument of (.+?)\. You are destined to recover the Amulet for your deity, or die in the attempt\. Your hour of destiny has come\. For the sake of us all: Go bravely with (.+?)!$/;
 
-// Names and starting ranks from the bundled NetHack 3.6.7 role definitions.
+// Names and starting ranks from NetHack's role definitions (src/role.c).
 export const deityNames: Readonly<Record<string, string>> = {
   ...hallucinatedDeities,
   Quetzalcoatl: "ケツァルコアトル", Camaxtli: "カマシュトリ", Huhetotl: "ウエテオトル",

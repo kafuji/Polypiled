@@ -353,7 +353,7 @@ class LocalNetHackRuntime {
       case "set_shim_font_name":
         return 0;
       case "shim_get_color_string":
-        // 3.6.7 shim marshalling for string returns writes into ret_ptr directly.
+        // Shim marshalling for string returns writes into ret_ptr directly.
         // Keep this empty to avoid corrupting the stack frame.
         return "";
       case "shim_start_screen":

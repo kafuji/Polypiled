@@ -16,7 +16,7 @@ export function normalizeStoredSaveInitOptions(
   runtimeVersion?: NethackRuntimeVersion,
 ): string[] {
   if (runtimeVersion) {
-    return sanitizeStartupInitOptionTokens(rawInitOptions, runtimeVersion);
+    return sanitizeStartupInitOptionTokens(rawInitOptions);
   }
   if (!Array.isArray(rawInitOptions)) {
     return [];
@@ -32,12 +32,11 @@ export function normalizeStoredSaveInitOptions(
 
 export function resolveSaveResumeInitOptionTokens(
   rawInitOptions: unknown,
-  runtimeVersion: NethackRuntimeVersion,
 ): string[] {
   // Do not synthesize number_pad:1 for old saves. NetHack restores num_pad
   // from the save itself, and forcing the current default here overwrites an
   // intentionally saved vi-key mode before the restored runtime state arrives.
-  return sanitizeStartupInitOptionTokens(rawInitOptions, runtimeVersion);
+  return sanitizeStartupInitOptionTokens(rawInitOptions);
 }
 
 export function getRuntimeSavePresentationMetadataKey(

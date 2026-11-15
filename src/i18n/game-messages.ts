@@ -508,7 +508,7 @@ type Template = readonly [RegExp, (...parts: string[]) => string];
 
 // The runtime's role.c supplies these words separately in the welcome line.
 // Only exact known values are translated; names and unknown variant values
-// remain verbatim. Several SLASH'EM roles contain spaces.
+// remain verbatim.
 const welcomeAlignments: Readonly<Record<string, string>> = {
   lawful: "秩序属性", neutral: "中立属性", chaotic: "混沌属性",
 };

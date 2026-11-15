@@ -12,7 +12,7 @@ const OUTPUT_FILE = resolve(
 const ROLE_SOURCE_TARGETS = [
   {
     version: "5.0",
-    sourcePath: resolve(PROJECT_ROOT, "imported/role-sources/5.0/role.c"),
+    sourcePath: resolve(PROJECT_ROOT, "core/NetHack/src/role.c"),
   },
 ];
 

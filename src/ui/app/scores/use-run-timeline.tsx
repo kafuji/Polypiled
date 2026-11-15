@@ -174,7 +174,6 @@ export function useRunTimelineTracking(dependencies: UseRunTimelineTrackingDepen
         }
         const locationKey = resolveTopScoreLiveLocationKey(
           stats,
-          activeRuntimeVersion,
           currentLocation,
         );
         if (visitedTopScoreLocationsRef.current.has(locationKey)) {
@@ -304,7 +303,7 @@ export function useRunTimelineTracking(dependencies: UseRunTimelineTrackingDepen
 
   useEffect(() => {
     if (
-      !supportsRuntimeTopScores(activeRuntimeVersion) ||
+      !supportsRuntimeTopScores() ||
       !characterCreationConfig
     ) {
       return;
@@ -319,7 +318,7 @@ export function useRunTimelineTracking(dependencies: UseRunTimelineTrackingDepen
 
   useEffect(() => {
     if (
-      !supportsRuntimeTopScores(activeRuntimeVersion) ||
+      !supportsRuntimeTopScores() ||
       !characterCreationConfig
     ) {
       return;
@@ -339,7 +338,7 @@ export function useRunTimelineTracking(dependencies: UseRunTimelineTrackingDepen
 
   useEffect(() => {
     if (
-      !supportsRuntimeTopScores(activeRuntimeVersion) ||
+      !supportsRuntimeTopScores() ||
       !gameOver.active ||
       !gameOver.promptReady
     ) {

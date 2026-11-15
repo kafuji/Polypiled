@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { getAllTiles } from "./tile-parser.mjs";
 
 export const GLYPH_CATALOG_VERSIONS = /** @type {const} */ (["5.0"]);
 
@@ -308,9 +307,7 @@ function buildGlyphEntries(
   version,
   ranges,
   maxGlyph,
-  tiles,
   offsets,
-  counts,
 ) {
   /** @type {GlyphEntry[]} */
   const entries = [];
@@ -483,7 +480,6 @@ export async function generateGlyphCatalogSource(
   ]);
 
   const { nethackGlobal, wasmBinary } = runtimeInfo;
-  const { tiles, counts } = await getAllTiles(projectRoot);
 
   const glyphConstants = nethackGlobal.constants?.GLYPH;
   if (!glyphConstants) {
@@ -513,9 +509,7 @@ export async function generateGlyphCatalogSource(
     target.version,
     ranges,
     maxGlyph,
-    tiles,
     offsets,
-    counts,
   );
 
   return renderGlyphCatalogModule({

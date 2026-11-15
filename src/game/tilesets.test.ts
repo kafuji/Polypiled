@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  clearNh3dUserTilesets, findNh3dTilesetByPath, getNh3dCompatibleTilesetCatalog,
+  clearNh3dUserTilesets, findNh3dTilesetByPath, getNh3dTilesetCatalog,
   inferNh3dTilesetTileDimensions, isNh3dTilesetExactBackgroundRemovalForced,
   resolveDefaultNh3dTilesetBackgroundRemovalMode, resolveDefaultNh3dTilesetBackgroundTileId,
   resolveDefaultNh3dTilesetSolidChromaKeyColorHex,
@@ -14,10 +14,10 @@ describe("DuskHack built-in support", () => {
   it("offers its original 16px sheet for 3.6 and translates it for NetHack 5", () => {
     const path = "assets/3.6/DuskHack.bmp";
     expect(findNh3dTilesetByPath(path)).toMatchObject({ label: "DuskHack", tileSize: 16, tileLayoutVersion: "3.6.7", source: "builtin" });
-    expect(getNh3dCompatibleTilesetCatalog("5.0").some(entry => entry.path === path)).toBe(true);
+    expect(getNh3dTilesetCatalog().some(entry => entry.path === path)).toBe(true);
     expect(getNh3dTilesetAtlasTileColumns(path)).toBe(40);
     expect(inferNh3dTilesetTileDimensions(640, 592, path)).toEqual({ tileWidth: 16, tileHeight: 16 });
-    expect(shouldTranslateNh367TilesetForNh5Runtime("5.0", 1480, "3.6.7")).toBe(true);
+    expect(shouldTranslateNh367TilesetForNh5Runtime(1480, "3.6.7")).toBe(true);
     expect(resolveDefaultNh3dTilesetBackgroundRemovalMode(path)).toBe("solid");
     expect(resolveDefaultNh3dTilesetSolidChromaKeyColorHex(path)).toBe("#000000");
     expect(resolveDefaultNh3dTilesetBackgroundTileId(path)).toBe(850);
@@ -26,7 +26,7 @@ describe("DuskHack built-in support", () => {
 describe("rectangular tileset dimensions", () => {
   it.each([["3.6.7", 975, 1476, "assets/3.6/Geoduck.bmp"], ["5.0", 1500, 2304, "assets/5.0/Geoduck.bmp"]] as const)(
     "registers the native Geoduck sheet in the %s layout", (version, height, background, path) => {
-      expect(getNh3dCompatibleTilesetCatalog("5.0").some(entry => entry.path === path)).toBe(true);
+      expect(getNh3dTilesetCatalog().some(entry => entry.path === path)).toBe(true);
       expect(findNh3dTilesetByPath(path)).toMatchObject({ tileSize: 15, tileHeight: 25 });
       expect(inferNh3dTilesetTileDimensions(600, height, path)).toEqual({ tileWidth: 15, tileHeight: 25 });
       expect(inferNh3dTilesetTileDimensions(600, height, undefined, version)).toEqual({ tileWidth: 15, tileHeight: 25 });

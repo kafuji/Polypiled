@@ -86,9 +86,8 @@ export function resolveEffectiveStartupCharacterName(
   const normalizedName = normalizeStartupCharacterName(config.name || "");
   const startupTokens = sanitizeStartupInitOptionTokens(
     config.initOptions,
-    config.runtimeVersion,
   );
-  // NetHack 3.6.7 wizard/debug playmode canonicalizes player name to
+  // NetHack wizard/debug playmode canonicalizes the player name to
   // "wizard" during startup, so align save-name logic with runtime behavior.
   if (startupTokens.includes("playmode:debug")) {
     return "wizard";

@@ -48,7 +48,7 @@ describe("local MCP app controller", () => {
     await controller.execute("start_game", { mode: "random", runtimeVersion, name: "Test" });
     expect(deps.handleStartNewGame).toHaveBeenCalledWith(expect.objectContaining({
       mode: "random", runtimeVersion,
-      initOptions: serializeStartupInitOptionTokens(deps.startupInitOptionValues, runtimeVersion),
+      initOptions: serializeStartupInitOptionTokens(deps.startupInitOptionValues),
     }));
     const actual = vi.mocked(deps.handleStartNewGame).mock.calls[0][0].initOptions;
     expect(actual).toContain("number_pad:0");

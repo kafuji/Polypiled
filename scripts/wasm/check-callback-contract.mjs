@@ -1,15 +1,18 @@
 // Read-only verification of the JavaScript inside the native EM_JS bridge.
 // This does not compile WASM or modify/stage game artifacts.
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const variants = [
-  ["5.0", process.env.NH3D_SOURCE_5 ?? "/home/james/Repos/forked/neth4ck-monorepo/packages/wasm-5/NetHack", "viiippii", [3, 4, 5, 128, 192, 42, 0]],
+  ["5.0", resolve(PROJECT_ROOT, "core/NetHack"), "viiippii", [3, 4, 5, 128, 192, 42, 0]],
 ];
 
 for (const [version, root, format, args] of variants) {
-  const sourcePath = (process.platform === "win32" && root.startsWith("/home/") ? "//wsl.localhost/Ubuntu" : "") + root + "/win/shim/winshim.c";
+  const sourcePath = resolve(root, "win/shim/winshim.c");
   const source = readFileSync(sourcePath, "utf8");
   const declaration = source.lastIndexOf("EM_JS(void, local_callback,");
   assert.ok(declaration >= 0, version + ": callback definition missing");

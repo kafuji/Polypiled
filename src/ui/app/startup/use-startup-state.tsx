@@ -84,7 +84,7 @@ export function useStartupState2(dependencies: UseStartupState2Dependencies) {
     characterCreationConfig?.runtimeVersion ?? runtimeVersion;
 
   const activeRuntimeVersionLabel =
-    resolveRuntimeVersionDisplayLabel(activeRuntimeVersion);
+    resolveRuntimeVersionDisplayLabel();
 
   const [createRole, setCreateRole] = useState(
     startupDefaultCharacterPreferences.createRole,

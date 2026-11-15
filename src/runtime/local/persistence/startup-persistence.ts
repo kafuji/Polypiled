@@ -34,12 +34,12 @@ export class RuntimePersistence {
     if (mod.FS && IDBFS) {
       // Dynamically locate the CWD so we mount IDBFS exactly where NetHack writes
       const cwd = mod.FS.cwd();
-      const saveDir = getRuntimeSaveMountDir(runtimeVersion, cwd);
-      const saveDbName = getRuntimeSaveDbName(runtimeVersion, cwd);
+      const saveDir = getRuntimeSaveMountDir(cwd);
+      const saveDbName = getRuntimeSaveDbName(cwd);
       const rootPersistenceEnabled =
-        supportsRuntimeRootPersistence(runtimeVersion);
+        supportsRuntimeRootPersistence();
       const rootPersistenceDbName = rootPersistenceEnabled
-        ? getRuntimeRootPersistenceDbName(runtimeVersion)
+        ? getRuntimeRootPersistenceDbName()
         : "";
       const rootPersistenceStoreName =
         IDBFS.DB_STORE_NAME || "FILE_DATA";
@@ -48,7 +48,7 @@ export class RuntimePersistence {
       const normalizedCwd = cwd.replace(/\/+$/, "") || "/";
       const normalizedSaveDir =
         saveDir.replace(/\/+$/, "") ||
-        getRuntimeSaveMountDir(runtimeVersion);
+        getRuntimeSaveMountDir();
       // Checkpoint shards always live on the /save mount, independent
       // of root persistence (which persists other top-level game data).
       const checkpointStorageDir = normalizedSaveDir;

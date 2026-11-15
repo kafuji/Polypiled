@@ -6,7 +6,7 @@ import type { NethackRuntimeVersion } from "../../../runtime/types";
 function archive(runtimeVersion: NethackRuntimeVersion = "5.0") {
   return {
     format: "nh3d-save", version: 1, runtimeVersion,
-    compatTag: getRuntimeSaveCompatTag(runtimeVersion), dbName: getRuntimeSaveDbName(runtimeVersion),
+    compatTag: getRuntimeSaveCompatTag(), dbName: getRuntimeSaveDbName(),
     name: "Test", category: "manual", displayName: "Test", playMode: "normal", initOptions: [],
     files: [{ key: "/save/0Test", timestamp: "2026-10-04T12:00:00.000Z", contents: "AAEC/w==" }],
   };

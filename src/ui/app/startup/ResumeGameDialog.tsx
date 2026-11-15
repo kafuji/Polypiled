@@ -9,7 +9,7 @@ import type {
   NethackRuntimeVersion
 } from "../../../runtime/types";
 import {
-  resolveNh3dCompatibleTilesetPathForRuntime
+  resolveNh3dTilesetPathForGame
 } from "../../../game/tilesets";
 import AnimatedDialog from "../../modals/AnimatedDialog";
 import type * as React from "react";
@@ -79,10 +79,7 @@ export function ResumeGameDialog({
       clientOptions.tilesetPath || "",
     ).trim();
     const compatibleTilesetPath =
-      resolveNh3dCompatibleTilesetPathForRuntime(
-        currentTilesetPath,
-        runtimeVersion,
-      );
+      resolveNh3dTilesetPathForGame(currentTilesetPath);
     if (
       compatibleTilesetPath &&
       compatibleTilesetPath !== currentTilesetPath

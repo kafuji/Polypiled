@@ -31,7 +31,7 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 - `src/game/controller-bindings.ts`: controller action schema, defaults, parsing, and normalization.
 - `src/game/tilesets.ts`: builtin, user, and Vulture tileset catalog and asset resolution.
 - `src/game/user-tileset-storage.ts`: persistence for imported user tilesets.
-- `src/game/helpers/startup-character-rulesets.ts`: startup role, race, gender, and alignment rulesets generated from NetHack 5.0's `role.c` (`imported/role-sources/5.0`).
+- `src/game/helpers/startup-character-rulesets.ts`: startup role, race, gender, and alignment rulesets generated from `core/NetHack/src/role.c`.
 - `src/game/helpers/startup-character-constraints.ts`: startup character selection normalization and option resolution.
 - `src/game/glyphs/index.ts`: public glyph helper barrel.
 - `src/game/glyphs/registry.ts`: glyph catalog lookup. NetHack 5.0's catalog is the only one and is always loaded.
@@ -63,11 +63,10 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 - `public/nethack-5.js`, `public/nethack-5.wasm`: the checked-in runtime artifact consumed by the browser build. NetHack 5.0 is the only runtime; there is no runtime choice in the UI.
 - `core/NetHack/*`: the game core's C source (NetHack 5.0 plus this project's changes), vendored with `git subtree`. `core/build-wasm.sh` builds it to `core/build/`; the build runs in CI (`.github/workflows/build-core-wasm.yml`), not on Windows. See [core/README.md](../../core/README.md). `public/nethack-5.*` are CI builds of it, replaced by hand as that README describes.
 - `scripts/wasm/compare-core-build.mjs`, `scripts/wasm/smoke-core.mjs`, `scripts/wasm/save-compat-core.mjs`: interface comparison, boot check and save-compatibility check for a built core.
-- `imported/nethack-5.0/*`: NetHack 5.0 help files (`dat/`, bundled by `src/runtime/displayFileCatalog.ts`) and tile files (`win-share/`). `imported/role-sources/5.0/role.c` feeds the startup rulesets.
-- `imported/nethack-3.6.7/{monsters,objects,other}.txt`: NetHack 3.6.7 tile files. They describe the 3.6.7 atlas layout for `scripts/glyphs/tile-parser.mjs` and `scripts/tilesets/generate-ai-tileset-prompts.mjs`; nothing at runtime reads them.
+- Data read from `core/NetHack` outside the core build: help files (`dat/`, bundled by `src/runtime/displayFileCatalog.ts`), tile files (`win/share/`, for `npm run hires:tile-keys` and the AI tileset prompts) and `src/role.c` (startup rulesets).
 - `third_party/vulture/*`: vendored Vulture source reference.
 - `scripts/glyphs/*`: glyph catalog generation and validation.
-- `scripts/wasm/*`: WASM copy and packaging helpers.
+- `scripts/wasm/*`: checks for a built core (interface comparison, boot, save compatibility, callback bridge).
 - `scripts/updates/*`: update packaging helpers.
 - `electron/*`: Electron entry points and packaging support.
 - `android/*`: Capacitor Android project.

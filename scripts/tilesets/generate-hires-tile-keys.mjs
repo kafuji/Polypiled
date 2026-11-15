@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, "../..");
-const SOURCE_DIR = resolve(PROJECT_ROOT, "imported/nethack-5.0/win-share");
+const SOURCE_DIR = resolve(PROJECT_ROOT, "core/NetHack/win/share");
 const OUTPUT_FILE = resolve(
   PROJECT_ROOT,
   "src/game/hires-tiles/tile-keys.5.generated.ts",

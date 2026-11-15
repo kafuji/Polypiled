@@ -6,7 +6,7 @@ import {
   resolveProjectRoot,
 } from "./catalog-generator.mjs";
 
-function resolveExpectedGlyphKinds(version) {
+function resolveExpectedGlyphKinds() {
   const expectedKinds = [
     "mon",
     "pet",
@@ -21,7 +21,6 @@ function resolveExpectedGlyphKinds(version) {
     "swallow",
     "warning",
   ];
-  void version;
   expectedKinds.push("statue");
   return expectedKinds;
 }
@@ -41,7 +40,7 @@ function validateGeneratedSource(source, version) {
   }
 
   const seenKinds = new Set(entries.map((match) => match[2]));
-  const expectedKinds = new Set(resolveExpectedGlyphKinds(version));
+  const expectedKinds = new Set(resolveExpectedGlyphKinds());
   for (const kind of expectedKinds) {
     if (!seenKinds.has(kind)) {
       throw new Error(`Missing expected glyph kind '${kind}' in catalog`);
