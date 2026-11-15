@@ -54,16 +54,10 @@ export function useTilesetPickerVisibility(dependencies: UseTilesetPickerVisibil
   }, [clientOptionsDraft.darkCorridorWallTileOverrideEnabled]);
 
   useEffect(() => {
-    if (
-      !clientOptionsDraft.darkCorridorWalls367 &&
-      !clientOptionsDraft.overrideNh5DarkCorridorWallTiles
-    ) {
+    if (!clientOptionsDraft.overrideNh5DarkCorridorWallTiles) {
       setIsDarkWallTilePickerVisible(false);
     }
-  }, [
-    clientOptionsDraft.darkCorridorWalls367,
-    clientOptionsDraft.overrideNh5DarkCorridorWallTiles,
-  ]);
+  }, [clientOptionsDraft.overrideNh5DarkCorridorWallTiles]);
 
   useEffect(() => {
     if (isVultureTilesetSelected) {

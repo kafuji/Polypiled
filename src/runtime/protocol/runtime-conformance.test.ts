@@ -66,7 +66,7 @@ function withoutProtocol(events: RuntimeEvent[]): RuntimeEvent[] {
   });
 }
 
-describe.each(["3.6.7", "5.0", "slashem"] as const)("%s shared protocol conformance", version => {
+describe.each(["5.0"] as const)("%s shared protocol conformance", version => {
   it("keeps bulk map refreshes separate from explicit under-player refreshes", () => {
     const f = fixture(version, true), topItemGlyphUnderPlayer = vi.fn(() => -1);
     const decode = () => ({ ch: 46, color: 7, tileidx: 12 });
@@ -102,8 +102,7 @@ describe.each(["3.6.7", "5.0", "slashem"] as const)("%s shared protocol conforma
     async function run(protocol: boolean) {
       const f = fixture(version, protocol);
       const mapWindow = f.systems.windows.getRuntimeWindowId("WIN_MAP");
-      const args = version === "5.0" ? [mapWindow, 4, 5, 128, 192, -1, -1]
-        : version === "slashem" ? [mapWindow, 4, 5, 100, -1, -1] : [mapWindow, 4, 5, 100, 0, -1, -1];
+      const args = [mapWindow, 4, 5, 128, 192, -1, -1];
       expect(f.runtime.handleUICallback("shim_print_glyph", args)).toBe(0);
       f.runtime.handleUICallback("shim_cliparound", [4, 5]);
       f.runtime.handleUICallback("shim_curs", [mapWindow, 4, 5]);

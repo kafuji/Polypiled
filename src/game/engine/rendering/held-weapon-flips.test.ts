@@ -36,9 +36,9 @@ it.each(['raw','compiled'] as const)('uses source-pack flips for NetHack 5 with 
   texture.dispose();
 });
 
-it.each(['3.6.7','5.0','slashem'] as const)('preserves native tile IDs for %s packs',version=>{
+it.each(['3.6.7','5.0'] as const)('preserves native tile IDs for %s-layout packs',version=>{
   const assets=new TilesetAssets({} as TilesetAssetsDependencies);
-  assets.resolveRuntimeVersion=()=>version;
+  assets.resolveRuntimeVersion=()=>'5.0';
   assets.loadedTilesetSourceLayoutVersion=version;
   assets.loadedTilesetTileLayoutVersion=assets.loadedTilesetSourceLayoutVersion;
   assets.resolveLoadedAtlasTileCount=()=>nh5ExpectedTileCount;

@@ -5,6 +5,7 @@ import { createEngineSystems } from "../create-engine-systems";
 import type { EngineCoordinator } from "../engine-coordinator";
 import { getGlyphCatalogRanges } from "../../glyphs/registry";
 import { classifyTileBehavior, getDefaultFloorGlyph } from "../../glyphs/behavior";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 
 afterEach(() => vi.restoreAllMocks());
 afterAll(() => vi.unstubAllGlobals());
@@ -27,7 +28,7 @@ describe("Vulture occupied doorway terrain", () => {
     vi.spyOn(s.vultureWalls, "refreshVultureWallMaterialsNear").mockImplementation(() => {});
     vi.spyOn(s.minimap, "queueMinimapTileUpdate").mockImplementation(() => {});
     const ranges = getGlyphCatalogRanges();
-    const door = ranges.find(range => range.kind === "cmap")!.start + cmap;
+    const door = cmapGlyphForSymbol(cmap);
     const player = ranges.find(range => range.kind === "mon")!.start;
     const doorChar = cmap === 12 ? "." : cmap === 13 ? "|" : "-";
     expect(classifyTileBehavior({ glyph: door, runtimeChar: doorChar, runtimeColor: 3, priorTerrain: null }).materialKind).toBe(cmap === 12 ? "floor" : "door");

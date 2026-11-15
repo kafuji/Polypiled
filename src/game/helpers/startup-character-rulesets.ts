@@ -41,7 +41,7 @@ export const startupCharacterRulesets = GENERATED_STARTUP_CHARACTER_RULESETS sat
 >;
 
 export function getStartupCharacterRuleset(
-  runtimeVersion: NethackRuntimeVersion = "3.6.7",
+  runtimeVersion: NethackRuntimeVersion = "5.0",
 ): StartupCharacterRuleset {
-  return startupCharacterRulesets[runtimeVersion] ?? startupCharacterRulesets["3.6.7"];
+  return startupCharacterRulesets[runtimeVersion] ?? startupCharacterRulesets["5.0"];
 }

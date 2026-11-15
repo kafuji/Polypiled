@@ -192,21 +192,12 @@ export class RuntimeInputRequests {
       if (this.deps.contextualLook.contextualLookInfoProbeMouseDeadlineMs > 0) {
         const nowMs = Date.now();
         if (nowMs <= this.deps.contextualLook.contextualLookInfoProbeMouseDeadlineMs) {
-          if (this.deps.coordinator.runtimeVersion === "slashem") {
-            this.deps.coordinator.logRoutine(
-              'Queueing contextual tile info follow-up input ["Escape"] for legacy /what is map probe',
-            );
-            this.enqueueInputKeys(["Escape"], "synthetic", ["position"]);
-            this.deps.contextualLook.contextualLookInfoAutoFlowStage = "await_more_info";
-            this.deps.contextualLook.contextualLookInfoAutoFlowUntilMs = nowMs + 30000;
-          } else {
-            this.deps.coordinator.logRoutine(
-              'Queueing contextual tile info follow-up inputs [":", "Escape"] for /what is map probe',
-            );
-            this.enqueueInputKeys([":", "Escape"], "synthetic", ["position"]);
-            this.deps.contextualLook.contextualLookInfoAutoFlowStage = "await_exit";
-            this.deps.contextualLook.contextualLookInfoAutoFlowUntilMs = nowMs + 30000;
-          }
+          this.deps.coordinator.logRoutine(
+            'Queueing contextual tile info follow-up inputs [":", "Escape"] for /what is map probe',
+          );
+          this.enqueueInputKeys([":", "Escape"], "synthetic", ["position"]);
+          this.deps.contextualLook.contextualLookInfoAutoFlowStage = "await_exit";
+          this.deps.contextualLook.contextualLookInfoAutoFlowUntilMs = nowMs + 30000;
         } else {
           this.deps.contextualLook.clearContextualLookInfoAutoFlow("mouse target expired");
         }
@@ -284,8 +275,7 @@ export class RuntimeInputRequests {
       this.deps.positionInput.pendingLookMenuFarLookArm = false;
     } else if (
       requestKind === "event" &&
-      this.deps.positionInput.farLookMode === "armed" &&
-      this.deps.positionInput.farLookOrigin !== "legacy_cursor_prompt"
+      this.deps.positionInput.farLookMode === "armed"
     ) {
       this.deps.positionInput.farLookMode = "none";
       this.deps.positionInput.farLookOrigin = null;

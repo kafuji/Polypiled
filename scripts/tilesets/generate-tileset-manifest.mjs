@@ -7,11 +7,6 @@ const PROJECT_ROOT = resolve(__dirname, "../..");
 
 const TILESET_MANIFEST_SOURCES = [
   {
-    sourceDir: resolve(PROJECT_ROOT, "public/assets/slashem"),
-    assetPrefix: "assets/slashem",
-    tileLayoutVersion: "slashem",
-  },
-  {
     sourceDir: resolve(PROJECT_ROOT, "public/assets/3.6"),
     assetPrefix: "assets/3.6",
     tileLayoutVersion: "3.6.7",
@@ -39,11 +34,6 @@ const supportedImageExtensions = new Set([
   ".jpeg",
   ".webp",
 ]);
-
-const tilesetAtlasTileColumnsPresetByPath = {
-  "assets/slashem/Abigaba.bmp": 38,
-  "assets/slashem/Absurd.png": 38,
-};
 
 const tilesetTileHeightPresetByPath = {
   "assets/3.6/Geoduck.bmp": 25,
@@ -190,7 +180,7 @@ function readImageSize(filePath) {
 
 function inferTileSizeFromFile(filePath, assetPath) {
   const imageSize = readImageSize(filePath);
-  const columns = tilesetAtlasTileColumnsPresetByPath[assetPath] ?? 40;
+  const columns = 40;
   if (imageSize?.width && imageSize.width >= columns) {
     const inferred = Math.trunc(imageSize.width / columns);
     if (Number.isFinite(inferred) && inferred >= 8 && inferred <= 512) {
@@ -247,7 +237,7 @@ export type GeneratedTilesetManifestEntry = {
   readonly path: string;
   readonly tileSize: number;
   readonly tileHeight?: number;
-  readonly tileLayoutVersion: "slashem" | "3.4.3" | "3.6.7" | "5.0";
+  readonly tileLayoutVersion: "3.6.7" | "5.0";
 };
 
 export const GENERATED_TILESET_MANIFEST: ReadonlyArray<GeneratedTilesetManifestEntry> =

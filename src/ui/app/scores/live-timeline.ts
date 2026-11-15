@@ -40,9 +40,6 @@ export function resolveTopScoreLiveLocationKey(
     typeof stats.dlevel === "number" && Number.isFinite(stats.dlevel)
       ? Math.trunc(stats.dlevel)
       : null;
-  if (runtimeVersion === "slashem" && dungeonLevel !== null) {
-    return `slashem-depth:${dungeonLevel}`;
-  }
   const dungeon = String(stats.dungeon ?? "").trim().toLowerCase();
   if (dungeon && dungeonLevel !== null) {
     return `${dungeon}:${dungeonLevel}`;

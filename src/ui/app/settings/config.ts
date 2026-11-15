@@ -730,12 +730,6 @@ export const clientOptionsConfig: ClientOption[] = [
     type: "group",
   },
   {
-    key: "darkCorridorWalls367",
-    label: t.clientOptions.config.darkCorridorWalls367.label,
-    description: t.clientOptions.config.darkCorridorWalls367.description,
-    type: "boolean",
-  },
-  {
     key: "overrideNh5DarkCorridorWallTiles",
     label: t.clientOptions.config.overrideNh5DarkCorridorWallTiles.label,
     description:

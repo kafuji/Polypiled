@@ -27,8 +27,7 @@ import {
 import {
   armorClassDescription,
   characterStatDescriptionById,
-  formatCharacterNumber,
-  renderCharacterSheetFieldRows
+  formatCharacterNumber
 } from "../status/character-fields";
 import {
   renderEnhanceMenuContent
@@ -48,12 +47,9 @@ export interface CharacterInfoDialogProps {
   closeInfoMenuDialog: () => void;
   characterSheet: CharacterSheetData | null;
   characterExperienceProgress: { level: number; experiencePoints: number; isMaxLevel: boolean; currentLevelStart: number; nextLevelThreshold: number; toNextLevel: number; progressPercent: number; };
-  isLegacySlashEmBaseAttributesSheet: boolean;
-  showLegacySlashEmDeitiesPanel: boolean;
   displayedCharacterStatEntries: CharacterSheetStat[];
   playerStats: PlayerStatsSnapshot;
   renderCharacterCurrentStatusPanel: (statusLines: readonly string[], fallbackBadges?: readonly PlayerStatusBadge[]) => JSX.Element;
-  playerStatusBadges: PlayerStatusBadge[];
   renderCharacterCurrentAttributesPanel: (attributeLines: readonly string[]) => JSX.Element;
   controller: Nethack3DEngineController | null;
   characterCommandActions: CharacterCommandAction[];
@@ -79,12 +75,9 @@ export function CharacterInfoDialog({
   closeInfoMenuDialog,
   characterSheet,
   characterExperienceProgress,
-  isLegacySlashEmBaseAttributesSheet,
-  showLegacySlashEmDeitiesPanel,
   displayedCharacterStatEntries,
   playerStats,
   renderCharacterCurrentStatusPanel,
-  playerStatusBadges,
   renderCharacterCurrentAttributesPanel,
   controller,
   characterCommandActions,
@@ -170,58 +163,92 @@ export function CharacterInfoDialog({
                   </div>
                 </div>
                 <div className="nh3d-character-grid">
-                  {isLegacySlashEmBaseAttributesSheet ? (
-                    <>
-                      <div className="nh3d-character-legacy-summary-row">
-                        <section className="nh3d-character-panel nh3d-character-panel-legacy-summary">
-                          <div className="nh3d-character-panel-title">
-                            {locale === "ja" ? "初期" : "Starting"}
+                  <>
+                    <section className="nh3d-character-panel">
+                      <div className="nh3d-character-panel-title">
+                        {
+                          translationStrings.characterSheet.sectionTitles
+                            .background
+                        }
+                      </div>
+                      <div className="nh3d-character-line-stack">
+                        {characterSheet.backgroundLines.length > 0 ? (
+                          characterSheet.backgroundLines.map(
+                            (line, index) => (
+                              <div
+                                className="nh3d-character-line"
+                                key={`character-bg-${index}`}
+                              >
+                                {translateCharacterLine(line, locale)}
+                              </div>
+                            ),
+                          )
+                        ) : characterSheet.identityLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.identityLine, locale)}
                           </div>
-                          {renderCharacterSheetFieldRows(
-                            characterSheet.backgroundLines,
-                            "character-legacy-starting",
-                            { showBadges: false, locale },
-                          )}
-                        </section>
-
-                        <section className="nh3d-character-panel nh3d-character-panel-legacy-summary">
-                          <div className="nh3d-character-panel-title">
-                            {locale === "ja" ? "現在" : "Current"}
-                          </div>
-                          {renderCharacterSheetFieldRows(
-                            characterSheet.characteristicsLines,
-                            "character-legacy-current",
-                            { showBadges: false, locale },
-                          )}
-                        </section>
-
-                        {showLegacySlashEmDeitiesPanel ? (
-                          <section className="nh3d-character-panel nh3d-character-panel-legacy-summary nh3d-character-panel-legacy-deities">
-                            <div className="nh3d-character-panel-title">
-                              {locale === "ja" ? "神々" : "Deities"}
-                            </div>
-                            {renderCharacterSheetFieldRows(
-                              characterSheet.deityLines,
-                              "character-legacy-deities",
-                              {
-                                showBadges: false,
-                                highlightCurrent: true,
-                                locale,
-                              },
-                            )}
-                          </section>
                         ) : null}
                       </div>
+                    </section>
 
-                      <section className="nh3d-character-panel nh3d-character-panel-characteristics">
-                        <div className="nh3d-character-panel-title">
-                          {t.dialogs.info.characteristics}
-                        </div>
+                    <section className="nh3d-character-panel">
+                      <div className="nh3d-character-panel-title">
+                        {t.dialogs.info.vitals}
+                      </div>
+                      <div className="nh3d-character-line-stack">
+                        {characterSheet.hitPointsLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.hitPointsLine, locale)}
+                          </div>
+                        ) : null}
+                        {characterSheet.energyLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.energyLine, locale)}
+                          </div>
+                        ) : null}
+                        {characterSheet.armorClassLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.armorClassLine, locale)}
+                          </div>
+                        ) : null}
+                        {characterSheet.experienceLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.experienceLine, locale)}
+                          </div>
+                        ) : null}
+                        {characterSheet.scoreLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.scoreLine, locale)}
+                          </div>
+                        ) : null}
+                        {characterSheet.walletLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.walletLine, locale)}
+                          </div>
+                        ) : null}
+                        {characterSheet.autopickupLine ? (
+                          <div className="nh3d-character-line">
+                            {translateCharacterLine(characterSheet.autopickupLine, locale)}
+                          </div>
+                        ) : null}
+                      </div>
+                    </section>
+
+                    <section className="nh3d-character-panel nh3d-character-panel-characteristics">
+                      <div className="nh3d-character-panel-title">
+                        {t.dialogs.info.characteristics}
+                      </div>
+                      {hasCharacterStatValues ? (
                         <div className="nh3d-character-stat-grid">
+                          {hasCharacterStatLimits ? (
+                            <div className="nh3d-character-stat-grid-hint">
+                              {t.dialogs.info.currentLimit}
+                            </div>
+                          ) : null}
                           {displayedCharacterStatEntries.map((entry) => (
                             <div
                               className="nh3d-character-stat"
-                              key={`character-legacy-stat-${entry.id}`}
+                              key={`character-stat-${entry.id}`}
                             >
                               <div className="nh3d-character-stat-label">
                                 {entry.label}
@@ -232,6 +259,16 @@ export function CharacterInfoDialog({
                                     entry.rawValue ||
                                     "--"}
                                 </span>
+                                {entry.limitValue ? (
+                                  <>
+                                    <span className="nh3d-character-stat-divider">
+                                      /
+                                    </span>
+                                    <span className="nh3d-character-stat-limit">
+                                      {entry.limitValue}
+                                    </span>
+                                  </>
+                                ) : null}
                               </div>
                               <div className="nh3d-character-stat-description">
                                 {characterStatDescriptionById[entry.id]}
@@ -252,272 +289,92 @@ export function CharacterInfoDialog({
                             </div>
                           </div>
                         </div>
-                      </section>
-
-                      {renderCharacterCurrentStatusPanel(
-                        characterSheet.statusLines,
-                        playerStatusBadges,
-                      )}
-
-                      {characterSheet.attributeLines.length > 0
-                        ? renderCharacterCurrentAttributesPanel(
-                          characterSheet.attributeLines,
-                        )
-                        : null}
-
-                      <section className="nh3d-character-panel nh3d-character-panel-actions">
-                        <div className="nh3d-character-panel-title">
-                          {t.dialogs.info.characterActions}
+                      ) : (
+                        <div className="nh3d-character-line-stack">
+                          {characterSheet.characteristicsLines.map(
+                            (line, index) => (
+                              <div
+                                className="nh3d-character-line"
+                                key={`character-characteristics-${index}`}
+                              >
+                                {line}
+                              </div>
+                            ),
+                          )}
                         </div>
-                        <div className="nh3d-character-actions-grid">
+                      )}
+                    </section>
+
+                    {renderCharacterCurrentStatusPanel(
+                      characterSheet.statusLines,
+                    )}
+
+                    {renderCharacterCurrentAttributesPanel(
+                      characterSheet.attributeLines,
+                    )}
+
+                    <section className="nh3d-character-panel nh3d-character-panel-actions">
+                      <div className="nh3d-character-panel-title">
+                        {t.dialogs.info.characterActions}
+                      </div>
+                      <div className="nh3d-character-actions-grid">
+                        <button
+                          className="nh3d-character-action-button"
+                          onClick={() =>
+                            controller?.toggleInventoryDialog()
+                          }
+                          type="button"
+                        >
+                          <span className="nh3d-character-action-label">
+                            {t.dialogs.info.inventory}
+                          </span>
+                          <span className="nh3d-character-action-detail">
+                            {t.dialogs.info.inventoryDetail}
+                          </span>
+                        </button>
+                        {characterCommandActions.map((action) => (
                           <button
                             className="nh3d-character-action-button"
+                            key={`character-action-${action.id}`}
                             onClick={() =>
-                              controller?.toggleInventoryDialog()
+                              runCharacterExtendedCommand(action.command)
                             }
                             type="button"
                           >
                             <span className="nh3d-character-action-label">
-                              {t.dialogs.info.inventory}
+                              {action.label}
                             </span>
                             <span className="nh3d-character-action-detail">
-                              {t.dialogs.info.inventoryDetail}
+                              {action.detail}
                             </span>
                           </button>
-                          {characterCommandActions.map((action) => (
-                            <button
-                              className="nh3d-character-action-button"
-                              key={`character-action-${action.id}`}
-                              onClick={() =>
-                                runCharacterExtendedCommand(action.command)
-                              }
-                              type="button"
-                            >
-                              <span className="nh3d-character-action-label">
-                                {action.label}
-                              </span>
-                              <span className="nh3d-character-action-detail">
-                                {action.detail}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </section>
-                    </>
-                  ) : (
-                    <>
-                      <section className="nh3d-character-panel">
-                        <div className="nh3d-character-panel-title">
-                          {
-                            translationStrings.characterSheet.sectionTitles
-                              .background
-                          }
-                        </div>
-                        <div className="nh3d-character-line-stack">
-                          {characterSheet.backgroundLines.length > 0 ? (
-                            characterSheet.backgroundLines.map(
-                              (line, index) => (
-                                <div
-                                  className="nh3d-character-line"
-                                  key={`character-bg-${index}`}
-                                >
-                                  {translateCharacterLine(line, locale)}
-                                </div>
-                              ),
-                            )
-                          ) : characterSheet.identityLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.identityLine, locale)}
-                            </div>
-                          ) : null}
-                        </div>
-                      </section>
+                        ))}
+                      </div>
+                    </section>
 
-                      <section className="nh3d-character-panel">
-                        <div className="nh3d-character-panel-title">
-                          {t.dialogs.info.vitals}
-                        </div>
-                        <div className="nh3d-character-line-stack">
-                          {characterSheet.hitPointsLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.hitPointsLine, locale)}
-                            </div>
-                          ) : null}
-                          {characterSheet.energyLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.energyLine, locale)}
-                            </div>
-                          ) : null}
-                          {characterSheet.armorClassLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.armorClassLine, locale)}
-                            </div>
-                          ) : null}
-                          {characterSheet.experienceLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.experienceLine, locale)}
-                            </div>
-                          ) : null}
-                          {characterSheet.scoreLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.scoreLine, locale)}
-                            </div>
-                          ) : null}
-                          {characterSheet.walletLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.walletLine, locale)}
-                            </div>
-                          ) : null}
-                          {characterSheet.autopickupLine ? (
-                            <div className="nh3d-character-line">
-                              {translateCharacterLine(characterSheet.autopickupLine, locale)}
-                            </div>
-                          ) : null}
-                        </div>
-                      </section>
-
-                      <section className="nh3d-character-panel nh3d-character-panel-characteristics">
-                        <div className="nh3d-character-panel-title">
-                          {t.dialogs.info.characteristics}
-                        </div>
-                        {hasCharacterStatValues ? (
-                          <div className="nh3d-character-stat-grid">
-                            {hasCharacterStatLimits ? (
-                              <div className="nh3d-character-stat-grid-hint">
-                                {t.dialogs.info.currentLimit}
-                              </div>
-                            ) : null}
-                            {displayedCharacterStatEntries.map((entry) => (
+                    {characterSheet.extraSections.map(
+                      (section, sectionIndex) => (
+                        <section
+                          className="nh3d-character-panel"
+                          key={`character-extra-${section.title}-${sectionIndex}`}
+                        >
+                          <div className="nh3d-character-panel-title">
+                            {translateCharacterSectionTitle(section.title, locale)}
+                          </div>
+                          <div className="nh3d-character-line-stack">
+                            {section.lines.map((line, lineIndex) => (
                               <div
-                                className="nh3d-character-stat"
-                                key={`character-stat-${entry.id}`}
+                                className="nh3d-character-line"
+                                key={`character-extra-line-${sectionIndex}-${lineIndex}`}
                               >
-                                <div className="nh3d-character-stat-label">
-                                  {entry.label}
-                                </div>
-                                <div className="nh3d-character-stat-value">
-                                  <span className="nh3d-character-stat-current">
-                                    {entry.currentValue ||
-                                      entry.rawValue ||
-                                      "--"}
-                                  </span>
-                                  {entry.limitValue ? (
-                                    <>
-                                      <span className="nh3d-character-stat-divider">
-                                        /
-                                      </span>
-                                      <span className="nh3d-character-stat-limit">
-                                        {entry.limitValue}
-                                      </span>
-                                    </>
-                                  ) : null}
-                                </div>
-                                <div className="nh3d-character-stat-description">
-                                  {characterStatDescriptionById[entry.id]}
-                                </div>
+                                {translateCharacterLine(line, locale)}
                               </div>
                             ))}
-                            <div className="nh3d-character-stat">
-                              <div className="nh3d-character-stat-label">
-                                {t.dialogs.info.armorClass}
-                              </div>
-                              <div className="nh3d-character-stat-value">
-                                <span className="nh3d-character-stat-current">
-                                  {playerStats.armor}
-                                </span>
-                              </div>
-                              <div className="nh3d-character-stat-description">
-                                {armorClassDescription}
-                              </div>
-                            </div>
                           </div>
-                        ) : (
-                          <div className="nh3d-character-line-stack">
-                            {characterSheet.characteristicsLines.map(
-                              (line, index) => (
-                                <div
-                                  className="nh3d-character-line"
-                                  key={`character-characteristics-${index}`}
-                                >
-                                  {line}
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        )}
-                      </section>
-
-                      {renderCharacterCurrentStatusPanel(
-                        characterSheet.statusLines,
-                      )}
-
-                      {renderCharacterCurrentAttributesPanel(
-                        characterSheet.attributeLines,
-                      )}
-
-                      <section className="nh3d-character-panel nh3d-character-panel-actions">
-                        <div className="nh3d-character-panel-title">
-                          {t.dialogs.info.characterActions}
-                        </div>
-                        <div className="nh3d-character-actions-grid">
-                          <button
-                            className="nh3d-character-action-button"
-                            onClick={() =>
-                              controller?.toggleInventoryDialog()
-                            }
-                            type="button"
-                          >
-                            <span className="nh3d-character-action-label">
-                              {t.dialogs.info.inventory}
-                            </span>
-                            <span className="nh3d-character-action-detail">
-                              {t.dialogs.info.inventoryDetail}
-                            </span>
-                          </button>
-                          {characterCommandActions.map((action) => (
-                            <button
-                              className="nh3d-character-action-button"
-                              key={`character-action-${action.id}`}
-                              onClick={() =>
-                                runCharacterExtendedCommand(action.command)
-                              }
-                              type="button"
-                            >
-                              <span className="nh3d-character-action-label">
-                                {action.label}
-                              </span>
-                              <span className="nh3d-character-action-detail">
-                                {action.detail}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </section>
-
-                      {characterSheet.extraSections.map(
-                        (section, sectionIndex) => (
-                          <section
-                            className="nh3d-character-panel"
-                            key={`character-extra-${section.title}-${sectionIndex}`}
-                          >
-                            <div className="nh3d-character-panel-title">
-                              {translateCharacterSectionTitle(section.title, locale)}
-                            </div>
-                            <div className="nh3d-character-line-stack">
-                              {section.lines.map((line, lineIndex) => (
-                                <div
-                                  className="nh3d-character-line"
-                                  key={`character-extra-line-${sectionIndex}-${lineIndex}`}
-                                >
-                                  {translateCharacterLine(line, locale)}
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        ),
-                      )}
-                    </>
-                  )}
+                        </section>
+                      ),
+                    )}
+                  </>
                 </div>
 
                 <div className="nh3d-info-hint">

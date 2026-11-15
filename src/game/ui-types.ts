@@ -364,7 +364,6 @@ export type Nh3dClientOptions = {
   musicPack: string;
   musicVolume: number;
   blockAmbientOcclusion: boolean;
-  darkCorridorWalls367: boolean;
   overrideNh5DarkCorridorWallTiles: boolean;
   darkCorridorWallTileOverrideEnabled: boolean;
   darkCorridorWallTileOverrideEnabledByTileset: DarkCorridorWallTileOverrideEnabledByTileset;
@@ -535,7 +534,6 @@ export const defaultNh3dClientOptions: Nh3dClientOptions = {
   musicPack: defaultMusicPackId,
   musicVolume: 0.5,
   blockAmbientOcclusion: true,
-  darkCorridorWalls367: true,
   overrideNh5DarkCorridorWallTiles: true,
   darkCorridorWallTileOverrideEnabled: false,
   darkCorridorWallTileOverrideEnabledByTileset: {},
@@ -1390,10 +1388,6 @@ export function normalizeNh3dClientOptions(
       typeof overrides?.blockAmbientOcclusion === "boolean"
         ? overrides.blockAmbientOcclusion
         : defaultNh3dClientOptions.blockAmbientOcclusion,
-    darkCorridorWalls367:
-      typeof overrides?.darkCorridorWalls367 === "boolean"
-        ? overrides.darkCorridorWalls367
-        : defaultNh3dClientOptions.darkCorridorWalls367,
     overrideNh5DarkCorridorWallTiles:
       typeof overrides?.overrideNh5DarkCorridorWallTiles === "boolean"
         ? overrides.overrideNh5DarkCorridorWallTiles
@@ -1489,7 +1483,6 @@ export interface Nethack3DEngineController {
   syncQuestionActionFocus(
     action: "select-all" | "confirm" | "cancel",
   ): void;
-  resolveLegacyQuestionChoicePreviewTileIndex(choice: string): number | null;
   confirmQuestionMenuChoice(): void;
   togglePickupChoice(accelerator: string): void;
   toggleAllPickupChoices(): void;

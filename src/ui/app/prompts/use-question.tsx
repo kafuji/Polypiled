@@ -7,9 +7,6 @@ import {
   useState
 } from "react";
 import type { CharacterCreationConfig, FpsCrosshairContextState, InfoMenuState, QuestionDialogState, InventoryDialogState, Nethack3DEngineController, NewGamePromptState, TextInputRequestState } from "../../../game/ui-types";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   parseCastSpellMenu
 } from "../../modals/cast-menu";
@@ -24,14 +21,11 @@ import type {
   MessageInfoMenuHistoryState
 } from "../menus/message-history";
 import {
-  buildLegacyInventoryQuestionMenuItems,
   getMenuSelectionInput,
   isAdjustLetterQuestionPrompt,
-  isLegacyInventoryQuestionChoicePrompt,
   isSelectableQuestionMenuItem,
   isSymbolLookupTextQuestion,
   isYesNoChoicePrompt,
-  orderQuestionChoicesForDisplay,
   parseQuestionChoices,
   shouldUseCompactQuestionChoiceLayout
 } from "../menus/question-choices";
@@ -79,7 +73,6 @@ export function useQuestionState(dependencies: UseQuestionStateDependencies) {
 
 export interface UseQuestionModelDependencies {
   readonly question: QuestionDialogState | null;
-  readonly activeRuntimeVersion: NethackRuntimeVersion;
   readonly displayedInfoMenu: InfoMenuState | null;
   readonly inventory: InventoryDialogState;
   readonly isMobileViewport: boolean;
@@ -89,7 +82,6 @@ export interface UseQuestionModelDependencies {
 export function useQuestionModel(dependencies: UseQuestionModelDependencies) {
   const {
     question,
-    activeRuntimeVersion,
     displayedInfoMenu,
     inventory,
     isMobileViewport,
@@ -99,21 +91,7 @@ export function useQuestionModel(dependencies: UseQuestionModelDependencies) {
     ? parseQuestionChoices(question.text, question.choices)
     : [];
 
-  const hideLegacySlashEmInventoryShortcuts =
-    activeRuntimeVersion === "slashem" &&
-    parsedQuestionChoices.some((choice) => choice.trim() === "*");
-
-  const visibleQuestionChoices = hideLegacySlashEmInventoryShortcuts
-    ? parsedQuestionChoices.filter((choice) => {
-      const normalizedChoice = choice.trim();
-      return normalizedChoice !== "*" && normalizedChoice !== "?";
-    })
-    : parsedQuestionChoices;
-
-  const orderedQuestionChoices = orderQuestionChoicesForDisplay(
-    visibleQuestionChoices,
-    activeRuntimeVersion,
-  );
+  const orderedQuestionChoices = parsedQuestionChoices;
 
   const shouldRenderQuestionTextInput =
     Boolean(question) &&
@@ -121,7 +99,7 @@ export function useQuestionModel(dependencies: UseQuestionModelDependencies) {
     orderedQuestionChoices.length === 0 &&
     isSymbolLookupTextQuestion(question?.text ?? "", question?.choices ?? "");
 
-  const isYesNoQuestionChoices = isYesNoChoicePrompt(visibleQuestionChoices);
+  const isYesNoQuestionChoices = isYesNoChoicePrompt(orderedQuestionChoices);
 
   const isAdjustLetterQuestion = isAdjustLetterQuestionPrompt(
     question?.text ?? "",
@@ -130,7 +108,7 @@ export function useQuestionModel(dependencies: UseQuestionModelDependencies) {
   const useInventoryChoiceLabels =
     !isYesNoQuestionChoices && !isAdjustLetterQuestion;
 
-  const normalizedVisibleQuestionChoiceSignature = visibleQuestionChoices
+  const normalizedQuestionChoiceSignature = orderedQuestionChoices
     .map((choice) =>
       String(choice || "")
         .trim()
@@ -140,30 +118,20 @@ export function useQuestionModel(dependencies: UseQuestionModelDependencies) {
     .join("");
 
   const suppressQuestionCancelButton =
-    normalizedVisibleQuestionChoiceSignature === "yn" ||
-    normalizedVisibleQuestionChoiceSignature === "ynq" ||
-    normalizedVisibleQuestionChoiceSignature === "ynaq";
-
-  const showLegacyInventoryQuestionCancelButton =
-    isLegacyInventoryQuestionChoicePrompt(
-      question?.text ?? "",
-      visibleQuestionChoices,
-      activeRuntimeVersion,
-      isYesNoQuestionChoices,
-    );
+    normalizedQuestionChoiceSignature === "yn" ||
+    normalizedQuestionChoiceSignature === "ynq" ||
+    normalizedQuestionChoiceSignature === "ynaq";
 
   const useCompactQuestionChoiceLayout = shouldUseCompactQuestionChoiceLayout(
     question?.text ?? "",
     orderedQuestionChoices,
-    activeRuntimeVersion,
     isYesNoQuestionChoices,
   );
 
   const showQuestionCancelButton =
     Boolean(question) &&
     !suppressQuestionCancelButton &&
-    ((question?.menuItems.length ?? 0) === 0 ||
-      showLegacyInventoryQuestionCancelButton);
+    (question?.menuItems.length ?? 0) === 0;
 
   const displayedQuestionText = capitalizeFirstLetter(question?.text ?? "");
 
@@ -208,45 +176,14 @@ export function useQuestionModel(dependencies: UseQuestionModelDependencies) {
     [question],
   );
 
-  const legacyInventoryQuestionMenuItems = useMemo(
-    () =>
-      question && question.menuItems.length === 0
-        ? buildLegacyInventoryQuestionMenuItems(
-          question.text,
-          orderedQuestionChoices,
-          inventory.items,
-          activeRuntimeVersion,
-          isYesNoQuestionChoices,
-        )
-        : [],
-    [
-      activeRuntimeVersion,
-      inventory.items,
-      isYesNoQuestionChoices,
-      orderedQuestionChoices,
-      question,
-    ],
-  );
-
-  const displayedQuestionMenuItems =
-    question && question.menuItems.length > 0
-      ? question.menuItems
-      : legacyInventoryQuestionMenuItems;
-
-  const useSlashEmLegacyShortcutChoiceDialog =
-    activeRuntimeVersion === "slashem" &&
-    Boolean(question) &&
-    showLegacyInventoryQuestionCancelButton &&
-    !question?.isPickupDialog;
+  const displayedQuestionMenuItems = question?.menuItems ?? [];
 
   const questionChoiceSourceItems =
     displayedQuestionMenuItems.length > 0
       ? displayedQuestionMenuItems
       : inventory.items;
 
-  const shouldRenderQuestionMenuItems =
-    displayedQuestionMenuItems.length > 0 &&
-    !useSlashEmLegacyShortcutChoiceDialog;
+  const shouldRenderQuestionMenuItems = displayedQuestionMenuItems.length > 0;
 
   const questionSelectableMenuItemCount = displayedQuestionMenuItems.filter(
     (item) => isSelectableQuestionMenuItem(item),
@@ -275,7 +212,6 @@ export function useQuestionModel(dependencies: UseQuestionModelDependencies) {
     castMenuData,
     techniqueMenuData,
     displayedQuestionMenuItems,
-    useSlashEmLegacyShortcutChoiceDialog,
     questionChoiceSourceItems,
     shouldRenderQuestionMenuItems,
     questionSelectableMenuItemCount,

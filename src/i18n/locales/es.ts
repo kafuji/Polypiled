@@ -1094,10 +1094,6 @@ export const esOverrides = {
                     description: "Ti\u00F1e los p\u00EDxeles de fragmentos cerca de las l\u00EDneas divididas con bordes aleatorios de color rojo sangre.",
                 },
                 groupCompatibility: "Compatibilidad en tiempo de ejecuci\u00F3n",
-                darkCorridorWalls367: {
-                    label: "Paredes oscuras de pasillo heredadas",
-                    description: "Inferir y almacenar en cach\u00E9 los mosaicos de paredes de pasillos oscuros para runtimes heredados de NetHack 3.4.3/3.6.x, incluido Slash'EM.",
-                },
                 overrideNh5DarkCorridorWallTiles: {
                     label: "Anular los mosaicos de pared oscuros de NetHack 5.0",
                     description: "Aplique configuraciones de anulaci\u00F3n de paredes oscuras a los mosaicos de paredes de pasillos oscuros de NetHack 5.0.",
@@ -1318,7 +1314,6 @@ export const esOverrides = {
                 cancelDownload: "Cancelar descarga",
             },
             startup: {
-                chooseVariant: "Elija su variante NetHack:",
                 options: "Opciones de NetHack 3D",
                 quitGame: "Salir del juego",
                 chooseSetup: "Elige la configuraci\u00F3n de tu personaje:",
@@ -1354,7 +1349,6 @@ export const esOverrides = {
                     resetControllerDefaults: "Restablecer los valores predeterminados del controlador",
                 },
                 hints: {
-                    darkWallsAlwaysEnabled: "Siempre habilitado mientras los mosaicos de Vulture est\u00E1n activos.",
                     darkWallsDisabledByVulture: "Deshabilitado mientras los mosaicos de Vulture est\u00E1n activos.",
                     enableDarkWallsFirst: "Habilite primero las paredes oscuras de pasillo heredadas o las anulaciones de paredes oscuras de NetHack 5.0.",
                     enableFpsFirst: "Habilite el modo en primera persona en Pantalla primero.",
@@ -1438,10 +1432,6 @@ export const esOverrides = {
                 choices: {
                     leftRingFinger: "Dedo anular izquierdo",
                     rightRingFinger: "Dedo anular derecho",
-                    here: "Aquí",
-                    onGround: "En el suelo",
-                    eligibleItems: "Objetos válidos",
-                    allInventory: "Todo el inventario",
                 },
             },
             runtimeStartError: {

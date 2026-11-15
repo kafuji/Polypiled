@@ -5,6 +5,7 @@ import { createEngineSystems } from "../create-engine-systems";
 import type { EngineCoordinator } from "../engine-coordinator";
 import { getGlyphCatalogRanges } from "../../glyphs/registry";
 import { getDefaultFloorGlyph } from "../../glyphs/behavior";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 
 afterEach(() => vi.restoreAllMocks());
 afterAll(() => vi.unstubAllGlobals());
@@ -21,7 +22,7 @@ function fixture(dynamicLighting: boolean) {
   vi.spyOn(s.vultureWalls, "refreshVultureWallMaterialsNear").mockImplementation(() => {});
   vi.spyOn(s.minimap, "queueMinimapTileUpdate").mockImplementation(() => {});
   const ranges = getGlyphCatalogRanges();
-  const darkRoom = ranges.find((range) => range.kind === "cmap")!.start + 20;
+  const darkRoom = cmapGlyphForSymbol(20);
   const item = ranges.find((range) => range.kind === "obj")!.start + 1;
   return { s, darkRoom, item };
 }

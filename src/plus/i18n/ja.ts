@@ -83,10 +83,6 @@ const jaPlusTranslations: LocaleOverrides<TranslationDictionary> = {
       active: (count: number) => `発動中 ${count}`,
     },
     tilesetLayouts: {
-      slashem: "Slash'EM レイアウト",
-      slashem40: "Slash'EM レイアウト（40 列）",
-      slashem38: "Slash'EM レイアウト（38 列）",
-      nethack343: "NetHack 3.4.3 レイアウト",
       unknown: "不明なレイアウト",
     },
     engine: {

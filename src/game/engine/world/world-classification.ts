@@ -2,7 +2,6 @@ import type { NethackRuntimeVersion } from "../../../runtime/types";
 import {
   classifyTileBehavior,
   getDefaultDarkFloorGlyph,
-  getDefaultDarkWallGlyph,
   getDefaultFloorGlyph,
   getOpenDoorGlyphFrom,
   isDoorwayCmapGlyph,
@@ -12,7 +11,6 @@ import {
 import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
 import type { GlyphKind, TileBehaviorResult, TileMaterialKind } from "../../glyphs";
 import type { TerrainSnapshot } from "../../types";
-import type { DarkCorridorInference } from "./dark-corridor-inference";
 import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "../rendering/entity-billboards";
 import type { LevelTerrainCache } from "./level-terrain-cache";
@@ -23,10 +21,6 @@ import type { TilesetAssets } from "../rendering/tileset-assets";
 import type { TileUpdates } from "./tile-updates";
 
 export interface WorldClassificationDependencies {
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "getKnownTerrainSnapshotForInferenceAtKey"
-  >;
   readonly engineState: Pick<
     EngineState,
     "characterCreationConfig"
@@ -95,45 +89,15 @@ export class WorldClassification {
     }
   }
 
-  isUndiscoveredKind(kind: string): boolean {
-    return kind === "unexplored" || kind === "nothing";
+  /** Remembered terrain, then the flat feature under the player, then the last runtime state. */
+  getKnownTerrainSnapshotAtKey(key: string): TerrainSnapshot | null {
+    return this.dependencies.levelTerrainCache.lastKnownTerrain.get(key) ??
+      this.flatFeatureUnderPlayerCache.get(key) ??
+      this.dependencies.levelTerrainCache.getTileSnapshotFromStateCache(key);
   }
 
-  shouldFlattenVoidOrUnknownTileFor367(
-    behavior: TileBehaviorResult,
-    isInferredDarkCorridorWall: boolean,
-  ): boolean {
-    if (isInferredDarkCorridorWall) {
-      return false;
-    }
-
-    const runtimeVersion =
-      this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7";
-    if (runtimeVersion === "5.0") {
-      return false;
-    }
-
-    if (
-      behavior.resolved.kind === "unknown" ||
-      behavior.effective.kind === "unknown"
-    ) {
-      return true;
-    }
-
-    if (behavior.resolved.kind !== "cmap") {
-      return false;
-    }
-    if (behavior.resolved.glyph !== getDefaultDarkWallGlyph()) {
-      return false;
-    }
-
-    const resolvedChar =
-      typeof behavior.resolved.char === "string"
-        ? behavior.resolved.char.trim()
-        : "";
-    const glyphChar =
-      typeof behavior.glyphChar === "string" ? behavior.glyphChar.trim() : "";
-    return resolvedChar.length === 0 || glyphChar.length === 0;
+  isUndiscoveredKind(kind: string): boolean {
+    return kind === "unexplored" || kind === "nothing";
   }
 
   isDamageFlashableBehavior(behavior: TileBehaviorResult): boolean {
@@ -315,7 +279,7 @@ export class WorldClassification {
     for (const offset of neighborOffsets) {
       const neighborKey = `${tileX + offset.dx},${tileY + offset.dy}`;
       const snapshot =
-        this.dependencies.darkCorridorInference.getKnownTerrainSnapshotForInferenceAtKey(neighborKey);
+        this.getKnownTerrainSnapshotAtKey(neighborKey);
       if (!snapshot) {
         continue;
       }
@@ -356,41 +320,6 @@ export class WorldClassification {
       this.dependencies.movementInput.isFpsMode() ||
       this.shouldShowUnderPlayerFeaturesInOverheadTilesMode()
     );
-  }
-
-  resolveLegacyHereChoicePreviewTileIndex(): number | null {
-    const playerTileKey = `${this.dependencies.playerMovement.playerPos.x},${this.dependencies.playerMovement.playerPos.y}`;
-    const playerTileMesh = this.dependencies.tileRendering.tileMap.get(playerTileKey) ?? null;
-    const floorTileIndex =
-      typeof playerTileMesh?.userData?.floorUnderlayTileIndex === "number" &&
-      Number.isFinite(playerTileMesh.userData.floorUnderlayTileIndex)
-        ? Math.trunc(playerTileMesh.userData.floorUnderlayTileIndex)
-        : typeof playerTileMesh?.userData?.tileIndex === "number" &&
-            Number.isFinite(playerTileMesh.userData.tileIndex)
-          ? Math.trunc(playerTileMesh.userData.tileIndex)
-          : null;
-    const sharedSpaceBillboard =
-      this.dependencies.entityBillboards.monsterBillboards.get(playerTileKey) ?? null;
-    const sharedSpaceBillboardTileIndex =
-      typeof sharedSpaceBillboard?.userData?.tileIndex === "number" &&
-      Number.isFinite(sharedSpaceBillboard.userData.tileIndex)
-        ? Math.trunc(sharedSpaceBillboard.userData.tileIndex)
-        : null;
-    const flattenedFeatureBillboard =
-      this.dependencies.entityBillboards.monsterBillboards.get(
-        this.getPlayerUnderlayBillboardKey(playerTileKey),
-      ) ?? null;
-    const flattenedFeatureBillboardTileIndex =
-      typeof flattenedFeatureBillboard?.userData?.tileIndex === "number" &&
-      Number.isFinite(flattenedFeatureBillboard.userData.tileIndex)
-        ? Math.trunc(flattenedFeatureBillboard.userData.tileIndex)
-        : null;
-
-    if (this.dependencies.engineState.clientOptions.fpsFlattenEntityBillboards) {
-      return flattenedFeatureBillboardTileIndex ?? floorTileIndex;
-    }
-
-    return sharedSpaceBillboardTileIndex ?? floorTileIndex;
   }
 
   getFpsPlayerTileBillboardBehaviorFromCache(
@@ -508,12 +437,6 @@ export class WorldClassification {
   }
 
   resolveTransparentOpenDoorwayFloorTileIndex(): number {
-    if (
-      this.dependencies.tilesetAssets.loadedTilesetTileLayoutVersion === "slashem" ||
-      this.dependencies.tilesetAssets.loadedTilesetTileLayoutVersion === "3.4.3"
-    ) {
-      return 1187;
-    }
     if (this.dependencies.tilesetAssets.loadedTilesetTileLayoutVersion === "5.0") {
       return 1281;
     }
@@ -581,7 +504,7 @@ export class WorldClassification {
       }
     }
     if (lookup.size === 0 && backtickObjGlyphs.length > 0) {
-      // 3.6.7 catalogs don't expose obj symidx; boulder is the first rock-class obj glyph.
+      // Without an obj symidx, boulder is the first rock-class obj glyph.
       lookup.add(Math.min(...backtickObjGlyphs));
     }
     this.boulderGlyphLookup = lookup;

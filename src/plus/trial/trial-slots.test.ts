@@ -20,7 +20,7 @@ const mocked = vi.hoisted(() => ({
 vi.mock("../../ui/app/startup/saved-games", () => ({ fetchSavedGames: mocked.fetchSavedGames, deleteSavedGame: mocked.deleteSavedGame }));
 vi.mock("../../ui/app/startup/save-transfer", () => ({ exportSavedGame: mocked.exportSavedGame, importSavedGame: mocked.importSavedGame, parseSaveArchive: mocked.parseSaveArchive }));
 
-const snapshotId = "3.6.7:Alice:auto-123";
+const snapshotId = "5.0:Alice:auto-123";
 const record = { archive: "stored-archive", displayName: "Alice", savedAt: "2026-01-01T00:00:00Z", turn: 1, dlevel: 1, checkpointTime: 1 };
 
 beforeEach(() => {
@@ -58,16 +58,16 @@ describe("trial save capture", () => {
   const bob = { ...alice, key: "manual:Bob", name: "Bob", timestamp: new Date("2027-01-01T00:00:00Z") };
   it("selects only the requested character even when another save is newer", async () => {
     mocked.fetchSavedGames.mockResolvedValue([bob, alice] as never);
-    await expect(resolveLatestManualSave("3.6.7", "Alice")).resolves.toMatchObject({ name: "Alice" });
+    await expect(resolveLatestManualSave("5.0", "Alice")).resolves.toMatchObject({ name: "Alice" });
   });
   it("does not overwrite a slot when a save changes between reads", async () => {
     mocked.fetchSavedGames.mockResolvedValue([alice] as never);
     mocked.exportSavedGame.mockResolvedValueOnce("first").mockResolvedValueOnce("changed");
-    await expect(captureExistingTrialSlot("3.6.7", "Alice", "manual:Alice", 1, () => {})).rejects.toThrow("contents changed");
+    await expect(captureExistingTrialSlot("5.0", "Alice", "manual:Alice", 1, () => {})).rejects.toThrow("contents changed");
     expect(mocked.puts).toHaveLength(0);
     mocked.exportSavedGame.mockResolvedValue("same-archive");
-    await captureExistingTrialSlot("3.6.7", "Alice", "manual:Alice", 1, () => {});
-    expect(mocked.puts[0].key).toBe("3.6.7:Alice:1");
+    await captureExistingTrialSlot("5.0", "Alice", "manual:Alice", 1, () => {});
+    expect(mocked.puts[0].key).toBe("5.0:Alice:1");
   });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -99,7 +99,7 @@ describe("automatic snapshot labels", () => {
     mocked.fetchSavedGames.mockResolvedValue([autosave] as never);
     mocked.exportSavedGame.mockResolvedValue(shardArchive(2, stateTime));
     const labels = new Map([[2, { turn: 100, dlevel: 2 }], [3, { turn: 120, dlevel: 3 }]]);
-    await expect(captureAutoSnapshot("3.6.7", "Alice", ledger => labels.get(ledger) ?? null, 0))
+    await expect(captureAutoSnapshot("5.0", "Alice", ledger => labels.get(ledger) ?? null, 0))
       .resolves.toEqual({ ledger: 2, checkpointTime: Date.parse(stateTime) });
     expect(mocked.puts[0].value).toMatchObject({ turn: 100, dlevel: 2 });
   });
@@ -107,13 +107,13 @@ describe("automatic snapshot labels", () => {
   it("waits while the shards' level has not been seen arriving", async () => {
     mocked.fetchSavedGames.mockResolvedValue([autosave] as never);
     mocked.exportSavedGame.mockResolvedValue(shardArchive(9, stateTime));
-    await expect(captureAutoSnapshot("3.6.7", "Alice", () => null, 0)).resolves.toBeNull();
+    await expect(captureAutoSnapshot("5.0", "Alice", () => null, 0)).resolves.toBeNull();
     expect(mocked.puts).toHaveLength(0);
   });
 
   it("ignores a checkpoint it has already captured", async () => {
     mocked.fetchSavedGames.mockResolvedValue([autosave] as never);
-    await expect(captureAutoSnapshot("3.6.7", "Alice", () => ({ turn: 1, dlevel: 1 }), Date.parse(stateTime)))
+    await expect(captureAutoSnapshot("5.0", "Alice", () => ({ turn: 1, dlevel: 1 }), Date.parse(stateTime)))
       .resolves.toBeNull();
     expect(mocked.exportSavedGame).not.toHaveBeenCalled();
   });
@@ -121,8 +121,8 @@ describe("automatic snapshot labels", () => {
 
 describe("trial restore character identity", () => {
   it.each([
-    ["slot", () => restoreTrialSlot("3.6.7", "Alice", 1)],
-    ["snapshot", () => restoreAutoSnapshot("3.6.7", "Alice", snapshotId)],
+    ["slot", () => restoreTrialSlot("5.0", "Alice", 1)],
+    ["snapshot", () => restoreAutoSnapshot("5.0", "Alice", snapshotId)],
   ])("rejects a mismatched %s archive before inspecting or changing saves", async (_kind, restore) => {
     await expect(restore()).rejects.toThrow("does not match");
     expect(mocked.fetchSavedGames).not.toHaveBeenCalled();
@@ -132,7 +132,7 @@ describe("trial restore character identity", () => {
 
   it("continues to restore an archive belonging to the requested character", async () => {
     mocked.archive.name = "Alice";
-    await expect(restoreTrialSlot("3.6.7", "Alice", 1)).resolves.toMatchObject({ name: "Alice" });
-    expect(mocked.importSavedGame).toHaveBeenCalledWith("stored-archive", "3.6.7");
+    await expect(restoreTrialSlot("5.0", "Alice", 1)).resolves.toMatchObject({ name: "Alice" });
+    expect(mocked.importSavedGame).toHaveBeenCalledWith("stored-archive", "5.0");
   });
 });

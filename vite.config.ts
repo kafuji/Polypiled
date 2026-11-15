@@ -124,53 +124,23 @@ const isElectronBuild = process.env.BUILD_TARGET === "electron";
 const isQuestBuild = process.env.VITE_DEPLOY_TARGET === "quest";
 const enableCrossOriginIsolation =
   process.env.NH3D_ENABLE_CROSS_ORIGIN_ISOLATION === "true";
-const wasm367RuntimeBuildJsPath = resolvePublicAssetPath("nethack-367.js");
 const wasm5RuntimeBuildJsPath = resolvePublicAssetPath("nethack-5.js");
-const slashemRuntimeBuildJsPath = resolvePublicAssetPath("slashem.js");
-const wasm367CompatTag = "wasm-367-forked";
 const wasm5CompatTag = "wasm-5-forked";
-const slashemCompatTag = "slashem-343-forked";
 const projectVersion = resolveProjectPackageVersion();
-const wasm367RuntimeBuildTag = buildRuntimeAssetTag([
-  wasm367RuntimeBuildJsPath,
-  resolvePublicAssetPath("nethack-367.wasm"),
-]);
 const wasm5RuntimeBuildTag = buildRuntimeAssetTag([
   wasm5RuntimeBuildJsPath,
   resolvePublicAssetPath("nethack-5.wasm"),
 ]);
-const slashemRuntimeBuildTag = buildRuntimeAssetTag([
-  slashemRuntimeBuildJsPath,
-  resolvePublicAssetPath("slashem.wasm"),
-]);
-const wasm367PointerAbiTag = "nh367-pointer-v1";
 const wasm5PointerAbiTag = "nh5-pointer-v1";
-const slashemPointerAbiTag = "slashem-pointer-v1";
-const wasm367HasRecoverSavefile = buildFileContains(
-  wasm367RuntimeBuildJsPath,
+const wasm5HasRecoverSavefile = buildFileContains(
+  wasm5RuntimeBuildJsPath,
   'Module["_recover_savefile"]',
 );
 // The low-level recover_savefile() export alone is not sufficient for the web
 // client. A usable browser-side autosave resume path also needs a dedicated
 // bridge that can prepare lock state before libnhmain reaches unixunix.c/getlock().
-const wasm367HasCheckpointResumeBridge = buildFileContains(
-  wasm367RuntimeBuildJsPath,
-  'Module["_resume_checkpoint_save"]',
-);
-const wasm5HasRecoverSavefile = buildFileContains(
-  wasm5RuntimeBuildJsPath,
-  'Module["_recover_savefile"]',
-);
 const wasm5HasCheckpointResumeBridge = buildFileContains(
   wasm5RuntimeBuildJsPath,
-  'Module["_resume_checkpoint_save"]',
-);
-const slashemHasRecoverSavefile = buildFileContains(
-  slashemRuntimeBuildJsPath,
-  'Module["_recover_savefile"]',
-);
-const slashemHasCheckpointResumeBridge = buildFileContains(
-  slashemRuntimeBuildJsPath,
   'Module["_resume_checkpoint_save"]',
 );
 const resolvedBuildCommitSha = resolveBuildCommitSha();
@@ -275,7 +245,7 @@ function normalizeTileFaceTextureRotationPayload(rawPayload: unknown) {
   const rotations: Record<string, Record<string, number>> = {};
   for (const [variant, rawFaces] of Object.entries(rawRotations).slice(0, 4096)) {
     if (
-      !/^(?:3\.6\.7|5\.0|slashem):tile:\d+$/.test(variant) ||
+      !/^5\.0:tile:\d+$/.test(variant) ||
       !rawFaces ||
       typeof rawFaces !== "object" ||
       Array.isArray(rawFaces)
@@ -411,17 +381,6 @@ export default defineConfig({
       bundledClientUpdateState.commitSha,
     ),
     "import.meta.env.VITE_NH3D_DEV_SESSION_TAG": JSON.stringify(devSessionTag),
-    "import.meta.env.VITE_NH3D_WASM_367_COMPAT_TAG":
-      JSON.stringify(wasm367CompatTag),
-    "import.meta.env.VITE_NH3D_WASM_367_RUNTIME_BUILD_TAG":
-      JSON.stringify(wasm367RuntimeBuildTag),
-    "import.meta.env.VITE_NH3D_WASM_367_POINTER_ABI_TAG":
-      JSON.stringify(wasm367PointerAbiTag),
-    "import.meta.env.VITE_NH3D_WASM_367_HAS_RECOVER_SAVEFILE": JSON.stringify(
-      wasm367HasRecoverSavefile,
-    ),
-    "import.meta.env.VITE_NH3D_WASM_367_HAS_CHECKPOINT_RESUME_BRIDGE":
-      JSON.stringify(wasm367HasCheckpointResumeBridge),
     "import.meta.env.VITE_NH3D_WASM_5_COMPAT_TAG":
       JSON.stringify(wasm5CompatTag),
     "import.meta.env.VITE_NH3D_WASM_5_RUNTIME_BUILD_TAG":
@@ -433,16 +392,6 @@ export default defineConfig({
     ),
     "import.meta.env.VITE_NH3D_WASM_5_HAS_CHECKPOINT_RESUME_BRIDGE":
       JSON.stringify(wasm5HasCheckpointResumeBridge),
-    "import.meta.env.VITE_NH3D_WASM_SLASHEM_COMPAT_TAG":
-      JSON.stringify(slashemCompatTag),
-    "import.meta.env.VITE_NH3D_WASM_SLASHEM_RUNTIME_BUILD_TAG":
-      JSON.stringify(slashemRuntimeBuildTag),
-    "import.meta.env.VITE_NH3D_WASM_SLASHEM_POINTER_ABI_TAG":
-      JSON.stringify(slashemPointerAbiTag),
-    "import.meta.env.VITE_NH3D_WASM_SLASHEM_HAS_RECOVER_SAVEFILE":
-      JSON.stringify(slashemHasRecoverSavefile),
-    "import.meta.env.VITE_NH3D_WASM_SLASHEM_HAS_CHECKPOINT_RESUME_BRIDGE":
-      JSON.stringify(slashemHasCheckpointResumeBridge),
   },
   base: isQuestBuild ? "/" : isElectronBuild ? "./" : isGitHubActions ? gitHubPagesBase : "/",
   server: {

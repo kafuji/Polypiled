@@ -45,66 +45,64 @@ export class RuntimeTravel {
   }
 
   handleShimDelayOutput() {
-    if (this.deps.coordinator.runtimeVersion === "5.0") {
-      const nowMs = Date.now();
-      const latestTurn = this.deps.status.readLatestStatusInteger("BL_TIME");
-      const posX = Number.isFinite(this.deps.mapCallbacks.playerPosition?.x)
-        ? Math.trunc(Number(this.deps.mapCallbacks.playerPosition.x))
-        : null;
-      const posY = Number.isFinite(this.deps.mapCallbacks.playerPosition?.y)
-        ? Math.trunc(Number(this.deps.mapCallbacks.playerPosition.y))
-        : null;
-      const sameTurn =
-        Number.isInteger(latestTurn) &&
-        Number.isInteger(this.lastAppliedDelayOutputTurn) &&
-        latestTurn === this.lastAppliedDelayOutputTurn;
-      const samePosition =
-        this.lastAppliedDelayOutputPosition &&
-        Number.isInteger(posX) &&
-        Number.isInteger(posY) &&
-        posX === this.lastAppliedDelayOutputPosition.x &&
-        posY === this.lastAppliedDelayOutputPosition.y;
-      const movementSerial = Number.isInteger(
-        this.deps.mapCallbacks.playerPositionMovementSerial,
-      )
-        ? this.deps.mapCallbacks.playerPositionMovementSerial
-        : null;
-      const sameMovementStep =
-        Number.isInteger(movementSerial) &&
-        Number.isInteger(this.lastAppliedDelayOutputMovementSerial) &&
-        movementSerial === this.lastAppliedDelayOutputMovementSerial;
-      const recentDuplicateWindowMs = Math.max(
-        25,
-        Number(this.travelSpeedDelayMs) + 40,
+    const nowMs = Date.now();
+    const latestTurn = this.deps.status.readLatestStatusInteger("BL_TIME");
+    const posX = Number.isFinite(this.deps.mapCallbacks.playerPosition?.x)
+      ? Math.trunc(Number(this.deps.mapCallbacks.playerPosition.x))
+      : null;
+    const posY = Number.isFinite(this.deps.mapCallbacks.playerPosition?.y)
+      ? Math.trunc(Number(this.deps.mapCallbacks.playerPosition.y))
+      : null;
+    const sameTurn =
+      Number.isInteger(latestTurn) &&
+      Number.isInteger(this.lastAppliedDelayOutputTurn) &&
+      latestTurn === this.lastAppliedDelayOutputTurn;
+    const samePosition =
+      this.lastAppliedDelayOutputPosition &&
+      Number.isInteger(posX) &&
+      Number.isInteger(posY) &&
+      posX === this.lastAppliedDelayOutputPosition.x &&
+      posY === this.lastAppliedDelayOutputPosition.y;
+    const movementSerial = Number.isInteger(
+      this.deps.mapCallbacks.playerPositionMovementSerial,
+    )
+      ? this.deps.mapCallbacks.playerPositionMovementSerial
+      : null;
+    const sameMovementStep =
+      Number.isInteger(movementSerial) &&
+      Number.isInteger(this.lastAppliedDelayOutputMovementSerial) &&
+      movementSerial === this.lastAppliedDelayOutputMovementSerial;
+    const recentDuplicateWindowMs = Math.max(
+      25,
+      Number(this.travelSpeedDelayMs) + 40,
+    );
+    const recentlyAppliedAtSamePosition =
+      samePosition &&
+      Number.isFinite(this.lastAppliedDelayOutputAtMs) &&
+      nowMs - this.lastAppliedDelayOutputAtMs <=
+      recentDuplicateWindowMs;
+    const oneTurnDriftSamePosition =
+      recentlyAppliedAtSamePosition &&
+      Number.isInteger(latestTurn) &&
+      Number.isInteger(this.lastAppliedDelayOutputTurn) &&
+      latestTurn === this.lastAppliedDelayOutputTurn + 1;
+    const duplicateTravelDelayAtSameTile =
+      samePosition && (sameMovementStep || sameTurn);
+    if (duplicateTravelDelayAtSameTile || oneTurnDriftSamePosition) {
+      console.log(
+        `Skipping duplicate 5.0 travel delay at (${posX}, ${posY}) turn ${latestTurn} (lastTurn=${this.lastAppliedDelayOutputTurn}, movementSerial=${movementSerial}, lastMovementSerial=${this.lastAppliedDelayOutputMovementSerial})`,
       );
-      const recentlyAppliedAtSamePosition =
-        samePosition &&
-        Number.isFinite(this.lastAppliedDelayOutputAtMs) &&
-        nowMs - this.lastAppliedDelayOutputAtMs <=
-        recentDuplicateWindowMs;
-      const oneTurnDriftSamePosition =
-        recentlyAppliedAtSamePosition &&
-        Number.isInteger(latestTurn) &&
-        Number.isInteger(this.lastAppliedDelayOutputTurn) &&
-        latestTurn === this.lastAppliedDelayOutputTurn + 1;
-      const duplicateTravelDelayAtSameTile =
-        samePosition && (sameMovementStep || sameTurn);
-      if (duplicateTravelDelayAtSameTile || oneTurnDriftSamePosition) {
-        console.log(
-          `Skipping duplicate 5.0 travel delay at (${posX}, ${posY}) turn ${latestTurn} (lastTurn=${this.lastAppliedDelayOutputTurn}, movementSerial=${movementSerial}, lastMovementSerial=${this.lastAppliedDelayOutputMovementSerial})`,
-        );
-        return 0;
-      }
-      this.lastAppliedDelayOutputTurn = Number.isInteger(latestTurn)
-        ? latestTurn
-        : null;
-      this.lastAppliedDelayOutputPosition =
-        Number.isInteger(posX) && Number.isInteger(posY)
-          ? { x: posX, y: posY }
-          : null;
-      this.lastAppliedDelayOutputAtMs = nowMs;
-      this.lastAppliedDelayOutputMovementSerial = movementSerial;
+      return 0;
     }
+    this.lastAppliedDelayOutputTurn = Number.isInteger(latestTurn)
+      ? latestTurn
+      : null;
+    this.lastAppliedDelayOutputPosition =
+      Number.isInteger(posX) && Number.isInteger(posY)
+        ? { x: posX, y: posY }
+        : null;
+    this.lastAppliedDelayOutputAtMs = nowMs;
+    this.lastAppliedDelayOutputMovementSerial = movementSerial;
     if (this.travelSpeedDelayMs <= 0) {
       if (this.deps.coordinator.eventHandler) {
         this.deps.coordinator.emit({

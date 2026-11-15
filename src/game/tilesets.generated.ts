@@ -8,23 +8,11 @@ export type GeneratedTilesetManifestEntry = {
   readonly path: string;
   readonly tileSize: number;
   readonly tileHeight?: number;
-  readonly tileLayoutVersion: "slashem" | "3.4.3" | "3.6.7" | "5.0";
+  readonly tileLayoutVersion: "3.6.7" | "5.0";
 };
 
 export const GENERATED_TILESET_MANIFEST: ReadonlyArray<GeneratedTilesetManifestEntry> =
   [
-  {
-    "label": "Abigaba",
-    "path": "assets/slashem/Abigaba.bmp",
-    "tileSize": 24,
-    "tileLayoutVersion": "slashem"
-  },
-  {
-    "label": "Absurd",
-    "path": "assets/slashem/Absurd.png",
-    "tileSize": 128,
-    "tileLayoutVersion": "slashem"
-  },
   {
     "label": "Absurdly Evil",
     "path": "assets/3.6/Absurdly Evil.png",

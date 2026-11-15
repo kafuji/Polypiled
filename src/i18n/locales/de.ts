@@ -1109,11 +1109,6 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
             "F\u00e4rbt Splitterpixel nahe den Bruchlinien mit zuf\u00e4lligen blutroten Kanten ein.",
         },
         groupCompatibility: "Runtime-Kompatibilit\u00e4t",
-        darkCorridorWalls367: {
-          label: "Dunkle Korridorw\u00e4nde f\u00fcr Legacy-Runtimes",
-          description:
-            "Leitet Kacheln f\u00fcr dunkle Korridorw\u00e4nde ab und speichert sie f\u00fcr \u00e4ltere NetHack-3.4.3-/3.6.x-Laufzeiten, einschlie\u00dflich Slash'EM.",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "Dunkle Wandkacheln in NetHack 5.0 \u00fcberschreiben",
           description:
@@ -1382,7 +1377,6 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
         cancelDownload: "Download abbrechen",
       },
       startup: {
-        chooseVariant: "W\u00e4hle deine NetHack-Variante:",
         options: "NetHack 3D-Optionen",
         quitGame: "Spiel beenden",
         chooseSetup: "W\u00e4hle deine Charakterkonfiguration:",
@@ -1424,8 +1418,6 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
             "Controller-Standardbelegung wiederherstellen",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Immer aktiviert, solange Vulture-Tiles aktiv sind.",
           darkWallsDisabledByVulture:
             " Deaktiviert, solange Vulture-Tiles aktiv sind.",
           enableDarkWallsFirst:
@@ -1517,10 +1509,6 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
         choices: {
           leftRingFinger: "Linker Ringfinger",
           rightRingFinger: "Rechter Ringfinger",
-          here: "Hier",
-          onGround: "Am Boden",
-          eligibleItems: "Passende Gegenstände",
-          allInventory: "Ganzes Inventar",
         },
       },
       runtimeStartError: {

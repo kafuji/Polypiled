@@ -8,7 +8,7 @@ window.runMovementWork = () => {
   s.engineState.uiAdapter=new Proxy({}, {get:()=>()=>{}});
   s.engineState.clientOptions=normalizeNh3dClientOptions({tilesetMode:"tiles",fpsMode:true,darkCorridorWalls367:true,blockAmbientOcclusion:true});
   s.engineState.playMode="fps";
-  s.engineState.characterCreationConfig={runtimeVersion:"3.6.7",mode:"create"};
+  s.engineState.characterCreationConfig={runtimeVersion:"5.0",mode:"create"};
   s.renderPipeline.scene=new THREE.Scene();
   s.renderPipeline.renderer={xr:{isPresenting:false},capabilities:{getMaxAnisotropy:()=>1}};
   s.camera.camera=new THREE.PerspectiveCamera();

@@ -416,14 +416,8 @@ export class RuntimeUnderPlayerItems {
         : null;
     const resolvedMapHelper =
       mapHelper ||
-      (resolvedHelpers
-        ? this.deps.coordinator.runtimeVersion === "5.0"
-          ? typeof resolvedHelpers.mapGlyphInfoHelper === "function"
-            ? resolvedHelpers.mapGlyphInfoHelper
-            : null
-          : typeof resolvedHelpers.mapglyphHelper === "function"
-            ? resolvedHelpers.mapglyphHelper
-            : null
+      (resolvedHelpers && typeof resolvedHelpers.mapGlyphInfoHelper === "function"
+        ? resolvedHelpers.mapGlyphInfoHelper
         : null);
 
     try {

@@ -73,7 +73,7 @@ export function resolveStartupCreateCharacterOptionSet(
     gender?: unknown;
     align?: unknown;
   },
-  runtimeVersion: NethackRuntimeVersion = "3.6.7",
+  runtimeVersion: NethackRuntimeVersion = "5.0",
 ): StartupCreateCharacterOptionSet {
   const ruleset = getStartupCharacterRuleset(runtimeVersion);
   const defaultRole = ruleset.roles[0] ?? "Archeologist";
@@ -125,13 +125,13 @@ export function normalizeStartupCreateCharacterSelection(
     gender?: unknown;
     align?: unknown;
   },
-  runtimeVersion: NethackRuntimeVersion = "3.6.7",
+  runtimeVersion: NethackRuntimeVersion = "5.0",
 ): StartupCreateCharacterSelection {
   return resolveStartupCreateCharacterOptionSet(rawSelection, runtimeVersion).selection;
 }
 
 export function pickRandomStartupRole(
-  runtimeVersion: NethackRuntimeVersion = "3.6.7",
+  runtimeVersion: NethackRuntimeVersion = "5.0",
 ): StartupRole {
   const ruleset = getStartupCharacterRuleset(runtimeVersion);
   return pickRandomItem(ruleset.roles, ruleset.roles[0] ?? "Archeologist");
@@ -139,7 +139,7 @@ export function pickRandomStartupRole(
 
 export function pickRandomStartupGenderForRole(
   role: unknown,
-  runtimeVersion: NethackRuntimeVersion = "3.6.7",
+  runtimeVersion: NethackRuntimeVersion = "5.0",
 ): StartupGender {
   const optionSet = resolveStartupCreateCharacterOptionSet(
     { role },
@@ -152,7 +152,7 @@ export function pickRandomStartupGenderForRole(
 }
 
 export function pickRandomStartupCreateCharacterSelection(
-  runtimeVersion: NethackRuntimeVersion = "3.6.7",
+  runtimeVersion: NethackRuntimeVersion = "5.0",
 ): StartupCreateCharacterSelection {
   const defaultSelection = normalizeStartupCreateCharacterSelection(
     {},

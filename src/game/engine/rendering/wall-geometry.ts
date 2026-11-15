@@ -4,7 +4,6 @@ import { TileNeighborBatch } from "./tile-neighbor-batch";
 import { TILE_SIZE, WALL_HEIGHT } from "../../constants";
 import {
   classifyTileBehavior,
-  getDefaultDarkFloorGlyph,
   getDefaultFloorGlyph,
   getOpenDoorGlyphFrom,
   isDoorlessDoorwayCmapGlyph,
@@ -20,7 +19,7 @@ import {
   createRoundedWallGeometry,
   type RoundedWallShapeOptions,
 } from "./rounded-wall-shape";
-import type { DarkCorridorInference } from "../world/dark-corridor-inference";
+import type { DarkWallOverrides } from "./dark-wall-overrides";
 import type { EngineState } from "../runtime/engine-state";
 import type { FloorOcclusion } from "./floor-occlusion";
 import type { GlyphTextures } from "./glyph-textures";
@@ -36,12 +35,11 @@ import type { WallOverlays } from "./wall-overlays";
 import type { WorldClassification } from "../world/world-classification";
 
 export interface WallGeometryDependencies {
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "getKnownTerrainSnapshotForInferenceAtKey"
-    | "resolveInferredDarkCorridorWallSolidColorGridDarknessPercent"
-    | "resolveInferredDarkCorridorWallSolidColorGridEnabled"
-    | "resolveInferredDarkCorridorWallSolidColorHexForTile"
+  readonly darkWallOverrides: Pick<
+    DarkWallOverrides,
+    "resolveSolidColorGridDarknessPercent"
+    | "resolveSolidColorGridEnabled"
+    | "resolveSolidColorHexForTile"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -105,7 +103,8 @@ export interface WallGeometryDependencies {
   >;
   readonly worldClassification: Pick<
     WorldClassification,
-    "resolveFloorBehaviorFromNeighborTiles"
+    "getKnownTerrainSnapshotAtKey"
+    | "resolveFloorBehaviorFromNeighborTiles"
     | "resolveNormalRoomFloorBehavior"
   >;
 }
@@ -218,7 +217,7 @@ export class WallGeometry {
       return isDoorlessDoorwayCmapGlyph(normalized) ? "doorless" : "door";
     };
     const mesh = this.dependencies.tileRendering.tileMap.get(key);
-    const knownTerrain = this.dependencies.darkCorridorInference.getKnownTerrainSnapshotForInferenceAtKey(key);
+    const knownTerrain = this.dependencies.worldClassification.getKnownTerrainSnapshotAtKey(key);
     const fromGlyphs =
       kindOf(mesh?.userData?.tileTextureSourceGlyph) ??
       kindOf(mesh?.userData?.sourceGlyph) ??
@@ -597,12 +596,7 @@ export class WallGeometry {
     const floorGlyph = getDefaultFloorGlyph();
     let fallbackGlyph = floorGlyph;
     if (materialKind === "dark") {
-      const runtimeVersion =
-        this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7";
-      // Legacy 3.4.3/3.6.x dark corridor walls should chamfer using the dark hallway
-      // floor texture, not the generic dark room texture.
-      fallbackGlyph =
-        runtimeVersion !== "5.0" ? getDefaultDarkFloorGlyph() : floorGlyph + 1;
+      fallbackGlyph = floorGlyph + 1;
     }
     const behavior = classifyTileBehavior({
       glyph: fallbackGlyph,
@@ -1225,18 +1219,18 @@ export class WallGeometry {
         : -1;
     const darkCorridorWallCompatibilityActive =
       this.dependencies.tilesetAssets.isDarkCorridorWallCompatibilityActiveOnMesh(mesh);
-    const inferredDarkWallSolidColorHex =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorHexForTile(
+    const darkWallSolidColorHex =
+      this.dependencies.darkWallOverrides.resolveSolidColorHexForTile(
         darkCorridorWallCompatibilityActive,
         tileIndex,
         usesTerrainTiles(this.dependencies.engineState.clientOptions, true, materialKind),
       );
-    const inferredDarkWallSolidColorGridEnabled =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorGridEnabled(
+    const darkWallSolidColorGridEnabled =
+      this.dependencies.darkWallOverrides.resolveSolidColorGridEnabled(
         darkCorridorWallCompatibilityActive,
       );
-    const inferredDarkWallSolidColorGridDarknessPercent =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorGridDarknessPercent(
+    const darkWallSolidColorGridDarknessPercent =
+      this.dependencies.darkWallOverrides.resolveSolidColorGridDarknessPercent(
         darkCorridorWallCompatibilityActive,
       );
     this.dependencies.tileMaterials.applyGlyphMaterial(
@@ -1249,9 +1243,9 @@ export class WallGeometry {
       darkenFactor,
       this.dependencies.movementInput.isFpsMode() && !darkCorridorWallCompatibilityActive,
       tileIndex,
-      inferredDarkWallSolidColorHex,
-      inferredDarkWallSolidColorGridEnabled,
-      inferredDarkWallSolidColorGridDarknessPercent,
+      darkWallSolidColorHex,
+      darkWallSolidColorGridEnabled,
+      darkWallSolidColorGridDarknessPercent,
       glyphBackgroundColor,
     );
   }

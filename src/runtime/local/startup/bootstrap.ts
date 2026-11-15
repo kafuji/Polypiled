@@ -1,6 +1,5 @@
 // @ts-nocheck
 // Legacy dynamic WASM integration; dependency membership is checked by assembly.
-import { ensureBundledTerminalSymbolSetsFile } from "../../nethack-symbols";
 import type { RuntimeCoordinator } from "../runtime-coordinator";
 import type { RuntimeAssets } from "./runtime-assets";
 import type { RuntimeStatus } from "../status/status";
@@ -31,7 +30,6 @@ export function createNethackCallbackDispatcher(handleUICallback) {
     }
   };
 }
-import type { RuntimeSlashEmLocks } from "../persistence/slashem-locks";
 import type { RuntimeMemory } from "../abi/memory";
 import type { RuntimeStartupDiagnostics } from "../diagnostics/startup-diagnostics";
 
@@ -72,10 +70,6 @@ export interface RuntimeBootstrapDependencies {
     RuntimeCheckpointRecovery,
     "queueCheckpointAutosaveResumeBeforeStartup"
     | "updateCheckpointRecoverySupport"
-  >;
-  readonly slashEmLocks: Pick<
-    RuntimeSlashEmLocks,
-    "patchSlashEmLockLinkFallback"
   >;
   readonly startupDiagnostics: Pick<
     RuntimeStartupDiagnostics,
@@ -122,7 +116,7 @@ export class RuntimeBootstrap {
       const runtimeVersion = this.deps.assets.normalizeRuntimeVersion(
         this.deps.coordinator.startupOptions?.runtimeVersion,
       );
-      const wasmAssetPath = this.deps.assets.getRuntimeWasmAssetPath(runtimeVersion);
+      const wasmAssetPath = this.deps.assets.getRuntimeWasmAssetPath();
       const startupHookLabel = `[WASM startup:${runtimeVersion}]`;
       let startupModule = null;
       let lastObservedRunDependencyCount = Number.NaN;
@@ -182,15 +176,12 @@ export class RuntimeBootstrap {
       this.deps.status.seedRuntimeStatusFieldConstants();
       const { runtimeOptions, checkpointStartupOptionEnabled } = this.deps.startupOptions.buildRuntimeModuleStartupOptions(runtimeVersion);
 
-      const resolvedWasmAssetUrl = this.deps.assets.resolveWasmAssetUrl(
-        wasmAssetPath,
-        runtimeVersion,
-      );
+      const resolvedWasmAssetUrl = this.deps.assets.resolveWasmAssetUrl(wasmAssetPath);
       console.log("Resolved NetHack wasm asset URL", {
         runtimeVersion,
         wasmAssetPath,
         resolvedWasmAssetUrl,
-        runtimeBuildTag: this.deps.assets.readRuntimeBuildTag(runtimeVersion) || null,
+        runtimeBuildTag: this.deps.assets.readRuntimeBuildTag() || null,
       });
 
       const createModule = await this.deps.assets.loadRuntimeFactory(runtimeVersion);
@@ -209,7 +200,7 @@ export class RuntimeBootstrap {
         locateFile: (assetPath) => {
           const resolvedAssetPath = assetPath.endsWith(".wasm")
             ? resolvedWasmAssetUrl
-            : this.deps.assets.resolveWasmAssetUrl(assetPath, runtimeVersion);
+            : this.deps.assets.resolveWasmAssetUrl(assetPath);
           logStartupHook("locateFile", startupModule, {
             assetPath,
             resolvedAssetPath,
@@ -488,14 +479,6 @@ export class RuntimeBootstrap {
     this.deps.startupOptions.lastConfiguredNethackOptions = mod.ENV.NETHACKOPTIONS;
     console.log(`Configured NETHACKOPTIONS: ${mod.ENV.NETHACKOPTIONS}`);
 
-    const terminalSymbolSetsFileState =
-      ensureBundledTerminalSymbolSetsFile(mod, runtimeVersion);
-    if (terminalSymbolSetsFileState === "created") {
-      console.log(
-        "Installed bundled IBMgraphics and DECgraphics symbol sets into /symbols",
-      );
-    }
-
     // Ensure NetHack chdirs into a valid data root inside the wasm FS.
     // If HACKDIR/NETHACKDIR points at a host path, main() will abort
     // before js_helpers_init/js_constants_init run.
@@ -519,16 +502,6 @@ export class RuntimeBootstrap {
         );
       }
     }
-
-    // Slash'EM 3.4.3 still uses Unix hard-link lock files.
-    // Browser-backed FS implementations can reject link() with EMLINK,
-    // so install a narrow fallback before startup touches perm_lock.
-    this.deps.slashEmLocks.patchSlashEmLockLinkFallback(mod);
-    logStartupHook("preRun:slash-em-lock-hook", mod, {
-      lockFallbackInstalled: Boolean(
-        mod.FS?.__nh3dSlashEmLockLinkFallbackPatched,
-      ),
-    });
   }
 
   installRuntimeSysconfInjection(mod) {

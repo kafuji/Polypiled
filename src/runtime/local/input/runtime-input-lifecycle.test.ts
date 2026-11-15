@@ -23,18 +23,14 @@ afterEach(() => {
 });
 
 describe("assembled runtime input lifecycle", () => {
-  it.each(["3.6.7", "5.0", "slashem"] as const)("keeps contextual Info cliparound on the cursor in %s until Escape", async version => {
+  it.each(["5.0"] as const)("keeps contextual Info cliparound on the cursor in %s until Escape", async version => {
     runtime.runtimeVersion = version;
     systems.mapCallbacks.playerPosition = { x: 33, y: 7 };
     runtime.sendInput("__CTX_LOOK_INFO_PROBE__");
-    if (version === "slashem") {
-      expect(systems.questionInput.handleShimYnFunction(["Specify unknown object by cursor?", "ynq", 113])).toBe(121);
-    } else {
-      expect(systems.inventoryContext.tryAutoHandlePendingInventoryContextSelection(
-        "What do you want to look at:",
-        [{ accelerator: "/", identifier: 47, menuIndex: 0, text: "something on the map" }],
-      )).toBe(true);
-    }
+    expect(systems.inventoryContext.tryAutoHandlePendingInventoryContextSelection(
+      "What do you want to look at:",
+      [{ accelerator: "/", identifier: 47, menuIndex: 0, text: "something on the map" }],
+    )).toBe(true);
     expect(systems.positionInput.farLookMode).toBe("armed");
     systems.mapCallbacks.handleShimCliparound([34, 6]);
     expect(systems.mapCallbacks.playerPosition).toEqual({ x: 33, y: 7 });
@@ -43,7 +39,7 @@ describe("assembled runtime input lifecycle", () => {
     systems.inputRequests.enqueueInputKeys([":"], "synthetic", ["position"]);
     expect(await wait).toBe(58);
     expect(systems.positionInput.positionInputActive).toBe(true);
-    systems.contextualLook.contextualLookInfoAutoFlowStage = version === "slashem" ? "await_more_info" : "await_exit";
+    systems.contextualLook.contextualLookInfoAutoFlowStage = "await_exit";
     systems.contextualLook.contextualLookInfoAutoFlowUntilMs = Date.now() + 10000;
     expect(systems.contextualLook.resolveContextualLookInfoAutoAnswer('More info about "jackal"?', "yn", 110)).toBe("y");
     systems.mapCallbacks.handleShimCliparound([34, 6]);

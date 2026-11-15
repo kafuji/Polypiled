@@ -67,8 +67,7 @@ export class RuntimeContextualLook {
   shouldSuppressContextualGlanceTip(lines: readonly string[]): boolean {
     // NetHack 5's first getpos emits an informational PICK_NONE tip before
     // reading the queued target. Do not let that background probe open a modal.
-    return this.deps.coordinator.runtimeVersion === "5.0" &&
-      (this.contextualGlanceProbeMouseDeadlineMs > 0 || this.isContextualInfoQuiet()) &&
+    return (this.contextualGlanceProbeMouseDeadlineMs > 0 || this.isContextualInfoQuiet()) &&
       lines.find(line => line.trim().length > 0)?.trim() ===
         "Tip: Farlooking or selecting a map location";
   }
@@ -99,25 +98,8 @@ export class RuntimeContextualLook {
       this.deps.questionInput.normalizeYnDefaultChoice(defaultChoice);
     const stage = this.contextualLookInfoAutoFlowStage;
 
-    if (this.deps.coordinator.runtimeVersion === "slashem") {
-      const isCursorPrompt =
-        stage === "await_cursor_confirm" &&
-        normalizedQuestion.includes("cursor") &&
-        normalizedChoices.includes("y") &&
-        normalizedChoices.includes("q") &&
-        normalizedDefaultChoice === "q";
-      if (isCursorPrompt) {
-        this.deps.coordinator.logRoutine(
-          'Auto-answering contextual tile info cursor prompt with "y"',
-        );
-        this.contextualLookInfoAutoFlowStage = "await_mouse_target";
-        return "y";
-      }
-
-    }
-
-    // NetHack variants can ask this after either the mouse target or the
-    // queued verbose-look key. It is not exclusive to Slash'EM.
+    // NetHack can ask this after either the mouse target or the queued
+    // verbose-look key.
     const isMoreInfoPrompt = (stage === "await_more_info" || stage === "await_exit") &&
       normalizedQuestion.includes("more info") && normalizedChoices.includes("y") &&
       normalizedChoices.includes("n") && normalizedDefaultChoice === "n";

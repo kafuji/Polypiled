@@ -23,7 +23,7 @@ export interface LocalMcpAppDependencies {
 }
 
 type Operation = { id: number; method: string; status: "pending" | "completed" | "cancelled" | "failed"; error?: string };
-const versions = new Set<NethackRuntimeVersion>(["3.6.7", "5.0", "slashem"]);
+const versions = new Set<NethackRuntimeVersion>(["5.0"]);
 
 /** Keep one controller for the page lifetime; dependencies are read live on each request. */
 export function createLocalMcpAppController(read: () => LocalMcpAppDependencies) {

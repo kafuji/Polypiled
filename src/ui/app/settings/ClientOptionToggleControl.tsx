@@ -58,8 +58,6 @@ export function ClientOptionToggleControl({
 
   const isInventoryTileOnlyMotionOption =
     option.key === "inventoryTileOnlyMotion";
-  const isDarkCorridorWallsOption =
-    option.key === "darkCorridorWalls367";
   const isNh5DarkWallOverrideOption =
     option.key === "overrideNh5DarkCorridorWallTiles";
   const isDarkWallTileOverrideOption =
@@ -72,11 +70,7 @@ export function ClientOptionToggleControl({
     isDarkWallSolidColorOverrideOption;
   const darkCorridorOptionSuppressedByVulture =
     isVultureTilesetSelected &&
-    (isDarkCorridorWallsOption ||
-      isNh5DarkWallOverrideOption ||
-      isDarkWallOverrideOption);
-  const darkCorridorWallsForcedOnByVulture =
-    isVultureTilesetSelected && isDarkCorridorWallsOption;
+    (isNh5DarkWallOverrideOption || isDarkWallOverrideOption);
   const invertLookOptionDisabledByFpsMode =
     option.key === "invertLookYAxis" &&
     !fpsMode;
@@ -88,11 +82,8 @@ export function ClientOptionToggleControl({
     clientOptionsDraft.tilesetMode === "terminal";
   const darkWallOverrideDisabledByDarkCorridorWalls =
     isDarkWallOverrideOption &&
-    !clientOptionsDraft.darkCorridorWalls367 &&
     !clientOptionsDraft.overrideNh5DarkCorridorWallTiles;
-  const enabled = darkCorridorWallsForcedOnByVulture
-    ? true
-    : option.key === "fpsMode" ? fpsMode : Boolean(clientOptionsDraft[option.key]);
+  const enabled = option.key === "fpsMode" ? fpsMode : Boolean(clientOptionsDraft[option.key]);
   const toggleDisabled =
     (isInventoryTileOnlyMotionOption &&
       clientOptionsDraft.reduceInventoryMotion) ||
@@ -102,16 +93,13 @@ export function ClientOptionToggleControl({
     fpsModeDisabledByTerminal ||
     animatedMovementDisabledByTerminal;
   const toggleDisabledHint =
-    darkCorridorWallsForcedOnByVulture
-      ? t.dialogs.clientOptions.hints.darkWallsAlwaysEnabled
-      : darkCorridorOptionSuppressedByVulture
-        ? t.dialogs.clientOptions.hints
-          .darkWallsDisabledByVulture
-        : darkWallOverrideDisabledByDarkCorridorWalls
-          ? t.dialogs.clientOptions.hints.enableDarkWallsFirst
-          : invertLookOptionDisabledByFpsMode
-            ? t.dialogs.clientOptions.hints.enableFpsFirst
-            : "";
+    darkCorridorOptionSuppressedByVulture
+      ? t.dialogs.clientOptions.hints.darkWallsDisabledByVulture
+      : darkWallOverrideDisabledByDarkCorridorWalls
+        ? t.dialogs.clientOptions.hints.enableDarkWallsFirst
+        : invertLookOptionDisabledByFpsMode
+          ? t.dialogs.clientOptions.hints.enableFpsFirst
+          : "";
   const darkWallSecondaryControlsDisabled =
     !enabled || toggleDisabled;
   const shouldRenderControllerRemapRow =

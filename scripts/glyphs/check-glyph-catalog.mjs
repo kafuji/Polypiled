@@ -21,9 +21,8 @@ function resolveExpectedGlyphKinds(version) {
     "swallow",
     "warning",
   ];
-  if (version !== "slashem") {
-    expectedKinds.push("statue");
-  }
+  void version;
+  expectedKinds.push("statue");
   return expectedKinds;
 }
 

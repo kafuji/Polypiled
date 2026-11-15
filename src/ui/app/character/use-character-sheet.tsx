@@ -9,14 +9,10 @@ import type { InfoMenuState, PlayerStatsSnapshot, Nethack3DEngineController } fr
 import {
   nh3dOpenCharacterSheetEventName
 } from "../../../game/ui-types";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import { parseCharacterSheetInfoMenu, type CharacterSheetData } from "../../modals/character-sheet";
 import type * as React from "react";
 import {
   getExperienceThresholdForLevel,
-  getLegacyCharacterStatValue,
   maxExperienceLevel
 } from "../status/character-fields";
 import type {
@@ -38,7 +34,6 @@ export function useCharacterSheetState() {
 
 export interface UseCharacterSheetViewDependencies {
   readonly displayedInfoMenu: InfoMenuState | null;
-  readonly activeRuntimeVersion: NethackRuntimeVersion;
   readonly playerStats: PlayerStatsSnapshot;
   readonly characterSheetInterceptionArmed: boolean;
 }
@@ -47,7 +42,6 @@ export interface UseCharacterSheetViewDependencies {
 export function useCharacterSheetView(dependencies: UseCharacterSheetViewDependencies) {
   const {
     displayedInfoMenu,
-    activeRuntimeVersion,
     playerStats,
     characterSheetInterceptionArmed,
   } = dependencies;
@@ -57,27 +51,7 @@ export function useCharacterSheetView(dependencies: UseCharacterSheetViewDepende
     [displayedInfoMenu],
   );
 
-  const isLegacySlashEmBaseAttributesSheet =
-    activeRuntimeVersion === "slashem" &&
-    characterSheet?.variant === "slashem_base_attributes";
-
-  const displayedCharacterStatEntries = useMemo(() => {
-    if (!characterSheet) {
-      return [];
-    }
-    if (!isLegacySlashEmBaseAttributesSheet) {
-      return characterSheet.statEntries;
-    }
-    return characterSheet.statEntries.map((entry) => {
-      const currentValue = getLegacyCharacterStatValue(entry.id, playerStats);
-      return {
-        ...entry,
-        rawValue: currentValue,
-        currentValue,
-        limitValue: null,
-      };
-    });
-  }, [characterSheet, isLegacySlashEmBaseAttributesSheet, playerStats]);
+  const displayedCharacterStatEntries = characterSheet?.statEntries ?? [];
 
   const isCharacterSheetVisible = Boolean(
     displayedInfoMenu && characterSheet && characterSheetInterceptionArmed,
@@ -93,11 +67,6 @@ export function useCharacterSheetView(dependencies: UseCharacterSheetViewDepende
     displayedCharacterStatEntries.some((entry) => Boolean(entry.limitValue)),
   );
 
-  const showLegacySlashEmDeitiesPanel = Boolean(
-    isLegacySlashEmBaseAttributesSheet &&
-    characterSheet?.deityLines &&
-    characterSheet.deityLines.length > 0,
-  );
 
   const characterExperienceProgress = useMemo(() => {
     const level = Number.isFinite(playerStats.level)
@@ -140,12 +109,10 @@ export function useCharacterSheetView(dependencies: UseCharacterSheetViewDepende
   }, [playerStats.level, playerStats.experience]);
   return {
     characterSheet,
-    isLegacySlashEmBaseAttributesSheet,
     displayedCharacterStatEntries,
     isCharacterSheetVisible,
     hasCharacterStatValues,
     hasCharacterStatLimits,
-    showLegacySlashEmDeitiesPanel,
     characterExperienceProgress,
   } as const;
 }

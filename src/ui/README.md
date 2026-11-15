@@ -66,7 +66,7 @@ The following helpers support those feature owners:
 | Choose inventory context actions | [inventory/actions.ts](app/inventory/actions.ts) | Category exclusions, item-specific eligibility and stack counts |
 | Position inventory and drop menus | [inventory/position.ts](app/inventory/position.ts) | Safe-zone limits, scroll bounds and anchor geometry |
 | Position tile context menus or scroll long titles | [menus/context-menu.ts](app/menus/context-menu.ts) | Title animation lifecycle and viewport bounds |
-| Change hunger, load or condition badges | [status/conditions.ts](app/status/conditions.ts) | Different condition bit meanings in 3.6.7, 5.0 and Slash'EM |
+| Change hunger, load or condition badges | [status/conditions.ts](app/status/conditions.ts) | NetHack 5.0 condition bit meanings |
 | Change core-stat highlighting | [status/core-stats.ts](app/status/core-stats.ts) | Bootstrap baseline and turn-based highlight expiry |
 | Render character attributes and experience values | [status/character-fields.tsx](app/status/character-fields.tsx) | Legacy field labels and stat-value fallbacks |
 | Sort and summarize archived runs | [scores/sorting.ts](app/scores/sorting.ts), [scores/summary.ts](app/scores/summary.ts) | Stable tie breaks and missing-detail fallbacks |
@@ -90,18 +90,15 @@ The following helpers support those feature owners:
 
 ## Validation
 
-Custom Slash'EM imports offer explicit 40-column (legacy/default) and 38-column
-layouts. The stored `slashem-38` choice becomes ordinary `slashem` glyph ordering
-plus per-sheet `atlasColumns: 38` at registration, shared by rendering and tile
-previews. Existing imports stay at 40 columns; the bundled Abigaba and Absurd
-38-column presets remain unchanged.
+Custom tileset imports use the NetHack 3.6.7 or 5.0 atlas layout at 40 columns.
+Imports stored with a Slash'EM or 3.4.3 layout are no longer listed.
 
 Score snapshots reserve a run ID synchronously and serialize IndexedDB writes so
 late score, inventory and report updates replace the same record. Postmortem
 report selection is tracked separately from whether the player chose to display
 it. Native dungeon overviews are recognized by branch/level headings; when no
 native report exists, saved timeline locations provide a labeled record of
-dungeon visits, including for Slash'EM and older snapshots.
+dungeon visits, including for older snapshots.
 
 Run `npm run check:tsc` and focused tests for the feature being changed. UI regression tests live beside their helpers under `app/`; engine input lifecycle coverage remains in [input-lifecycle.test.ts](../game/engine/input/input-lifecycle.test.ts).
 

@@ -135,19 +135,7 @@ export class RuntimeMenuSelection {
     return this.getPrintableAcceleratorCharacter(code).length === 1;
   }
 
-  isLegacyMenuAcceleratorRuntime() {
-    return this.deps.coordinator.runtimeVersion === "3.6.7" || this.deps.coordinator.runtimeVersion === "slashem";
-  }
-
   getPrintableAcceleratorCharacter(code) {
-    if (typeof code === "string" && this.isLegacyMenuAcceleratorRuntime()) {
-      const normalized = code.replace(/[\u0000-\u001f\u007f]/g, "");
-      if (normalized.length !== 1) {
-        return "";
-      }
-      const charCode = normalized.charCodeAt(0);
-      return charCode > 32 && charCode < 127 ? normalized : "";
-    }
     if (typeof code === "number" && Number.isFinite(code)) {
       const normalized = Math.trunc(code);
       if (normalized > 32 && normalized < 127) {

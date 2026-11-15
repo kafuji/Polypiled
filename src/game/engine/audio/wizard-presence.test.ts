@@ -1,37 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { getActiveGlyphCatalogVersion, getGlyphCatalogEntriesForVersion, setActiveGlyphCatalog } from "../../glyphs/registry";
-import type { NethackRuntimeVersion } from "../../../runtime/types";
+import { describe, expect, it } from "vitest";
+import { GLYPH_CATALOG } from "../../glyphs";
 import { isWizardOfYendorGlyph, WizardPresenceTracker } from "./wizard-presence";
 
-async function wizardGlyphs(version: NethackRuntimeVersion) {
-  await setActiveGlyphCatalog(version);
-  const entries = await getGlyphCatalogEntriesForVersion(version);
-  return entries.filter((entry) => isWizardOfYendorGlyph(entry.glyph));
-}
-
 describe("isWizardOfYendorGlyph", () => {
-  afterEach(async () => {
-    await setActiveGlyphCatalog("3.6.7");
-  });
-
-  it("finds him seen, tame, sensed and ridden in NetHack 3.6.7", async () => {
-    const found = await wizardGlyphs("3.6.7");
-    expect(found.map((entry) => entry.kind)).toEqual(["mon", "pet", "detect", "ridden"]);
-    expect(new Set(found.map((entry) => entry.asciiChar))).toEqual(new Set(["@"]));
-    // The monster just before him (Croesus or a quest leader) is not him.
-    expect(isWizardOfYendorGlyph(found[0].glyph - 1)).toBe(false);
-  });
-
-  it("finds the same in NetHack 5, whose glyph numbers differ", async () => {
-    const found = await wizardGlyphs("5.0");
-    expect(getActiveGlyphCatalogVersion()).toBe("5.0");
+  it("finds him seen, tame, sensed and ridden", () => {
+    const found = GLYPH_CATALOG.filter((entry) => isWizardOfYendorGlyph(entry.glyph));
     expect(new Set(found.map((entry) => entry.kind))).toEqual(new Set(["mon", "pet", "detect", "ridden"]));
     expect(new Set(found.map((entry) => entry.asciiChar))).toEqual(new Set(["@"]));
+    // Male and female tiles for each of the four kinds, and nothing else.
+    expect(found).toHaveLength(8);
   });
 
-  it("never matches in SLASH'EM or for non-glyphs", async () => {
-    expect(await wizardGlyphs("slashem")).toEqual([]);
-    await setActiveGlyphCatalog("3.6.7");
+  it("never matches non-glyphs", () => {
     expect(isWizardOfYendorGlyph(undefined)).toBe(false);
     expect(isWizardOfYendorGlyph(-1)).toBe(false);
   });

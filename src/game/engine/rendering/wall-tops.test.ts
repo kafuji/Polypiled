@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { getGlyphCatalogRanges } from "../../glyphs/registry";
 import {
   DEFAULT_WALL_TOPS_TUNING,
   WALL_TOP_BLOCKED,
@@ -11,19 +10,18 @@ import {
   type WallTopsDependencies,
 } from "./wall-tops";
 import { WorldShading, createWorldShadingUniforms } from "./world-shading";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 
-const cmap = getGlyphCatalogRanges().find((range) => range.kind === "cmap")!.start;
-const hwall = cmap + 2;
-const tree = cmap + 18;
+const hwall = cmapGlyphForSymbol(2);
+const tree = cmapGlyphForSymbol(18);
 
 describe("wall-top cells", () => {
   it("darkens walls and inferred rock, keeps doors and other blocks, opens floor", () => {
     expect(classifyWallTopCell({ isWall: true, materialKind: "wall", tileTextureSourceGlyph: hwall })).toBe(WALL_TOP_WALL);
     expect(classifyWallTopCell({ isWall: true, materialKind: "dark_wall", isInferredDarkCorridorWall: true })).toBe(WALL_TOP_WALL);
-    expect(classifyWallTopCell({ isWall: true, materialKind: "door", tileTextureSourceGlyph: cmap + 15 })).toBe(WALL_TOP_BLOCKED);
+    expect(classifyWallTopCell({ isWall: true, materialKind: "door", tileTextureSourceGlyph: cmapGlyphForSymbol(15) })).toBe(WALL_TOP_BLOCKED);
     expect(classifyWallTopCell({ isWall: true, materialKind: "wall", tileTextureSourceGlyph: tree })).toBe(WALL_TOP_BLOCKED);
     expect(classifyWallTopCell({ isWall: false, materialKind: "floor" })).toBe(WALL_TOP_OPEN);
-    expect(classifyWallTopCell({ isWall: false, isVoidFill: true })).toBe(WALL_TOP_BLOCKED);
     expect(classifyWallTopCell(null)).toBe(WALL_TOP_BLOCKED);
   });
 });

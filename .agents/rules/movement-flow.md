@@ -238,7 +238,7 @@ Menu selection state is isolated from the general broker path:
 - `player_position` comes from `shim_cliparound`.
 - `recordPlayerMovement` keeps the engine movement-dependent UX aligned with the runtime consume model.
 - `positionInputModeActive` on the engine controls whether movement keys are routed as player movement or position selection.
-- When tracked wasm-367 map glyph payloads include `monsterId=0` for the player tile, the engine should prefer that tracked entity move path for player step lerps and must not start a duplicate fallback player transition for the same move.
+- When tracked map glyph payloads include `monsterId=0` for the player tile, the engine should prefer that tracked entity move path for player step lerps and must not start a duplicate fallback player transition for the same move.
 - In that tracked-player path, the source tile may already have been repainted with another occupant before the destination player glyph arrives, so movement visuals must prefer the cached player appearance over the live source tile state.
 
 ## Under-Player Loot Flow
@@ -298,31 +298,15 @@ Menu selection state is isolated from the general broker path:
 
 - Pickup success is not inferred only from movement. The runtime also looks for authoritative pickup-success text.
 - Modern inventory-assignment raw prints such as `f - a tripe ration.` and `$ - 7 gold pieces.` mean the item is gone and should clear the pending target/current player tile immediately.
-- Slash'EM also needs a runtime-specific bare-gold case like `28 gold pieces.` because that runtime does not always emit the assignment format for autopickup.
 - After a pickup-success signal, the runtime should not blindly clear if the
   player is standing on a stack. It should refresh from the helper when a new
   top item might remain visible under the player.
 
-### Legacy Slash'EM Drop Flow
-
-- Slash'EM can route drop through:
-  1. `shim_yn_function("What do you want to drop? ...")`
-  2. auto-answer with `*`
-  3. a questionless `WIN_INVEN` menu
-- In that path, `currentMenuQuestionText` may be empty even though the action is
-  still logically a drop question.
-- When arming the post-action refresh from the selection, the runtime must fall
-  back to `lastQuestionText` if the current menu question is empty.
-- If this fallback is missing, the item dropped onto the current tile will not
-  appear under the player until they step off the tile.
-
 ### Runtime Artifact Caveat
 
-- `scripts/wasm/copy-wasm.mjs` only copies built artifacts from the WSL build
-  directories into `public/`.
-- If the WSL source changed but `packages/wasm-367/build/nethack.js` was not
-  rebuilt, the checked-in/public 3.6.7 runtime can be stale and miss helper
-  installs even when the source-side `libnhmain.c` is correct.
+- `public/nethack-5.*` are CI builds of `core/NetHack`, replaced by hand as
+  `core/README.md` describes. If the source changed but the shipped artifact did
+  not, the runtime can be stale and miss helper installs.
 
 ### Engine Expectations
 
@@ -388,12 +372,10 @@ Camera behavior is implemented in `src/game/engine/camera/camera.ts`:
 12. Multi-step move onto non-autopicked loot still showing that loot under the player only after the player reaches the target tile.
 13. Clicking the current player tile to pick up loot clears the loot under the player.
 14. Pressing `,` to pick up loot clears the loot under the player.
-15. Autopickup gold/items clearing the under-player loot in 3.6.7-style runtimes.
-16. Slash'EM bare-gold autopickup text also clearing the under-player loot.
-17. Partial pickup from a stack replaces the old top item with the remaining top item under the player.
-18. Dropping an item onto the current tile immediately shows the dropped item or new top-of-pile item under the player.
-19. Slash'EM `drop` through legacy `yn_function` plus `*` still updates the under-player top item without requiring movement.
-20. Pickup, drop, eat, and other inventory mutations keep the item shown under the player in sync in both FPS and overhead views.
-21. In runtimes that return odd high glyph numbers for top-of-pile items, the
+15. Autopickup gold/items clearing the under-player loot.
+16. Partial pickup from a stack replaces the old top item with the remaining top item under the player.
+17. Dropping an item onto the current tile immediately shows the dropped item or new top-of-pile item under the player.
+18. Pickup, drop, eat, and other inventory mutations keep the item shown under the player in sync in both FPS and overhead views.
+19. In runtimes that return odd high glyph numbers for top-of-pile items, the
     under-player item still renders correctly when the runtime tile metadata says
     it is an item.

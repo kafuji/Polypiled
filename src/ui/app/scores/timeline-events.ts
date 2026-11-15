@@ -140,37 +140,6 @@ export function buildFallbackTopScoreTimeline(score: TopScoreRecord): TopScoreTi
   ];
 }
 
-export function dedupeSlashemLocationTimelineEvents(
-  events: TopScoreTimelineEvent[],
-  score: TopScoreRecord,
-): TopScoreTimelineEvent[] {
-  if (score.detail?.runtimeVersion !== "slashem" && score.version !== "slashem") {
-    return events;
-  }
-
-  const seenLocationKeys = new Set<string>();
-  return events.filter((event) => {
-    if (event.kind !== "location") {
-      return true;
-    }
-    const label = String(
-      event.location || event.summary || event.detail || event.label || "",
-    ).trim();
-    const depthMatch = label.match(/-?\d+\s*\.?$/);
-    const key = depthMatch
-      ? `slashem-depth:${Number.parseInt(depthMatch[0], 10)}`
-      : label.toLowerCase();
-    if (!key) {
-      return true;
-    }
-    if (seenLocationKeys.has(key)) {
-      return false;
-    }
-    seenLocationKeys.add(key);
-    return true;
-  });
-}
-
 export function resolveTopScoreTimelineEvents(score: TopScoreRecord): TopScoreTimelineEvent[] {
   const savedTimeline = score.detail?.timeline ?? [];
   const telemetryTimeline = buildTopScoreTelemetryTimelineEvents(score);
@@ -178,11 +147,8 @@ export function resolveTopScoreTimelineEvents(score: TopScoreRecord): TopScoreTi
     (event) => event.kind !== "search",
   );
   return mergedTimeline.length > 0
-    ? dedupeSlashemLocationTimelineEvents(
-      mergedTimeline.sort(
-        (left, right) => left.turn - right.turn || left.label.localeCompare(right.label),
-      ),
-      score,
+    ? mergedTimeline.sort(
+      (left, right) => left.turn - right.turn || left.label.localeCompare(right.label),
     )
     : buildFallbackTopScoreTimeline(score);
 }

@@ -21,8 +21,7 @@ Start with the [engine task-to-owner map](../../src/game/engine/README.md#code-h
   - `src/game/glyphs/index.ts`
   - `src/game/glyphs/registry.ts`
   - `src/game/glyphs/behavior.ts`
-  - `src/game/glyphs/glyph-catalog.367.generated.ts` (generated fallback/reference; not authoritative for all variant item tiles)
-  - `src/game/glyphs/glyph-catalog.5.generated.ts` and `src/game/glyphs/glyph-catalog.slashem.generated.ts` (generated fallback/reference; not authoritative for all variant item tiles)
+  - `src/game/glyphs/glyph-catalog.5.generated.ts` (generated fallback/reference; not authoritative for all variant item tiles)
 - Generated glyph catalogs are fallback references, not the final source of truth.
   If live runtime payloads disagree with the catalog, especially for item-like
   top-of-pile results, prefer the runtime payload.
@@ -110,12 +109,10 @@ Start with the [engine task-to-owner map](../../src/game/engine/README.md#code-h
   - `move-onto-lootlike-tile` with a stored snapshot replays that snapshot once the player reaches the armed target.
   - Other reasons query helpers and emit the real current top item or a clear event.
 - Successful pickup/autopickup uses raw text as an authoritative success signal:
-  - Modern/3.4.3-style inventory assignment text like `f - a tripe ration.` or `$ - 7 gold pieces.` clears the pending target/current tile immediately.
-  - Slash'EM also needs a runtime-specific bare-gold case like `28 gold pieces.` because it does not always use the inventory-assignment format.
-- Slash'EM legacy drop flows can route through a `yn_function` prompt followed by
-  a questionless `WIN_INVEN` menu after `*`. In that case, the runtime must use
-  the active Y/N prompt text (`lastQuestionText`) as the action context when
-  `currentMenuQuestionText` is empty, or the drop refresh will never arm.
+  - Inventory assignment text like `f - a tripe ration.` or `$ - 7 gold pieces.` clears the pending target/current tile immediately.
+- When a questionless `WIN_INVEN` menu follows a `yn_function` prompt, the
+  runtime uses the active Y/N prompt text (`lastQuestionText`) as the action
+  context when `currentMenuQuestionText` is empty.
 - This split is intentional:
   - intent arming decides when we should care about a tile
   - raw-print pickup success decides when the loot is definitely gone
@@ -159,11 +156,10 @@ Start with the [engine task-to-owner map](../../src/game/engine/README.md#code-h
     but then downgraded by static catalog classification
 - A stale current-tile pickup arm affects later travel:
   - `pickup-current-player-tile` was not cleared when a new remote target was chosen.
-- 3.6.7 helper behavior seems impossible or inconsistent with source:
-  - `copy-wasm` only copies `packages/wasm-367/build/nethack.js`; it does not
-    rebuild it
-  - if WSL source changed but the build artifact did not, the checked-in public
-    runtime can be stale and miss helper installs like `topItemGlyphUnderPlayer`
+- Helper behavior seems impossible or inconsistent with source:
+  - `public/nethack-5.*` are CI builds of `core/NetHack` replaced by hand (see
+    `core/README.md`); if the source changed but the shipped artifact did not,
+    the runtime can be stale and miss helper installs like `topItemGlyphUnderPlayer`
 
 ### First Places To Check
 
@@ -184,9 +180,8 @@ Start with the [engine task-to-owner map](../../src/game/engine/README.md#code-h
   - `emitUnderPlayerItemGlyphFromPendingSnapshot`
   - `emitUnderPlayerItemGlyphIfAvailableAt`
 - Runtime artifact/source-of-truth checks:
-  - `scripts/wasm/copy-wasm.mjs`
-  - `public/nethack-367.js`
-  - `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo\packages\wasm-367\build\nethack.js`
+  - `core/README.md`
+  - `public/nethack-5.js`
 - Engine receive/cache in `src/game/engine/world/world-classification.ts`, reached through `Nethack3DEngine.handleRuntimeEvent`:
   - `applyUnderPlayerItemGlyphEvent`
   - `clearUnderPlayerItemGlyphEvent`
@@ -304,7 +299,7 @@ Start with the [engine task-to-owner map](../../src/game/engine/README.md#code-h
 - Tile behavior decisions live in `src/game/glyphs/behavior.ts` and are consumed by `updateTile`.
 - Glyph resolution/version selection lives in `src/game/glyphs/registry.ts`.
 - Glyph catalogs are versioned, checked-in generated fallback references. They are useful for static mapping and debugging, but can be wrong for some item-variation tiles; prefer proper live WASM NetHack calls whenever possible.
-- World/terrain helpers and tile classification assumptions should be verified against `src/runtime/displayFileCatalog.ts` and the imported NetHack data under `imported/nethack-3.6.7` when behavior depends on canonical game text or object data.
+- World/terrain helpers and tile classification assumptions should be verified against `src/runtime/displayFileCatalog.ts` and the NetHack data under `imported/nethack-5.0` and `core/NetHack` when behavior depends on canonical game text or object data.
 
 ## If You Need To Change Startup Options, Saves, Or Updates
 

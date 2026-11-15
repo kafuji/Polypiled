@@ -1,16 +1,11 @@
 import * as THREE from "three";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { isLavaCmapGlyph, isLitFloorCmapGlyph } from "../../glyphs/behavior";
-import { getGlyphCatalogEntry, getGlyphCatalogRanges, setActiveGlyphCatalog } from "../../glyphs/registry";
+import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
 import { NH5_TILE_KEYS } from "../../hires-tiles/tile-keys.5.generated";
-import { VULTURE_MONSTER_KEYS_367 } from "../../vulture/vulture-monster-keys.367.generated";
 import { resolveGlowingMonsterLight } from "./glowing-monsters";
 import { LIGHT_FIELD_RANGE, LIGHT_FIELD_SUBCELLS, LightField, type LightFieldDependencies } from "./light-field";
 import { WorldShading, createWorldShadingUniforms } from "./world-shading";
-
-afterEach(async () => {
-  await setActiveGlyphCatalog("3.6.7");
-});
 
 function cmapGlyph(symidx: number): number {
   const range = getGlyphCatalogRanges().find((entry) => entry.kind === "cmap")!;
@@ -20,32 +15,16 @@ function cmapGlyph(symidx: number): number {
   return range.start + symidx;
 }
 
-describe("light-related glyphs per runtime", () => {
-  it("finds the lit corridor and lava in NetHack 3.6.7", async () => {
-    await setActiveGlyphCatalog("3.6.7");
+describe("light-related glyphs", () => {
+  it("finds the lit corridor and lava", () => {
     expect(isLitFloorCmapGlyph(cmapGlyph(19))).toBe("room");
-    expect(isLitFloorCmapGlyph(cmapGlyph(21))).toBeNull(); // corridor
-    expect(isLitFloorCmapGlyph(cmapGlyph(22))).toBe("corridor");
-    expect(isLavaCmapGlyph(cmapGlyph(34))).toBe(true);
-  });
-
-  it("follows NetHack 5's shifted corridor and lava symbols", async () => {
-    await setActiveGlyphCatalog("5.0");
-    expect(isLitFloorCmapGlyph(cmapGlyph(19))).toBe("room");
-    expect(isLitFloorCmapGlyph(cmapGlyph(22))).toBeNull(); // plain corridor in NetHack 5
+    expect(isLitFloorCmapGlyph(cmapGlyph(22))).toBeNull(); // plain corridor
     expect(isLitFloorCmapGlyph(cmapGlyph(23))).toBe("corridor");
     expect(isLavaCmapGlyph(cmapGlyph(40))).toBe(true);
-    expect(isLavaCmapGlyph(cmapGlyph(34))).toBe(false); // a grave in NetHack 5
+    expect(isLavaCmapGlyph(cmapGlyph(34))).toBe(false); // a grave
   });
 
-  it("recognises glowing monsters in both runtimes", async () => {
-    await setActiveGlyphCatalog("3.6.7");
-    const monStart = getGlyphCatalogRanges().find((range) => range.kind === "mon")!.start;
-    expect(resolveGlowingMonsterLight(monStart + VULTURE_MONSTER_KEYS_367.indexOf("PM_FIRE_ELEMENTAL"))).not.toBeNull();
-    expect(resolveGlowingMonsterLight(monStart + VULTURE_MONSTER_KEYS_367.indexOf("PM_YELLOW_LIGHT"))).not.toBeNull();
-    expect(resolveGlowingMonsterLight(monStart + VULTURE_MONSTER_KEYS_367.indexOf("PM_GIANT_ANT"))).toBeNull();
-
-    await setActiveGlyphCatalog("5.0");
+  it("recognises glowing monsters", () => {
     const mon = getGlyphCatalogRanges().find((range) => range.kind === "mon")!;
     const glyphFor = (key: string) => {
       for (let glyph = mon.start; glyph < mon.endExclusive; glyph++) {
@@ -92,7 +71,6 @@ describe("LightField glows, magic light and memory", () => {
   }
 
   it("lets lava glow orange into a dark corridor", async () => {
-    await setActiveGlyphCatalog("5.0");
     const { lights, put, texel } = fixture();
     const corridor = cmapGlyph(22);
     for (let x = 10; x <= 20; x++) put(x, 10, corridor);
@@ -106,7 +84,6 @@ describe("LightField glows, magic light and memory", () => {
   });
 
   it("tints a room lit by a light scroll blue", async () => {
-    await setActiveGlyphCatalog("5.0");
     const { lights, put, texel } = fixture();
     const room = cmapGlyph(19);
     for (let y = 2; y <= 6; y++) for (let x = 2; x <= 9; x++) put(x, y, room);

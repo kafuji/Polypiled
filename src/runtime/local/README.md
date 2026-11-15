@@ -10,7 +10,7 @@ The extracted implementation retains the previous `@ts-nocheck` boundary for dyn
 
 During game over, `RuntimeGameOver` reads NetHack's final `with N points` summary from displayed windows or raw output and emits `game_over_score`. The engine updates the score snapshot before archival; live `BL_SCORE` values can be absent or stale and are not a substitute for the computed final total. Native `record`/`xlogfile` entries remain authoritative when available.
 
-Contextual Info auto-selection must arm position mode before entering `getpos`: both the NetHack map-menu route in `RuntimeInventoryContext` and Slash'EM's automatic cursor confirmation in `RuntimeQuestionInput` bypass ordinary user-input dispatch. Keep verbose `:` in the look-mode continuation set until Escape. Otherwise inspection `cliparound` callbacks become false player moves. The shared contextual answer handler accepts the expected More-info confirmation in each supported runtime. Engine-side camera suppression is separate from this runtime cursor bookkeeping.
+Contextual Info auto-selection must arm position mode before entering `getpos`: the NetHack map-menu route in `RuntimeInventoryContext` bypasses ordinary user-input dispatch. Keep verbose `:` in the look-mode continuation set until Escape. Otherwise inspection `cliparound` callbacks become false player moves. The shared contextual answer handler accepts the expected More-info confirmation in each supported runtime. Engine-side camera suppression is separate from this runtime cursor bookkeeping.
 
 Polearm and grappling-hook `Where do you want to hit?` prompts activate the same map-selection UI with origin `target`, before `getpos` emits its initial cursor callbacks. Message-window and raw-print paths must both recognize it. Target movement and help stay in cursor mode; a pick key, click or Escape ends it. Enter maps to `.` for compatibility with Slash'EM. Do not infer targeting from every `nh_poskey` call: that callback also reads ordinary game commands.
 
@@ -42,7 +42,7 @@ Paths in this table are relative to this directory.
 | Startup options, character name and configuration | [startup/startup-configuration.ts](startup/startup-configuration.ts) |
 | No-callback startup timer and callback count | [diagnostics/startup-diagnostics.ts](diagnostics/startup-diagnostics.ts) |
 | Save mounts, IDBFS and checkpoint sync wrappers | [persistence/startup-persistence.ts](persistence/startup-persistence.ts) |
-| Checkpoint files, recovery and Slash'EM locks | [persistence/checkpoint-files.ts](persistence/checkpoint-files.ts), [checkpoint-recovery.ts](persistence/checkpoint-recovery.ts), [slashem-locks.ts](persistence/slashem-locks.ts) |
+| Checkpoint files and recovery | [persistence/checkpoint-files.ts](persistence/checkpoint-files.ts), [checkpoint-recovery.ts](persistence/checkpoint-recovery.ts) |
 | Pointer ABI profiles, callback shape validation and safe fallback returns | [abi/pointer-contract.ts](abi/pointer-contract.ts): `buildDefaultRuntimePointerContract`, `validateCallbackPointerContract` |
 | Pointer normalization and heap reads | [abi/memory.ts](abi/memory.ts) |
 | Client keyboard, sequence and mouse routing | [input/client-dispatch.ts](input/client-dispatch.ts): `handleClientInput`, `handleClientInputSequence`, `handleClientMouseInput` |

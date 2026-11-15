@@ -1,14 +1,13 @@
 import * as THREE from "three";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { VultureWalls, type VultureWallsDependencies } from "./vulture-walls";
 import { WallOverlays, type WallOverlaysDependencies } from "./wall-overlays";
-import { getGlyphCatalogEntry, getGlyphCatalogRanges, setActiveGlyphCatalog } from "../../glyphs/registry";
+import { getGlyphCatalogEntry } from "../../glyphs/registry";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 import type { VultureWallFaceSlot } from "../shared/types";
 
-beforeEach(async () => { await setActiveGlyphCatalog("3.6.7"); });
-
 function fixture(cmap: number, floors: VultureWallFaceSlot[]) {
-  const glyph = getGlyphCatalogRanges().find(range => range.kind === "cmap")!.start + cmap;
+  const glyph = cmapGlyphForSymbol(cmap);
   const mesh = new THREE.Mesh(); mesh.userData.tileTextureSourceGlyph = glyph;
   const tileMap = new Map([["4,5", mesh]]);
   const snapshot = vi.fn(() => null as { glyph: number; symidx: number } | null);
@@ -22,7 +21,7 @@ function fixture(cmap: number, floors: VultureWallFaceSlot[]) {
     ? { category: "wall", name: `WALL_ROUGH_F_${face[0].toUpperCase()}`, projection: "sprite", wallFace: face }
     : null);
   vi.spyOn(walls, "isVultureDoorwayNeighborFloor").mockReturnValue(false);
-  const char = walls.resolveWallOrientationChar(String.fromCodePoint(getGlyphCatalogEntry(glyph)!.ch), glyph);
+  const char = walls.resolveWallOrientationChar(getGlyphCatalogEntry(glyph)!.asciiChar ?? "", glyph);
   return { walls, mesh, glyph, snapshot, tileMap, config: () => walls.resolveVultureWallPlaneRenderConfig(4, 5, "wall", char) };
 }
 

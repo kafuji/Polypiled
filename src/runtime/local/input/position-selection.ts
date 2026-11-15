@@ -59,7 +59,6 @@ export class RuntimePositionInput {
   declare farLookMode: string;
   declare farLookOrigin: any;
   declare pendingLookMenuFarLookArm: boolean;
-  declare pendingLegacySlashEmCursorPromptFarLook: boolean;
   declare pendingTravelPositionInputArm: boolean;
   declare positionInputActive: boolean;
   declare positionCursor: any;
@@ -68,9 +67,8 @@ export class RuntimePositionInput {
     this.farLookMode = "none";
     // none | armed | active
     this.farLookOrigin = null;
-    // null | "direct" | "look_menu" | "floor_target_menu" | "legacy_cursor_prompt" | "travel" | "target"
+    // null | "direct" | "look_menu" | "floor_target_menu" | "travel" | "target"
     this.pendingLookMenuFarLookArm = false;
-    this.pendingLegacySlashEmCursorPromptFarLook = false;
     this.pendingTravelPositionInputArm = false;
     this.positionInputActive = false;
     this.positionCursor = null;
@@ -279,10 +277,7 @@ export class RuntimePositionInput {
   }
 
   shouldPreserveFarLookAfterMouseSelection() {
-    return (
-      this.farLookOrigin === "look_menu" ||
-      this.farLookOrigin === "legacy_cursor_prompt"
-    );
+    return this.farLookOrigin === "look_menu";
   }
 
   normalizeFarLookPositionInput(input) {
@@ -296,7 +291,6 @@ export class RuntimePositionInput {
     // Treat Enter as that confirm key to avoid leaving far-look in a bad state.
     if (
       this.farLookOrigin !== "floor_target_menu" &&
-      this.farLookOrigin !== "legacy_cursor_prompt" &&
       (input === "Enter" || input === "\r" || input === "\n")
     ) {
       return ";";

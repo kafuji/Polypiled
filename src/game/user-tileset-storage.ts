@@ -11,13 +11,15 @@ export type StoredUserTilesetRecord = {
   updatedAt: number;
 };
 
-export type StoredUserTilesetTileLayoutVersion =
-  // Keep old imports at 40 columns; the opt-in variant uses the same glyph order.
-  | "slashem"
-  | "slashem-38"
-  | "3.4.3"
-  | "3.6.7"
-  | "5.0";
+export type StoredUserTilesetTileLayoutVersion = "3.6.7" | "5.0";
+
+// Layouts that only the removed Slash'EM runtime could draw. Tilesets stored
+// with one of these stay in the database but are no longer listed.
+const removedTileLayoutVersions: ReadonlySet<unknown> = new Set([
+  "slashem",
+  "slashem-38",
+  "3.4.3",
+]);
 
 type SaveUserTilesetInput = {
   id?: string;
@@ -36,19 +38,7 @@ const storeName = "tilesets";
 function normalizeStoredTileLayoutVersion(
   rawValue: unknown,
 ): StoredUserTilesetTileLayoutVersion {
-  if (rawValue === "slashem-38") {
-    return "slashem-38";
-  }
-  if (rawValue === "slashem") {
-    return "slashem";
-  }
-  if (rawValue === "5.0") {
-    return "5.0";
-  }
-  if (rawValue === "3.4.3") {
-    return "3.4.3";
-  }
-  return "3.6.7";
+  return rawValue === "5.0" ? "5.0" : "3.6.7";
 }
 
 function ensureIndexedDbAvailable(): void {
@@ -96,6 +86,9 @@ function normalizeStoredRecord(raw: unknown): StoredUserTilesetRecord | null {
   const value = raw as Partial<StoredUserTilesetRecord>;
   const id = String(value.id || "").trim();
   if (!id) {
+    return null;
+  }
+  if (removedTileLayoutVersions.has(value.tileLayoutVersion)) {
     return null;
   }
   const label = String(value.label || "").trim() || id;

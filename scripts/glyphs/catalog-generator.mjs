@@ -4,30 +4,14 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { getAllTiles } from "./tile-parser.mjs";
 
-export const GLYPH_CATALOG_VERSIONS = /** @type {const} */ ([
-  "3.6.7",
-  "5.0",
-  "slashem",
-]);
+export const GLYPH_CATALOG_VERSIONS = /** @type {const} */ (["5.0"]);
 
 const CATALOG_TARGETS = [
-  {
-    version: "3.6.7",
-    publicJsPath: "public/nethack-367.js",
-    publicWasmPath: "public/nethack-367.wasm",
-    generatedCatalogPath: "src/game/glyphs/glyph-catalog.367.generated.ts",
-  },
   {
     version: "5.0",
     publicJsPath: "public/nethack-5.js",
     publicWasmPath: "public/nethack-5.wasm",
     generatedCatalogPath: "src/game/glyphs/glyph-catalog.5.generated.ts",
-  },
-  {
-    version: "slashem",
-    publicJsPath: "public/slashem.js",
-    publicWasmPath: "public/slashem.wasm",
-    generatedCatalogPath: "src/game/glyphs/glyph-catalog.slashem.generated.ts",
   },
 ];
 
@@ -170,7 +154,7 @@ function createRuntimeCallback() {
 
 /**
  * @param {string} projectRoot
- * @param {{ version: "3.6.7" | "5.0" | "slashem"; publicJsPath: string; publicWasmPath: string }} target
+ * @param {{ version: "5.0"; publicJsPath: string; publicWasmPath: string }} target
  */
 async function bootCatalogRuntime(projectRoot, target) {
   const jsPath = path.join(projectRoot, target.publicJsPath);
@@ -315,7 +299,7 @@ function glyphKindForGlyph(ranges, glyph) {
  *   mapglyphHelper?: (glyph: number, x: number, y: number, mgflags: number) => any,
  *   mapGlyphInfoHelper?: (glyph: number, x: number, y: number, mgflags: number) => any
  * }} helpers
- * @param {"3.6.7" | "5.0" | "slashem"} version
+ * @param {"5.0"} version
  * @param {GlyphRange[]} ranges
  * @param {number} maxGlyph
  */
@@ -468,19 +452,8 @@ function resolvePublicJsPath(projectRoot, target) {
   return path.join(projectRoot, target.publicJsPath);
 }
 
-function normalizeCatalogVersion(version) {
-  if (version === "5.0") {
-    return "5.0";
-  }
-  if (version === "slashem") {
-    return "slashem";
-  }
-  return "3.6.7";
-}
-
 function resolveCatalogTarget(version) {
-  const normalized = normalizeCatalogVersion(version);
-  const target = CATALOG_TARGETS.find((entry) => entry.version === normalized);
+  const target = CATALOG_TARGETS.find((entry) => entry.version === version);
   if (!target) {
     throw new Error(`Unsupported glyph catalog version: ${String(version)}`);
   }
@@ -498,7 +471,7 @@ export function getGeneratedCatalogPathForVersion(projectRoot, version) {
 
 export async function generateGlyphCatalogSource(
   projectRoot,
-  version = "3.6.7",
+  version = "5.0",
 ) {
   const target = resolveCatalogTarget(version);
   const jsPath = resolvePublicJsPath(projectRoot, target);

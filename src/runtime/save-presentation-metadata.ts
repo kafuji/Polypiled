@@ -6,9 +6,9 @@ export type SavePresentationCategory = "manual" | "autosave";
 export function normalizeSavePresentationRuntimeVersion(
   rawValue: unknown,
 ): NethackRuntimeVersion | undefined {
-  return rawValue === "3.6.7" || rawValue === "5.0" || rawValue === "slashem"
-    ? rawValue
-    : undefined;
+  // Metadata written for the removed NetHack 3.6.7 and Slash'EM runtimes is
+  // treated as carrying no runtime.
+  return rawValue === "5.0" ? rawValue : undefined;
 }
 
 export function normalizeStoredSaveInitOptions(
@@ -23,9 +23,7 @@ export function normalizeStoredSaveInitOptions(
   }
 
   // Legacy metadata did not record its runtime. Preserve its raw string tokens
-  // until the save list supplies the owning runtime, where they are sanitized
-  // against the correct option set. Sanitizing here as generic NetHack options
-  // would discard Slash'EM-only tokens such as IBMgraphics and DECgraphics.
+  // until the save list supplies the owning runtime, where they are sanitized.
   return rawInitOptions
     .filter((token): token is string => typeof token === "string")
     .map((token) => token.trim())

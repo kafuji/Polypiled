@@ -1,12 +1,19 @@
 import * as THREE from "three";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
-vi.hoisted(() => vi.stubGlobal("window", { matchMedia: () => ({ matches: false }), location: { protocol: "http:", hostname: "localhost" } }));
+vi.hoisted(() => {
+  vi.stubGlobal("window", { matchMedia: () => ({ matches: false }), location: { protocol: "http:", hostname: "localhost" } });
+  // The atlas lookup tests the loaded image against these DOM classes.
+  for (const name of ["HTMLCanvasElement", "HTMLImageElement", "ImageBitmap", "OffscreenCanvas"]) {
+    if (!(name in globalThis)) vi.stubGlobal(name, class {});
+  }
+});
 import { createEngineSystems } from "../create-engine-systems";
 import type { EngineCoordinator } from "../engine-coordinator";
 import { getGlyphCatalogRanges } from "../../glyphs/registry";
 import { getDefaultFloorGlyph } from "../../glyphs/behavior";
 import { normalizeNh3dClientOptions } from "../../ui-types";
 import { usesTerrainTiles, usesTileTextures } from "../../terrain-tile-options";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 
 afterEach(() => vi.restoreAllMocks());
 afterAll(() => vi.unstubAllGlobals());
@@ -38,7 +45,7 @@ describe("3D ASCII terrain tiles", () => {
   it.each([false, true].flatMap(fps => [false, true].flatMap(walls => [false, true].map(floors => ({ fps, walls, floors })))))
     ("independent wall=$walls floor=$floors choices in fps=$fps keep actors and items ASCII", ({ fps, walls, floors }) => {
       const s = fixture(walls, floors, fps);
-      const wall = getGlyphCatalogRanges().find(range => range.kind === "cmap")!.start + 1;
+      const wall = cmapGlyphForSymbol(1);
       s.tileRendering.updateTile(10, 8, wall, "|");
       s.tileRendering.updateTile(11, 8, getDefaultFloorGlyph(), ".");
       expect(s.glyphTextures.glyphOverlayMap.get("10,8")!.texture!.name).toBe(walls ? "tile" : "ascii");

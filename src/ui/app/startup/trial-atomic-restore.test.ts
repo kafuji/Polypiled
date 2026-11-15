@@ -59,7 +59,7 @@ class FakeDatabase {
   }
 }
 
-const runtime = "3.6.7" as const;
+const runtime = "5.0" as const;
 const dbName = getRuntimeSaveDbName(runtime);
 const time = new Date("2026-10-04T12:00:00.000Z");
 const row = (byte: number, timestamp = time): Row => ({ timestamp, mode: 0o100666, contents: new Uint8Array([byte]) });

@@ -3,9 +3,7 @@ import * as THREE from "three";
 import { createEngineSystems } from "./src/game/engine/create-engine-systems";
 import { normalizeNh3dClientOptions } from "./src/game/ui-types";
 import { getDefaultFloorGlyph, getDefaultDarkWallGlyph, getDefaultDarkFloorGlyph } from "./src/game/glyphs/behavior";
-import { setActiveGlyphCatalog } from "./src/game/glyphs/registry";
 window.runMovementWork = async () => {
-  await setActiveGlyphCatalog("5.0");
   const s=createEngineSystems(new Proxy({}, {get:()=>()=>{}}));
   s.engineState.uiAdapter=new Proxy({}, {get:()=>()=>{}});
   s.engineState.clientOptions=normalizeNh3dClientOptions({tilesetMode:"tiles",fpsMode:true,darkCorridorWalls367:true,blockAmbientOcclusion:true});

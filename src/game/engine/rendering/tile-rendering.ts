@@ -15,7 +15,7 @@ import { getTerminalColorHex } from "../../terminal/terminal-display";
 import type { TileEffectKind, TileMaterialKind } from "../../glyphs";
 import type { TerrainSnapshot, TileMap } from "../../types";
 import type { TileUpdateOptions, FpsChamferWallUvRotation } from "../shared/types";
-import type { DarkCorridorInference } from "../world/dark-corridor-inference";
+import type { DarkWallOverrides } from "./dark-wall-overrides";
 import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "./entity-billboards";
 import type { FloorOcclusion } from "./floor-occlusion";
@@ -40,16 +40,12 @@ import type { WallOverlays } from "./wall-overlays";
 import type { WorldClassification } from "../world/world-classification";
 
 export interface TileRenderingDependencies {
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "addInferredDarkCorridorTile"
-    | "inferredDarkCorridorTileFlags"
-    | "inferredDarkCorridorWallTiles"
-    | "removeInferredDarkCorridorTile"
-    | "resolveInferredDarkCorridorWallSolidColorGridDarknessPercent"
-    | "resolveInferredDarkCorridorWallSolidColorGridEnabled"
-    | "resolveInferredDarkCorridorWallSolidColorHexForTile"
-    | "resolveInferredDarkCorridorWallTileTextureIndex"
+  readonly darkWallOverrides: Pick<
+    DarkWallOverrides,
+    "resolveSolidColorGridDarknessPercent"
+    | "resolveSolidColorGridEnabled"
+    | "resolveSolidColorHexForTile"
+    | "resolveTileTextureIndex"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -118,7 +114,6 @@ export interface TileRenderingDependencies {
   readonly terminalRendering: Pick<
     TerminalRendering,
     "isTerminalDisplayMode"
-    | "resolveSlashEmTerminalCmapIndex"
     | "terminalRenderOptionStates"
     | "updateTerminalCell"
   >;
@@ -192,7 +187,6 @@ export interface TileRenderingDependencies {
     | "resolveNormalRoomFloorBehavior"
     | "resolveRaisedSpecialTileFloorBehavior"
     | "resolveTransparentOpenDoorwayFloorBehavior"
-    | "shouldFlattenVoidOrUnknownTileFor367"
     | "shouldKeepFloorGlyphUnderFpsAsciiPlayer"
     | "shouldRenderFlatFeatureUnderPlayer"
     | "shouldShowUnderPlayerFeaturesInOverheadTilesMode"
@@ -239,20 +233,11 @@ export class TileRendering {
     options: TileUpdateOptions = {},
   ): void {
     if (this.dependencies.terminalRendering.isTerminalDisplayMode()) {
-      // The simulated terminal shows only what the runtime printed;
-      // synthetic inferred-wall tiles are a 3D-mode presentation aid.
-      if (options.inferredDarkCorridorWall !== true) {
-        this.dependencies.terminalRendering.updateTerminalCell(x, y, glyph, char, color, options);
-      }
+      this.dependencies.terminalRendering.updateTerminalCell(x, y, glyph, char, color, options);
       return;
     }
     const key = `${x},${y}`;
-    const isInferredDarkCorridorWall =
-      options.inferredDarkCorridorWall === true;
     const restartRevealFade = options.restartRevealFade === true;
-    const hadInferredDarkCorridorWall =
-      this.dependencies.darkCorridorInference.inferredDarkCorridorWallTiles.has(key) ||
-      this.dependencies.darkCorridorInference.inferredDarkCorridorTileFlags.has(key);
     let mesh = this.tileMap.get(key);
     const previousTerrainSnapshot = this.dependencies.levelTerrainCache.lastKnownTerrain.get(key) ?? null;
     const runtimeSymidxForTileBehavior =
@@ -281,7 +266,6 @@ export class TileRendering {
           ? Math.trunc(behavior.effective.tileIndex)
           : -1;
     const darkCorridorWallCompatibilityActive =
-      isInferredDarkCorridorWall ||
       this.dependencies.tilesetAssets.isNh5DarkCorridorWallVariantForLegacyTileset(
         glyph,
         runtimeTileIndexForDarkCorridorCompatibility,
@@ -367,15 +351,11 @@ export class TileRendering {
     // before the authoritative player/under-player update arrives.
     const keepStandingLootDuringStep = this.dependencies.movementInput.isFpsMode() &&
       isLootLikeCharacter && !this.dependencies.engineState.clientOptions.fpsFlattenEntityBillboards;
-    // Prediction is not terrain authority. An inferred wall rendered during
-    // a step must remain a wall (including its movement-highlight metadata).
-    // A later real player/floor observation clears the inference normally.
     const shouldKeepVisiblePlayerBillboardInFarLook =
       this.dependencies.tileUpdates.shouldKeepFarLookPlayerBillboardVisible() &&
       tileRelation.isCurrentPlayerTile &&
       this.dependencies.tileUpdates.hasExplicitPlayerVisual(behavior, char);
     const shouldSuppressPlayerTileVisualInFps =
-      !isInferredDarkCorridorWall &&
       this.dependencies.movementInput.isFpsMode() &&
       ((isRuntimeTrackedPlayerTileInFps &&
         !shouldKeepVisiblePlayerBillboardInFarLook) ||
@@ -387,7 +367,7 @@ export class TileRendering {
         shouldSuppressRecentPreviousPlayerTileInFps);
     // The runtime can print the destination player glyph before cliparound
     // commits playerPos. Keep its known loot standing throughout that gap.
-    const pendingPlayerLootTile = !isInferredDarkCorridorWall && this.dependencies.movementInput.isFpsMode() &&
+    const pendingPlayerLootTile = this.dependencies.movementInput.isFpsMode() &&
       !this.dependencies.engineState.clientOptions.fpsFlattenEntityBillboards &&
       (isFpsStepDestinationTile || isPredictedFpsPlayerTile) &&
       (isRuntimeTrackedPlayerTileInFps || this.dependencies.tileUpdates.hasExplicitPlayerVisual(behavior, char));
@@ -416,22 +396,6 @@ export class TileRendering {
       (useTiles || this.dependencies.movementInput.isFpsMode() || isOverheadAsciiMode);
 
     const isUndiscovered = this.dependencies.worldClassification.isUndiscoveredKind(behavior.effective.kind);
-
-    if (
-      !isInferredDarkCorridorWall &&
-      hadInferredDarkCorridorWall &&
-      isUndiscovered
-    ) {
-      // Keep inferred corridor-wall memory when runtime emits an unknown/undiscovered
-      // refresh for out-of-sight tiles. Only concrete terrain should overwrite it.
-      return;
-    }
-
-    if (!isInferredDarkCorridorWall) {
-      this.dependencies.darkCorridorInference.removeInferredDarkCorridorTile(key);
-    } else {
-      this.dependencies.darkCorridorInference.addInferredDarkCorridorTile(key, x, y);
-    }
 
     if (isUndiscovered) {
       if (mesh) {
@@ -463,109 +427,94 @@ export class TileRendering {
       return;
     }
 
-    if (!isInferredDarkCorridorWall) {
-      const shouldCacheFlatUnderPlayer =
-        this.dependencies.worldClassification.shouldRenderFlatFeatureUnderPlayer(behavior);
-      const shouldSuppressLootLikeFlatFeatureCache =
-        isCurrentKnownPlayerTile &&
-        isLootLikeCharacter &&
-        this.dependencies.worldClassification.suppressedLootLikeUnderPlayerCacheKeys.has(key);
-      const previousFlatFeatureSnapshot =
-        this.dependencies.worldClassification.flatFeatureUnderPlayerCache.get(key) ?? null;
-      const previousFlatFeatureBehavior =
-        previousFlatFeatureSnapshot !== null
-          ? classifyTileBehavior({
-              glyph: previousFlatFeatureSnapshot.glyph,
-              runtimeChar: previousFlatFeatureSnapshot.char ?? null,
-              runtimeColor:
-                typeof previousFlatFeatureSnapshot.color === "number"
-                  ? previousFlatFeatureSnapshot.color
-                  : null,
-              runtimeTileIndex:
-                typeof previousFlatFeatureSnapshot.tileIndex === "number"
-                  ? previousFlatFeatureSnapshot.tileIndex
-                  : null,
-              runtimeSymidx:
-                typeof previousFlatFeatureSnapshot.symidx === "number"
-                  ? previousFlatFeatureSnapshot.symidx
-                  : null,
-              priorTerrain: this.dependencies.levelTerrainCache.lastKnownTerrain.get(key) ?? null,
-            })
-          : null;
-      const shouldPreserveExistingUnderPlayerFeatureCache =
-        isCurrentKnownPlayerTile &&
-        this.dependencies.worldClassification.shouldShowUnderPlayerFeaturesInOverheadTilesMode() &&
-        previousFlatFeatureBehavior !== null &&
-        (this.dependencies.worldClassification.shouldRenderFlatFeatureUnderPlayer(previousFlatFeatureBehavior) ||
-          this.dependencies.worldClassification.shouldUseRaisedSpecialTileBillboardInTiles(
-            previousFlatFeatureBehavior,
-          ));
-      const resolvedTerrainSymidx =
-        runtimeSymidxForTileBehavior !== null
-          ? runtimeSymidxForTileBehavior
-          : previousTerrainSnapshot &&
-              previousTerrainSnapshot.glyph === glyph &&
-              typeof previousTerrainSnapshot.symidx === "number" &&
-              Number.isFinite(previousTerrainSnapshot.symidx)
-            ? Math.trunc(previousTerrainSnapshot.symidx)
-            : undefined;
-      const resolvedFlatFeatureSymidx =
-        runtimeSymidxForTileBehavior !== null
-          ? runtimeSymidxForTileBehavior
-          : previousFlatFeatureSnapshot &&
-              previousFlatFeatureSnapshot.glyph === glyph &&
-              typeof previousFlatFeatureSnapshot.symidx === "number" &&
-              Number.isFinite(previousFlatFeatureSnapshot.symidx)
-            ? Math.trunc(previousFlatFeatureSnapshot.symidx)
-            : resolvedTerrainSymidx;
-      if (this.dependencies.worldClassification.isPersistentTerrainKind(behavior.resolved.kind)) {
-        this.dependencies.levelTerrainCache.lastKnownTerrain.set(key, {
+    const shouldCacheFlatUnderPlayer =
+      this.dependencies.worldClassification.shouldRenderFlatFeatureUnderPlayer(behavior);
+    const shouldSuppressLootLikeFlatFeatureCache =
+      isCurrentKnownPlayerTile &&
+      isLootLikeCharacter &&
+      this.dependencies.worldClassification.suppressedLootLikeUnderPlayerCacheKeys.has(key);
+    const previousFlatFeatureSnapshot =
+      this.dependencies.worldClassification.flatFeatureUnderPlayerCache.get(key) ?? null;
+    const previousFlatFeatureBehavior =
+      previousFlatFeatureSnapshot !== null
+        ? classifyTileBehavior({
+            glyph: previousFlatFeatureSnapshot.glyph,
+            runtimeChar: previousFlatFeatureSnapshot.char ?? null,
+            runtimeColor:
+              typeof previousFlatFeatureSnapshot.color === "number"
+                ? previousFlatFeatureSnapshot.color
+                : null,
+            runtimeTileIndex:
+              typeof previousFlatFeatureSnapshot.tileIndex === "number"
+                ? previousFlatFeatureSnapshot.tileIndex
+                : null,
+            runtimeSymidx:
+              typeof previousFlatFeatureSnapshot.symidx === "number"
+                ? previousFlatFeatureSnapshot.symidx
+                : null,
+            priorTerrain: this.dependencies.levelTerrainCache.lastKnownTerrain.get(key) ?? null,
+          })
+        : null;
+    const shouldPreserveExistingUnderPlayerFeatureCache =
+      isCurrentKnownPlayerTile &&
+      this.dependencies.worldClassification.shouldShowUnderPlayerFeaturesInOverheadTilesMode() &&
+      previousFlatFeatureBehavior !== null &&
+      (this.dependencies.worldClassification.shouldRenderFlatFeatureUnderPlayer(previousFlatFeatureBehavior) ||
+        this.dependencies.worldClassification.shouldUseRaisedSpecialTileBillboardInTiles(
+          previousFlatFeatureBehavior,
+        ));
+    const resolvedTerrainSymidx =
+      runtimeSymidxForTileBehavior !== null
+        ? runtimeSymidxForTileBehavior
+        : previousTerrainSnapshot &&
+            previousTerrainSnapshot.glyph === glyph &&
+            typeof previousTerrainSnapshot.symidx === "number" &&
+            Number.isFinite(previousTerrainSnapshot.symidx)
+          ? Math.trunc(previousTerrainSnapshot.symidx)
+          : undefined;
+    const resolvedFlatFeatureSymidx =
+      runtimeSymidxForTileBehavior !== null
+        ? runtimeSymidxForTileBehavior
+        : previousFlatFeatureSnapshot &&
+            previousFlatFeatureSnapshot.glyph === glyph &&
+            typeof previousFlatFeatureSnapshot.symidx === "number" &&
+            Number.isFinite(previousFlatFeatureSnapshot.symidx)
+          ? Math.trunc(previousFlatFeatureSnapshot.symidx)
+          : resolvedTerrainSymidx;
+    if (this.dependencies.worldClassification.isPersistentTerrainKind(behavior.resolved.kind)) {
+      this.dependencies.levelTerrainCache.lastKnownTerrain.set(key, {
+        glyph,
+        char: behavior.resolved.char ?? undefined,
+        color: behavior.resolved.color ?? undefined,
+        tileIndex: behavior.resolved.tileIndex,
+        symidx: resolvedTerrainSymidx,
+      });
+    }
+    if (shouldCacheFlatUnderPlayer) {
+      if (shouldSuppressLootLikeFlatFeatureCache) {
+        this.dependencies.worldClassification.flatFeatureUnderPlayerCache.delete(key);
+      } else {
+        this.dependencies.worldClassification.flatFeatureUnderPlayerCache.set(key, {
           glyph,
           char: behavior.resolved.char ?? undefined,
           color: behavior.resolved.color ?? undefined,
           tileIndex: behavior.resolved.tileIndex,
-          symidx: resolvedTerrainSymidx,
+          symidx: resolvedFlatFeatureSymidx,
         });
-      }
-      if (shouldCacheFlatUnderPlayer) {
-        if (shouldSuppressLootLikeFlatFeatureCache) {
-          this.dependencies.worldClassification.flatFeatureUnderPlayerCache.delete(key);
-        } else {
-          this.dependencies.worldClassification.flatFeatureUnderPlayerCache.set(key, {
-            glyph,
-            char: behavior.resolved.char ?? undefined,
-            color: behavior.resolved.color ?? undefined,
-            tileIndex: behavior.resolved.tileIndex,
-            symidx: resolvedFlatFeatureSymidx,
-          });
-          if (isLootLikeCharacter) {
-            this.dependencies.worldClassification.suppressedLootLikeUnderPlayerCacheKeys.delete(key);
-          }
+        if (isLootLikeCharacter) {
+          this.dependencies.worldClassification.suppressedLootLikeUnderPlayerCacheKeys.delete(key);
         }
-      } else if (
-        !(this.dependencies.movementInput.isFpsMode() && shouldSuppressPlayerTileVisualInFps) &&
-        !shouldPreserveExistingUnderPlayerFeatureCache
-      ) {
-        this.dependencies.worldClassification.flatFeatureUnderPlayerCache.delete(key);
       }
+    } else if (
+      !(this.dependencies.movementInput.isFpsMode() && shouldSuppressPlayerTileVisualInFps) &&
+      !shouldPreserveExistingUnderPlayerFeatureCache
+    ) {
+      this.dependencies.worldClassification.flatFeatureUnderPlayerCache.delete(key);
     }
 
     let renderBehavior = behavior;
     let tileGlyphChar = behavior.glyphChar;
     let tileTextColor = behavior.textColor;
-    const shouldFlattenVoidOrUnknownTile =
-      this.dependencies.worldClassification.shouldFlattenVoidOrUnknownTileFor367(
-        behavior,
-        isInferredDarkCorridorWall,
-      );
-    if (shouldFlattenVoidOrUnknownTile) {
-      renderBehavior = {
-        ...behavior,
-        materialKind: "dark",
-        geometryKind: "floor",
-        isWall: false,
-      };
-    }
     const preferNormalModeAsciiUnderlayForFpsBillboards =
       this.dependencies.movementInput.isFpsMode() && !useTiles && shouldUseElevatedBillboard;
 
@@ -781,7 +730,6 @@ export class TileRendering {
       tileTextColor = renderBehavior.textColor;
     }
     const isPlayerRelatedTileInFps =
-      !isInferredDarkCorridorWall &&
       this.dependencies.movementInput.isFpsMode() &&
       (isRuntimeTrackedPlayerTileInFps ||
         tileRelation.isPlayerGlyph ||
@@ -853,11 +801,6 @@ export class TileRendering {
             ? options.runtimeGlyphFlags
             : null,
         terminalOptionStates: this.dependencies.terminalRendering.terminalRenderOptionStates,
-        slashEmCmapIndex: this.dependencies.terminalRendering.resolveSlashEmTerminalCmapIndex(
-          useReconstructedAsciiUnderlay
-            ? renderBehavior.effective.glyph
-            : glyph,
-        ),
       });
       tileGlyphChar = asciiPresentation.glyphChar;
       tileTextColor = asciiPresentation.textColor;
@@ -875,7 +818,6 @@ export class TileRendering {
               ? options.runtimeGlyphFlags
               : null,
           terminalOptionStates: this.dependencies.terminalRendering.terminalRenderOptionStates,
-          slashEmCmapIndex: this.dependencies.terminalRendering.resolveSlashEmTerminalCmapIndex(glyph),
         });
         runtimeAsciiBillboardGlyphChar = entityPresentation.glyphChar;
         runtimeAsciiBillboardTextColor = entityPresentation.textColor;
@@ -953,9 +895,6 @@ export class TileRendering {
 
     mesh.userData.tileX = x;
     mesh.userData.tileY = y;
-    mesh.userData.isInferredDarkCorridorWall = isInferredDarkCorridorWall;
-    // Blank stone drawn only as a dark filler; the explored mask ignores it.
-    mesh.userData.isVoidFill = shouldFlattenVoidOrUnknownTile;
     mesh.userData.useDarkCorridorWallCompatibility =
       darkCorridorWallCompatibilityActive;
     mesh.userData.isWall = renderBehavior.isWall;
@@ -994,22 +933,22 @@ export class TileRendering {
     mesh.userData.glyphDarkenFactor = behavior.darkenFactor;
     mesh.userData.glyphBaseColorHex = material.color.getHexString();
     const tileTextureIndex =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallTileTextureIndex(
+      this.dependencies.darkWallOverrides.resolveTileTextureIndex(
         renderBehavior.effective.tileIndex,
         darkCorridorWallCompatibilityActive,
       );
-    const inferredDarkWallSolidColorHex =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorHexForTile(
+    const darkWallSolidColorHex =
+      this.dependencies.darkWallOverrides.resolveSolidColorHexForTile(
         darkCorridorWallCompatibilityActive,
         tileTextureIndex,
         useTerrainTiles,
       );
-    const inferredDarkWallSolidColorGridEnabled =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorGridEnabled(
+    const darkWallSolidColorGridEnabled =
+      this.dependencies.darkWallOverrides.resolveSolidColorGridEnabled(
         darkCorridorWallCompatibilityActive,
       );
-    const inferredDarkWallSolidColorGridDarknessPercent =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorGridDarknessPercent(
+    const darkWallSolidColorGridDarknessPercent =
+      this.dependencies.darkWallOverrides.resolveSolidColorGridDarknessPercent(
         darkCorridorWallCompatibilityActive,
       );
     mesh.userData.tileIndex = tileTextureIndex;
@@ -1114,9 +1053,9 @@ export class TileRendering {
       renderBehavior.darkenFactor,
       drawFpsFloorGrid,
       tileTextureIndex,
-      inferredDarkWallSolidColorHex,
-      inferredDarkWallSolidColorGridEnabled,
-      inferredDarkWallSolidColorGridDarknessPercent,
+      darkWallSolidColorHex,
+      darkWallSolidColorGridEnabled,
+      darkWallSolidColorGridDarknessPercent,
       glyphBackgroundColorHex,
     );
     const hasFpsClosedDoorChamferTrim =

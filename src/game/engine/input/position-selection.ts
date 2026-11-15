@@ -556,13 +556,6 @@ export class PositionSelection {
     ) {
       return ".";
     }
-    if (
-      this.dependencies.tilesetAssets.resolveRuntimeVersion() === "slashem" &&
-      this.positionInputOrigin === "legacy_cursor_prompt" &&
-      event.key === ","
-    ) {
-      return ",";
-    }
     if (event.key === "s" || event.key === "S") {
       return "s";
     }

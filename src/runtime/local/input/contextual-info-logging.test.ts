@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 afterEach(() => { runtime.shutdown("test complete"); vi.restoreAllMocks(); });
 
-it.each(["3.6.7", "5.0", "slashem"] as const)("keeps %s contextual Info quiet but still displays its information", async version => {
+it.each(["5.0"] as const)("keeps %s contextual Info quiet but still displays its information", async version => {
   runtime.runtimeVersion = version;
   runtime.sendInput("__CTX_LOOK_INFO_PROBE__");
   systems.positionInput.farLookMode = "armed";
@@ -46,7 +46,7 @@ it.each(["3.6.7", "5.0", "slashem"] as const)("keeps %s contextual Info quiet bu
   expect(systems.messages.gameMessages).toHaveLength(0);
   expect(events.find(event => event.type === "info_menu")).toMatchObject({ lines: ["The requested encyclopedia entry."] });
   expect(systems.startupDiagnostics.uiCallbackCount).toBeGreaterThan(initialCallbacks);
-  if (version !== "slashem") expect(await runtime.handleUICallback("shim_nh_poskey", [64,68,72])).toBe(58);
+  expect(await runtime.handleUICallback("shim_nh_poskey", [64,68,72])).toBe(58);
   expect(await runtime.handleUICallback("shim_nh_poskey", [64,68,72])).toBe(27);
   expect(console.log).not.toHaveBeenCalled();
   runtime.handleUICallback("shim_putstr", [1,0,"You hear a door open."]);

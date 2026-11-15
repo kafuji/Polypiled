@@ -197,7 +197,6 @@ export class RuntimeInventoryContext {
     if (exact) {
       const shouldPreservePendingAction =
         preserveActionRoute &&
-        this.deps.coordinator.runtimeVersion === "5.0" &&
         typeof pending.actionId === "string" &&
         pending.actionId.trim().length > 0;
       if (!shouldPreservePendingAction) {
@@ -400,7 +399,7 @@ export class RuntimeInventoryContext {
     const normalizedActionId = String(actionId || "")
       .trim()
       .toLowerCase();
-    if (!normalizedActionId || this.deps.coordinator.runtimeVersion !== "5.0") {
+    if (!normalizedActionId) {
       return null;
     }
 

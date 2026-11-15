@@ -10,15 +10,6 @@ import {
 } from "./save-presentation-metadata";
 
 describe("save presentation metadata", () => {
-  it("preserves Slash'EM-only init options with their save", () => {
-    expect(
-      normalizeStoredSaveInitOptions(
-        ["IBMgraphics", "number_pad:0"],
-        "slashem",
-      ),
-    ).toEqual(["IBMgraphics", "number_pad:0"]);
-  });
-
   it("keeps legacy raw tokens until the save runtime is known", () => {
     const legacyTokens = normalizeStoredSaveInitOptions([
       "DECgraphics",
@@ -26,13 +17,12 @@ describe("save presentation metadata", () => {
     ]);
 
     expect(legacyTokens).toEqual(["DECgraphics", "number_pad:0"]);
-    expect(normalizeStoredSaveInitOptions(legacyTokens, "slashem")).toEqual([
-      "DECgraphics",
+    expect(normalizeStoredSaveInitOptions(legacyTokens, "5.0")).toEqual([
       "number_pad:0",
     ]);
   });
 
-  it.each(["3.6.7", "5.0", "slashem"] as const)(
+  it.each(["5.0"] as const)(
     "preserves both number pad modes when resuming %s",
     (runtimeVersion) => {
       expect(
@@ -44,7 +34,7 @@ describe("save presentation metadata", () => {
     },
   );
 
-  it.each(["3.6.7", "5.0", "slashem"] as const)(
+  it.each(["5.0"] as const)(
     "does not force number pad on when %s legacy metadata has no mode",
     (runtimeVersion) => {
       expect(resolveSaveResumeInitOptionTokens([], runtimeVersion)).toEqual([]);
@@ -53,7 +43,7 @@ describe("save presentation metadata", () => {
 
   it("uses runtime-scoped keys without losing legacy metadata fallback", () => {
     const runtimeKey = getRuntimeSavePresentationMetadataKey(
-      "slashem",
+      "5.0",
       "manual",
       "Player",
     );
@@ -63,31 +53,32 @@ describe("save presentation metadata", () => {
     );
     const metadata = {
       [legacyKey]: "legacy",
-      [runtimeKey]: "slashem",
+      [runtimeKey]: "scoped",
     };
 
     expect(
       resolveSavePresentationMetadataEntry(
         metadata,
-        "slashem",
+        "5.0",
         "manual",
         "Player",
       ),
-    ).toBe("slashem");
+    ).toBe("scoped");
     expect(
       resolveSavePresentationMetadataEntry(
         { [legacyKey]: "legacy" },
-        "slashem",
+        "5.0",
         "manual",
         "Player",
       ),
     ).toBe("legacy");
   });
 
-  it("accepts only known runtime identifiers", () => {
-    expect(normalizeSavePresentationRuntimeVersion("slashem")).toBe(
-      "slashem",
-    );
+  it("accepts only the NetHack 5.0 runtime identifier", () => {
+    expect(normalizeSavePresentationRuntimeVersion("5.0")).toBe("5.0");
+    // Removed runtimes that older builds wrote into metadata.
+    expect(normalizeSavePresentationRuntimeVersion("3.6.7")).toBeUndefined();
+    expect(normalizeSavePresentationRuntimeVersion("slashem")).toBeUndefined();
     expect(normalizeSavePresentationRuntimeVersion("unknown")).toBeUndefined();
   });
 });

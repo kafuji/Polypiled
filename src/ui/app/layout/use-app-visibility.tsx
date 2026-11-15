@@ -276,10 +276,9 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     t.update.runtimeStoppedBeforeStartup
     : "";
 
-  const startupSelectedRuntimeVersionLabel =
-    startupMenuVisible && startupFlowStep !== "variant"
-      ? resolveRuntimeVersionDisplayLabel(runtimeVersion)
-      : null;
+  const startupSelectedRuntimeVersionLabel = startupMenuVisible
+    ? resolveRuntimeVersionDisplayLabel(runtimeVersion)
+    : null;
 
   useEffect(() => {
     if (startupMenuVisible) {
@@ -292,11 +291,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
       startupBuildLabelToastTimerRef.current = null;
     }
   }, [startupMenuVisible]);
-
-  const startupVariantDialogVisible =
-    startupMenuVisible &&
-    startupFlowStep === "variant" &&
-    !startupUpdateDialogOpen;
 
   const startupChooseDialogVisible =
     startupMenuVisible &&
@@ -411,7 +405,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     runtimeInitializationErrorVisible,
     runtimeInitializationErrorMessage,
     startupSelectedRuntimeVersionLabel,
-    startupVariantDialogVisible,
     startupChooseDialogVisible,
     startupResumeDialogVisible,
     startupRandomDialogVisible,

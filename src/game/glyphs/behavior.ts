@@ -1,7 +1,6 @@
 import type { TerrainSnapshot } from "../types";
 import { getMergedGlyphOverride } from "./overrides";
 import {
-  getActiveGlyphCatalogVersion,
   getGlyphCatalogEntry,
   getGlyphCatalogRanges,
   resolveGlyph,
@@ -187,35 +186,31 @@ export function getOpenDoorGlyphFrom(glyph: number): number | null {
 
 /**
  * Floor the hero currently sees lit: room floor (S_room) or a lit corridor
- * (S_litcorr). Remembered or unlit floor shows as S_darkroom / S_corr.
- * NetHack 5 inserts S_engroom before the corridors, moving S_litcorr to 23.
+ * (S_litcorr, 23). Remembered or unlit floor shows as S_darkroom / S_corr.
  */
 export function isLitFloorCmapGlyph(glyph: number): "room" | "corridor" | null {
   const cmapIndex = getCmapIndex(glyph, null);
   if (cmapIndex === 19) return "room";
-  const litCorridor = getActiveGlyphCatalogVersion() === "5.0" ? 23 : 22;
-  if (cmapIndex === litCorridor) return "corridor";
+  if (cmapIndex === 23) return "corridor";
   return null;
 }
 
-/** Stone and the wall pieces (S_stone..S_trwall); the same indices in every runtime. */
+/** Stone and the wall pieces (S_stone..S_trwall). */
 export function isWallBlockCmapGlyph(glyph: number): boolean {
   const cmapIndex = getCmapIndex(glyph, null);
   return cmapIndex !== null && cmapIndex >= 0 && cmapIndex <= 11;
 }
 
-/** Room floor shown as remembered or unlit (S_darkroom); the same index in every runtime. */
+/** Room floor shown as remembered or unlit (S_darkroom). */
 export function isDarkRoomFloorCmapGlyph(glyph: number): boolean {
   return getCmapIndex(glyph, null) === 20;
 }
 
-/** Molten lava (and NetHack 5's wall of lava), which glows. */
+/** Molten lava and the wall of lava, which glow. */
 export function isLavaCmapGlyph(glyph: number): boolean {
   const cmapIndex = getCmapIndex(glyph, null);
   if (cmapIndex === null) return false;
-  return getActiveGlyphCatalogVersion() === "5.0"
-    ? cmapIndex === 40 || cmapIndex === 41
-    : cmapIndex === 34;
+  return cmapIndex === 40 || cmapIndex === 41;
 }
 
 export function isDarkCorridorCmapGlyph(glyph: number): boolean {
@@ -272,21 +267,6 @@ type CmapIndexProfile = {
   trapRanges: ReadonlyArray<readonly [number, number]>;
 };
 
-const LEGACY_367_CMAP_PROFILE: CmapIndexProfile = {
-  wall: new Set<number>([17, 18, 37, 38]),
-  doorOpen: new Set<number>([13, 14]),
-  doorClosed: new Set<number>([15, 16]),
-  darkFloor: new Set<number>([20, 21]),
-  floor: new Set<number>([12, 19, 22, 35, 36]),
-  stairsUp: new Set<number>([23, 25]),
-  stairsDown: new Set<number>([24, 26]),
-  sink: new Set<number>([30]),
-  fountain: new Set<number>([31]),
-  water: new Set<number>([32, 34, 41]),
-  tombstone: new Set<number>([28]),
-  trapRanges: [[42, 64]],
-};
-
 const NH5_SPLIT_CMAP_PROFILE: CmapIndexProfile = {
   wall: new Set<number>([17, 18, 44, 45]),
   doorOpen: new Set<number>([13, 14]),
@@ -303,9 +283,7 @@ const NH5_SPLIT_CMAP_PROFILE: CmapIndexProfile = {
 };
 
 function getActiveCmapIndexProfile(): CmapIndexProfile {
-  return getActiveGlyphCatalogVersion() === "5.0"
-    ? NH5_SPLIT_CMAP_PROFILE
-    : LEGACY_367_CMAP_PROFILE;
+  return NH5_SPLIT_CMAP_PROFILE;
 }
 
 export function isSinkCmapGlyph(glyph: number): boolean {

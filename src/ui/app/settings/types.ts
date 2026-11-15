@@ -166,7 +166,6 @@ export type ClientOptionToggleKey =
   | "showVersionNotificationsOnLaunch"
   | "soundEnabled"
   | "blockAmbientOcclusion"
-  | "darkCorridorWalls367"
   | "overrideNh5DarkCorridorWallTiles"
   | "darkCorridorWallTileOverrideEnabled"
   | "darkCorridorWallSolidColorOverrideEnabled";

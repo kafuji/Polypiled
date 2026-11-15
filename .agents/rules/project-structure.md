@@ -31,17 +31,16 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 - `src/game/controller-bindings.ts`: controller action schema, defaults, parsing, and normalization.
 - `src/game/tilesets.ts`: builtin, user, and Vulture tileset catalog and asset resolution.
 - `src/game/user-tileset-storage.ts`: persistence for imported user tilesets.
-- `src/game/helpers/startup-character-rulesets.ts`: runtime-specific startup role, race, gender, and alignment rulesets sourced from NetHack and Slash'EM reference tables.
-- `src/game/helpers/startup-character-constraints.ts`: runtime-aware startup character selection normalization and option resolution.
+- `src/game/helpers/startup-character-rulesets.ts`: startup role, race, gender, and alignment rulesets generated from NetHack 5.0's `role.c` (`imported/role-sources/5.0`).
+- `src/game/helpers/startup-character-constraints.ts`: startup character selection normalization and option resolution.
 - `src/game/glyphs/index.ts`: public glyph helper barrel.
-- `src/game/glyphs/registry.ts`: glyph catalog lookup and runtime-version selection.
+- `src/game/glyphs/registry.ts`: glyph catalog lookup. NetHack 5.0's catalog is the only one and is always loaded.
 - `src/game/glyphs/behavior.ts`: tile classification and default terrain glyph helpers.
 - `src/game/glyphs/overrides.ts`: runtime glyph override registry.
-- `src/game/glyphs/glyph-catalog.367.generated.ts`: checked-in generated glyph fallback/reference for NetHack 3.6.7 (not authoritative for all item-variation tiles).
-- `src/game/glyphs/glyph-catalog.5.generated.ts` and `src/game/glyphs/glyph-catalog.slashem.generated.ts`: generated fallbacks for NetHack 5.0 and Slash'EM, loaded by the registry for the active runtime.
+- `src/game/glyphs/glyph-catalog.5.generated.ts`: checked-in generated glyph fallback/reference for NetHack 5.0 (`npm run glyphs:generate`; not authoritative for all item-variation tiles).
+- `src/game/tileset-367-to-5-translation.ts`: tile-index translation that lets 3.6.7-layout tilesets (`public/assets/3.6/*`, Vulture, user imports) be drawn by NetHack 5.0. "3.6.7" here names an atlas layout, not a game.
 - `src/game/vulture/translation.ts`: Vulture projection and tileset translation adapter.
-- `src/game/vulture/nethack-object-tokens.ts`: Vulture object token bridge to imported NetHack data.
-- `src/game/vulture/vulture-monster-keys.367.generated.ts`: generated Vulture monster lookup data.
+- `src/game/vulture/legacy-tile-identities.ts`: fixed table from a 3.6.7 tile index to the monster, object or map symbol on it. Vulture names its images after NetHack 3.6 identities, so a 5.0 tile is translated to its 3.6.7 tile and looked up here. The table was derived once from data that is no longer in the repository and does not change with the core.
 - `src/audio/index.ts`: public audio barrel.
 - `src/audio/FmodRuntime.ts`: FMOD runtime bootstrap and wrapper.
 - `src/audio/sound-pack-storage.ts`: sound-pack persistence.
@@ -52,7 +51,7 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 - `src/runtime/WorkerRuntimeBridge.ts`: main-thread worker bridge.
 - `src/runtime/input/RuntimeInputBroker.ts`: broker for event, menu, and position input.
 - `src/runtime/startup-init-options.ts`: startup option schema, normalization, serialization, and required token handling.
-- `src/runtime/runtime-capabilities.ts`: runtime feature gates.
+- `src/runtime/runtime-capabilities.ts`: feature gates read from the shipped NetHack 5.0 build.
 - `src/runtime/save-storage.ts`: save-path and database-name helpers.
 - `src/runtime/displayFileCatalog.ts`: bundled help and display-file text catalog.
 - `src/runtime/types.ts`: runtime commands, envelopes, and shared bridge types.
@@ -61,13 +60,11 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 - `src/update/github-version-checker.ts`: GitHub release/version checks used by the UI.
 - `src/update/types.ts`: update type definitions.
 - `public/assets/*`: shipped images, UI icons, and Vulture asset roots.
-- `public/nethack-367.js`, `public/nethack-367.wasm`, `public/nethack-5.js`, `public/nethack-5.wasm`, `public/slashem.js`, `public/slashem.wasm`: checked-in runtime artifacts consumed by the browser build.
+- `public/nethack-5.js`, `public/nethack-5.wasm`: the checked-in runtime artifact consumed by the browser build. NetHack 5.0 is the only runtime; there is no runtime choice in the UI.
 - `core/NetHack/*`: the game core's C source (NetHack 5.0 plus this project's changes), vendored with `git subtree`. `core/build-wasm.sh` builds it to `core/build/`; the build runs in CI (`.github/workflows/build-core-wasm.yml`), not on Windows. See [core/README.md](../../core/README.md). `public/nethack-5.*` are CI builds of it, replaced by hand as that README describes.
 - `scripts/wasm/compare-core-build.mjs`, `scripts/wasm/smoke-core.mjs`, `scripts/wasm/save-compat-core.mjs`: interface comparison, boot check and save-compatibility check for a built core.
-- `imported/nethack-3.6.7/*`: A few imported NetHack 3.6.7 source code files needed to run the UI properly.
-- `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo`: forked NetHack WASM monorepo reference in WSL.
-- `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo\packages\wasm-367`: forked wasm-367 package reference in WSL.
-- `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo\packages\wasm-367\NetHack`: forked NetHack source inside the wasm-367 package in WSL.
+- `imported/nethack-5.0/*`: NetHack 5.0 help files (`dat/`, bundled by `src/runtime/displayFileCatalog.ts`) and tile files (`win-share/`). `imported/role-sources/5.0/role.c` feeds the startup rulesets.
+- `imported/nethack-3.6.7/{monsters,objects,other}.txt`: NetHack 3.6.7 tile files. They describe the 3.6.7 atlas layout for `scripts/glyphs/tile-parser.mjs` and `scripts/tilesets/generate-ai-tileset-prompts.mjs`; nothing at runtime reads them.
 - `third_party/vulture/*`: vendored Vulture source reference.
 - `scripts/glyphs/*`: glyph catalog generation and validation.
 - `scripts/wasm/*`: WASM copy and packaging helpers.
@@ -163,10 +160,10 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 ## WASM Pointer Contract
 
 - Pointer contracts and validation live in `src/runtime/local/abi/`; callback bodies live with their domain owners. `LocalNetHackRuntime.handleUICallback` validates the contract before dispatch. Subsystem boundaries do not change WASM pointers, callback signatures, or command identifiers.
-- Current runtime choices are NetHack 3.6.7, NetHack 5.0 and Slash'EM, defined by `NethackRuntimeVersion` in `src/runtime/types.ts`. Older wasm-37 WSL locations in the steering reference are source references, not current public artifact names.
-- Current pointer ABI tags are defined by `vite.config.ts`: `VITE_NH3D_WASM_367_POINTER_ABI_TAG`, `VITE_NH3D_WASM_5_POINTER_ABI_TAG` and `VITE_NH3D_WASM_SLASHEM_POINTER_ABI_TAG`.
-- Use the active runtime's callback/struct layout contract and validate shapes before reading memory. Do not scan arbitrary heap memory or silently replace unresolved command identifiers with guessed indices.
-- The tracked 3.6.7 map extension uses `monsterId=0` for the player; positive ids identify monsters. Preserve that identity through engine tile/entity presentation.
+- NetHack 5.0 is the only runtime. `NethackRuntimeVersion` in `src/runtime/types.ts` is the single literal `"5.0"`; it stays in save metadata, handshakes and function signatures. NetHack 3.6.7 and Slash'EM were removed: a stored or requested value naming them is treated as unknown (save metadata, imports) or starts NetHack 5.0 (`RuntimeAssets.normalizeRuntimeVersion`). Saves made with them stay in their own IndexedDB databases and are not opened.
+- The pointer ABI tag is defined by `vite.config.ts`: `VITE_NH3D_WASM_5_POINTER_ABI_TAG`.
+- Use the callback/struct layout contract and validate shapes before reading memory. Do not scan arbitrary heap memory or silently replace unresolved command identifiers with guessed indices.
+- The tracked map extension uses `monsterId=0` for the player; positive ids identify monsters. Preserve that identity through engine tile/entity presentation.
 - See [pointer ABI troubleshooting](../../docs/pointer-abi-troubleshooting.md) for callback formats and command-table diagnostics, and [world/runtime flows](../../docs/engine-world-runtime.md) for the engine receivers.
 
 ## High-Risk Zones
@@ -174,7 +171,7 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 - Async input state in runtime: `activeInputRequest`, `awaitingQuestionInput`, `pendingTextRequest`, `pendingExtendedCommandRequest`, `pendingMenuSelection`.
 - Position state: `positionInputModeActive` in `src/game/engine/input/position-selection.ts`; runtime far-look state `farLookMode`, `farLookOrigin`, and `pendingLookMenuFarLookArm` belongs to `src/runtime/local/input/position-selection.ts`.
 - Tile classification: `src/game/glyphs/behavior.ts`, `src/game/glyphs/registry.ts`, `src/game/engine/world/world-classification.ts`, and `updateTile` in `src/game/engine/rendering/tile-rendering.ts`.
-- Generated runtime catalogs (fallback/reference data): `src/game/glyphs/glyph-catalog.367.generated.ts`, `src/game/glyphs/glyph-catalog.5.generated.ts`, `src/game/glyphs/glyph-catalog.slashem.generated.ts`, `src/game/tilesets.generated.ts`, `src/game/vulture/vulture-monster-keys.367.generated.ts`.
+- Generated catalogs (fallback/reference data): `src/game/glyphs/glyph-catalog.5.generated.ts`, `src/game/tilesets.generated.ts`, `src/game/helpers/startup-character-rulesets.generated.ts`. `src/game/vulture/legacy-tile-identities.ts` is fixed data, not generated.
 - Update flow: `src/update/*` plus the UI in `src/ui/app/updates/`.
 - Startup options and checkpoint recovery: `src/runtime/startup-init-options.ts`, `src/runtime/runtime-capabilities.ts`, and `src/storage/client-options-storage.ts`.
 

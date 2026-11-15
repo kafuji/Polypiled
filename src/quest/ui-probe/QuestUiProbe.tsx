@@ -29,7 +29,7 @@ export function QuestUiProbe(): JSX.Element {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rangeValue, setRangeValue] = useState(50);
   const [checked, setChecked] = useState(false);
-  const [selectValue, setSelectValue] = useState("NetHack 3.6.7");
+  const [selectValue, setSelectValue] = useState("First choice");
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [scrollPercent, setScrollPercent] = useState(0);
   const [animationRunning, setAnimationRunning] = useState(true);
@@ -170,9 +170,9 @@ export function QuestUiProbe(): JSX.Element {
               }}
               value={selectValue}
             >
-              <option>NetHack 3.6.7</option>
-              <option>NetHack 5.0</option>
-              <option>SLASH'EM</option>
+              <option>First choice</option>
+              <option>Second choice</option>
+              <option>Third choice</option>
             </select>
           </label>
           <p className="quest-probe-small">The popup must be visible and selectable inside VR.</p>

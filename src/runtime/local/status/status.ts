@@ -1,6 +1,6 @@
 // @ts-nocheck
 // Legacy dynamic WASM integration; dependency membership is checked by assembly.
-import { STATUS_FIELD_MAP_367, STATUS_FIELD_MAP_5 } from "../../status-map";
+import { STATUS_FIELD_MAP_5 } from "../../status-map";
 import { isLoggingEnabled } from "../../../logging";
 import type { RuntimeCoordinator } from "../runtime-coordinator";
 import type { RuntimeGameOver } from "../lifecycle/game-over";
@@ -36,9 +36,7 @@ export class RuntimeStatus {
   }
 
   getRuntimeStatusFieldMap() {
-    return this.deps.coordinator.runtimeVersion === "5.0"
-      ? STATUS_FIELD_MAP_5
-      : STATUS_FIELD_MAP_367;
+    return STATUS_FIELD_MAP_5;
   }
 
   seedRuntimeStatusFieldConstants() {

@@ -74,7 +74,7 @@ export class RenderPipeline {
   readonly handleWebGlContextLost = (): void => {
     const renderInfo = this.renderer?.info;
     recordDebugSessionLogEvent("webglcontextlost", {
-      runtimeVersion: this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7",
+      runtimeVersion: this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "5.0",
       antialiasing: this.dependencies.engineState.clientOptions.antialiasing,
       tilesetPath: this.dependencies.engineState.clientOptions.tilesetPath,
       renderMemory: renderInfo
@@ -89,7 +89,7 @@ export class RenderPipeline {
 
   readonly handleWebGlContextRestored = (): void => {
     recordDebugSessionLogEvent("webglcontextrestored", {
-      runtimeVersion: this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7",
+      runtimeVersion: this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "5.0",
       antialiasing: this.dependencies.engineState.clientOptions.antialiasing,
     });
   };

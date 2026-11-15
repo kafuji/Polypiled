@@ -1,9 +1,6 @@
 import type {
   NethackMenuItem
 } from "../../../game/ui-types";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   t
 } from "../shared/translations";
@@ -136,65 +133,9 @@ export function isAdjustLetterQuestionPrompt(questionText: string): boolean {
   return /^adjust letter to what\b/i.test(String(questionText || "").trim());
 }
 
-export function isLegacyQuestionChoiceRuntime(
-  runtimeVersion: NethackRuntimeVersion,
-): boolean {
-  return runtimeVersion !== "5.0";
-}
-
-export function orderQuestionChoicesForDisplay(
-  parsedChoices: string[],
-  runtimeVersion: NethackRuntimeVersion,
-): string[] {
-  if (
-    !isLegacyQuestionChoiceRuntime(runtimeVersion) ||
-    !parsedChoices.some((choice) => choice.trim() === ".")
-  ) {
-    return parsedChoices;
-  }
-
-  const localActionChoices = parsedChoices.filter(
-    (choice) => choice.trim() === ".",
-  );
-  const remainingChoices = parsedChoices.filter(
-    (choice) => choice.trim() !== ".",
-  );
-  return [...localActionChoices, ...remainingChoices];
-}
-
-export function isLegacyInventoryQuestionChoicePrompt(
-  questionText: string,
-  parsedChoices: string[],
-  runtimeVersion: NethackRuntimeVersion,
-  isYesNoPrompt: boolean,
-): boolean {
-  if (isYesNoPrompt || !isLegacyQuestionChoiceRuntime(runtimeVersion)) {
-    return false;
-  }
-  const bracketChoiceSpec = getQuestionBracketChoiceSpec(questionText);
-  if (
-    bracketChoiceSpec.includes(".") ||
-    bracketChoiceSpec.includes(",") ||
-    bracketChoiceSpec.includes("?") ||
-    bracketChoiceSpec.includes("*")
-  ) {
-    return true;
-  }
-  return parsedChoices.some((choice) => {
-    const normalizedChoice = choice.trim();
-    return (
-      normalizedChoice === "." ||
-      normalizedChoice === "," ||
-      normalizedChoice === "?" ||
-      normalizedChoice === "*"
-    );
-  });
-}
-
 export function shouldUseCompactQuestionChoiceLayout(
   questionText: string,
   parsedChoices: string[],
-  runtimeVersion: NethackRuntimeVersion,
   isYesNoPrompt: boolean,
 ): boolean {
   if (
@@ -209,16 +150,6 @@ export function shouldUseCompactQuestionChoiceLayout(
   }
   if (isAdjustLetterQuestionPrompt(questionText)) {
     return true;
-  }
-  if (
-    isLegacyInventoryQuestionChoicePrompt(
-      questionText,
-      parsedChoices,
-      runtimeVersion,
-      isYesNoPrompt,
-    )
-  ) {
-    return false;
   }
   return parsedChoices.length <= 4;
 }
@@ -270,58 +201,10 @@ export function getInventoryItemForQuestionChoice(
   );
 }
 
-export function buildLegacyInventoryQuestionMenuItems(
-  questionText: string,
-  parsedChoices: string[],
-  inventoryItems: NethackMenuItem[],
-  runtimeVersion: NethackRuntimeVersion,
-  isYesNoPrompt: boolean,
-): NethackMenuItem[] {
-  if (
-    !isLegacyInventoryQuestionChoicePrompt(
-      questionText,
-      parsedChoices,
-      runtimeVersion,
-      isYesNoPrompt,
-    )
-  ) {
-    return [];
-  }
-
-  const syntheticMenuItems: NethackMenuItem[] = [];
-  for (const choice of parsedChoices) {
-    const normalizedChoice = String(choice || "").trim();
-    if (normalizedChoice.length !== 1) {
-      return [];
-    }
-
-    const inventoryItem = getInventoryItemForQuestionChoice(
-      normalizedChoice,
-      inventoryItems,
-    );
-    if (!inventoryItem) {
-      return [];
-    }
-
-    syntheticMenuItems.push({
-      ...inventoryItem,
-      accelerator: normalizedChoice,
-      originalAccelerator:
-        inventoryItem.originalAccelerator ?? normalizedChoice,
-      selectionInput: normalizedChoice,
-      isSelectable: true,
-      isCategory: false,
-    });
-  }
-
-  return syntheticMenuItems;
-}
-
 export function getQuestionChoiceLabel(
   questionText: string,
   choice: string,
   inventoryItems: NethackMenuItem[],
-  runtimeVersion: NethackRuntimeVersion,
   useInventoryLabels = true,
 ): string {
   const normalizedChoice = choice.trim();
@@ -336,20 +219,6 @@ export function getQuestionChoiceLabel(
 
   if (!normalizedChoice) {
     return choice;
-  }
-  if (isLegacyQuestionChoiceRuntime(runtimeVersion)) {
-    if (normalizedChoice === ".") {
-      return `.) ${t.dialogs.question.choices.here}`;
-    }
-    if (normalizedChoice === ",") {
-      return `,) ${t.dialogs.question.choices.onGround}`;
-    }
-    if (normalizedChoice === "?") {
-      return `?) ${t.dialogs.question.choices.eligibleItems}`;
-    }
-    if (normalizedChoice === "*") {
-      return `*) ${t.dialogs.question.choices.allInventory}`;
-    }
   }
   if (!useInventoryLabels) {
     return normalizedChoice;

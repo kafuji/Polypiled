@@ -21,7 +21,6 @@ export function resolveAsciiGlyphPresentation(params: {
   runtimeColor: number | null | undefined;
   runtimeGlyphFlags: number | null | undefined;
   terminalOptionStates: TerminalRenderOptionStates;
-  slashEmCmapIndex?: number | null;
 }): AsciiGlyphPresentation {
   const {
     mode,
@@ -31,7 +30,6 @@ export function resolveAsciiGlyphPresentation(params: {
     runtimeColor,
     runtimeGlyphFlags,
     terminalOptionStates,
-    slashEmCmapIndex,
   } = params;
 
   const terminalPresentation = resolveTerminalCellPresentation({
@@ -45,7 +43,6 @@ export function resolveAsciiGlyphPresentation(params: {
       ...terminalOptionStates,
       hilitePet: false,
     },
-    slashEmCmapIndex,
   });
   const displayChar = terminalPresentation.displayChar || glyphChar;
 

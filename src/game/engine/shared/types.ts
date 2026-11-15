@@ -419,7 +419,6 @@ export type RepeatableActionSpec =
   | { kind: "inventory_command"; value: string };
 
 export type TileUpdateOptions = {
-  inferredDarkCorridorWall?: boolean;
   restartRevealFade?: boolean;
   runtimeTrackedEntityId?: number;
   runtimeTileIndex?: number;
@@ -453,8 +452,6 @@ export type LevelTerrainCacheSnapshot = {
   lastKnownTerrain: Map<string, TerrainSnapshot>;
   flatFeatureUnderPlayerCache: Map<string, TerrainSnapshot>;
   suppressedLootLikeUnderPlayerCacheKeys: Set<string>;
-  inferredDarkCorridorWallTiles: Map<string, { x: number; y: number }>;
-  inferredDarkCorridorTileFlags: Set<string>;
   bloodGround: BloodGroundCacheSnapshot | null;
 };
 

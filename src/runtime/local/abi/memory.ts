@@ -458,14 +458,9 @@ export class RuntimeMemory {
   }
 
   unpackGlyphArgs(args: number[]) {
-    // Default (older runtimes): [win, x, y, glyph]
     const [win, x, y, a, b] = args;
 
-    if (this.deps.coordinator.runtimeVersion !== "5.0") {
-      return { win, x, y, glyph: a, mgflags: 0, extra: b };
-    }
-
-    // 5.0: callback often comes as [win, x, y, packed, extra]
+    // The callback often comes as [win, x, y, packed, extra]
     // packed: hi16 = flags, lo16 = glyph
     let glyph = a;
     let mgflags = 0;

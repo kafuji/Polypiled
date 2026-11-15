@@ -1,9 +1,9 @@
 import type { NethackRuntimeVersion } from "../../runtime/types";
 import {
-  GLYPH_CATALOG as GLYPH_CATALOG_367,
-  GLYPH_CATALOG_META as GLYPH_CATALOG_META_367,
-  GLYPH_CATALOG_RANGES as GLYPH_CATALOG_RANGES_367,
-} from "./glyph-catalog.367.generated";
+  GLYPH_CATALOG,
+  GLYPH_CATALOG_META,
+  GLYPH_CATALOG_RANGES,
+} from "./glyph-catalog.5.generated";
 import type {
   GlyphCatalogEntry,
   GlyphCatalogMeta,
@@ -18,78 +18,17 @@ type GlyphCatalogModule = {
   GLYPH_CATALOG_RANGES: readonly GlyphCatalogRange[];
 };
 
-const GLYPH_CATALOG_BY_VERSION: Record<
-  NethackRuntimeVersion,
-  GlyphCatalogModule
-> = {
-  "3.6.7": {
-    GLYPH_CATALOG: GLYPH_CATALOG_367,
-    GLYPH_CATALOG_META: GLYPH_CATALOG_META_367,
-    GLYPH_CATALOG_RANGES: GLYPH_CATALOG_RANGES_367,
-  },
-  "5.0": {
-    GLYPH_CATALOG: GLYPH_CATALOG_367,
-    GLYPH_CATALOG_META: GLYPH_CATALOG_META_367,
-    GLYPH_CATALOG_RANGES: GLYPH_CATALOG_RANGES_367,
-  },
-  slashem: {
-    GLYPH_CATALOG: GLYPH_CATALOG_367,
-    GLYPH_CATALOG_META: GLYPH_CATALOG_META_367,
-    GLYPH_CATALOG_RANGES: GLYPH_CATALOG_RANGES_367,
-  },
+// NetHack 5.0's catalog is the only one.
+const activeGlyphCatalog: GlyphCatalogModule = {
+  GLYPH_CATALOG,
+  GLYPH_CATALOG_META,
+  GLYPH_CATALOG_RANGES,
 };
-
-let activeGlyphCatalogVersion: NethackRuntimeVersion = "3.6.7";
-let activeGlyphCatalog: GlyphCatalogModule = GLYPH_CATALOG_BY_VERSION["3.6.7"];
-
-async function loadGlyphCatalogModule(
-  version: NethackRuntimeVersion,
-): Promise<GlyphCatalogModule> {
-  if (version === "5.0") {
-    const existing = GLYPH_CATALOG_BY_VERSION["5.0"];
-    if (existing.GLYPH_CATALOG !== GLYPH_CATALOG_367) {
-      return existing;
-    }
-    const mod =
-      (await import("./glyph-catalog.5.generated")) as GlyphCatalogModule;
-    GLYPH_CATALOG_BY_VERSION["5.0"] = mod;
-    return mod;
-  }
-
-  if (version === "slashem") {
-    const existing = GLYPH_CATALOG_BY_VERSION.slashem;
-    if (existing.GLYPH_CATALOG !== GLYPH_CATALOG_367) {
-      return existing;
-    }
-    const mod =
-      (await import("./glyph-catalog.slashem.generated")) as GlyphCatalogModule;
-    GLYPH_CATALOG_BY_VERSION.slashem = mod;
-    return mod;
-  }
-
-  return GLYPH_CATALOG_BY_VERSION["3.6.7"];
-}
-
-export async function setActiveGlyphCatalog(
-  version: NethackRuntimeVersion,
-): Promise<void> {
-  if (version === activeGlyphCatalogVersion) {
-    return;
-  }
-  const mod = await loadGlyphCatalogModule(version);
-  activeGlyphCatalog = mod;
-  activeGlyphCatalogVersion = version;
-}
 
 export async function getGlyphCatalogEntriesForVersion(
   version: NethackRuntimeVersion,
 ): Promise<readonly GlyphCatalogEntry[]> {
-  const mod = await loadGlyphCatalogModule(version);
-  return mod.GLYPH_CATALOG;
-}
-
-export function getActiveGlyphCatalogVersion(): NethackRuntimeVersion {
-  return activeGlyphCatalogVersion;
+  return activeGlyphCatalog.GLYPH_CATALOG;
 }
 
 function normalizeRuntimeChar(runtimeChar?: string | null): string | null {

@@ -9,7 +9,7 @@ import {
   type LightFieldDependencies,
 } from "./light-field";
 import { WorldShading, createWorldShadingUniforms } from "./world-shading";
-import { getGlyphCatalogRanges } from "../../glyphs/registry";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 
 describe("carried light sources", () => {
   it("reads lit sources and their NetHack radius from inventory text", () => {
@@ -86,9 +86,8 @@ describe("lit rooms and light reach", () => {
 });
 
 describe("LightField", () => {
-  const cmap = getGlyphCatalogRanges().find((range) => range.kind === "cmap")!.start;
-  const litFloor = cmap + 19;
-  const wall = cmap + 1;
+  const litFloor = cmapGlyphForSymbol(19);
+  const wall = cmapGlyphForSymbol(1);
 
   function fixture() {
     const tileMap = new Map<string, THREE.Mesh>();

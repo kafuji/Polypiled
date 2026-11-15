@@ -205,7 +205,7 @@ export class AudioHapticsPlatform {
 
   notifyBackgroundMusicPlayerStats(stats: PlayerStatsSnapshot): void {
     const runtimeVersion =
-      this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7";
+      this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "5.0";
     const statusSoundKey = this.statusSoundTracker.update(stats, runtimeVersion);
     if (statusSoundKey) {
       this.messageSoundHooks?.playStatusEffectSound(statusSoundKey);

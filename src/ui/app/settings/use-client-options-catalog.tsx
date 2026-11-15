@@ -148,16 +148,9 @@ export function useClientOptionsCatalog(dependencies: UseClientOptionsCatalogDep
   );
 
   useEffect(() => {
-    // Runtime coercion overwrites (and persists over) clientOptions.tilesetPath,
-    // so it must not run against the transient default runtime before the user
-    // has chosen a variant — otherwise the last-used tileset from a different
-    // runtime family is clobbered with the default runtime's default tileset on
-    // every reload. Only coerce once options have hydrated and a runtime is
-    // genuinely active (a variant was picked or a game is in progress).
+    // Coercion overwrites (and persists over) clientOptions.tilesetPath, so
+    // wait until user tilesets have hydrated.
     if (!hasHydratedUserTilesets) {
-      return;
-    }
-    if (startupFlowStep === "variant" && !characterCreationConfig) {
       return;
     }
     const currentClientTilesetPath = String(

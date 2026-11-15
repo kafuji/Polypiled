@@ -17,7 +17,7 @@ import {
 
 // Every runtime the app can launch. Loading (normal + autosave) must behave
 // consistently for all of them.
-const RUNTIMES: NethackRuntimeVersion[] = ["3.6.7", "5.0", "slashem"];
+const RUNTIMES: NethackRuntimeVersion[] = ["5.0"];
 
 describe("save-storage: normal (manual) save loading", () => {
   it.each(RUNTIMES)(
@@ -48,9 +48,10 @@ describe("save-storage: normal (manual) save loading", () => {
     },
   );
 
-  it("keeps each runtime's manual saves in a distinct database", () => {
-    const dbNames = RUNTIMES.map((rv) => getRuntimeSaveDbName(rv));
-    expect(new Set(dbNames).size).toBe(RUNTIMES.length);
+  it("does not reuse the databases of the removed runtimes", () => {
+    const dbName = getRuntimeSaveDbName("5.0");
+    expect(dbName).not.toContain("367");
+    expect(dbName).not.toContain("slashem");
   });
 
   it.each(RUNTIMES)(
@@ -65,7 +66,7 @@ describe("save-storage: normal (manual) save loading", () => {
 });
 
 describe("save-storage: autosave (checkpoint) loading", () => {
-  // Regression: when 5.0/SlashEm gained root persistence, checkpoint storage
+  // Regression: when root persistence was added, checkpoint storage
   // was moved from the /save mount to "/", stranding autosaves. Checkpoints
   // must resolve to the /save mount for EVERY runtime, root persistence or not.
   it.each(RUNTIMES)(

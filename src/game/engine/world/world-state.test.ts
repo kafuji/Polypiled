@@ -28,15 +28,10 @@ function createWorldFixture() {
     maybeRequestRuntimeTileRefreshForFpsCacheAssumption: vi.fn(),
     requestPlayerTileRefresh: vi.fn(),
   };
-  const darkCorridorInference: LevelTerrainCacheDependencies["darkCorridorInference"] = {
-    inferredDarkCorridorTileFlags: new Set(),
-    inferredDarkCorridorWallTiles: new Map(),
-  };
   const tileRendering = { updateTile: vi.fn(), tileMap: new Map() };
   const worldDependencies: WorldClassificationDependencies = {
-    darkCorridorInference: { getKnownTerrainSnapshotForInferenceAtKey: vi.fn(() => null) },
     engineState: {
-      characterCreationConfig: { mode: "create", playMode: "normal", runtimeVersion: "3.6.7" },
+      characterCreationConfig: { mode: "create", playMode: "normal", runtimeVersion: "5.0" },
       clientOptions: normalizeNh3dClientOptions(),
     },
     entityBillboards: { monsterBillboards: new Map(), shouldUseStandingBillboardOverlayMode: () => true },
@@ -47,7 +42,7 @@ function createWorldFixture() {
     tilesetAssets: {
       loadedTilesetTileLayoutVersion: "3.6.7",
       resolveHiResTile: () => null,
-      resolveRuntimeVersion: () => "3.6.7",
+      resolveRuntimeVersion: () => "5.0",
       resolveTilesetBackgroundReferenceTileIndex: () => 0,
       shouldUseVultureTiles: () => false,
       tilesetBackgroundReferenceTileCanvas: null,
@@ -63,7 +58,6 @@ function createWorldFixture() {
       disposeBloodGroundOverlayResources: vi.fn(),
       restoreBloodGroundCacheSnapshot: vi.fn(),
     },
-    darkCorridorInference,
     playerStatus: { playerStats: {
       name: "Adventurer", hp: 10, maxHp: 10, power: 0, maxPower: 0,
       level: 1, experience: 0, strength: 10, dexterity: 10, constitution: 10,
@@ -79,7 +73,7 @@ function createWorldFixture() {
     worldClassification,
   };
   const levelTerrainCache = new LevelTerrainCache(levelDependencies);
-  return { worldClassification, worldDependencies, levelTerrainCache, tileUpdates, tileRendering, darkCorridorInference };
+  return { worldClassification, worldDependencies, levelTerrainCache, tileUpdates, tileRendering };
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -123,24 +117,21 @@ describe("under-player runtime item state", () => {
 
 describe("level terrain restoration", () => {
   it("isolates cached state and restores shared state before applying newly observed tiles", () => {
-    const { worldClassification: world, levelTerrainCache: levels, tileUpdates, tileRendering, darkCorridorInference } = createWorldFixture();
+    const { worldClassification: world, levelTerrainCache: levels, tileUpdates, tileRendering } = createWorldFixture();
     levels.lastKnownTerrain.set("4,5", { glyph: 100, char: ".", tileIndex: 10 });
     world.flatFeatureUnderPlayerCache.set("4,5", { glyph: 200, kind: "obj", tileIndex: 20 });
     world.suppressedLootLikeUnderPlayerCacheKeys.add("6,5");
     tileUpdates.tileStateCache.set("4,5", "old signature");
-    darkCorridorInference.inferredDarkCorridorWallTiles.set("3,5", { x: 3, y: 5 });
     const snapshot = levels.captureCurrentLevelTerrainCacheSnapshot();
     levels.upsertLevelTerrainCacheEntry("Dlvl:1", "entry-1", snapshot);
     const entry = levels.levelTerrainCachesByName.get("Dlvl:1")![0];
 
     levels.lastKnownTerrain.get("4,5")!.tileIndex = 11;
     world.flatFeatureUnderPlayerCache.get("4,5")!.tileIndex = 21;
-    darkCorridorInference.inferredDarkCorridorWallTiles.get("3,5")!.x = 30;
     snapshot.lastKnownTerrain.get("4,5")!.tileIndex = 12;
     snapshot.flatFeatureUnderPlayerCache.get("4,5")!.tileIndex = 22;
     expect(entry.lastKnownTerrain.get("4,5")!.tileIndex).toBe(10);
     expect(entry.flatFeatureUnderPlayerCache.get("4,5")!.tileIndex).toBe(20);
-    expect(entry.inferredDarkCorridorWallTiles.get("3,5")).toEqual({ x: 3, y: 5 });
 
     const order: string[] = [];
     vi.mocked(tileUpdates.refreshTilesFromStateCache).mockImplementation(() => {
@@ -154,7 +145,6 @@ describe("level terrain restoration", () => {
     expect(order).toEqual(["restore", "observed"]);
     expect(tileUpdates.tileStateCache.get("4,5")).toBe(tileUpdates.buildTileStateSignatureFromPayload(observed));
     expect(world.suppressedLootLikeUnderPlayerCacheKeys.has("6,5")).toBe(true);
-    expect(darkCorridorInference.inferredDarkCorridorTileFlags.has("3,5")).toBe(true);
     expect(levels.activeLevelCacheRef).toEqual({ levelName: "Dlvl:1", entryId: "entry-1" });
     world.flatFeatureUnderPlayerCache.get("4,5")!.tileIndex = 999;
     levels.lastKnownTerrain.get("4,5")!.tileIndex = 999;

@@ -15,9 +15,11 @@ import {
   RuntimeVersionBadge
 } from "./RuntimeVersionBadge";
 import {
-  commonStrings,
   t
 } from "../shared/translations";
+import {
+  requestGameQuit
+} from "../shared/platform";
 
 export interface StartupMenuDialogProps {
   startupInitialLoadingVisible: boolean;
@@ -114,10 +116,12 @@ export function StartupMenuDialog({
           </button>
           <button
             className="nh3d-choice-button nh3d-character-setup-choice-button"
-            onClick={() => setStartupFlowStep("variant")}
+            onClick={() => {
+              void requestGameQuit();
+            }}
             type="button"
           >
-            {commonStrings.back}
+            {t.dialogs.startup.quitGame}
           </button>
         </div>
       </div>

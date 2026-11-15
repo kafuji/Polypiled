@@ -907,10 +907,6 @@ export const zhCnOverrides = {
           description: "为分裂线附近的碎片像素添加随机的血红色边缘。",
         },
         groupCompatibility: "运行时兼容性",
-        darkCorridorWalls367: {
-          label: "旧版黑暗走廊墙",
-          description: "为旧版 NetHack 3.4.3/3.6.x 运行时（包括 Slash'EM）推断并缓存黑暗走廊墙瓦片。",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "覆盖 NetHack 5.0 黑暗墙瓦片",
           description: "将黑暗墙覆盖设置应用到 NetHack 5.0 的黑暗走廊墙瓦片。",
@@ -1141,7 +1137,6 @@ export const zhCnOverrides = {
         cancelDownload: "取消下载",
       },
       startup: {
-        chooseVariant: "选择你的 NetHack 变体：",
         options: "NetHack 3D 选项",
         quitGame: "退出游戏",
         chooseSetup: "选择你的角色配置：",
@@ -1178,7 +1173,6 @@ export const zhCnOverrides = {
           resetControllerDefaults: "重置控制器默认设置",
         },
         hints: {
-          darkWallsAlwaysEnabled: " 使用 Vulture 瓦片时始终启用。",
           darkWallsDisabledByVulture: " 使用 Vulture 瓦片时会被禁用。",
           enableDarkWallsFirst:
             " 请先启用旧版黑暗走廊墙或 NetHack 5.0 黑暗墙覆盖。",
@@ -1267,10 +1261,6 @@ export const zhCnOverrides = {
         choices: {
           leftRingFinger: "左手无名指",
           rightRingFinger: "右手无名指",
-          here: "这里",
-          onGround: "地上",
-          eligibleItems: "可选物品",
-          allInventory: "全部物品栏",
         },
       },
       runtimeStartError: {

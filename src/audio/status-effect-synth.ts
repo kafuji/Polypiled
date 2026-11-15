@@ -63,18 +63,6 @@ type ConditionSoundKey = Exclude<
   | "status-recovered"
 >;
 
-const conditionSoundMasks367: ReadonlyArray<[number, ConditionSoundKey]> = [
-  [0x00000001, "status-stoning"],
-  [0x00000002, "status-slimed"],
-  [0x00000004, "status-strangled"],
-  [0x00000008, "status-sick"],
-  [0x00000010, "status-sick"],
-  [0x00000020, "status-blind"],
-  [0x00000080, "status-stunned"],
-  [0x00000100, "status-confused"],
-  [0x00000200, "status-hallucinating"],
-];
-
 const conditionSoundMasks5: ReadonlyArray<[number, ConditionSoundKey]> = [
   [0x00000002, "status-blind"],
   [0x00000008, "status-confused"],
@@ -90,24 +78,10 @@ const conditionSoundMasks5: ReadonlyArray<[number, ConditionSoundKey]> = [
   [0x08000000, "status-paralyzed"],
 ];
 
-const conditionSoundMasksSlashEm: ReadonlyArray<[number, ConditionSoundKey]> = [
-  [0x00000002, "status-confused"],
-  [0x00000004, "status-sick"],
-  [0x00000008, "status-sick"],
-  [0x00000010, "status-blind"],
-  [0x00000020, "status-stunned"],
-  [0x00000040, "status-hallucinating"],
-  [0x00000080, "status-slimed"],
-];
-
 function resolveConditionSoundMasks(
   runtimeVersion: NethackRuntimeVersion,
 ): ReadonlyArray<[number, ConditionSoundKey]> {
-  return runtimeVersion === "5.0"
-    ? conditionSoundMasks5
-    : runtimeVersion === "slashem"
-      ? conditionSoundMasksSlashEm
-      : conditionSoundMasks367;
+  return conditionSoundMasks5;
 }
 
 /** Condition sound keys whose status bits are set in `rawMask`. */

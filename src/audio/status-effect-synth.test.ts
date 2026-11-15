@@ -18,29 +18,26 @@ const snap = (hunger: string, conditionMask: number, time: number) => ({
 describe("Nh3dStatusSoundTracker", () => {
   it("primes on first snapshot and on a new game without playing", () => {
     const t = new Nh3dStatusSoundTracker();
-    expect(t.update(snap("Hungry", 0x20, 500), "3.6.7")).toBeNull();
-    expect(t.update(snap("Not Hungry", 0, 1), "3.6.7")).toBeNull();
+    expect(t.update(snap("Hungry", 0x2, 500), "5.0")).toBeNull();
+    expect(t.update(snap("Not Hungry", 0, 1), "5.0")).toBeNull();
   });
 
   it("plays hunger escalation and recovery", () => {
     const t = new Nh3dStatusSoundTracker();
-    t.update(snap("Not Hungry", 0, 100), "3.6.7");
-    expect(t.update(snap("Hungry", 0, 101), "3.6.7")).toBe("status-hungry");
-    expect(t.update(snap("Weak", 0, 102), "3.6.7")).toBe("status-weak");
-    expect(t.update(snap("Fainting", 0, 103), "3.6.7")).toBe("status-fainting");
-    expect(t.update(snap("Fainting", 0, 104), "3.6.7")).toBeNull();
-    expect(t.update(snap("Not Hungry", 0, 105), "3.6.7")).toBe("status-recovered");
+    t.update(snap("Not Hungry", 0, 100), "5.0");
+    expect(t.update(snap("Hungry", 0, 101), "5.0")).toBe("status-hungry");
+    expect(t.update(snap("Weak", 0, 102), "5.0")).toBe("status-weak");
+    expect(t.update(snap("Fainting", 0, 103), "5.0")).toBe("status-fainting");
+    expect(t.update(snap("Fainting", 0, 104), "5.0")).toBeNull();
+    expect(t.update(snap("Not Hungry", 0, 105), "5.0")).toBe("status-recovered");
   });
 
-  it("maps condition bits per runtime and prioritizes danger", () => {
+  it("maps condition bits and prioritizes danger", () => {
     const t = new Nh3dStatusSoundTracker();
     t.update(snap("Not Hungry", 0, 100), "5.0");
-    // 5.0: blind (0x2) + stoning (0x100000) at once -> stoning wins
+    // blind (0x2) + stoning (0x100000) at once -> stoning wins
     expect(t.update(snap("Not Hungry", 0x100002, 101), "5.0")).toBe("status-stoning");
     expect(t.update(snap("Not Hungry", 0x2, 102), "5.0")).toBe("status-recovered");
-    const s = new Nh3dStatusSoundTracker();
-    s.update(snap("Not Hungry", 0, 100), "slashem");
-    expect(s.update(snap("Not Hungry", 0x40, 101), "slashem")).toBe("status-hallucinating");
   });
 });
 

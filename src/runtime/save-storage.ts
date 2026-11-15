@@ -65,26 +65,13 @@ export function isRecoverableCheckpointLevelZeroByteLength(
 export function getRuntimeSaveCompatTag(
   runtimeVersion: NethackRuntimeVersion,
 ): string {
-  const fallback =
-    runtimeVersion === "5.0"
-      ? "wasm-5"
-      : runtimeVersion === "slashem"
-        ? "slashem-343"
-        : "wasm-367";
-  const rawCompatTag =
-    runtimeVersion === "5.0"
-      ? import.meta.env.VITE_NH3D_WASM_5_COMPAT_TAG
-      : runtimeVersion === "slashem"
-        ? import.meta.env.VITE_NH3D_WASM_SLASHEM_COMPAT_TAG
-        : import.meta.env.VITE_NH3D_WASM_367_COMPAT_TAG;
-  return normalizeCompatTag(rawCompatTag, fallback);
+  return normalizeCompatTag(import.meta.env.VITE_NH3D_WASM_5_COMPAT_TAG, "wasm-5");
 }
 
 export function getRuntimeSaveMountDir(
   runtimeVersion: NethackRuntimeVersion,
   cwd = "/",
 ): string {
-  void runtimeVersion;
   const normalizedRoot = normalizeRuntimeRoot(cwd);
   const saveLeaf = "save";
   return normalizedRoot === "/"
@@ -99,8 +86,7 @@ export function getRuntimeSaveMountDir(
  * persistence — so autosaves round-trip through the proven syncfs path instead
  * of the root-persistence layer (which only owns other top-level game data such
  * as record/xlogfile/bones). This decoupling is the fix for autosaves breaking
- * when 5.0/SlashEm gained root persistence, so keep checkpoints here for every
- * runtime.
+ * when root persistence was added, so keep checkpoints here.
  */
 export function getRuntimeCheckpointMountDir(
   runtimeVersion: NethackRuntimeVersion,
@@ -151,11 +137,7 @@ export function getRuntimeRootPersistenceDbName(
 export function supportsRuntimeRootPersistence(
   runtimeVersion: NethackRuntimeVersion,
 ): boolean {
-  return (
-    runtimeVersion === "3.6.7" ||
-    runtimeVersion === "5.0" ||
-    runtimeVersion === "slashem"
-  );
+  return true;
 }
 
 export function getRuntimeRootPersistenceDbNames(

@@ -37,7 +37,6 @@ export interface RuntimeWindowTextDependencies {
     RuntimeWindows,
     "isMapWindow"
     | "isMessageWindow"
-    | "shouldSuppressRedundantStatusWindowText"
   >;
 }
 
@@ -68,7 +67,7 @@ export class RuntimeWindowText {
       `DISPLAY FILE request: "${fileName || "<empty>"}" (mustExist=${mustExist})`,
     );
 
-    const bundled = getBundledDisplayFile(fileName, this.deps.coordinator.runtimeVersion);
+    const bundled = getBundledDisplayFile(fileName);
     if (bundled && bundled.lines.length > 0) {
       if (this.deps.coordinator.eventHandler) {
         this.deps.coordinator.emit({
@@ -137,9 +136,6 @@ export class RuntimeWindowText {
     for (const rawLine of normalizedLines) {
       const text = String(rawLine || "").replace(/\u0000/g, "");
       if (!text.trim()) {
-        continue;
-      }
-      if (this.deps.windows.shouldSuppressRedundantStatusWindowText(winId)) {
         continue;
       }
       if (this.deps.windows.isMessageWindow(winId)) {

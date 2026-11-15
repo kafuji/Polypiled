@@ -8,7 +8,6 @@ import { FmodRuntime } from "../audio";
 import { BackgroundMusic, type MusicMood } from "../audio/music";
 import { isLoggingEnabled, setLoggingEnabled } from "../logging";
 import { TILE_SIZE } from "./constants";
-import { setActiveGlyphCatalog } from "./glyphs/registry";
 import type {
   Nh3dClientOptions,
   CharacterCreationConfig,
@@ -72,7 +71,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.engineState.characterCreationConfig = options.characterCreationConfig ?? {
       mode: "create",
       playMode: "normal",
-      runtimeVersion: "3.6.7",
+      runtimeVersion: "5.0",
     };
     this.automationNumberPad.reset(this.systems.engineState.characterCreationConfig.mode,
       this.systems.extendedCommands.extractNumberPadModeEnabledFromOptionTokens(this.systems.engineState.characterCreationConfig.initOptions));
@@ -152,7 +151,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.inputCommands.numberPadModeEnabled = this.systems.extendedCommands.resolveStartupNumberPadModeEnabled(config.initOptions);
     this.systems.extendedCommands.useNativeExtendedCommandMenu = this.systems.extendedCommands.resolveStartupExtmenuEnabled(config.initOptions);
     this.applyClientOptions(options);
-    this.systems.tilesetAssets.ensureTilesetRuntime(this.systems.engineState.clientOptions);
+    this.systems.tilesetAssets.ensureTilesetTextureLoaded(this.systems.engineState.clientOptions);
     this.startupOnly = false;
     setNativeInputModeFps(this.systems.engineState.playMode === "fps");
     this.systems.webXrPresentation.setStartupMenu(false);
@@ -581,8 +580,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
       previous.monsterShatter !== normalized.monsterShatter;
     const blockAmbientOcclusionChanged =
       previous.blockAmbientOcclusion !== normalized.blockAmbientOcclusion;
-    const darkCorridorWallsChanged =
-      previous.darkCorridorWalls367 !== normalized.darkCorridorWalls367;
     const darkCorridorWallTileOverrideChanged =
       previous.overrideNh5DarkCorridorWallTiles !==
         normalized.overrideNh5DarkCorridorWallTiles ||
@@ -788,12 +785,9 @@ class Nethack3DEngine implements Nethack3DEngineController {
     if (brightnessChanged || contrastChanged || gammaChanged) {
       this.systems.renderPipeline.updateToneAdjustPostProcess();
     }
-    if (darkCorridorWallsChanged || darkCorridorWallTileOverrideChanged) {
-      this.systems.darkCorridorInference.requestInferredDarkCorridorWallReconcile({ forceImmediate: true, refreshVisuals: true });
-      if (this.systems.tilesetAssets.resolveRuntimeVersion() === "5.0") {
-        this.systems.tilesetAssets.invalidateBillboardTextureCaches();
-        this.systems.tileUpdates.refreshTilesFromStateCache();
-      }
+    if (darkCorridorWallTileOverrideChanged) {
+      this.systems.tilesetAssets.invalidateBillboardTextureCaches();
+      this.systems.tileUpdates.refreshTilesFromStateCache();
       this.systems.lighting.markLightingDirty();
     }
     if (soundEnabledChanged && !normalized.soundEnabled) {
@@ -859,14 +853,11 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.audioHapticsPlatform.clearBackgroundMusicMapTiles();
     this.systems.audioHapticsPlatform.backgroundMusic?.reset();
     this.systems.playerStatus.resetPlayerStatusDeltaTracking();
-    this.systems.darkCorridorInference.pendingBoulderPushDarkCorridorInference = null;
     this.systems.playerMovement.fpsLastPlayerMoveFromTile = null;
     this.systems.promptDialogs.updateConnectionStatus("Starting", "starting");
     this.systems.tileUpdates.pendingPlayerTileRefreshOnNextPosition = true;
 
-    await Promise.all([this.systems.audioHapticsPlatform.prepareAudioForLoading(), setActiveGlyphCatalog(
-      this.systems.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7",
-    )]);
+    await this.systems.audioHapticsPlatform.prepareAudioForLoading();
     if (this.systems.engineState.disposed || generation !== this.runtimeGeneration) {
       return;
     }
@@ -876,7 +867,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         if (generation === this.runtimeGeneration) this.handleRuntimeEvent(payload);
       },
       {
-        runtimeVersion: this.systems.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7",
+        runtimeVersion: "5.0",
         characterCreation: {
           mode: this.systems.engineState.characterCreationConfig.mode,
           name: this.systems.engineState.characterCreationConfig.name,
@@ -1097,10 +1088,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
         }
         break;
 
-      case "map_update_complete":
-        this.systems.tileUpdates.flushPendingDarkCorridorInference();
-        break;
-
       case "player_position":
         if (this.systems.positionSelection.positionInputModeActive) {
           console.log(
@@ -1133,15 +1120,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
           data.x,
           data.y,
         );
-        this.systems.darkCorridorInference.pendingBoulderPushDarkCorridorInference =
-          oldPos.x !== data.x || oldPos.y !== data.y
-            ? this.systems.darkCorridorInference.buildBoulderPushDarkCorridorInferenceContext(
-                oldPos.x,
-                oldPos.y,
-                data.x,
-                data.y,
-              )
-            : null;
         this.systems.playerMovement.recordPlayerMovement(oldPos.x, oldPos.y, data.x, data.y);
         if (oldPos.x !== data.x || oldPos.y !== data.y) {
           this.systems.movementInput.refreshPlayerCliparoundInputCooldownFromMovement();
@@ -1183,9 +1161,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
         ) {
           this.systems.tileUpdates.requestPlayerTileRefresh("overhead-under-player-move");
         }
-        // Re-evaluate every authoritative step, even during continuous motion.
-        // Later map observations get another pass at their display boundary.
-        this.systems.tileUpdates.flushPendingDarkCorridorInference(true);
         if (this.systems.movementInput.isFpsMode()) {
           const playerTileKey = `${data.x},${data.y}`;
           const shouldKeepPlayerTileBillboard =
@@ -1736,13 +1711,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.runtimeEntityTracking.pendingRuntimeMonsterVacatedTileKeyById.clear();
     this.systems.worldClassification.flatFeatureUnderPlayerCache.clear();
     this.systems.worldClassification.suppressedLootLikeUnderPlayerCacheKeys.clear();
-    this.systems.darkCorridorInference.inferredDarkCorridorWallTiles.clear();
-    this.systems.darkCorridorInference.inferredDarkCorridorTileFlags.clear();
-    this.systems.darkCorridorInference.pendingBoulderPushDarkCorridorInference = null;
-    this.systems.darkCorridorInference.darkCorridorInputDiscoveryWindowActive = false;
-    this.systems.darkCorridorInference.darkCorridorBlindSearchInferenceActive = false;
-    this.systems.darkCorridorInference.darkCorridorBlindSearchInferenceUntilMs = 0;
-    this.systems.darkCorridorInference.newlyDiscoveredDarkCorridorTilesForCurrentInput.clear();
     this.systems.tileRendering.activeEffectTileKeys.clear();
     this.systems.tileUpdates.pendingTileUpdates.clear();
     this.systems.tileUpdates.pendingTileVisualRefreshKeys.clear();
@@ -1968,7 +1936,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.aimHighlights.updateFpsAimVisuals(timeMs);
     this.systems.tileContextActions.updateContextSelectionHighlight(timeMs);
     this.systems.positionSelection.updatePositionCursorPulse(timeMs);
-    this.systems.darkCorridorInference.expireBlindSearchInferenceWindowIfNeeded();
     this.systems.lighting.updateLightingCenter(deltaSeconds);
     if (this.systems.engineState.clientOptions.minimap || this.systems.terminalRendering.terminalGutterMinimapVisible) {
       this.systems.minimap.renderMinimapViewportOverlay(timeMs);
@@ -1980,7 +1947,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.tileRendering.updateTileRevealFades(timeMs);
     this.systems.vultureWalls.updateVultureDoorPlaneRenderOrdering();
     this.systems.vultureWalls.updateIronBarsWallPlaneVisibility();
-    this.systems.tileUpdates.flushPendingDarkCorridorInference();
     // After all tile changes for this frame, so the mask matches what is drawn.
     this.systems.exploredMask.update(timeMs);
     // After updateLightingCenter, which places the hero's light.
@@ -2108,12 +2074,6 @@ class Nethack3DEngine implements Nethack3DEngineController {
     action: "select-all" | "confirm" | "cancel",
   ): void {
     return this.systems.questionMenus.syncQuestionActionFocus(action);
-  }
-
-  public resolveLegacyQuestionChoicePreviewTileIndex(
-    choice: string,
-  ): number | null {
-    return this.systems.questionMenus.resolveLegacyQuestionChoicePreviewTileIndex(choice);
   }
 
   public confirmQuestionMenuChoice(): void {

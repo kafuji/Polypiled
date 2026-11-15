@@ -50,10 +50,9 @@ export const DEFAULT_WALL_TOPS_TUNING: Readonly<WallTopsTuning> = {
  * cells (floor, corridors, doorways, water...) leave a wall side visible.
  */
 export function classifyWallTopCell(userData: Record<string, unknown> | null | undefined): number {
-  if (!userData || userData.isVoidFill === true) return WALL_TOP_BLOCKED;
+  if (!userData) return WALL_TOP_BLOCKED;
   if (userData.isWall !== true) return WALL_TOP_OPEN;
   if (userData.materialKind === "door") return WALL_TOP_BLOCKED;
-  if (userData.isInferredDarkCorridorWall === true) return WALL_TOP_WALL;
   const glyph = typeof userData.tileTextureSourceGlyph === "number"
     ? userData.tileTextureSourceGlyph
     : userData.sourceGlyph;

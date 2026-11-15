@@ -6,7 +6,6 @@ import { StartupBackdrop } from "./app/startup/StartupBackdrop";
 import { DebugSessionLogsDialog } from "./app/diagnostics/DebugSessionLogsDialog";
 import { StartupLogo } from "./app/startup/StartupLogo";
 import { StartupUpdateDialog } from "./app/startup/StartupUpdateDialog";
-import { VariantDialog } from "./app/startup/VariantDialog";
 import { StartupMenuDialog } from "./app/startup/StartupMenuDialog";
 import { ResumeGameDialog } from "./app/startup/ResumeGameDialog";
 import { TopScoresDialog } from "./app/scores/TopScoresDialog";
@@ -63,7 +62,6 @@ export default function App(): JSX.Element {
       <DebugSessionLogsDialog {...model.debugSessionLogsDialog} />
       <StartupLogo {...model.startupLogo} />
       <StartupUpdateDialog {...model.startupUpdateDialog} />
-      <VariantDialog {...model.variantDialog} />
       <StartupMenuDialog {...model.startupMenuDialog} />
       <ResumeGameDialog {...model.resumeGameDialog} />
       <TopScoresDialog {...model.topScoresDialog} />

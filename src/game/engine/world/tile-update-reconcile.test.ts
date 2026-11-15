@@ -3,11 +3,10 @@ import { TileUpdates, type TileUpdatesDependencies } from "./tile-updates";
 afterEach(() => vi.unstubAllGlobals());
 function fixture() {
   vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
-  const reconcile = vi.fn(), movement = new Map<string, unknown>(), camera = {fpsStepCameraActive:false};
-  const recordDiscovery=vi.fn();
+  const movement = new Map<string, unknown>(), camera = {fpsStepCameraActive:false};
   const xr = { isPresenting: false };
   const tileBatch={beginTileBatch:vi.fn(),flushTileBatch:vi.fn(),endTileBatch:vi.fn()};
-  const deps = new Proxy({camera, floorOcclusion:tileBatch,wallGeometry:tileBatch,entityMovement:{activeEntityMoveTransitions:movement}, darkCorridorInference:{invalidateInferredWallVisuals:vi.fn(),requestInferredDarkCorridorWallReconcile:reconcile,recordNewlyDiscoveredDarkCorridorTileForCurrentInput:recordDiscovery}, worldClassification:{seedTerrainCacheFromSupersededPendingUpdate:vi.fn()}, minimap:{flushPendingMinimapTileUpdates:vi.fn()}, vultureWalls:{flushPendingVultureWallMaterialRefreshes:vi.fn(),collectPendingVultureRoomDecorReconcileKeys:vi.fn(),flushPendingVultureRoomDecorReconcile:vi.fn()},runtimeEntityTracking:{finalizePendingRuntimeMonsterVacatedTracking:vi.fn()}}, { get:(o,k)=>Reflect.get(o,k)??new Proxy({}, {get:()=>vi.fn()}) });
+  const deps = new Proxy({camera, floorOcclusion:tileBatch,wallGeometry:tileBatch,entityMovement:{activeEntityMoveTransitions:movement}, worldClassification:{seedTerrainCacheFromSupersededPendingUpdate:vi.fn()}, minimap:{flushPendingMinimapTileUpdates:vi.fn()}, vultureWalls:{flushPendingVultureWallMaterialRefreshes:vi.fn(),collectPendingVultureRoomDecorReconcileKeys:vi.fn(),flushPendingVultureRoomDecorReconcile:vi.fn()},runtimeEntityTracking:{finalizePendingRuntimeMonsterVacatedTracking:vi.fn()}}, { get:(o,k)=>Reflect.get(o,k)??new Proxy({}, {get:()=>vi.fn()}) });
   Object.assign(deps, {
     renderPipeline: { renderer: { xr } },
     entityBillboards: { monsterBillboards: new Map() },
@@ -16,7 +15,7 @@ function fixture() {
   });
   const updates = new TileUpdates(deps as unknown as TileUpdatesDependencies);
   updates.processPendingTileUpdate = vi.fn();
-  return {updates,reconcile,movement,camera,recordDiscovery,tileBatch,xr,deps};
+  return {updates,movement,camera,tileBatch,xr,deps};
 }
 
 it("keeps actor and feature removal immediate even when replaced by distant terrain", () => {
@@ -119,13 +118,12 @@ it("applies movement-near arrivals at the player-position fence and leaves disco
 });
 
 it("bounds a large discovery burst even when player position arrives", () => {
-  const {updates,recordDiscovery}=fixture();
+  const {updates}=fixture();
   for(let i=0;i<500;i++)updates.enqueueTileUpdate({x:30+i%50,y:30+Math.floor(i/50),glyph:i});
   updates.enqueueTileUpdate({x:5,y:5,glyph:999});
   updates.flushPendingTileUpdatesForPlayerPositionReconcile(4,5,5,5);
   expect(updates.processPendingTileUpdate).toHaveBeenCalledTimes(1);
   expect(updates.pendingTileFlushQueue).toHaveLength(500);
-  expect(recordDiscovery).toHaveBeenCalledTimes(501);
   expect(updates.hasPendingTileUpdateAtKey("30,30")).toBe(true);
   expect(updates.hasPendingTileUpdateAtKey("5,5")).toBe(false);
 });
@@ -170,34 +168,6 @@ it("uses one completion-backed forced refresh instead of timer retries", () => {
   expect(requestTileUpdate).toHaveBeenCalledExactlyOnceWith(5,6);
   expect(vi.mocked(requestAnimationFrame)).not.toHaveBeenCalled();
 });
-it("reconciles completed map data while tile work and movement are still active", () => {
-  const {updates,reconcile,camera,movement}=fixture();
-  camera.fpsStepCameraActive=true; movement.set("player",{});
-  updates.pendingTileFlushQueue=[{x:30,y:3,glyph:4}];
-  updates.enqueueTileUpdate({x:2,y:3,glyph:4});
-  expect(reconcile).not.toHaveBeenCalled();
-  updates.flushPendingDarkCorridorInference();
-  expect(reconcile).toHaveBeenCalledOnce();
-  expect(updates.processPendingTileUpdate).not.toHaveBeenCalled();
-  updates.flushPendingDarkCorridorInference();
-  expect(reconcile).toHaveBeenCalledOnce();
-  updates.enqueueTileUpdate({x:3,y:3,glyph:5});
-  updates.flushPendingDarkCorridorInference();
-  expect(reconcile).toHaveBeenCalledTimes(2);
-  updates.flushPendingDarkCorridorInference(true);
-  expect(reconcile).toHaveBeenCalledTimes(3);
-});
-
-it("reads the latest complete pending observations without draining visual work", () => {
-  const {updates}=fixture();
-  updates.pendingTileFlushQueue=[{x:1,y:1,glyph:1},{x:2,y:1,glyph:2}];
-  updates.pendingTileFlushQueueIndex=1;
-  updates.enqueueTileUpdate({x:2,y:1,glyph:3});
-  expect([...updates.collectPendingTileUpdates().values()]).toEqual([{x:2,y:1,glyph:3}]);
-  expect(updates.pendingTileFlushQueueIndex).toBe(1);
-  expect(updates.pendingTileUpdates.size).toBe(1);
-});
-
 it("ignores obsolete animation callbacks after a player-position fence", () => {
   const {updates}=fixture(), callbacks: FrameRequestCallback[] = [];
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callbacks.push(callback); return callbacks.length; });

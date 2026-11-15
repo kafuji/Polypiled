@@ -16,12 +16,12 @@ import {
 } from "../../../game/helpers/startup-character-constraints";
 
 /** Runtime-specific startup character defaults, equality and canonical names. */
-export type StartupFlowStep = "variant" | "choose" | "create" | "random" | "resume";
+export type StartupFlowStep = "choose" | "create" | "random" | "resume";
 
 export const startupDefaultCharacterName = "Web_user";
 
 export function createDefaultStartupCharacterPreferences(
-  runtimeVersion: NethackRuntimeVersion = "3.6.7",
+  runtimeVersion: NethackRuntimeVersion = "5.0",
 ): StartupCharacterPreferences {
   const defaultCreateSelection = normalizeStartupCreateCharacterSelection(
     {},
@@ -39,9 +39,7 @@ export function createDefaultStartupCharacterPreferences(
 
 export function createDefaultStartupCharacterPreferencesByRuntime(): StartupCharacterPreferencesByRuntime {
   return {
-    "3.6.7": createDefaultStartupCharacterPreferences("3.6.7"),
     "5.0": createDefaultStartupCharacterPreferences("5.0"),
-    slashem: createDefaultStartupCharacterPreferences("slashem"),
   };
 }
 

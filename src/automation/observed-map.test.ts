@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { RuntimeObservationScope } from "../runtime/protocol/types";
 import { ObservedMap } from "./observed-map";
-import { getGlyphCatalogRanges, setActiveGlyphCatalog } from "../game/glyphs/registry";
+import { getGlyphCatalogRanges } from "../game/glyphs/registry";
+import { cmapGlyphForSymbol } from "../game/glyphs/test-support";
 
 const scope = (levelGeneration: number, presentationGeneration = 0): RuntimeObservationScope => ({
   levelGeneration, presentationGeneration, level: { dnum: 0, dlevel: levelGeneration },
@@ -46,32 +47,28 @@ describe("observed map", () => {
   });
 
   it("classifies IBM display characters from displayed glyphs without leaking underlying data", () => {
+    const objectStart = getGlyphCatalogRanges().find(range => range.kind === "obj")!.start;
     const map = new ObservedMap();
     map.observe({ type: "map_glyph_batch", tiles: [
-      { x: 1, y: 1, glyph: 2359 + 19, symidx: 19, char: "ú", color: 7, floorUnderlayGlyph: 999 },
-      { x: 2, y: 1, glyph: 2359 + 1, symidx: 1, char: "³", color: 7 },
-      { x: 3, y: 1, glyph: 2359 + 15, symidx: 15, char: "+", color: 7 },
-      { x: 4, y: 1, glyph: 2359 + 13, symidx: 13, char: "þ", color: 7 },
-      { x: 5, y: 1, glyph: 2359 + 23, symidx: 23, char: "<", color: 7 },
-      { x: 6, y: 1, glyph: 1906, char: "!", color: 3, identifier: 42 },
+      { x: 1, y: 1, glyph: cmapGlyphForSymbol(19), symidx: 19, char: "ú", color: 7, floorUnderlayGlyph: 999 },
+      { x: 2, y: 1, glyph: cmapGlyphForSymbol(1), symidx: 1, char: "³", color: 7 },
+      { x: 3, y: 1, glyph: cmapGlyphForSymbol(15), symidx: 15, char: "+", color: 7 },
+      { x: 4, y: 1, glyph: cmapGlyphForSymbol(13), symidx: 13, char: "þ", color: 7 },
+      { x: 5, y: 1, glyph: cmapGlyphForSymbol(25), symidx: 25, char: "<", color: 7 },
+      { x: 6, y: 1, glyph: objectStart, char: "!", color: 3, identifier: 42 },
       { x: 7, y: 1, glyph: 0, char: "a", color: 3, monsterId: 42 },
     ] }, "s", scope(1));
     expect(map.snapshot().cells.map(cell => cell.kind)).toEqual(["floor", "wall", "door_closed", "door_open", "stairs_up", "item", "creature"]);
     expect(JSON.stringify(map.snapshot())).not.toMatch(/glyph|identifier|monsterId|underlay/i);
   });
 
-  it.each(["3.6.7", "5.0", "slashem"] as const)("uses the %s catalog when classifying observed cells", async version => {
-    try {
-      await setActiveGlyphCatalog(version);
-      const start = getGlyphCatalogRanges().find(range => range.kind === "cmap")!.start;
-      const map = new ObservedMap();
-      map.observe({ type: "map_glyph_batch", tiles: [
-        { x: 1, y: 1, glyph: start + 1, symidx: 19, char: "ú" },
-        { x: 2, y: 1, glyph: start + 1, symidx: 1, char: "³" },
-      ] }, "s", scope(1));
-      expect(map.snapshot().cells.map(cell => cell.kind)).toEqual(["floor", "wall"]);
-    } finally {
-      await setActiveGlyphCatalog("3.6.7");
-    }
+  it("uses the reported symbol index when classifying observed cells", () => {
+    const start = getGlyphCatalogRanges().find(range => range.kind === "cmap")!.start;
+    const map = new ObservedMap();
+    map.observe({ type: "map_glyph_batch", tiles: [
+      { x: 1, y: 1, glyph: start + 1, symidx: 19, char: "ú" },
+      { x: 2, y: 1, glyph: start + 1, symidx: 1, char: "³" },
+    ] }, "s", scope(1));
+    expect(map.snapshot().cells.map(cell => cell.kind)).toEqual(["floor", "wall"]);
   });
 });

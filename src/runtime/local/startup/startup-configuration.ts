@@ -180,10 +180,7 @@ export class RuntimeStartupConfiguration {
       this.deps.coordinator.startupOptions?.initOptions,
       this.deps.coordinator.runtimeVersion,
     ));
-    if (
-      this.deps.coordinator.runtimeVersion !== "3.6.7" &&
-      !supportsRuntimeCheckpointRecovery(this.deps.coordinator.runtimeVersion)
-    ) {
+    if (!supportsRuntimeCheckpointRecovery(this.deps.coordinator.runtimeVersion)) {
       return tokens.filter((token) => !/^!?checkpoint(?:$|:)/i.test(token));
     }
     return tokens;

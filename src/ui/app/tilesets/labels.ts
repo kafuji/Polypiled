@@ -12,10 +12,6 @@ export function resolveTilesetLayoutShortLabel(
   tileLayoutVersion: Nh3dTilesetTileLayoutVersion,
 ): string {
   switch (tileLayoutVersion) {
-    case "slashem":
-      return "Slash'EM";
-    case "3.4.3":
-      return "3.4.3";
     case "5.0":
       return "5.0";
     case "3.6.7":
@@ -29,10 +25,6 @@ export function resolveTilesetLayoutDisplayLabel(
   tileLayoutVersion: Nh3dTilesetTileLayoutVersion,
 ): string {
   switch (tileLayoutVersion) {
-    case "slashem":
-      return plusStrings.tilesetLayouts.slashem;
-    case "3.4.3":
-      return plusStrings.tilesetLayouts.nethack343;
     case "5.0":
       return t.dialogs.tilesetManager.layout5;
     case "3.6.7":

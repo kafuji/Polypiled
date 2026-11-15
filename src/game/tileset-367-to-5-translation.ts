@@ -211,21 +211,9 @@ export const nh5ExpectedTileCount =
 export function shouldTranslateNh367TilesetForNh5Runtime(
   runtimeVersion: NethackRuntimeVersion,
   atlasTileCount: number,
-  tileLayoutVersion:
-    | "slashem"
-    | "3.4.3"
-    | "3.6.7"
-    | "5.0"
-    | "unknown" = "unknown",
+  tileLayoutVersion: "3.6.7" | "5.0" | "unknown" = "unknown",
 ): boolean {
-  if (runtimeVersion !== "5.0") {
-    return false;
-  }
-  if (
-    tileLayoutVersion === "5.0" ||
-    tileLayoutVersion === "slashem" ||
-    tileLayoutVersion === "3.4.3"
-  ) {
+  if (tileLayoutVersion === "5.0") {
     return false;
   }
   const normalizedAtlasTileCount = Math.max(0, Math.trunc(atlasTileCount));
