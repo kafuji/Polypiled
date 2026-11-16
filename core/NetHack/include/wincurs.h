@@ -1,4 +1,4 @@
-/* NetHack 5.0 wincurs.h */
+/* $NHDT-Header: NetHack 5.0 wincurs.h 2026/10/03_12:08:42 NetHack-5.0:1.62 $ */
 /* Copyright (c) Karl Garrison, 2010. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -47,6 +47,13 @@ extern WINDOW *activemenu;         /* curses window for menu requesting a
 #endif
 #ifndef A_ITALIC
 #define A_ITALIC A_UNDERLINE
+#endif
+
+/* COLOR_PAIR() and PAIR_NUMBER() only carry 8 bits of pair number;
+   the wide-character API can address the pairs above 255 that
+   256-color mode allocates */
+#if defined(NCURSES_VERSION) && defined(NCURSES_WIDECHAR) && NCURSES_WIDECHAR
+#define CURSES_WIDE_PAIRS
 #endif
 
 typedef enum orient_type
@@ -145,6 +152,7 @@ extern boolean curses_map_borders(int *sx, int *sy, int *ex, int *ey,
 
 extern int curses_getch(void);
 extern int curses_read_char(void);
+extern int curses_read_poskey(void);
 extern void curses_toggle_color_attr(WINDOW *win, int color, int attr,
                                      int onoff);
 extern void curses_menu_color_attr(WINDOW *, int, int, int);

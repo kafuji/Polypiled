@@ -1,4 +1,4 @@
-/* NetHack 5.0	report.c	$NHDT-Date: 1777240823 2026/04/26 22:00:23 $  $NHDT-Branch: to500 $:$NHDT-Revision: 1.19 $ */
+/* $NHDT-Header: NetHack 5.0 report.c 2026/09/25_13:07:53 NetHack-5.0:1.22 $ */
 /* Copyright (c) Kenneth Lorber, Kensington, Maryland, 2024 */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -295,7 +295,7 @@ submit_web_report(int cos, const char *msg, const char *why)
     char temp2[200];
     int countpp = 0; /* pre and post traceback lines */
 //  URL loaded for creating reports to the NetHack DevTeam
-// CRASHREPORTURL=https://nethack.org/links/cr-5.0.0.html
+// CRASHREPORTURL=https://nethack.org/links/cr-5.0.1.html
     if (!sysopt.crashreporturl)
         return FALSE;
     SWR_ADD(sysopt.crashreporturl);

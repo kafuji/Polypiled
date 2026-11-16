@@ -1,4 +1,4 @@
-/* NetHack 5.0	config.h	$NHDT-Date: 1710344316 2024/03/13 15:38:36 $  $NHDT-Branch: keni-staticfn $:$NHDT-Revision: 1.188 $ */
+/* $NHDT-Header: NetHack 5.0 config.h 2026/09/30_14:47:34 NetHack-5.0:1.212 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2016. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -229,7 +229,7 @@
 #define WIZARD_NAME "wizard" /* value is ignored if SYSCF is enabled */
 #endif
 
-#ifndef SYSCF
+#if !defined(SYSCF) && !defined(MAC68K)
 #define SYSCF                /* use a global configuration */
 #define SYSCF_FILE "sysconf" /* global configuration is in a file */
 #endif
@@ -671,8 +671,7 @@ typedef unsigned char uchar;
 
 #define USE_ISAAC64 /* Use cross-platform, bundled RNG */
 
-/* TEMPORARY - MAKE UNCONDITIONAL BEFORE RELEASE */
-/* undef this to check if sandbox breaks something */
+/* undef this to check if sandbox breaks something, but only for debugging! */
 #define NHL_SANDBOX
 
 #ifdef NHL_SANDBOX

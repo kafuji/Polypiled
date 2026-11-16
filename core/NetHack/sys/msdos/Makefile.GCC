@@ -1,5 +1,8 @@
-# NetHack 5.0	Makefile.GCC	$NHDT-Date: 1596498268 2020/08/03 23:44:28 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.53 $
+# $NHDT-Header: NetHack 5.0 Makefile.GCC 2026/09/25_13:07:02 NetHack-5.0:1.97 $
+#       Copyright (c) Michael Allison 2002.
 #	Copyright (c) NetHack PC Development Team 1996-2024.
+#	NetHack may be freely redistributed.  See license for details.
+#
 #	PC NetHack 5.0 Makefile for djgpp V2
 #
 #	Gnu gcc compiler for msdos (djgpp)
@@ -64,7 +67,7 @@ endif
 #    successfully build NetHack-5.0.
 #
 ADD_LUA=Y
-LUATOP=../lib/lua$(LUAVER)
+LUATOP=../nhlua/lua
 #
 
 #---------------------------------------------------------------
@@ -328,7 +331,7 @@ ALLOBJ = $(VOBJ) $(SOBJ) $(TILOBJ) $(TILOBJ2) $(VVOBJ)
 #=================================================================
 
 LUASRC   = $(LUATOP)/src
-LUALIB   = $(O)lua$(LUAVER)s.a
+LUALIB   = $(O)lua.a
 LUAINCL  = -I$(LUASRC)
 #LUAFLAGS = unix added -lm here?
 LUATARGETS = lua.exe luac.exe $(LUALIB)
@@ -920,10 +923,10 @@ $(O)dlb_main.o: $(U)dlb_main.c $(INCL)/config.h $(DLB_H)
 lua.exe: $(O)lua.o $(LUALIB) 
 	$(CC) $(LFLAGS) -o$@ $(O)lua.o $(LUALIB)
 
-luac.exe: $(O)luac.o $(O)lua$(LUAVER)s.a
+luac.exe: $(O)luac.o $(O)$(LUALIB)
 	$(CC) $(LFLAGSU) -o$@ $(O)luac.o $(LUALIB)
 
-$(O)lua$(LUAVER)s.a: $(LUAOBJFILES)
+$(O)$(LUALIB).a: $(LUAOBJFILES)
 	ar rcS $@ $(LUAOBJFILES1)
 	ar rcS $@ $(LUAOBJFILES2)
 	ar rcs $@ $(LUAOBJFILES3)

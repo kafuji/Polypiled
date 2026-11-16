@@ -200,10 +200,9 @@ need to be included in the packaging of the game.
 
      4.3. Lua
 
-	Compile and link into a library, or obtain a prebuilt Lua library for
-your platform. Place the Lua source into lib/lua-5.4.8 (or other folder
-representing an appropriate Lua version); place the compiled Lua library into
-lib.
+	Compile and link the bundled Lua sources into a library.
+	The NetHack source tree includes Lua sources in the  nhlua/lua/src
+	directory. 
 
      4.4  Compile NetHack sources
 
@@ -260,6 +259,6 @@ by code within the game itself. That was done to facilitate cross-compiling of
 NetHack on one platform for game execution on another.
 
 
-# NetHack 3.7  Porting       $NHDT-Date: 1643491454 2022/01/29 21:24:14 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.17 $
+# $NHDT-Header: NetHack 5.0 Porting 2026/10/04_12:05:14 NetHack-5.0:1.26 $
 # Copyright (c) 2005 by Michael Allison
 # NetHack may be freely redistributed.  See license for details.

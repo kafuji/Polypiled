@@ -1,4 +1,4 @@
-/* NetHack 5.0    bmptiles.c    $NHDT-Date: 1781973097 2026/06/20 16:31:37 $ $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.6 $ */
+/* $NHDT-Header: NetHack 5.0 bmptiles.c 2026/10/04_11:50:50 NetHack-5.0:1.10 $ */
 /* Copyright (c) Ray Chason, 2016. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -367,7 +367,8 @@ read_info_header(FILE *fp, struct BitmapInfoHeader *header)
         header->ProfileSize = read_u32(buf + 116);
         header->ProfileData = read_u32(buf + 112);
         header->Intent = read_u32(buf + 108);
-        /* fall through */
+	FALLTHROUGH;
+        /*FALLTHRU */
 
     case 108: /* BITMAPV4INFOHEADER */
         header->GammaBlue = read_u32(buf + 104);
@@ -383,18 +384,21 @@ read_info_header(FILE *fp, struct BitmapInfoHeader *header)
         header->Endpoints.ciexyzRed.ciexyzY = read_u32(buf + 64);
         header->Endpoints.ciexyzRed.ciexyzX = read_u32(buf + 60);
         header->CSType = read_u32(buf + 56);
-        /* fall through */
+	FALLTHROUGH;
+        /*FALLTHRU*/
 
     case 56: /* BITMAPV3INFOHEADER */
         header->AlphaMask = read_u32(buf + 52);
-        /* fall through */
+	FALLTHROUGH;
+        /*FALLTHRU*/
 
     case 52: /* BITMAPV2INFOHEADER */
         header->BlueMask = read_u32(buf + 48);
         header->GreenMask = read_u32(buf + 44);
         header->RedMask = read_u32(buf + 40);
         have_color_mask = TRUE;
-        /* fall through */
+	FALLTHROUGH;
+        /*FALLTHRU*/
 
     case 40: /* BITMAPINFOHEADER */
     case 64: /* OS22XBITMAPHEADER */

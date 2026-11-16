@@ -13,20 +13,24 @@ License (`NetHack/dat/license`).
 
 | Layer | Source |
 | --- | --- |
-| Upstream base | [NetHack/NetHack](https://github.com/NetHack/NetHack), branch `NetHack-5.0`, commit `f3fc8537a47331578fe6ba67a7949fe46d1486a8` (2026-09-23) |
+| Upstream base | [NetHack/NetHack](https://github.com/NetHack/NetHack), branch `NetHack-5.0`, commit `b1c3c61a63f463d27f4b2fb80f448e96ea9bf545` (2026-11-15, 5.0.1 work in progress) |
 | WebAssembly integration | [JamesIV4/NetHack](https://github.com/JamesIV4/NetHack), branch `forked-wasm-5`, commit `e76b93423a3dd4432e2a46bc47066a8ba529f468`, by James Pound and Adam Powers |
+
+The subtree started from upstream commit `f3fc8537a` (2026-09-23), which was
+already 610 commits past the `NetHack-5.0.0_Released` tag (2026-05-02).
 
 To list every file that differs from the upstream base:
 
 ```bash
-git diff --stat 4cf833505: HEAD:core/NetHack
+git diff --stat 5bcf198fdc: HEAD:core/NetHack
 ```
 
-`4cf833505` is the squashed upstream snapshot the subtree started from.
+`5bcf198fdc` is the squashed upstream snapshot last merged; after the next
+`git subtree pull`, use the new `Squashed 'core/NetHack/' changes` commit.
 
 ## Building
 
-The build needs a POSIX host with `make`, `cc`, `curl` and an activated
+The build needs a POSIX host with `make`, `cc` and an activated
 Emscripten SDK, so it runs in CI: the
 [Build game core](../.github/workflows/build-core-wasm.yml) workflow builds
 every push that touches `core/`, checks the result against the interface of
@@ -68,3 +72,9 @@ git subtree pull --prefix=core/NetHack https://github.com/NetHack/NetHack.git Ne
 
 This fetches the full upstream history (about 170 MB) and merges it into
 `core/NetHack`, with conflicts wherever this project changed the same lines.
+
+Upstream renames its hints files with each patch level (`*.500` became
+`*.501`). The WebAssembly build flags live in
+`sys/unix/hints/include/cross-pre2.<level>`, so a rename shows up as a
+modify/delete conflict on that file: carry the changes over to the new name,
+and update the hints file `build-wasm.sh` passes to `setup.sh`.

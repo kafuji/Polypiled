@@ -2,7 +2,7 @@
 # Build the game core in core/NetHack for WebAssembly (WASM) using Emscripten.
 # Output: core/build/nethack.js and core/build/nethack.wasm.
 #
-# Needs a POSIX host with make, cc, curl and an activated Emscripten SDK;
+# Needs a POSIX host with make, cc and an activated Emscripten SDK;
 # CI runs it in .github/workflows/build-core-wasm.yml. Taken from
 # packages/wasm-5/build-wasm.sh in JamesIV4/neth4ck-monorepo (6dcb69a),
 # distributed under the NetHack General Public License like the core itself.
@@ -39,19 +39,13 @@ echo ""
 # ------------------------------------------------------------------
 echo "--- Setup: Generating Makefiles ---"
 cd "$NH"
-if ! (cd sys/unix && sh ./setup.sh hints/linux.500); then
+if ! (cd sys/unix && sh ./setup.sh hints/linux.501); then
     echo "Error: setup.sh failed."
     exit 1
 fi
 echo "  done."
 
-# ------------------------------------------------------------------
-# Fetch Lua dependency (required for NetHack 5.0)
-# ------------------------------------------------------------------
-echo ""
-echo "--- Fetching Lua ---"
-make -C "$NH" fetch-lua
-echo "  done."
+# Lua needs no fetching: its source is part of the tree (nhlua/lua).
 
 # ------------------------------------------------------------------
 # Phase 1: Build native utilities and generate data files.

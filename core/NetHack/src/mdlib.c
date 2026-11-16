@@ -1,4 +1,4 @@
-/* NetHack 5.0  mdlib.c  $NHDT-Date: 1781973053 2026/06/20 16:30:53 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.74 $ */
+/* $NHDT-Header: NetHack 5.0 mdlib.c 2026/09/30_14:47:34 NetHack-5.0:1.85 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Kenneth Lorber, Kensington, Maryland, 2015. */
 /* Copyright (c) M. Stephenson, 1990, 1991.                       */
@@ -146,6 +146,12 @@ static struct win_information window_opts[] = {
     { "amii", "Amiga Intuition (text)", TRUE },
     { "amiv", "Amiga Intuition (tiles)", TRUE },
 #endif
+#ifdef MAC68K /* classic Mac 68k windowport (revived) */
+    { "mac", "Macintosh", TRUE },
+#endif
+#ifdef GEM_GRAPHICS
+    { "Gem", "Atari ST GEM", TRUE },
+#endif
 
 #if 0  /* remainder have been retired */
 #ifdef GNOME_GRAPHICS /* unmaintained/defunct */
@@ -153,9 +159,6 @@ static struct win_information window_opts[] = {
 #endif
 #ifdef MAC68K /* defunct OS 9 interface */
     { "mac", "Mac", TRUE },
-#endif
-#ifdef GEM_GRAPHICS /* defunct Atari interface */
-    { "Gem", "Gem", TRUE },
 #endif
 #ifdef BEOS_GRAPHICS /* unmaintained/defunct */
     { "BeOS", "BeOS InterfaceKit", TRUE },
@@ -228,6 +231,10 @@ static struct soundlib_information soundlib_opts[] = {
 #ifdef SND_LIB_QTSOUND
     { soundlib_qtsound, "soundlib_qtsound",
         "https://doc.qt.io/qt-5/qsoundeffect.html", FALSE },
+#endif
+#ifdef SND_LIB_MAC68KSOUND
+    /* Uses the classic Mac OS Sound Manager */
+    { soundlib_mac68ksound, "soundlib_mac68ksound", "", FALSE },
 #endif
     { 0, 0, 0, FALSE },
 };
@@ -552,6 +559,9 @@ static const char *const build_opts[] = {
     "screen control via WIN32 console I/O",
 #endif
 #endif /* NO_TERMS */
+#ifdef WIN32CON
+    "WindowsTerminal",
+#endif
 #ifdef SHELL
     "shell command",
 #endif

@@ -23,7 +23,6 @@ If you are using the traditional configuration system, see Install.unx.
 	cd $Top/sys/unix
 	sh setup.sh hints/NAME_OF_HINTS_FILE
 	cd ../..
-	make fetch-Lua
 	make all
 
    If the build fails, remove all the generated files before retrying the
@@ -31,10 +30,6 @@ If you are using the traditional configuration system, see Install.unx.
 
    See the "User Interface Build Customizations" section below if you want to
    configure your build with support for interfaces beyond traditional TTY.
-
-   The 'make fetch-Lua' step really only needs to be done one time unless
-   your sources get refreshed, or the lib folder and its contents get
-   removed.
 
 4. Install:
    Depending on your configuration, this step may or may not need to be done
@@ -159,6 +154,6 @@ There are other hints file options that are meant to impact your NetHack build
 in various other ways too. A reference list can be found in
 sys/unix/README.hints. 
 
-# NetHack 5.0  NewInstall.unx       $NHDT-Date: 1652276817 2022/05/11 13:46:57 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.11 $
+# $NHDT-Header: NetHack 5.0 NewInstall.unx 2026/09/30_15:59:39 NetHack-5.0:1.24 $
 # Copyright (c) 2009 by Kenneth Lorber, Kensington, Maryland
 # NetHack may be freely redistributed.  See license for details.
