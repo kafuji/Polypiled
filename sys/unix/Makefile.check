@@ -1,4 +1,6 @@
-# NetHack 5.0  Makefile.check $NHDT-Date: 1599687610 2020/09/09 21:40:10 $  $NHDT-Branch: NetHack-5.0
+# $NHDT-Header: NetHack 5.0 Makefile.check 2026/10/11_17:56:42 NetHack-5.0:1.9 $
+# Copyright (c) Michael Allison, 2026.
+# NetHack may be freely redistributed.  See license for details.
 
 SUPATH := sys/unix/
 MKHINTSPATH := $(SUPATH)hints/
@@ -8,7 +10,7 @@ MKINCLPATH := $(SUPATH)hints/include/
 # Expectations:
 #
 # HINTSFILE and HINTSINCLFILES are passed from the calling Makefile
-# which is the case with the hints/*.500 and hints/include/*.500
+# which is the case with the hints/*.501 and hints/include/*.501
 # set.
 #
 ifneq ("$(HINTSFILE)","")

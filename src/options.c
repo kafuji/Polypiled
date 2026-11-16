@@ -1,4 +1,4 @@
-/* NetHack 5.0	options.c	$NHDT-Date: 1778886716 2026/05/15 15:11:56 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.782 $ */
+/* $NHDT-Header: NetHack 5.0 options.c 2026/09/30_14:47:34 NetHack-5.0:1.799 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2008. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -5327,6 +5327,12 @@ optfn_boolean(
             give_opt_msg = FALSE;
             break;
 #endif
+#ifdef WIN32CON
+        case opt_windowsterminal:
+            iflags.wt_how =
+                (negated) ? wt_in_config_negated : wt_in_config_not_negated;
+            break;
+#endif
         default:
             break;
         }
@@ -7166,8 +7172,14 @@ initoptions_init(void)
 
     /* make any symbol parsing quicker, but only if
      * gd.disable_glyphname_hash_indices_prefill is not set to TRUE */
+#ifndef MAC68K
+    /* Skip on classic Mac OS — the prefill iterates thousands of glyphs
+       (Sprintf + hash insertions), taking ~2 minutes on a 68030.  Lazy
+       lookup on first use is cheaper; the cache is only needed for glyph
+       name lookups in config files. */
     if (!glyphname_hash_indices_loaded() && !gd.disable_glyphname_hash_indices_prefill)
         populate_glyphname_hash_indices();
+#endif
 
     /* set up the command parsing */
     reset_commands(TRUE); /* init */

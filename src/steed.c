@@ -1,4 +1,4 @@
-/* NetHack 5.0	steed.c	$NHDT-Date: 1781973068 2026/06/20 16:31:08 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.132 $ */
+/* $NHDT-Header: NetHack 5.0 steed.c 2026/06/20_16:31:08 NetHack-5.0:1.138 $ */
 /* Copyright (c) Kevin Hugo, 1998-1999. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -913,8 +913,8 @@ place_monster(struct monst *mon, coordxy x, coordxy y)
         x = y = 0;
     }
     if ((mon == u.usteed && !gi.in_steed_dismounting)
-        /* special case is for convoluted vault guard handling */
-        || (DEADMONSTER(mon) && !PARKEDMONSTER(mon))) {
+        /* dead vault guards stay at <0,0> until their fake corridor is cleared */
+        || (DEADMONSTER(mon) && !(mon->isgd && x == 0 && y == 0))) {
         describe_level(buf, 0);
         impossible("placing %s onto map, mstate:%lx, on %s?",
                    (mon == u.usteed) ? "steed" : "defunct monster",

@@ -1,4 +1,6 @@
-% NetHack 5.0  Guidebook.tex $NHDT-Date: 1782274458 2026/06/23 23:14:18 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.630 $ */
+% $NHDT-Header: NetHack 5.0 Guidebook.tex 2026/09/25_23:45:30 NetHack-5.0:1.636 $
+% Copyright (c) Mike Stephenson 2002.
+% NetHack may be freely redistributed.  See license for details.
 \documentclass[titlepage]{article}
 \usepackage[hidelinks]{hyperref}
 \usepackage{longtable}
@@ -23,9 +25,9 @@
 
 %.au
 \author{Original version - Eric S. Raymond\\
-(Edited and expanded for 5.0.0 by Mike Stephenson and others)}
+(Edited and expanded for 5.0.1 by Mike Stephenson and others)}
 %DO NOT REMOVE NH_DATESUB \date{Date(%B %-d, %Y)}
-\date{July 4, 2026}
+\date{September 25, 2026}
 
 \maketitle
 
@@ -6297,7 +6299,7 @@ Each SOUND entry is broken down into the following parts:
 
 %.sd
 %.si
-\texttt{MESG} --- message window mapping (the only one supported in 5.0.0);\\
+\texttt{MESG} --- message window mapping (the only one supported in 5.0.0 and beyond);\\
 \texttt{msgtype} --- optional; message type to use, see ``Configuring User Sounds''\\
 \texttt{pattern} --- the pattern to match;\\
 \texttt{sound file} --- the sound file to play;\\
@@ -6991,7 +6993,7 @@ Only available if your game is compiled with DUMPLOG.
 Allows the following placeholders:
 % FIXME: this should be changed to a nested list or else be forcibly indented
 \texttt{\%\%}  --- literal `\texttt{\%}'\\
-\texttt{\%v}  --- version (eg. ``\texttt{5.0.0-0}'')\\
+\texttt{\%v}  --- version (eg. ``\texttt{5.0.1-0}'')\\
 \texttt{\%u}  --- game UID\\
 \texttt{\%t}  --- game start time, UNIX timestamp format\\
 \texttt{\%T}  --- current time, UNIX timestamp format\\

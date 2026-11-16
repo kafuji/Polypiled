@@ -1,4 +1,4 @@
-/* NetHack 5.0	teleport.c	$NHDT-Date: 1781973069 2026/06/20 16:31:09 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.246 $ */
+/* $NHDT-Header: NetHack 5.0 teleport.c 2026/06/20_16:31:09 NetHack-5.0:1.250 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -1190,6 +1190,7 @@ level_tele(void)
     if ((Teleport_control && !Stunned) || wizard) {
         char qbuf[BUFSZ];
         int trycnt = 0;
+        s_level *protolev;
 
         Strcpy(qbuf, "To what level do you want to teleport?");
         do {
@@ -1218,7 +1219,12 @@ level_tele(void)
             } else if (!strcmp(buf, "\033")) { /* cancelled */
                 return;
             }
-            if (wizard && !strcmp(buf, "?")) {
+            if (wizard && (protolev = find_level_substr(buf)) != 0) {
+                newlevel.dnum = protolev->dlevel.dnum;
+                newlevel.dlevel = protolev->dlevel.dlevel;
+                newlev = depth(&u.uz);
+                force_dest = TRUE;
+            } else if (wizard && !strcmp(buf, "?")) {
                 schar destlev;
                 xint16 destdnum;
 
@@ -1745,7 +1751,7 @@ rloc_to_core(
        a for-sale item is ordinary here--shk won't notice it leaving; if
        mtmp teleports from one shop into another, no_charge status sticks
        and an item on the first shk's bill stays there */
-    if (mtmp->minvent && !costly_spot(x, y)) {
+    if (!gi.in_mklev && mtmp->minvent && !costly_spot(x, y)) {
         struct obj *otmp;
         struct monst *shkp = find_objowner(mtmp->minvent, oldx, oldy);
         boolean peaceful = !shkp || shkp->mpeaceful;

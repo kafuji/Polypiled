@@ -1,3 +1,9 @@
+/*
+ * $NHDT-Header: NetHack 5.0 colorwin.c 2026/09/30_14:47:34 NetHack-5.0:1.5 $
+ * Copyright (c) Ingo Paschke 2026.
+ * NetHack may be freely redistributed.  See license for details.
+ */
+
 SHORT Col_BorderVectors1[] = { 0, 0, 59, 0, 59, 12, 0, 12, 0, 0 };
 struct Border Col_Border1 = {
     -1, -1,             /* XY origin relative to container TopLeft */
@@ -19,13 +25,13 @@ struct Gadget Col_Save = {
     NULL,                /* next gadget */
     9, 77,               /* origin XY of hit box relative to window TopLeft */
     58, 11,              /* hit box width and height */
-    NULL,                /* gadget flags */
+    0,                   /* gadget flags */
     RELVERIFY,           /* activation flags */
     BOOLGADGET,          /* gadget type flags */
     (APTR) &Col_Border1, /* gadget border or image to be rendered */
     NULL,                /* alternate imagery for selection */
     &Col_IText1,         /* first IntuiText structure */
-    NULL,                /* gadget mutual-exclude long word */
+    0,                   /* gadget mutual-exclude long word */
     NULL,                /* SpecialInfo structure */
     GADCOLSAVE,          /* user-definable data */
     NULL                 /* pointer to user-definable data */
@@ -52,13 +58,13 @@ struct Gadget Col_Okay = {
     &Col_Save,           /* next gadget */
     128, 77,             /* origin XY of hit box relative to window TopLeft */
     58, 11,              /* hit box width and height */
-    NULL,                /* gadget flags */
+    0,                   /* gadget flags */
     RELVERIFY,           /* activation flags */
     BOOLGADGET,          /* gadget type flags */
     (APTR) &Col_Border2, /* gadget border or image to be rendered */
     NULL,                /* alternate imagery for selection */
     &Col_IText2,         /* first IntuiText structure */
-    NULL,                /* gadget mutual-exclude long word */
+    0,                   /* gadget mutual-exclude long word */
     NULL,                /* SpecialInfo structure */
     GADCOLOKAY,          /* user-definable data */
     NULL                 /* pointer to user-definable data */
@@ -85,13 +91,13 @@ struct Gadget Col_Cancel = {
     &Col_Okay,           /* next gadget */
     244, 77,             /* origin XY of hit box relative to window TopLeft */
     58, 11,              /* hit box width and height */
-    NULL,                /* gadget flags */
+    0,                   /* gadget flags */
     RELVERIFY,           /* activation flags */
     BOOLGADGET,          /* gadget type flags */
     (APTR) &Col_Border3, /* gadget border or image to be rendered */
     NULL,                /* alternate imagery for selection */
     &Col_IText3,         /* first IntuiText structure */
-    NULL,                /* gadget mutual-exclude long word */
+    0,                   /* gadget mutual-exclude long word */
     NULL,                /* SpecialInfo structure */
     GADCOLCANCEL,        /* user-definable data */
     NULL                 /* pointer to user-definable data */
@@ -116,13 +122,13 @@ struct Gadget Col_RedPen = {
     &Col_Cancel, /* next gadget */
     32, 12,      /* origin XY of hit box relative to window TopLeft */
     271, 11,     /* hit box width and height */
-    NULL,        /* gadget flags */
+    0,           /* gadget flags */
     RELVERIFY + GADGIMMEDIATE + FOLLOWMOUSE, /* activation flags */
     PROPGADGET,                              /* gadget type flags */
     (APTR) &Col_Image1,          /* gadget border or image to be rendered */
     NULL,                        /* alternate imagery for selection */
     NULL,                        /* first IntuiText structure */
-    NULL,                        /* gadget mutual-exclude long word */
+    0,                           /* gadget mutual-exclude long word */
     (APTR) &Col_Col_RedPenSInfo, /* SpecialInfo structure */
     GADREDPEN,                   /* user-definable data */
     NULL                         /* pointer to user-definable data */
@@ -147,13 +153,13 @@ struct Gadget Col_GreenPen = {
     &Col_RedPen, /* next gadget */
     32, 24,      /* origin XY of hit box relative to window TopLeft */
     271, 11,     /* hit box width and height */
-    NULL,        /* gadget flags */
+    0,           /* gadget flags */
     RELVERIFY + GADGIMMEDIATE + FOLLOWMOUSE, /* activation flags */
     PROPGADGET,                              /* gadget type flags */
     (APTR) &Col_Image2,            /* gadget border or image to be rendered */
     NULL,                          /* alternate imagery for selection */
     NULL,                          /* first IntuiText structure */
-    NULL,                          /* gadget mutual-exclude long word */
+    0,                             /* gadget mutual-exclude long word */
     (APTR) &Col_Col_GreenPenSInfo, /* SpecialInfo structure */
     GADGREENPEN,                   /* user-definable data */
     NULL                           /* pointer to user-definable data */
@@ -178,13 +184,13 @@ struct Gadget Col_BluePen = {
     &Col_GreenPen, /* next gadget */
     32, 36,        /* origin XY of hit box relative to window TopLeft */
     271, 11,       /* hit box width and height */
-    NULL,          /* gadget flags */
+    0,             /* gadget flags */
     RELVERIFY + GADGIMMEDIATE + FOLLOWMOUSE, /* activation flags */
     PROPGADGET,                              /* gadget type flags */
     (APTR) &Col_Image3,           /* gadget border or image to be rendered */
     NULL,                         /* alternate imagery for selection */
     NULL,                         /* first IntuiText structure */
-    NULL,                         /* gadget mutual-exclude long word */
+    0,                            /* gadget mutual-exclude long word */
     (APTR) &Col_Col_BluePenSInfo, /* SpecialInfo structure */
     GADBLUEPEN,                   /* user-definable data */
     NULL                          /* pointer to user-definable data */

@@ -1,5 +1,5 @@
 /* vim:set cin ft=c sw=4 sts=4 ts=8 et ai cino=Ls\:0t0(0 : -*- mode:c;fill-column:80;tab-width:8;c-basic-offset:4;indent-tabs-mode:nil;c-file-style:"k&r" -*-*/
-/* NetHack 5.0 curswins.h */
+/* $NHDT-Header: NetHack 5.0 curswins.h 2026/10/04_17:51:20 NetHack-5.0:1.11 $ */
 /* Copyright (c) Karl Garrison, 2010. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -23,7 +23,6 @@ void curses_destroy_win(WINDOW * win);
 void curses_refresh_nethack_windows(void);
 WINDOW *curses_get_nhwin(winid wid);
 void curses_parse_wid_colors(int wid, char *fg, char *bg);
-boolean parse_hexstr(char *colorbuf, int *red, int *green, int *blue);
 void curses_add_nhwin(winid wid, int height, int width, int y, int x,
                       orient orientation, boolean border);
 void curses_add_wid(winid wid);

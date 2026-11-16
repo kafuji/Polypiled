@@ -1,4 +1,4 @@
-/* NetHack 5.0	extern.h	$NHDT-Date: 1778886716 2026/05/15 15:11:56 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.1558 $ */
+/* $NHDT-Header: NetHack 5.0 extern.h 2026/10/17_14:49:13 NetHack-5.0:1.1583 $ */
 /* Copyright (c) Steve Creps, 1988.                               */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -318,8 +318,10 @@ extern int midnight(void);
 
 /* ### cfgfiles.c ### */
 
+#ifndef __cplusplus
 #if !defined(CROSSCOMPILE) || defined(CROSSCOMPILE_TARGET)
 extern int l_get_config_errors(lua_State *) NONNULLARG1;
+#endif
 #endif
 extern int do_write_config_file(void);
 extern boolean parse_config_line(char *) NONNULLARG1;
@@ -345,7 +347,7 @@ extern void disregard_all_config_statements(void);
 extern void heed_this_config_statement(int);
 extern void disregard_this_config_statement(int);
 extern boolean config_unmatched_ignored(void);
-extern void clear_ignore_errors_on_unmatched(void);
+extern void clear_ignore_errors_on_unmatch(void);
 extern void set_ignore_errors_on_unmatched(void);
 extern void rcfile_only_this_statement(int);
 #ifdef WIN32
@@ -686,6 +688,7 @@ extern int dowipe(void);
 extern void legs_in_no_shape(const char *, boolean) NONNULLARG1;
 extern void set_wounded_legs(long, int);
 extern void heal_legs(int);
+extern void do_idlecheckpoint(void);
 
 /* ### do_name.c ### */
 
@@ -868,6 +871,9 @@ extern int breakobj(struct obj *, coordxy, coordxy, boolean, boolean) NONNULLARG
 extern boolean breaktest(struct obj *) NONNULLARG1;
 extern boolean walk_path(coord *, coord *,
                          boolean(*)(void *, coordxy, coordxy), genericptr_t) NONNULLARG12;
+extern void calc_othrow_ranges(struct obj *, enum toss_types,
+                                       const struct throw_and_return_weapon *,
+                                       boolean, int *, int *);
 
 /* ### drawing.c ### */
 
@@ -882,6 +888,7 @@ extern void restore_dungeon(NHFILE *) NONNULLARG1;
 extern void insert_branch(branch *, boolean) NONNULLARG1;
 extern void init_dungeons(void);
 extern s_level *find_level(const char *) NONNULLARG1;
+extern s_level *find_level_substr(const char *) NONNULLARG1;
 extern s_level *Is_special(d_level *) NONNULLARG1;
 extern branch *Is_branchlev(d_level *) NONNULLARG1;
 extern boolean builds_up(d_level *) NONNULLARG1;
@@ -2029,7 +2036,8 @@ extern int dosuspend(void);
 extern void nt_regularize(char *);
 extern int(*nt_kbhit)(void);
 extern void Delay(int);
-boolean get_user_home_folder(char *, size_t);
+extern boolean get_user_home_folder(char *, size_t);
+extern boolean WindowsTerminalActive(void);
 # ifdef CRASHREPORT
 struct CRctxt;
 extern struct CRctxt *ctxp;
@@ -2091,6 +2099,8 @@ extern boolean munslime(struct monst *, boolean) NONNULLARG1;
 extern void awaken_soldiers(struct monst *) NONNULLARG1;
 extern int do_play_instrument(struct obj *) NONNULLARG1;
 enum instruments obj_to_instr(struct obj *) NONNULLARG1;
+
+#ifndef __cplusplus
 
 /* ### nhlsel.c ### */
 
@@ -2160,11 +2170,12 @@ extern int get_table_boolean_opt(lua_State *, const char *, int) NONNULLARG12;
 extern int get_table_option(lua_State *, const char *, const char *,
                             const char *const *) NO_NNARGS;
 /* extern int str_lines_max_width(const char *); */
-extern const char *get_lua_version(void);
 extern void nhl_pushhooked_open_table(lua_State *L) NONNULLARG1;
 extern void free_tutorial(void);
 extern void tutorial(boolean);
 #endif /* !CROSSCOMPILE || CROSSCOMPILE_TARGET */
+#endif /* not __cplusplus */
+extern const char *get_lua_version(void);
 
 #endif /* MAKEDEFS_C MDLIB_C CPPREGEX_C */
 
@@ -2195,6 +2206,10 @@ extern int set_keyhandling_via_option(void);
 extern void tty_utf8graphics_fixup(void);
 extern void tty_ibmgraphics_fixup(void);
 #endif /* ENHANCED_SYMBOLS */
+#ifdef WIN32CON
+extern const char *win32con_topl_fixup(const char *);
+#endif
+extern boolean wincon_WindowsTerminalActive(void);
 #endif /* WIN32 */
 
 /* ### o_init.c ### */
@@ -2650,16 +2665,17 @@ extern void com_pager(const char *);
 extern void qt_pager(const char *);
 extern struct permonst *qt_montype(void);
 extern void deliver_splev_message(void);
+extern void free_questpager(void);
 
 /* ### random.c ### */
 
 #if defined(RANDOM) && !defined(__GO32__) /* djgpp has its own random */
-#ifndef CROSS_TO_AMIGA
+#if !defined(CROSS_TO_AMIGA) && !defined(CROSS_TO_ATARI)
 extern void srandom(unsigned);
 extern char *initstate(unsigned, char *, int);
 extern char *setstate(char *);
 extern long random(void);
-#endif /* CROSS_TO_AMIGA */
+#endif /* !CROSS_TO_AMIGA && !CROSS_TO_ATARI */
 #endif /* RANDOM */
 
 /* ### read.c ### */
@@ -2747,7 +2763,8 @@ extern int dorecover(NHFILE *) NONNULLARG1;
 extern void restcemetery(NHFILE *, struct cemetery **) NONNULLARG12;
 extern void trickery(char *) NO_NNARGS;
 extern void getlev(NHFILE *, int, xint8) NONNULLARG1;
-extern void get_plname_from_file(NHFILE *, char *, boolean) NONNULLARG12;
+extern int get_plname_from_file(NHFILE *, char *, size_t, boolean) NONNULLARG12;
+ATTRNORETURN extern void plnabort(int) NORETURN;
 #ifdef SELECTSAVED
 extern int restore_menu(winid);
 #endif
@@ -2761,9 +2778,10 @@ void restore_gamelog(NHFILE *);
 boolean restgamestate(NHFILE *);
 void restore_msghistory(NHFILE *);
 #endif
-extern void rest_adjust_levelflags(long);
+extern void rest_adjust_levelflags(long, boolean);
 extern void moves_to_relative_time(long *);
 extern void relative_time_to_moves(long *);
+extern void bones_time_adjust(long *);
 extern boolean revision_increment(int, int, uchar *);
 
 /* ### revision.c ### */
@@ -3066,6 +3084,7 @@ extern enum soundlib_ids soundlib_id_from_opt(char *);
 
 /* ### sp_lev.c ### */
 
+#ifndef __cplusplus
 #if !defined(CROSSCOMPILE) || defined(CROSSCOMPILE_TARGET)
 extern boolean match_maptyps(xint16, xint16);
 extern void create_des_coder(void);
@@ -3106,6 +3125,7 @@ extern void l_register_des(lua_State *) NONNULLARG1;
 extern int get_table_objclass(lua_State *) NONNULLARG1;
 extern int get_table_objtype(lua_State *) NONNULLARG1;
 #endif /* !CROSSCOMPILE || CROSSCOMPILE_TARGET */
+#endif /* not __cplusplus */
 
 /* ### spell.c ### */
 
@@ -3912,6 +3932,7 @@ extern int wiz_show_wmodes(void);
 extern int wiz_smell(void);
 extern int wiz_telekinesis(void);
 extern int wiz_where(void);
+extern int wiz_throwranges(void);
 extern int wiz_wish(void);
 extern void makemap_remove_mons(void);
 extern void wiz_levltyp_legend(void);

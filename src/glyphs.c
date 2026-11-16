@@ -1,4 +1,4 @@
-/* NetHack 5.0	glyphs.c	TODO: add NHDT branch/date/revision tags */
+/* $NHDT-Header: NetHack 5.0 glyphs.c 2026/09/30_14:47:34 NetHack-5.0:1.77 $ */
 /* Copyright (c) Michael Allison, 2021. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -577,6 +577,14 @@ empty_glyphname_hash_indices(void)
     glyphname_hash_indices_ptr = (struct glyphname_hash_index_entry_t *) 0;
     glyphname_hash_indices_count = 0;
 }
+
+
+
+
+
+
+
+
 
 staticfn int
 find_glyph_in_hashtable(const char *id)

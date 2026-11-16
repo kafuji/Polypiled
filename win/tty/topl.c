@@ -1,4 +1,4 @@
-/* NetHack 5.0	topl.c	$NHDT-Date: 1781973100 2026/06/20 16:31:40 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.94 $ */
+/* $NHDT-Header: NetHack 5.0 topl.c 2026/06/20_22:26:43 NetHack-5.0:1.96 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2009. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -325,14 +325,16 @@ topl_putsym(char c)
         ttyDisplay->cury++;
         cw->cury = ttyDisplay->cury;
 #ifdef WIN32CON
-        (void) putchar(c);
+        if (!wincon_WindowsTerminalActive())
+            (void) putchar(c);
 #endif
         break;
     default:
         if (ttyDisplay->curx == CO - 1)
             topl_putsym('\n'); /* 1 <= curx < CO; avoid CO */
 #ifdef WIN32CON
-        (void) putchar(c);
+        if (!wincon_WindowsTerminalActive())
+            (void) putchar(c);
 #endif
         ttyDisplay->curx++;
     }
@@ -341,12 +343,18 @@ topl_putsym(char c)
         cl_end();
 #ifndef WIN32CON
     (void) putchar(c);
+#else
+    if (wincon_WindowsTerminalActive())
+        (void) putchar(c);
 #endif
 }
 
 void
 putsyms(const char *str)
 {
+#ifdef WIN32CON
+    str = win32con_topl_fixup(str);
+#endif
     while (*str)
         topl_putsym(*str++);
 }
