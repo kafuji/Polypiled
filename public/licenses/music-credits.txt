@@ -15,6 +15,7 @@ public/music/takachiho/quest.mp3           "The Quest"                  scripts/
 public/music/takachiho/medusa.mp3          "Medusa's Island"            scripts/music-sketch/pieces/medusa.mjs
 public/music/takachiho/castle.mp3          "The Castle"                 scripts/music-sketch/pieces/castle.mjs
 public/music/takachiho/gehennom.mp3        "Gehennom"                   scripts/music-sketch/pieces/gehennom.mjs
+public/music/takachiho/sanctum.mp3         "Moloch's Sanctum"           scripts/music-sketch/pieces/sanctum.mjs
 public/music/takachiho/astral.mp3          "The Astral Plane"           scripts/music-sketch/pieces/astral.mjs
 public/music/takachiho/combat.mp3          "Combat"                     scripts/music-sketch/pieces/combat-heavy.mjs
 public/music/takachiho/combat-boss.mp3     "Boss Combat"                scripts/music-sketch/pieces/combat.mjs

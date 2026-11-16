@@ -247,6 +247,8 @@ export class AudioHapticsPlatform {
       dlevel: identity.dlevel,
       specialLevel: identity.specialLevel,
       mainDungeonLevelCount: identity.mainDungeonLevelCount,
+      dungeonName: identity.dungeonName,
+      dungeonLevelCount: identity.dungeonLevelCount,
     };
     // Counting water is only worth it where Medusa's level could be.
     return resolveMusicSpecialLevel(

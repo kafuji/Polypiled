@@ -58,6 +58,16 @@ describe("resolveMusicSpecialLevel", () => {
     expect(resolveMusicSpecialLevel({ ...doom, dnum: 2, dlevel: 25, knownWaterTiles: 500 })).toBeNull();
   });
 
+  it("finds Moloch's Sanctum at the bottom of Gehennom", () => {
+    const gehennom = { dnum: 1, dungeonName: "Gehennom", dungeonLevelCount: 22, mainDungeonLevelCount: 27 };
+    expect(resolveMusicSpecialLevel({ ...gehennom, dlevel: 22 })).toBe("sanctum");
+    expect(resolveMusicSpecialLevel({ ...gehennom, dlevel: 21 })).toBeNull();
+    // The bottom of another dungeon is not the Sanctum, nor is a level whose count is unknown.
+    expect(resolveMusicSpecialLevel({ ...gehennom, dungeonName: "The Gnomish Mines", dnum: 2, dlevel: 22 })).toBeNull();
+    expect(resolveMusicSpecialLevel({ ...gehennom, dungeonLevelCount: null, dlevel: 22 })).toBeNull();
+    expect(resolveMusicRegion("Gehennom", "sanctum")).toBe("sanctum");
+  });
+
   it("falls back to none without the level count", () => {
     expect(resolveMusicSpecialLevel({ dnum: 0, dlevel: 27, mainDungeonLevelCount: null })).toBeNull();
     expect(resolveMusicSpecialLevel({ dnum: 0, dlevel: 25, knownWaterTiles: 500 })).toBeNull();

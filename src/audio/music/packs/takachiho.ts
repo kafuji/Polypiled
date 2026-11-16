@@ -46,6 +46,7 @@ export const takachihoMusicPack: MusicPack = {
       track("medusa", "medusa", "Medusa's Island", "medusa", { crossfadeSec: 4, gainDb: -6.5 }),
       track("castle", "castle", "The Castle", "castle", { crossfadeSec: 4, gainDb: -4.5 }),
       track("gehennom", "gehennom", "Gehennom", "gehennom", { crossfadeSec: 4, gainDb: -6.5 }),
+      track("sanctum", "sanctum", "Moloch's Sanctum", "sanctum", { crossfadeSec: 4, gainDb: -7 }),
       track("astral", "astral", "The Astral Plane", "astral", { crossfadeSec: 4, gainDb: -4.5 }),
     ],
     combat: [
@@ -68,6 +69,7 @@ export const takachihoMusicPack: MusicPack = {
     quest: { calm: ["quest"], combat: ["combat"] },
     ludios: { calm: ["dungeon"], combat: ["combat-boss"] },
     gehennom: { calm: ["gehennom"], combat: ["combat-boss"] },
+    sanctum: { calm: ["sanctum"], combat: ["combat-boss"] },
     endgame: { calm: ["astral"], combat: ["astral-combat"] },
   },
   titleTrack: track("title-theme", "title-theme", "Labyrinth of DOOM", "title", { crossfadeSec: 4, gainDb: -6 }),

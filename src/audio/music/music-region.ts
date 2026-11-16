@@ -3,7 +3,8 @@ import type { MusicMood } from "./music-director";
 /**
  * Coarse dungeon regions that get their own track preferences. Derived from
  * the status line's dungeon name, which the runtimes report in English, plus
- * the special levels inside the Dungeons of Doom that have their own music.
+ * the special levels that have their own music: Medusa's and the Castle inside
+ * the Dungeons of Doom, and Moloch's Sanctum at the bottom of Gehennom.
  */
 export type MusicRegion =
   | "dungeon"
@@ -14,10 +15,11 @@ export type MusicRegion =
   | "quest"
   | "ludios"
   | "gehennom"
+  | "sanctum"
   | "endgame";
 
-/** Special levels inside the Dungeons of Doom that get their own region. */
-export type MusicSpecialLevel = "medusa" | "castle";
+/** Special levels that get their own region. */
+export type MusicSpecialLevel = "medusa" | "castle" | "sanctum";
 
 export type MusicLevelInfo = {
   /** Dungeon index and level within it (`u.uz`). Dungeon 0 is the Dungeons of Doom. */
@@ -25,6 +27,10 @@ export type MusicLevelInfo = {
   dlevel: number;
   /** Exact special level, when the runtime exports it. */
   specialLevel?: MusicSpecialLevel | null;
+  /** Dungeon name from the runtime ("Gehennom"). */
+  dungeonName?: string | null;
+  /** Number of levels in the current dungeon; Gehennom's last one is the Sanctum. */
+  dungeonLevelCount?: number | null;
   /** Number of levels in the Dungeons of Doom; the Castle is the last one. */
   mainDungeonLevelCount?: number | null;
   /** Water tiles seen so far on the current level. */
@@ -49,12 +55,20 @@ export function resolveMusicSpecialLevel(
 ): MusicSpecialLevel | null {
   if (!level) return null;
   if (level.specialLevel) return level.specialLevel;
+  // dungeon.lua places the Sanctum at Gehennom's last level (@ -1).
+  if (isGehennom(level.dungeonName) && level.dungeonLevelCount && level.dlevel === level.dungeonLevelCount) {
+    return "sanctum";
+  }
   const count = level.mainDungeonLevelCount;
   if (level.dnum === 0 && count && level.dlevel === count) return "castle";
   if (couldBeMedusaLevel(level) && (level.knownWaterTiles ?? 0) >= MEDUSA_MIN_WATER_TILES) {
     return "medusa";
   }
   return null;
+}
+
+function isGehennom(dungeonName: string | null | undefined): boolean {
+  return /^(the )?gehennom$/i.test(String(dungeonName ?? "").trim());
 }
 
 /** Whether the water count decides if this is Medusa's level. */
