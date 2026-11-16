@@ -360,6 +360,11 @@ EMCC_CFLAGS += -Wno-error=js-compiler
 # symbols which are resolved at runtime. Since CFLAGS are passed to the linker,
 # -Werror would turn these into fatal errors without this override.
 EMCC_CFLAGS += -s SUPPORT_LONGJMP=emscripten
+# Polypiled, 2026-11-16: upstream NetHack-5.0 at b1c3c61a6 declares statics in
+# src/polyself.c that are only used under UASMON_COUNTING_PER_MOVELOOP, which
+# -Werror turns into a build failure. Keep the warning, drop the error, so the
+# upstream source stays unpatched.
+EMCC_CFLAGS += -Wno-error=unused-variable
 EMCC_CFLAGS += -DNO_SIGNAL
 #EMCC_CFLAGS += -s DISABLE_EXCEPTION_CATCHING=0
 EMCC_DEBUG_LFLAGS += -s ASSERTIONS=1
