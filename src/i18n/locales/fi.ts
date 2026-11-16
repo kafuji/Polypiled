@@ -6,7 +6,7 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
     locale: "fi-FI",
   },
   common: {
-    appName: "NetHack 3D -peli",
+    appName: "Polypiled-peli",
     confirm: "Vahvista",
     cancel: "Peruuta",
     close: "Sulje",
@@ -570,7 +570,7 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
       title: "Tallennukset",
       description: "Tuo ja vie valitun peliversion tallennuksia.",
       importLabel: "Tuo tallennus",
-      importDescription: "Valitse tämän peliversion NetHack 3D -varmuuskopio (.nh3dsave). Tuonti tulee voimaan heti.",
+      importDescription: "Valitse tämän peliversion Polypiled-varmuuskopio (.nh3dsave). Tuonti tulee voimaan heti.",
       exportLabel: "Vie tallennus",
       exportDescription: "Lataa manuaalisen tai automaattisen tallennuksen varmuuskopio hahmon asetuksineen.",
       activeGame: "Tallenna ja lopeta peli. Avaa sitten aloitusvalikon asetukset tallennusten tuontia tai vientiä varten.",
@@ -867,9 +867,9 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
         asciiColorMode: {
           label: "ASCII-värit",
           description:
-            "ASCII-glyfien värimaailma. Klassinen käyttää alkuperäisiä NetHack-värejä tummalla taustalla ja lemmikeille käänteistä korostusta. NetHack 3D käyttää alkuperäistä muokkaamatonta renderöintiä.",
+            "ASCII-glyfien värimaailma. Klassinen käyttää alkuperäisiä NetHack-värejä tummalla taustalla ja lemmikeille käänteistä korostusta. Polypiled käyttää alkuperäistä muokkaamatonta renderöintiä.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "Terminal",
             classic: "Klassinen",
           },
@@ -1356,7 +1356,7 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
         cancelDownload: "Peruuta lataus",
       },
       startup: {
-        options: "NetHack 3D -asetukset",
+        options: "Polypiled-asetukset",
         quitGame: "Lopeta peli",
         chooseSetup: "Valitse hahmosi asetukset:",
         randomCharacter: "Satunnainen hahmo",
@@ -1373,8 +1373,8 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
         startGame: "Aloita peli",
       },
       clientOptions: {
-        closeLabel: "Sulje NetHack 3D -asetukset",
-        title: "NetHack 3D:n asiakasasetukset",
+        closeLabel: "Sulje Polypiled-asetukset",
+        title: "Polypiledin asiakasasetukset",
         categoriesLabel: "Asetusluokat",
         updates: {
           checkOnLaunchLabel:
@@ -1417,7 +1417,7 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
             `Listening for ${label} (slot ${slot}). Press ESC to cancel.`,
         },
         resetPrompt:
-          "Palautetaanko NetHack 3D:n asetukset oletuksiin? Mukautetut ruutusetit säilyvät.",
+          "Palautetaanko Polypiledin asetukset oletuksiin? Mukautetut ruutusetit säilyvät.",
       },
       tilesetManager: {
         closeLabel: "Sulje ruutusetinhallinta",

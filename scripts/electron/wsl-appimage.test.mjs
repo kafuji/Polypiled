@@ -38,15 +38,15 @@ test("artifact copy preserves Windows releases, replaces existing AppImages, and
   const destination = path.join(directory, "release with spaces");
   fs.mkdirSync(path.join(source, "linux-unpacked"), { recursive: true });
   fs.mkdirSync(destination);
-  fs.writeFileSync(path.join(source, "NetHack 3D 1.0.0.AppImage"), "new image");
+  fs.writeFileSync(path.join(source, "Polypiled 1.0.0.AppImage"), "new image");
   fs.writeFileSync(path.join(source, "builder-debug.yml"), "debug");
   fs.writeFileSync(path.join(source, "linux-unpacked", "app"), "unpacked");
-  fs.writeFileSync(path.join(destination, "NetHack 3D 1.0.0.AppImage"), "old image");
+  fs.writeFileSync(path.join(destination, "Polypiled 1.0.0.AppImage"), "old image");
   fs.writeFileSync(path.join(destination, "Windows.exe"), "windows");
   copyArtifacts(source, destination);
-  assert.equal(fs.readFileSync(path.join(destination, "NetHack 3D 1.0.0.AppImage"), "utf8"), "new image");
+  assert.equal(fs.readFileSync(path.join(destination, "Polypiled 1.0.0.AppImage"), "utf8"), "new image");
   assert.equal(fs.readFileSync(path.join(destination, "Windows.exe"), "utf8"), "windows");
-  assert.deepEqual(fs.readdirSync(destination).sort(), ["NetHack 3D 1.0.0.AppImage", "Windows.exe", "builder-debug.yml"]);
+  assert.deepEqual(fs.readdirSync(destination).sort(), ["Polypiled 1.0.0.AppImage", "Windows.exe", "builder-debug.yml"]);
 });
 
 test("missing AppImage fails before copying any output", (t) => {

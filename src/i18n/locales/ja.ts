@@ -8,7 +8,7 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
     locale: "ja-JP",
   },
   common: {
-    appName: "NetHack 3D",
+    appName: "Polypiled",
     confirm: "確認",
     cancel: "キャンセル",
     close: "閉じる",
@@ -565,7 +565,7 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
       title: "セーブデータ",
       description: "選択したゲームバージョンのセーブデータをインポート・エクスポートします。",
       importLabel: "セーブをインポート",
-      importDescription: "このバージョン用のNetHack 3Dバックアップ（.nh3dsave）を選択します。インポートは即座に反映されます。",
+      importDescription: "このバージョン用の Polypiled バックアップ（.nh3dsave）を選択します。インポートは即座に反映されます。",
       exportLabel: "セーブをエクスポート",
       exportDescription: "手動セーブまたはオートセーブをキャラクター設定とともにバックアップとしてダウンロードします。",
       activeGame: "ゲームをセーブして終了し、スタートメニューからオプションを開くと、セーブをインポート・エクスポートできます。",
@@ -847,9 +847,9 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
         asciiColorMode: {
           label: "ASCII カラー",
           description:
-            "ASCII グリフ描画時の配色です。クラシックは暗い背景に NetHack 本来の色を使い、ペットを反転表示で強調します。NetHack 3D は元の未変更レンダリングを使用します。",
+            "ASCII グリフ描画時の配色です。クラシックは暗い背景に NetHack 本来の色を使い、ペットを反転表示で強調します。Polypiled は元の未変更レンダリングを使用します。",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "ターミナル",
             classic: "クラシック",
           },
@@ -1349,7 +1349,7 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
         cancelDownload: "ダウンロードをキャンセル",
       },
       startup: {
-        options: "NetHack 3D オプション",
+        options: "Polypiled オプション",
         quitGame: "ゲーム終了",
         chooseSetup: "キャラクター設定を選択:",
         randomCharacter: "ランダムキャラクター",
@@ -1366,8 +1366,8 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
         startGame: "ゲーム開始",
       },
       clientOptions: {
-        closeLabel: "NetHack 3D オプションを閉じる",
-        title: "NetHack 3D クライアントオプション",
+        closeLabel: "Polypiled オプションを閉じる",
+        title: "Polypiled クライアントオプション",
         categoriesLabel: "設定カテゴリ",
         updates: {
           checkOnLaunchLabel: "起動時に GitHub リリース通知を表示",
@@ -1410,7 +1410,7 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
             `${label} の入力待機中 (スロット ${slot})。ESC でキャンセル。`,
         },
         resetPrompt:
-          "NetHack 3D オプションをデフォルトへ戻しますか？ カスタムタイルセットは保持されます。",
+          "Polypiled オプションをデフォルトへ戻しますか？ カスタムタイルセットは保持されます。",
       },
       tilesetManager: {
         closeLabel: "タイルセット管理を閉じる",

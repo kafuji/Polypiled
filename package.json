@@ -1,6 +1,6 @@
 {
-  "name": "nethack3d",
-  "version": "1.6.2",
+  "name": "polypiled",
+  "version": "0.1.0",
   "main": "electron/main.cjs",
   "scripts": {
     "ensure:rollup-native": "node scripts/electron/ensure-rollup-native.mjs",
@@ -64,10 +64,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "NetHack 3D desktop build",
+  "description": "Polypiled: a NetHack variant",
   "build": {
-    "appId": "com.nethack3d.app",
-    "productName": "NetHack 3D",
+    "appId": "io.github.kafuji.polypiled",
+    "productName": "Polypiled",
     "npmRebuild": false,
     "nodeGypRebuild": false,
     "buildDependenciesFromSource": false,
@@ -96,7 +96,7 @@
       "desktop": {
         "entry": {
           "Comment": "Play NetHack in a fully interactive 3D dungeon.",
-          "StartupWMClass": "nethack3d"
+          "StartupWMClass": "polypiled"
         }
       },
       "extraFiles": [
@@ -118,7 +118,7 @@
       ]
     },
     "appImage": {
-      "artifactName": "NetHack 3D ${version}.${ext}"
+      "artifactName": "Polypiled ${version}.${ext}"
     },
     "mac": {
       "icon": "public/NetHack3D.icns",
@@ -128,11 +128,11 @@
       ]
     },
     "dmg": {
-      "artifactName": "NetHack 3D ${version} macOS.${ext}"
+      "artifactName": "Polypiled ${version} macOS.${ext}"
     },
     "win": {
       "icon": "public/NetHack3D.ico",
-      "executableName": "NetHack 3D",
+      "executableName": "Polypiled",
       "target": [
         {
           "target": "nsis",
@@ -143,13 +143,13 @@
       ]
     },
     "nsis": {
-      "artifactName": "NetHack 3D ${version} Setup.${ext}",
+      "artifactName": "Polypiled ${version} Setup.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true
     },
     "portable": {
-      "artifactName": "NetHack 3D ${version} Portable.${ext}",
+      "artifactName": "Polypiled ${version} Portable.${ext}",
       "useZip": true,
       "splashImage": "build/NetHack3D-splash.bmp",
       "unpackDirName": false

@@ -6,7 +6,7 @@ export const zhCnOverrides = {
     locale: "zh-CN",
   },
   common: {
-    appName: "NetHack 3D",
+    appName: "Polypiled",
     confirm: "确认",
     cancel: "取消",
     close: "关闭",
@@ -360,7 +360,7 @@ export const zhCnOverrides = {
       title: "存档",
       description: "导入和导出所选游戏版本的存档。",
       importLabel: "导入存档",
-      importDescription: "选择适用于此游戏版本的 NetHack 3D 备份（.nh3dsave）。导入会立即生效。",
+      importDescription: "选择适用于此游戏版本的 Polypiled 备份（.nh3dsave）。导入会立即生效。",
       exportLabel: "导出存档",
       exportDescription: "下载手动存档或自动存档的备份，包含角色设置。",
       activeGame: "请保存并退出游戏，然后从开始菜单打开选项以导入或导出存档。",
@@ -637,9 +637,9 @@ export const zhCnOverrides = {
         },
         asciiColorMode: {
           label: "ASCII 颜色",
-          description: "用于渲染 3D ASCII 字形的配色方案。NetHack 3D 使用语义 3D 调色板；经典和终端模式使用当前运行时的准确颜色与终端高亮，背景分别为深灰色和黑色。",
+          description: "用于渲染 3D ASCII 字形的配色方案。Polypiled 使用语义 3D 调色板；经典和终端模式使用当前运行时的准确颜色与终端高亮，背景分别为深灰色和黑色。",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             classic: "经典",
             terminal: "终端",
           },
@@ -791,9 +791,9 @@ export const zhCnOverrides = {
         },
         minimapColorMode: {
           label: "小地图颜色",
-          description: "选择 NetHack 3D 语义调色板或 NetHack 的终端颜色。",
+          description: "选择 Polypiled 语义调色板或 NetHack 的终端颜色。",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "终端",
           },
         },
@@ -1137,7 +1137,7 @@ export const zhCnOverrides = {
         cancelDownload: "取消下载",
       },
       startup: {
-        options: "NetHack 3D 选项",
+        options: "Polypiled 选项",
         quitGame: "退出游戏",
         chooseSetup: "选择你的角色配置：",
         randomCharacter: "随机角色",
@@ -1154,8 +1154,8 @@ export const zhCnOverrides = {
         startGame: "开始游戏",
       },
       clientOptions: {
-        closeLabel: "关闭 NetHack 3D 选项",
-        title: "NetHack 3D 客户端选项",
+        closeLabel: "关闭 Polypiled 选项",
+        title: "Polypiled 客户端选项",
         categoriesLabel: "设置分类",
         updates: {
           checkOnLaunchLabel: "启动时显示 GitHub 发行版通知",
@@ -1193,7 +1193,7 @@ export const zhCnOverrides = {
           listeningFor: (label: string, slot: number) =>
             `正在监听 ${label}（槽位 ${slot}）。按 ESC 取消。`,
         },
-        resetPrompt: "要将 NetHack 3D 选项重置为默认值吗？自定义瓦片集会被保留。",
+        resetPrompt: "要将 Polypiled 选项重置为默认值吗？自定义瓦片集会被保留。",
       },
       tilesetManager: {
         closeLabel: "关闭瓦片集管理器",

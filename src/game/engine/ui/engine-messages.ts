@@ -84,7 +84,7 @@ export class EngineMessages {
     if (this.dependencies.engineState.session) {
       this.dependencies.engineState.session.setLoggingEnabled(next);
     }
-    logWithOriginal(`[NetHack 3D] Logging ${next ? "enabled" : "disabled"}`);
+    logWithOriginal(`[Polypiled] Logging ${next ? "enabled" : "disabled"}`);
     return next;
   }
 

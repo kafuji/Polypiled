@@ -4,7 +4,7 @@ export const ru = {
     locale: "ru-RU",
   },
   common: {
-    appName: "NetHack 3D",
+    appName: "Polypiled",
     confirm: "Подтвердить",
     cancel: "Отмена",
     close: "Закрыть",
@@ -576,7 +576,7 @@ export const ru = {
       title: "Сохранения",
       description: "Импорт и экспорт сохранений для выбранной версии игры.",
       importLabel: "Импорт сохранения",
-      importDescription: "Выберите резервную копию NetHack 3D (.nh3dsave) для этой версии игры. Импорт применяется сразу.",
+      importDescription: "Выберите резервную копию Polypiled (.nh3dsave) для этой версии игры. Импорт применяется сразу.",
       exportLabel: "Экспорт сохранения",
       exportDescription: "Скачайте резервную копию ручного или автоматического сохранения вместе с настройками персонажа.",
       activeGame: "Сохраните игру и выйдите, затем откройте настройки в стартовом меню для импорта или экспорта сохранений.",
@@ -872,9 +872,9 @@ export const ru = {
           description:
             "Цветовая схема для отображения ASCII-глифов. " +
             "Классический режим использует родные цвета NetHack с тёмным фоном и обратной подсветкой питомцев. " +
-            "NetHack 3D использует исходный неизменённый рендеринг.",
+            "Polypiled использует исходный неизменённый рендеринг.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "Terminal",
             classic: "Классический",
           },
@@ -1040,9 +1040,9 @@ export const ru = {
         },
         minimapColorMode: {
           label: "Цвета миникарты",
-          description: "Выберите семантическую палитру NetHack 3D или цвета терминала NetHack.",
+          description: "Выберите семантическую палитру Polypiled или цвета терминала NetHack.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "Терминал",
           },
         },
@@ -1415,7 +1415,7 @@ export const ru = {
         cancelDownload: "Отменить загрузку",
       },
       startup: {
-        options: "Параметры NetHack 3D",
+        options: "Параметры Polypiled",
         quitGame: "Выйти из игры",
         chooseSetup: "Выберите настройку персонажа:",
         randomCharacter: "Случайный персонаж",
@@ -1432,8 +1432,8 @@ export const ru = {
         startGame: "Начать игру",
       },
       clientOptions: {
-        closeLabel: "Закрыть параметры NetHack 3D",
-        title: "Параметры клиента NetHack 3D",
+        closeLabel: "Закрыть параметры Polypiled",
+        title: "Параметры клиента Polypiled",
         categoriesLabel: "Категории настроек",
         updates: {
           checkOnLaunchLabel: "Показывать уведомления о релизах GitHub при запуске",
@@ -1474,7 +1474,7 @@ export const ru = {
             `Ожидание ввода для ${label} (слот ${slot}). Нажмите ESC для отмены.`,
         },
         resetPrompt:
-          "Сбросить параметры NetHack 3D к значениям по умолчанию? Пользовательские тайлсеты будут сохранены.",
+          "Сбросить параметры Polypiled к значениям по умолчанию? Пользовательские тайлсеты будут сохранены.",
       },
       tilesetManager: {
         closeLabel: "Закрыть менеджер тайлсетов",

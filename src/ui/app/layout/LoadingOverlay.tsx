@@ -22,7 +22,7 @@ export function LoadingOverlay({
           role="status"
           tabIndex={-1}
         >
-          <div>NetHack 3D</div>
+          <div>Polypiled</div>
           <div className="loading-subtitle">{loadingSubtitle}</div>
         </div>,
         document.body,

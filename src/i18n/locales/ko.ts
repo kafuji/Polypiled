@@ -578,7 +578,7 @@ export const ko = {
       title: "저장 게임",
       description: "선택한 게임 버전의 저장 데이터를 가져오거나 내보냅니다.",
       importLabel: "저장 가져오기",
-      importDescription: "이 게임 버전의 NetHack 3D 백업(.nh3dsave)을 선택하세요. 가져오기는 즉시 적용됩니다.",
+      importDescription: "이 게임 버전의 Polypiled 백업(.nh3dsave)을 선택하세요. 가져오기는 즉시 적용됩니다.",
       exportLabel: "저장 내보내기",
       exportDescription: "캐릭터 설정을 포함한 수동 저장 또는 자동 저장의 백업을 다운로드합니다.",
       activeGame: "게임을 저장하고 종료한 다음 시작 메뉴에서 옵션을 열어 저장 데이터를 가져오거나 내보내세요.",
@@ -871,9 +871,9 @@ export const ko = {
         asciiColorMode: {
           label: "ASCII 색상",
           description:
-            "ASCII 글리프를 렌더링할 때 사용할 색상 구성입니다. 클래식은 어두운 배경에서 NetHack 원래 색상을 사용하고, 반전 표시로 펫을 강조합니다. NetHack 3D는 원래의 수정되지 않은 렌더링을 사용합니다.",
+            "ASCII 글리프를 렌더링할 때 사용할 색상 구성입니다. 클래식은 어두운 배경에서 NetHack 원래 색상을 사용하고, 반전 표시로 펫을 강조합니다. Polypiled는 원래의 수정되지 않은 렌더링을 사용합니다.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "Terminal",
             classic: "클래식",
           },
@@ -1033,9 +1033,9 @@ export const ko = {
         },
         minimapColorMode: {
           label: "미니맵 색상",
-          description: "NetHack 3D의 의미 기반 팔레트 또는 NetHack 터미널 색상을 선택합니다.",
+          description: "Polypiled의 의미 기반 팔레트 또는 NetHack 터미널 색상을 선택합니다.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "터미널",
           },
         },
@@ -1406,7 +1406,7 @@ export const ko = {
         cancelDownload: "다운로드 취소",
       },
       startup: {
-        options: "NetHack 3D 옵션",
+        options: "Polypiled 옵션",
         quitGame: "게임 종료",
         chooseSetup: "캐릭터 설정을 선택하세요:",
         randomCharacter: "무작위 캐릭터",
@@ -1423,8 +1423,8 @@ export const ko = {
         startGame: "게임 시작",
       },
       clientOptions: {
-        closeLabel: "NetHack 3D 옵션 닫기",
-        title: "NetHack 3D 클라이언트 옵션",
+        closeLabel: "Polypiled 옵션 닫기",
+        title: "Polypiled 클라이언트 옵션",
         categoriesLabel: "설정 범주",
         updates: {
           checkOnLaunchLabel: "실행 시 GitHub 릴리스 알림 표시",
@@ -1466,7 +1466,7 @@ export const ko = {
             `${label} 입력 대기 중(슬롯 ${slot}). 취소하려면 ESC를 누르세요.`,
         },
         resetPrompt:
-          "NetHack 3D 옵션을 기본값으로 되돌릴까요? 사용자 지정 타일셋은 유지됩니다.",
+          "Polypiled 옵션을 기본값으로 되돌릴까요? 사용자 지정 타일셋은 유지됩니다.",
       },
       tilesetManager: {
         closeLabel: "타일셋 관리자 닫기",

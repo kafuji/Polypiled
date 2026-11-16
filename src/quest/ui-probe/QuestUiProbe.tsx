@@ -100,7 +100,7 @@ export function QuestUiProbe(): JSX.Element {
     <main className="quest-probe">
       <header className="quest-probe-header">
         <div>
-          <span className="quest-probe-eyebrow">NetHack 3D / Quest experiment</span>
+          <span className="quest-probe-eyebrow">Polypiled / Quest experiment</span>
           <h1>Can the real UI work in VR?</h1>
           <p>Exercise the controls in the headset, then open the bundled game.</p>
         </div>

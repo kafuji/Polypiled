@@ -464,7 +464,7 @@ const jaPlusTranslations: LocaleOverrides<TranslationDictionary> = {
         minimapColorMode: {
           label: "ミニマップの色",
           description:
-            "NetHack 3D の意味別パレットか、NetHack のターミナル色を選択します。",
+            "Polypiled の意味別パレットか、NetHack のターミナル色を選択します。",
           options: {
             terminal: "ターミナル",
           },

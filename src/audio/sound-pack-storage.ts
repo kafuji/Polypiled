@@ -194,7 +194,7 @@ export const nh3dSoundEffectDefinitions = [
       /\byou feel (?:stronger|faster|more agile|wiser|tougher|powerful)\b/i,
     ],
   },
-  // Event sounds (NetHack 3D Plus). Upstream listed several of these
+  // Event sounds (Polypiled). Upstream listed several of these
   // without assets; they default to procedural "synth:" sources.
   {
     key: "explosion",
@@ -716,7 +716,7 @@ function createDefaultSoundAssignment(
       attribution: resolveNh3dBundledBuiltinSoundPath(key)?.startsWith(
         nh3dSynthSoundPathPrefix,
       )
-        ? "Built-in synthesized sound (NetHack 3D Plus)"
+        ? "Built-in synthesized sound (Polypiled)"
         : "No bundled sound assigned.",
     }),
     variations: [],

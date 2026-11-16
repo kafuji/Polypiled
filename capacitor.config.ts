@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.nethack3d.app",
-  appName: "NetHack 3D",
+  appId: "io.github.kafuji.polypiled",
+  appName: "Polypiled",
   webDir: "dist",
   bundledWebRuntime: false,
   appVersion: "0.9.1",

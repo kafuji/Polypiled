@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const fsp = fs.promises;
 const path = require("node:path");
 
-const launcherMarker = "NetHack 3D Linux launcher";
+const launcherMarker = "Polypiled Linux launcher";
 
 function fileStartsWithLauncherMarker(filePath) {
   let fileHandle = null;
@@ -28,7 +28,7 @@ set -euo pipefail
 
 APP_DIR="$(cd -- "$(dirname -- "$0")" && pwd -P)"
 REAL_BIN="$APP_DIR/${realExecutableName}"
-APP_CACHE_DIR_NAME="nethack3d"
+APP_CACHE_DIR_NAME="polypiled"
 
 ensure_private_dir() {
   local dir="$1"

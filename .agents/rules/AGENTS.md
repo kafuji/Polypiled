@@ -4,7 +4,7 @@ Start here before making changes.
 
 ## Project Summary
 
-- NetHack 3D is a browser-first TypeScript and React app.
+- Polypiled is a browser-first TypeScript and React app.
 - `src/game/Nethack3DEngine.ts` is the main orchestration layer for rendering, input, camera control, and runtime events.
 - `src/game/engine/` contains the engine subsystems. Each class owns its state and declares the exact members it needs from other subsystems through typed dependency contracts.
 - `src/runtime/runtime-worker.ts` hosts the NetHack runtime inside a Web Worker.

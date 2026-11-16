@@ -595,7 +595,7 @@ export class TileMaterials {
             asciiColorModeFaceMaterial,
           ];
         } else {
-          // NetHack 3D colors retain the semantic floor-tinted chamfer.
+          // Polypiled colors retain the semantic floor-tinted chamfer.
           const chamferKind =
             typeof mesh.userData?.fpsWallChamferMaterialKind === "string"
               ? (mesh.userData.fpsWallChamferMaterialKind as TileMaterialKind)

@@ -96,7 +96,7 @@ jobs:
       - name: Upload macOS workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nethack-3d-macos-dmg
+          name: polypiled-macos-dmg
           if-no-files-found: error
           path: release/*.dmg
 

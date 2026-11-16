@@ -76,7 +76,7 @@ export function registerDebugHelpers(game: Nethack3DEngine): void {
     return getAllGlyphOverrides();
   };
 
-  console.log("NetHack 3D debugging helpers available:");
+  console.log("Polypiled debugging helpers available:");
   console.log("  refreshTile(x, y) - Refresh a specific tile");
   console.log("  refreshArea(x, y, radius) - Refresh an area");
   console.log("  refreshPlayerArea(radius) - Refresh around player");

@@ -13,7 +13,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'node_modules/vite/bin
 
 Push-Location $PSScriptRoot
 try {
-    Write-Host 'Starting NetHack 3D at http://127.0.0.1:5173/ (Ctrl+C to stop).'
+    Write-Host 'Starting Polypiled at http://127.0.0.1:5173/ (Ctrl+C to stop).'
     & npm.cmd run dev -- --host 127.0.0.1 --port 5173 --strictPort --open
     exit $LASTEXITCODE
 } finally {

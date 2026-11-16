@@ -6,7 +6,7 @@ export const esOverrides = {
         locale: "es-ES",
     },
     common: {
-        appName: "NetHack 3D",
+        appName: "Polypiled",
         confirm: "Confirmar",
         cancel: "Cancelar",
         close: "Cerrar",
@@ -560,7 +560,7 @@ export const esOverrides = {
           title: "Partidas guardadas",
           description: "Importa y exporta partidas de la versión del juego seleccionada.",
           importLabel: "Importar partida",
-          importDescription: "Elige una copia de NetHack 3D (.nh3dsave) para esta versión. La importación se aplica inmediatamente.",
+          importDescription: "Elige una copia de Polypiled (.nh3dsave) para esta versión. La importación se aplica inmediatamente.",
           exportLabel: "Exportar partida",
           exportDescription: "Descarga una copia de una partida manual o automática, incluidos los ajustes del personaje.",
           activeGame: "Guarda y sal del juego. Después abre Opciones desde el menú inicial para importar o exportar partidas.",
@@ -830,9 +830,9 @@ export const esOverrides = {
                 },
                 asciiColorMode: {
                     label: "Colores ASCII",
-                    description: "Esquema de colores usado para representar glifos ASCII en 3D. NetHack 3D usa la paleta semántica 3D. Los modos Clásico y Terminal usan los colores exactos y el resaltado de terminal del runtime activo, con fondos gris oscuro y negro, respectivamente.",
+                    description: "Esquema de colores usado para representar glifos ASCII en 3D. Polypiled usa la paleta semántica 3D. Los modos Clásico y Terminal usan los colores exactos y el resaltado de terminal del runtime activo, con fondos gris oscuro y negro, respectivamente.",
                     options: {
-                        nethack3d: "NetHack 3D",
+                        nethack3d: "Polypiled",
                         classic: "Clásico",
                         terminal: "Terminal",
                     },
@@ -978,9 +978,9 @@ export const esOverrides = {
                 },
                 minimapColorMode: {
                     label: "Colores del minimapa",
-                    description: "Elige la paleta semántica de NetHack 3D o los colores de terminal de NetHack.",
+                    description: "Elige la paleta semántica de Polypiled o los colores de terminal de NetHack.",
                     options: {
-                        nethack3d: "NetHack 3D",
+                        nethack3d: "Polypiled",
                         terminal: "Terminal",
                     },
                 },
@@ -1314,7 +1314,7 @@ export const esOverrides = {
                 cancelDownload: "Cancelar descarga",
             },
             startup: {
-                options: "Opciones de NetHack 3D",
+                options: "Opciones de Polypiled",
                 quitGame: "Salir del juego",
                 chooseSetup: "Elige la configuraci\u00F3n de tu personaje:",
                 randomCharacter: "Car\u00E1cter aleatorio",
@@ -1331,8 +1331,8 @@ export const esOverrides = {
                 startGame: "iniciar juego",
             },
             clientOptions: {
-                closeLabel: "Cerrar las opciones de NetHack 3D",
-                title: "Opciones del cliente NetHack 3D",
+                closeLabel: "Cerrar las opciones de Polypiled",
+                title: "Opciones del cliente Polypiled",
                 categoriesLabel: "Categor\u00EDas de configuraci\u00F3n",
                 updates: {
                     checkOnLaunchLabel: "Mostrar notificaciones de versiones de GitHub al iniciar",
@@ -1367,7 +1367,7 @@ export const esOverrides = {
                     hint: "Seleccione una ranura, luego presione un bot\u00F3n o mueva un joystick. Cada acci\u00F3n tiene dos espacios.",
                     listeningFor: (label: string, slot: number) => `Escuchando${label}(ranura${slot}). Presione ESC para cancelar.`,
                 },
-                resetPrompt: "\u00BFRestablecer las opciones de NetHack 3D a sus valores predeterminados? Se mantendr\u00E1n los conjuntos de mosaicos personalizados.",
+                resetPrompt: "\u00BFRestablecer las opciones de Polypiled a sus valores predeterminados? Se mantendr\u00E1n los conjuntos de mosaicos personalizados.",
             },
             tilesetManager: {
                 closeLabel: "Cerrar el administrador de mosaicos",

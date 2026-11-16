@@ -1,6 +1,6 @@
 # Fork Maintenance
 
-NetHack 3D Plus is a fork of [JamesIV4/nethack-3d](https://github.com/JamesIV4/nethack-3d).
+Polypiled (formerly NetHack 3D Plus) is a fork of [JamesIV4/nethack-3d](https://github.com/JamesIV4/nethack-3d).
 This document describes how to keep the fork in sync with upstream while
 minimizing merge conflicts.
 
