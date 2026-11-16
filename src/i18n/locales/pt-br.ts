@@ -6,7 +6,7 @@ export const ptBrOverrides = {
     locale: "pt-BR",
   },
   common: {
-    appName: "NetHack 3D",
+    appName: "Polypiled",
     confirm: "Confirmar",
     cancel: "Cancelar",
     close: "Fechar",
@@ -594,7 +594,7 @@ export const ptBrOverrides = {
       title: "Jogos salvos",
       description: "Importe e exporte jogos salvos da versão selecionada.",
       importLabel: "Importar jogo salvo",
-      importDescription: "Escolha um backup do NetHack 3D (.nh3dsave) para esta versão. A importação é aplicada imediatamente.",
+      importDescription: "Escolha um backup do Polypiled (.nh3dsave) para esta versão. A importação é aplicada imediatamente.",
       exportLabel: "Exportar jogo salvo",
       exportDescription: "Baixe um backup de um salvamento manual ou automático, incluindo as configurações do personagem.",
       activeGame: "Salve e saia do jogo. Depois abra as opções no menu inicial para importar ou exportar jogos salvos.",
@@ -890,9 +890,9 @@ export const ptBrOverrides = {
         },
         asciiColorMode: {
           label: "Cores ASCII",
-          description: "Esquema de cores usado ao renderizar glifos ASCII em 3D. O NetHack 3D usa a paleta semântica 3D. Os modos Clássico e Terminal usam as cores exatas e o destaque do terminal do runtime ativo, com fundos cinza-escuro e preto, respectivamente.",
+          description: "Esquema de cores usado ao renderizar glifos ASCII em 3D. O Polypiled usa a paleta semântica 3D. Os modos Clássico e Terminal usam as cores exatas e o destaque do terminal do runtime ativo, com fundos cinza-escuro e preto, respectivamente.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             classic: "Clássico",
             terminal: "Terminal",
           },
@@ -1053,9 +1053,9 @@ export const ptBrOverrides = {
         },
         minimapColorMode: {
           label: "Cores do minimapa",
-          description: "Escolha a paleta semântica do NetHack 3D ou as cores do terminal do NetHack.",
+          description: "Escolha a paleta semântica do Polypiled ou as cores do terminal do NetHack.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "Terminal",
           },
         },
@@ -1440,7 +1440,7 @@ export const ptBrOverrides = {
         cancelDownload: "Cancelar download",
       },
       startup: {
-        options: "Opções do NetHack 3D",
+        options: "Opções do Polypiled",
         quitGame: "Sair do jogo",
         chooseSetup: "Escolha a configuração do seu personagem:",
         randomCharacter: "Personagem aleatório",
@@ -1457,8 +1457,8 @@ export const ptBrOverrides = {
         startGame: "Iniciar jogo",
       },
       clientOptions: {
-        closeLabel: "Fechar opções do NetHack 3D",
-        title: "Opções do cliente NetHack 3D",
+        closeLabel: "Fechar opções do Polypiled",
+        title: "Opções do cliente Polypiled",
         categoriesLabel: "Categorias de configuração",
         updates: {
           checkOnLaunchLabel:
@@ -1502,7 +1502,7 @@ export const ptBrOverrides = {
             `Aguardando ${label} (slot ${slot}). Pressione ESC para cancelar.`,
         },
         resetPrompt:
-          "Restaurar as opções do NetHack 3D para os padrões? Seus tilesets personalizados serão mantidos.",
+          "Restaurar as opções do Polypiled para os padrões? Seus tilesets personalizados serão mantidos.",
       },
       tilesetManager: {
         closeLabel: "Fechar gerenciador de tilesets",

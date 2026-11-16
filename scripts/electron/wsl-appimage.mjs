@@ -65,7 +65,7 @@ export function main(args = process.argv.slice(2)) {
   const destination = path.resolve(destinationArg);
   const projectId = createHash("sha256").update(source).digest("hex").slice(0, 16);
   // Deliberately use Linux home, not a cache environment variable that might point at /mnt/c.
-  const workspace = path.join(os.homedir(), ".cache", "nethack3d", "appimage", projectId);
+  const workspace = path.join(os.homedir(), ".cache", "polypiled", "appimage", projectId);
   const project = path.join(workspace, "project");
   const output = path.join(project, "release");
   const prepared = path.join(workspace, "prepared");

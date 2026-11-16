@@ -143,14 +143,14 @@ export class AudioHapticsPlatform {
       this.fmodRuntime.setEnabled(this.dependencies.engineState.clientOptions.soundEnabled);
       if (!this.dependencies.engineState.clientOptions.soundEnabled) {
         logWithOriginal(
-          "[NetHack 3D] FMOD Studio runtime initialized (audio disabled in client options).",
+          "[Polypiled] FMOD Studio runtime initialized (audio disabled in client options).",
         );
         return;
       }
-      logWithOriginal("[NetHack 3D] FMOD Studio runtime initialized.");
+      logWithOriginal("[Polypiled] FMOD Studio runtime initialized.");
       const diagnostics = this.fmodRuntime.getThreadingDiagnostics();
       logWithOriginal(
-        `[NetHack 3D] FMOD audio backend: ${diagnostics.backendMode} (update ${diagnostics.updateIntervalMs}ms, dsp ${diagnostics.dspBufferLength}x${diagnostics.dspBufferCount}, recover ${diagnostics.resumeRecoveryIntervalMs}ms).`,
+        `[Polypiled] FMOD audio backend: ${diagnostics.backendMode} (update ${diagnostics.updateIntervalMs}ms, dsp ${diagnostics.dspBufferLength}x${diagnostics.dspBufferCount}, recover ${diagnostics.resumeRecoveryIntervalMs}ms).`,
       );
       if (!this.fmodRuntime.isUsingThreadedAudioMixing()) {
         console.warn(

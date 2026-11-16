@@ -18,7 +18,7 @@ const baseParams = {
 };
 
 describe("resolveAsciiGlyphPresentation", () => {
-  it("preserves the NetHack 3D colors", () => {
+  it("preserves the Polypiled colors", () => {
     expect(
       resolveAsciiGlyphPresentation({
         ...baseParams,

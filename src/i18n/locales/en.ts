@@ -6,7 +6,7 @@ export const en = {
     locale: "en-US",
   },
   common: {
-    appName: "NetHack 3D",
+    appName: "Polypiled",
     confirm: "Confirm",
     cancel: "Cancel",
     close: "Close",
@@ -580,7 +580,7 @@ export const en = {
       title: "Saves",
       description: "Import and export saves for the selected game version.",
       importLabel: "Import save",
-      importDescription: "Choose a NetHack 3D save backup (.nh3dsave) for this game version. Imports take effect immediately.",
+      importDescription: "Choose a Polypiled save backup (.nh3dsave) for this game version. Imports take effect immediately.",
       exportLabel: "Export save",
       exportDescription: "Download a backup of a manual save or autosave, including its character settings.",
       activeGame: "Save and quit your game, then open Options from the startup menu to import or export saves.",
@@ -884,9 +884,9 @@ export const en = {
         asciiColorMode: {
           label: "ASCII Colors",
           description:
-            "Color scheme used when rendering 3D ASCII glyphs. NetHack 3D uses the semantic 3D palette. Classic and Terminal use the active runtime's exact colors and tty highlighting, with dark-grey and black backgrounds respectively.",
+            "Color scheme used when rendering 3D ASCII glyphs. Polypiled uses the semantic 3D palette. Classic and Terminal use the active runtime's exact colors and tty highlighting, with dark-grey and black backgrounds respectively.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             classic: "Classic",
             terminal: "Terminal",
           },
@@ -1048,9 +1048,9 @@ export const en = {
         minimapColorMode: {
           label: "Minimap colors",
           description:
-            "Choose the NetHack 3D semantic palette or NetHack's terminal colors.",
+            "Choose the Polypiled semantic palette or NetHack's terminal colors.",
           options: {
-            nethack3d: "NetHack 3D",
+            nethack3d: "Polypiled",
             terminal: "Terminal",
           },
         },
@@ -1420,7 +1420,7 @@ export const en = {
         cancelDownload: "Cancel Download",
       },
       startup: {
-        options: "NetHack 3D Options",
+        options: "Polypiled Options",
         quitGame: "Quit Game",
         chooseSetup: "Choose your character setup:",
         randomCharacter: "Random character",
@@ -1437,8 +1437,8 @@ export const en = {
         startGame: "Start game",
       },
       clientOptions: {
-        closeLabel: "Close NetHack 3D options",
-        title: "NetHack 3D Client Options",
+        closeLabel: "Close Polypiled options",
+        title: "Polypiled Client Options",
         categoriesLabel: "Settings categories",
         updates: {
           checkOnLaunchLabel: "Show GitHub release notifications on launch",
@@ -1479,7 +1479,7 @@ export const en = {
             `Listening for ${label} (slot ${slot}). Press ESC to cancel.`,
         },
         resetPrompt:
-          "Reset NetHack 3D options to defaults? Custom tile sets will be kept.",
+          "Reset Polypiled options to defaults? Custom tile sets will be kept.",
       },
       tilesetManager: {
         closeLabel: "Close tileset manager",

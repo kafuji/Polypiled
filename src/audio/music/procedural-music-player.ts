@@ -252,7 +252,7 @@ export class ProceduralMusicPlayer implements BackgroundMusicPlayer {
       this.noiseBuffer = this.createNoise(context);
       return context;
     } catch (error) {
-      console.warn("[NetHack 3D] Unable to create WebAudio context for background music.", error);
+      console.warn("[Polypiled] Unable to create WebAudio context for background music.", error);
       return null;
     }
   }

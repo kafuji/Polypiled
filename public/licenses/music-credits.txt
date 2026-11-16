@@ -1,7 +1,7 @@
-NetHack 3D - Background music credits
+Polypiled - Background music credits
 =====================================
 
-All background music is original work made for NetHack 3D Plus: each piece
+All background music is original work made for Polypiled: each piece
 was composed as a MIDI sketch (scripts/music-sketch) and produced with Suno
 under a Pro plan subscription. It is not covered by CC0.
 

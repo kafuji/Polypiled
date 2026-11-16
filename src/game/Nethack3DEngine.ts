@@ -1174,7 +1174,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         console.log(
           `🎯 Player position changed from (${oldPos.x}, ${oldPos.y}) to (${data.x}, ${data.y})`,
         );
-        this.systems.promptDialogs.updateStatus(`Player at (${data.x}, ${data.y}) - NetHack 3D`);
+        this.systems.promptDialogs.updateStatus(`Player at (${data.x}, ${data.y}) - Polypiled`);
         if (this.systems.tileUpdates.pendingPlayerTileRefreshOnNextPosition) {
           this.systems.tileUpdates.pendingPlayerTileRefreshOnNextPosition = false;
           this.systems.tileUpdates.requestPlayerTileRefresh("player-position-sync");

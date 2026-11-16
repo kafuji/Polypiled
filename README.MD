@@ -1,8 +1,8 @@
-# NetHack 3D Plus
+# Polypiled: a NetHack variant
 
-> A fork of [NetHack 3D](https://github.com/JamesIV4/nethack-3d) by James Pound, extended and maintained by [kafuji](https://github.com/kafuji). Upstream features are documented below; fork-specific changes are listed in [Fork Changes](#fork-changes).
+> Polypiled grew out of [NetHack 3D](https://github.com/JamesIV4/nethack-3d) by James Pound and is maintained by [kafuji](https://github.com/kafuji). It was developed until now as the fork "NetHack 3D Plus". The game core is NetHack 5.0, built from the source in [core/](core/README.md). Upstream features are documented below; fork-specific changes are listed in [Fork Changes](#fork-changes).
 
-Classic NetHack, presented as an interactive 3D dungeon. Play from above, step inside in first person, use an authentic terminal view, or explore in virtual reality on Meta Quest. The original NetHack game rules and depth are preserved.
+Classic NetHack, presented as an interactive 3D dungeon. Play from above, step inside in first person, use an authentic terminal view, or explore in virtual reality on Meta Quest. Polypiled is becoming a variant: the game itself will change, not only how it is presented. So far the rules are still those of NetHack 5.0.
 
 **[Play in your browser](https://kafuji.github.io/nethack-3d-plus/) · [Download the app](https://github.com/kafuji/nethack-3d-plus/releases/latest)**
 
@@ -17,7 +17,7 @@ Classic NetHack, presented as an interactive 3D dungeon. Play from above, step i
 - Desktop message log: drag its bottom-right corner to make it wider or show more lines (double-click the corner to reset), and lower its background opacity in Options to see more of the dungeon.
 - Upstream: [JamesIV4/nethack-3d](https://github.com/JamesIV4/nethack-3d), synced at 1.6.2 (`3b6fd23`). See [Fork Maintenance](docs/fork-maintenance.md) for the sync workflow.
 
-## New in 1.6.0: The VR Update
+## From NetHack 3D 1.6.0: The VR Update
 
 Standalone Quest VR, up to **40% better GPU performance**, customizable hotbars, and two new tilesets headline this release. DuskHack and Geoduck join the built-in artwork, and NetHack 5 players can start without possessions in **Pauper Mode**. Greatly improved communcation between the internal NetHack builds and the 3D client, allowing for smoother, more responsive gameplay. Sounds now preload during loading, alongside improvements to inventory prompts, terrain updates, and Vulture rendering.
 
@@ -65,7 +65,7 @@ Adjust tabletop area and tilt, first-person world scale, render resolution, and 
 
 ### Graphics to Suit Your Game
 
-Use graphical tiles, 3D ASCII, or Vulture artwork in the overhead and first-person 3D views. Vulture brings its isometric artwork into a full 3D scene; ASCII offers NetHack 3D, Classic, and Terminal color schemes. Terminal mode has its own message-log gutter.
+Use graphical tiles, 3D ASCII, or Vulture artwork in the overhead and first-person 3D views. Vulture brings its isometric artwork into a full 3D scene; ASCII offers Polypiled, Classic, and Terminal color schemes. Terminal mode has its own message-log gutter.
 
 ## Features
 
@@ -169,7 +169,7 @@ The earlier [Quest UI prototype](docs/quest-vr-plan.md), [stereo experiment](doc
 - `npm run electron:dist:all` - Build Electron assets once, then package the Windows x64 setup and portable executables, and Linux AppImage back to back.
 - `npm run electron:dist:all:parallel` - Same as above, but packages Windows and Linux at the same time after the shared Electron build.
 
-On Windows, AppImage packaging builds the web assets with Windows Node, then syncs the packaging inputs to `~/.cache/nethack3d/appimage/<checkout-id>/` inside WSL. Linux dependencies and packaging intermediates stay there; only finished artifacts and build diagnostics are copied back to `release/`. WSL needs Linux Node/npm, `rsync`, and `libcups.so.2`. The first run installs dependencies; subsequent runs reuse them until package metadata, `.npmrc`, or the Linux Node version changes. Each stage prints its elapsed time.
+On Windows, AppImage packaging builds the web assets with Windows Node, then syncs the packaging inputs to `~/.cache/polypiled/appimage/<checkout-id>/` inside WSL. Linux dependencies and packaging intermediates stay there; only finished artifacts and build diagnostics are copied back to `release/`. WSL needs Linux Node/npm, `rsync`, and `libcups.so.2`. The first run installs dependencies; subsequent runs reuse them until package metadata, `.npmrc`, or the Linux Node version changes. Each stage prints its elapsed time.
 
 Set `NH3D_SKIP_ELECTRON_BUILD=1` only when `dist/` already contains a current Electron build. `NH3D_ELECTRON_OUTPUT_DIR` changes the Windows artifact destination. The combined release scripts retain their shared-build and parallel packaging behavior. `NH3D_APPIMAGE_PREPARE_ONLY=1` stages the current build and dependencies; `NH3D_APPIMAGE_SKIP_PREPARE=1` packages that existing staged snapshot. An interrupted process may leave a workspace `lock` directory; remove that empty directory only after confirming no AppImage build is running.
 
@@ -177,7 +177,7 @@ Set `NH3D_SKIP_ELECTRON_BUILD=1` only when `dist/` already contains a current El
 
 - `npm run android:add` - Create the native Android project with Capacitor (run once).
 - `npm run android:sync` - Build web assets and sync them into the Android project.
-- `npm run android:release` - Build web assets, sync Android, and create a signed release APK without opening Android Studio. Output: `release/NetHack 3D <version> Android.apk`.
+- `npm run android:release` - Build web assets, sync Android, and create a signed release APK without opening Android Studio. Output: `release/Polypiled <version> Android.apk`.
 - `npm run quest:webxr:setup` - Download and verify the pinned Quest runtime dependencies, or restore them from the external cache.
 - `npm run quest:webxr:apk -- --debug` - Build and verify a standalone Quest debug APK using the generated Android debug key. Omit `--debug` for a signed release using your own signing configuration; each signed build automatically increments its Meta upload version code while keeping the `package.json` display version. The stable output is `quest/build/outputs/apk/nethack3d-vr.apk`, with a versioned copy under `release/`; `quest:webxr:publish-apk` verifies and copies an existing build without incrementing it. See [version counter and machine-transfer instructions](docs/quest-webxr-runtime.md#automatic-upload-version-codes).
 - `npm run quest:apk` - Build the legacy Quest app and copy it to `release/NetHack 3D <version> Quest Legacy.apk`.

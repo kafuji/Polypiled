@@ -14,8 +14,8 @@ export function translateRuntimeText(text: string, locale: SupportedLocale): str
   if (locale !== "ja" || !text) return text;
   if (Object.prototype.hasOwnProperty.call(japaneseStatus, text)) return japaneseStatus[text];
 
-  const position = /^Player at \((-?\d+), (-?\d+)\) - NetHack 3D$/.exec(text);
-  if (position) return `プレイヤー位置 (${position[1]}, ${position[2]}) - NetHack 3D`;
+  const position = /^Player at \((-?\d+), (-?\d+)\) - Polypiled$/.exec(text);
+  if (position) return `プレイヤー位置 (${position[1]}, ${position[2]}) - Polypiled`;
 
   const startupPrefix = "Failed to start local NetHack runtime: ";
   const startupFailure = text.startsWith(startupPrefix);

@@ -39,7 +39,7 @@ android {
     }
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.nethack3d.app"
+        applicationId "io.github.kafuji.polypiled"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -62,7 +62,7 @@ android {
     applicationVariants.configureEach { variant ->
         if (variant.buildType.name == "release") {
             variant.outputs.configureEach { output ->
-                output.outputFileName = "NetHack 3D ${variant.versionName}.apk"
+                output.outputFileName = "Polypiled ${variant.versionName}.apk"
             }
         }
     }

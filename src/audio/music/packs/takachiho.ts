@@ -3,7 +3,7 @@ import type { MusicPack } from "../music-pack";
 
 /** Credit fields shared by the pack's pieces. */
 const originalWork = {
-  author: "NetHack 3D Plus (made with Suno)",
+  author: "Polypiled (made with Suno)",
   license: "Original work; Suno Pro plan",
 } as const;
 

@@ -18,7 +18,7 @@ export const nh3dSynthSoundKeys = [
   "status-strangled",
   "status-paralyzed",
   "status-recovered",
-  // Event sounds (NetHack 3D Plus) for keys upstream left without assets.
+  // Event sounds (Polypiled) for keys upstream left without assets.
   "explosion",
   "zap-ray",
   "wand-fizzle",

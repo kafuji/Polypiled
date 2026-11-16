@@ -12,7 +12,7 @@ if (args.some(arg => !["--check", "--help"].includes(arg))) {
   process.exit(2);
 }
 if (args.includes("--help")) {
-  console.log("Build and sign the Android release APK without opening Android Studio.\nConfigure android/keystore.properties first (see the example file).\n--check: check Java, Android SDK and signing configuration without building.\nOutput: release/NetHack 3D <version> Android.apk");
+  console.log("Build and sign the Android release APK without opening Android Studio.\nConfigure android/keystore.properties first (see the example file).\n--check: check Java, Android SDK and signing configuration without building.\nOutput: release/Polypiled <version> Android.apk");
   process.exit(0);
 }
 
@@ -39,9 +39,9 @@ try {
     run(process.execPath, [npm, "run", "android:sync"]);
     gradle(":app:assembleRelease");
     const { version } = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
-    const apk = path.join(project, "app/build/outputs/apk/release", `NetHack 3D ${version}.apk`);
+    const apk = path.join(project, "app/build/outputs/apk/release", `Polypiled ${version}.apk`);
     if (!existsSync(apk)) throw new Error(`Gradle finished without the expected APK: ${apk}`);
-    const output = path.join(root, "release", `NetHack 3D ${version} Android.apk`);
+    const output = path.join(root, "release", `Polypiled ${version} Android.apk`);
     mkdirSync(path.dirname(output), { recursive: true });
     copyFileSync(apk, output);
     console.log(`Signed release APK ready: ${output}`);

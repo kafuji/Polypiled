@@ -262,7 +262,7 @@ export class FileMusicPlayer implements BackgroundMusicPlayer {
       this.onceMaster = onceMaster;
       return context;
     } catch (error) {
-      console.warn("[NetHack 3D] Unable to create WebAudio context for background music.", error);
+      console.warn("[Polypiled] Unable to create WebAudio context for background music.", error);
       return null;
     }
   }
@@ -292,7 +292,7 @@ export class FileMusicPlayer implements BackgroundMusicPlayer {
           const blob = await response.blob();
           return this.disposed ? null : URL.createObjectURL(blob);
         } catch (error) {
-          console.warn(`[NetHack 3D] Background music '${track.path}' could not be loaded.`, error);
+          console.warn(`[Polypiled] Background music '${track.path}' could not be loaded.`, error);
           return null;
         }
       })();

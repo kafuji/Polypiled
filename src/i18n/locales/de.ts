@@ -6,7 +6,7 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
     locale: "de-DE",
   },
   common: {
-    appName: "NetHack 3D",
+    appName: "Polypiled",
     confirm: "Best\u00e4tigen",
     cancel: "Abbrechen",
     close: "Schlie\u00dfen",
@@ -1377,7 +1377,7 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
         cancelDownload: "Download abbrechen",
       },
       startup: {
-        options: "NetHack 3D-Optionen",
+        options: "Polypiled-Optionen",
         quitGame: "Spiel beenden",
         chooseSetup: "W\u00e4hle deine Charakterkonfiguration:",
         randomCharacter: "Zufallscharakter",
@@ -1396,7 +1396,7 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
       },
       clientOptions: {
         closeLabel: "NetHack-3D-Optionen schlie\u00dfen",
-        title: "NetHack 3D Client-Optionen",
+        title: "Polypiled Client-Optionen",
         categoriesLabel: "Einstellungskategorien",
         updates: {
           checkOnLaunchLabel:
