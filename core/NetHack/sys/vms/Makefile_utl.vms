@@ -1,7 +1,8 @@
-#	Makefile for NetHack's utility programs.
-# NetHack 5.0  util Makefile.vms    $NHDT-Date: 1602258295 2020/10/09 15:44:55 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.53 $
+# $NHDT-Header: NetHack 5.0 Makefile_utl.vms 2026/10/10_01:02:03 NetHack-5.0:1.7 $
 # Copyright (c) 2018 by Robert Patrick Rankin
 # NetHack may be freely redistributed.  See license for details.
+
+# Makefile for NetHack's utility programs.
 
 # Root of source tree relative to here:
 NHSROOT=[-]
@@ -33,9 +34,9 @@ WINCHAIN=[-.win.chain]
 LUAVER=548
 LUADOTVER=5.4.8
 LUAUNDERVER=5_4_8
-LUAINC=[-.lib.lua.lua$(LUAVER).src]
-LUALIB=[-.lib.lua]lua$(LUAVER).olb
-LUASRCDIR =[-.lib.lua.lua$(LUAVER).src]
+LUAINC=[-.nhlua.lua.src]
+LUALIB=[-.src]liblua.olb
+LUASRCDIR =[-.nhlua.lua.src]
 LUASRCINCDIR=$(LUASRCDIR)
 #LUASRCINCDIR=SYS$COMMON:[LUA.INCLUDE]
 
@@ -159,7 +160,7 @@ makedefs.obj: makedefs.c $(SRC)mdlib.c $(CONFIG_H) \
 	$(CC) $(CFLAGS) $(CSTD) makedefs.c /OBJ=$@
 
 uplaceholder.c:
-	echo int uplaceholder = 1; >$@
+	echo "int uplaceholder = 1;" >$@
 
 uplaceholder.obj: uplaceholder.c
 

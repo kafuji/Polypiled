@@ -1,4 +1,7 @@
 #!/bin/bash
+# $NHDT-Header: NetHack 5.0 fetch-cross-compiler.sh 2026/09/25_13:07:53 NetHack-5.0:1.49 $
+# Copyright (c) Micheal Allison 2020.
+# NetHack may be freely redistributed.  See license for details.
 
 if [ ! -z "${TF_BUILD}" ]; then
 	set -x
@@ -14,15 +17,6 @@ if [ -z "$GCCVER" ]; then
        export GCCVER=gcc1220
 fi
 
-if [ -z "$LUA_VERSION" ]; then
-	export LUA_VERSION=5.4.8
-fi
-
-if [ ! -d "$(pwd)/lib" ]; then
-	echo "Set up for Unix build and 'make fetch-lua' first."
-	exit 1
-fi
-
 #DJGPP_URL="https://github.com/andrewwutw/build-djgpp/releases/download/v2.9/"
 #DJGPP_URL="https://github.com/andrewwutw/build-djgpp/releases/download/v3.0/"
 #DJGPP_URL="https://github.com/andrewwutw/build-djgpp/releases/download/v3.1/"
@@ -34,13 +28,13 @@ if [ "$(uname)" = "Darwin" ]; then
     #Mac
     DJGPP_FILE="djgpp-osx-$GCCVER.tar.bz2"
     if [ -z "HINTS" ]; then
-        export HINTS=macOS.500
+        export HINTS=macOS.501
     fi
 elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     #Linux
     DJGPP_FILE="djgpp-linux64-$GCCVER.tar.bz2"
     if [ -z "$HINTS" ]; then
-        export HINTS=linux.500
+        export HINTS=linux.501
     fi
 elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
     #mingw
@@ -237,10 +231,4 @@ else
 fi
 
 cd ../
-
-# Don't fail the build if lua fetch failed because we cannot do anything about it
-# but don't bother proceeding forward either
-if [ ! -d "lib/lua-$LUA_VERSION/src" ]; then
-        exit 0
-fi
 

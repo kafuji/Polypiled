@@ -1,4 +1,4 @@
-/* NetHack 5.0	files.c	$NHDT-Date: 1781973049 2026/06/20 16:30:49 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.448 $ */
+/* $NHDT-Header: NetHack 5.0 files.c 2026/11/03_16:37:53 NetHack-5.0:1.459 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Derek S. Ray, 2015. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -77,7 +77,7 @@ const
 #endif
 
 #if defined(MSDOS) || defined(OS2) || defined(TOS) || defined(WIN32)
-#ifndef __DJGPP__
+#if !defined(__DJGPP__) && !defined(__MINT__)
 #include <sys\stat.h>
 #else
 #include <sys/stat.h>
@@ -1058,7 +1058,11 @@ set_savefile_name(boolean regularize_it)
     if (strlen(gs.SAVEF) < (SAVESIZE - 1))
         (void) strncat(gs.SAVEF, svp.plname, (SAVESIZE - strlen(gs.SAVEF)));
 #endif
-#if defined(MICRO) && !defined(WIN32) && !defined(MSDOS)
+#if defined(MAC68K)
+    /* Mac: "<plname>.sav" (extension added below); macfile.c puts it
+       in the Saves folder */
+    Sprintf(gs.SAVEF, "%.*s", MAC_FNAME_PLMAX, svp.plname);
+#elif defined(MICRO) && !defined(WIN32) && !defined(MSDOS)
     if (strlen(gs.SAVEP) < (SAVESIZE - 1))
         Strcpy(gs.SAVEF, gs.SAVEP);
     {
@@ -1137,7 +1141,14 @@ set_error_savefile(void)
     Strcat(gs.SAVEF, ".e;1");
 #else
 #ifdef MAC68K
-    Strcat(gs.SAVEF, "-e");
+    {
+        /* swap ".sav" for ".err": same length, still in the Saves folder */
+        size_t n = strlen(gs.SAVEF), e = strlen(SAVE_EXTENSION);
+
+        if (n >= e && !strcmp(gs.SAVEF + n - e, SAVE_EXTENSION))
+            gs.SAVEF[n - e] = '\0';
+        Strcat(gs.SAVEF, MAC_ERRSAVE_EXT);
+    }
 #else
     Strcat(gs.SAVEF, ".e");
 #endif
@@ -1370,11 +1381,17 @@ plname_from_file(
         if ((sfstatus = validate(nhfp, filename,
                                 without_wait_synch_per_file,
                                 additional_utd_flags)) == SF_UPTODATE) {
+            int plnres = 0;
+
             /* room for "name+role+race+gend+algn X" where the space before
                X is actually NUL and X is playmode: one of '-', 'X', or 'D' */
             ln = (unsigned) PL_NSIZ_PLUS;
             result = memset((genericptr_t) alloc(ln), '\0', ln);
-            get_plname_from_file(nhfp, result, FALSE);
+            plnres = get_plname_from_file(nhfp, result, (size_t) ln, FALSE);
+            if (plnres < 0) {
+                if (result)
+                    free((genericptr_t) result), result = 0;
+            }
         }
         close_nhfile(nhfp);
     }

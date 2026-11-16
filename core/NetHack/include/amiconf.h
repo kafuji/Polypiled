@@ -1,14 +1,10 @@
-/* NetHack 3.6	amiconf.h	$NHDT-Date: 1432512775 2015/05/25 00:12:55 $  $NHDT-Branch: master $:$NHDT-Revision: 1.12 $ */
+/* $NHDT-Header: NetHack 5.0 amiconf.h 2026/09/30_14:47:34 NetHack-5.0:1.36 $ */
 /* Copyright (c) Kenneth Lorber, Bethesda, Maryland, 1990, 1991, 1992, 1993.
  */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #ifndef AMICONF_H
 #define AMICONF_H
-
-#undef abs /* avoid using macro form of abs */
-#undef min /* this gets redefined */
-#undef max /* this gets redefined */
 
 #include <time.h> /* get time_t defined before use! */
 
@@ -18,6 +14,10 @@
 #include <dos/dos.h>
 #include <clib/dos_protos.h>
 #include <proto/dos.h>
+
+#undef abs /* avoid using macro form of abs */
+#undef min /* this gets redefined */
+#undef max /* this gets redefined */
 
 #define MICRO /* must be defined to allow some inclusions */
 

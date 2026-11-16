@@ -27,6 +27,7 @@ static boolean modifiers_available = FALSE;
 static int modified(int ch);
 static void update_modifiers(void);
 static int parse_escape_sequence(int, boolean *);
+static int curses_read_char_internal(boolean);
 
 #define SS3 M(C('O')) /* 8-bit escape sequence initiator for VT number pad */
 
@@ -47,9 +48,7 @@ curses_getch(void)
         while (1) {
             ch = getch();
             if (ch == ERR && !done_a_checkpoint) {
-#ifdef INSURANCE
-                save_currentstate();
-#endif /* INSURANCE */
+                do_idlecheckpoint();
                 done_a_checkpoint = TRUE;
                 timeout(-1);
                 timeoutset = FALSE;
@@ -67,9 +66,9 @@ curses_getch(void)
     return ch;
 }
 
-/* Read a character of input from the user */
-int
-curses_read_char(void)
+/* Read a character of input, or a mouse event */
+static int
+curses_read_char_internal(boolean allow_mouse)
 {
     int ch;
 
@@ -77,13 +76,20 @@ curses_read_char(void)
     curses_got_input();
 
     ch = curses_getch();
+#ifdef NCURSES_MOUSE_VERSION
+    if (!allow_mouse || ch != KEY_MOUSE) {
+        ch = curses_convert_keys(ch);
+    }
+#else
     ch = curses_convert_keys(ch);
+#endif
 
     if (ch == 0) {
         ch = '\033'; /* map NUL to ESC since nethack doesn't expect NUL */
     }
 
-    if (counting && !isdigit(ch)) { /* dismiss count window if necessary */
+    /* dismiss count window if necessary */
+    if (counting && (ch > 255 || !isdigit(ch))) {
         curses_count_window(NULL);
         curses_refresh_nethack_windows();
     }
@@ -91,10 +97,28 @@ curses_read_char(void)
     return ch;
 }
 
+/* Read a character of input from the user */
+int
+curses_read_char(void)
+{
+    return curses_read_char_internal(FALSE);
+}
+
+/* Read a key or a position input from the user */
+int
+curses_read_poskey(void)
+{
+    return curses_read_char_internal(TRUE);
+}
+
 boolean
 curses_has_256color(void)
 {
+#if defined(NCURSES_VERSION) && !defined(CURSES_WIDE_PAIRS)
+    return FALSE;
+#else
     return (COLORS >= 256) && (COLOR_PAIRS >= 256 * CURSES_NUM_BACKGROUND_COLORS);
+#endif
 }
 
 /* Turn on or off the specified color and / or attribute */
@@ -153,7 +177,9 @@ curses_toggle_color_attr(WINDOW *win, int color, int attr, int onoff)
             if (use_bold) {
                 wattron(win, A_BOLD);
             }
-            wcolor_set(win, curses_color, &curses_color);
+            /* opts must be NULL; a curses built without extended colors
+               rejects a non-NULL opts and then sets no color at all */
+            (void) wcolor_set(win, (short) curses_color, NULL);
         }
 
         if (attr != NONE) {
@@ -174,7 +200,9 @@ curses_toggle_color_attr(WINDOW *win, int color, int attr, int onoff)
                 wattroff(win, A_REVERSE);
             }
 # endif/* DARKGRAY */
-            wattroff(win, COLOR_PAIR(curses_color));
+            /* COLOR_PAIR() only carries 8 bits of pair number, so it
+               cannot clear a pair above 255; select the default pair */
+            (void) wcolor_set(win, 0, NULL);
         }
 
         if (attr != NONE) {
@@ -968,6 +996,7 @@ curses_get_mouse(coordxy *mousex, coordxy *mousey, int *mod)
 
 #ifdef NCURSES_MOUSE_VERSION
     MEVENT event;
+    int sx, sy, ex, ey;
 
     if (getmouse(&event) == OK) { /* True if user has clicked */
         if ((event.bstate & MOUSEBUTTONS) != 0) {
@@ -990,6 +1019,11 @@ curses_get_mouse(coordxy *mousex, coordxy *mousey, int *mod)
                     (*mousex)--;
                     (*mousey)--;
                 }
+
+                /* Account for scroll offset */
+                (void) curses_map_borders(&sx, &sy, &ex, &ey, -1, -1);
+                *mousex += sx;
+                *mousey += sy;
 
                 *mod = ((event.bstate & (BUTTON1_CLICKED | BUTTON_CTRL))
                         == BUTTON1_CLICKED) ? CLICK_1 : CLICK_2;

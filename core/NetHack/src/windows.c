@@ -1,4 +1,4 @@
-/* NetHack 5.0	windows.c	$NHDT-Date: 1781973074 2026/06/20 16:31:14 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.147 $ */
+/* $NHDT-Header: NetHack 5.0 windows.c 2026/09/30_14:47:34 NetHack-5.0:1.153 $ */
 /* Copyright (c) D. Cohrs, 1993. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -20,7 +20,8 @@ extern void win_X11_init(int);
 extern struct window_procs Qt_procs;
 #endif
 #ifdef GEM_GRAPHICS
-/*#include "wingem.h"*/
+extern struct window_procs Gem_procs;
+extern void win_Gem_init(int);
 #endif
 #ifdef MAC68K
 extern struct window_procs mac_procs;
@@ -1186,7 +1187,7 @@ dump_fmtstr(
                 else
                     Strcpy(tmpbuf, "{current date+time}");
                 break;
-            case 'v': /* version, eg. "5.0.0,-0" */
+            case 'v': /* version, eg. "5.0.1,-0" */
                 Sprintf(tmpbuf, "%s", version_string(verbuf, sizeof verbuf));
                 break;
             case 'u': /* UID */
@@ -1399,8 +1400,13 @@ has_color(int color)
     return (iflags.use_color && windowprocs.name
             && (windowprocs.wincap & WC_COLOR) && windowprocs.has_color[color]
 #ifdef TTY_GRAPHICS
-#if defined(TERMLIB) && !defined(NO_TERMS)
+#if defined(TERMLIB)
+#if !defined(NO_TERMS) || defined(WIN32CON)
+#if defined(WIN32CON)
+             && !gn.no_terms
+#endif
              && (hilites[color] != 0)
+#endif
 #endif
 #endif
     );

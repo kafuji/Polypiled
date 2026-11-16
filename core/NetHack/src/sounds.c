@@ -1,4 +1,4 @@
-/* NetHack 5.0	sounds.c	$NHDT-Date: 1781973067 2026/06/20 16:31:07 $  $NHDT-Branch: NetHack-5.0 $:$NHDT-Revision: 1.172 $ */
+/* $NHDT-Header: NetHack 5.0 sounds.c 2026/09/30_14:47:34 NetHack-5.0:1.179 $ */
 /*      Copyright (c) 1989 Janet Walz, Mike Threepoint */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -1725,6 +1725,9 @@ extern struct sound_procs macsound_procs;
 #ifdef SND_LIB_QTSOUND
 extern struct sound_procs qtsound_procs;
 #endif
+#ifdef SND_LIB_MAC68KSOUND
+extern struct sound_procs mac68ksound_procs;
+#endif
 
 static struct sound_procs nosound_procs = {
     SOUNDID(nosound),
@@ -1775,6 +1778,9 @@ static struct sound_choices {
 #endif
 #ifdef SND_LIB_QTSOUND
     { &qtsound_procs },
+#endif
+#ifdef SND_LIB_MAC68KSOUND
+    { &mac68ksound_procs },
 #endif
 };
 

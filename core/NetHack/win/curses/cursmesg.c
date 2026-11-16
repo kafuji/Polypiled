@@ -1,5 +1,5 @@
 /* vim:set cin ft=c sw=4 sts=4 ts=8 et ai cino=Ls\:0t0(0 : -*- mode:c;fill-column:80;tab-width:8;c-basic-offset:4;indent-tabs-mode:nil;c-file-style:"k&r" -*-*/
-/* NetHack 5.0 cursmesg.c */
+/* $NHDT-Header: NetHack 5.0 cursmesg.c 2026/11/07_00:30:42 NetHack-5.0:1.89 $ */
 /* Copyright (c) Karl Garrison, 2010. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -398,9 +398,20 @@ curses_clear_unhighlight_message_window(void)
 
         for (ry = brdroffset; ry < mh; ry++) {
             for (rx = brdroffset; rx < mw; rx++) {
-                chtype cht = mvwinch(win, ry, rx);
+#ifdef CURSES_WIDE_PAIRS
+                /* PAIR_NUMBER() of a chtype is truncated to 8 bits */
+                cchar_t cc;
+                wchar_t wch[CCHARW_MAX + 1];
+                attr_t attrs;
+                short pair = 0;
 
-                mvwchgat(win, ry, rx, 1, A_NORMAL, PAIR_NUMBER(cht), NULL);
+                if (mvwin_wch(win, ry, rx, &cc) == OK)
+                    (void) getcchar(&cc, wch, &attrs, &pair, NULL);
+#else
+                short pair = PAIR_NUMBER(mvwinch(win, ry, rx));
+#endif
+
+                mvwchgat(win, ry, rx, 1, A_NORMAL, pair, NULL);
             }
         }
 
