@@ -86,7 +86,9 @@ async function main() {
       fs.readFile(outputPath, "utf8"),
     ]);
 
-    if (currentSource !== expectedSource) {
+    // Git may check the file out with CRLF line endings (core.autocrlf).
+    const normalizeLineEndings = (text) => text.replace(/\r\n/g, "\n");
+    if (normalizeLineEndings(currentSource) !== normalizeLineEndings(expectedSource)) {
       console.error(
         `Glyph catalog is stale (${target.version}): ${outputPath}\nRun: npm run glyphs:generate`,
       );

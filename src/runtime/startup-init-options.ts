@@ -415,7 +415,7 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       control: "text",
       defaultValue: "",
       maxLength: 64,
-      placeholder: "startupStrings.options.paranoid_confirmation.placeholder",
+      placeholder: startupStrings.options.paranoid_confirmation.placeholder,
     },
     {
       key: "sparkle",
