@@ -380,7 +380,7 @@ export const en = {
       symset: {
         label: "Symbol Set",
         description:
-          "Map symbol set (`symset` in NetHack; legacy `IBMgraphics`/`DECgraphics` in Slash'EM). IBM and DEC graphics draw walls with line-drawing characters, including in Terminal display mode.",
+          "Map symbol set (`symset` in NetHack). IBM and DEC graphics draw walls with line-drawing characters, including in Terminal display mode.",
         options: {
           default: "Default (plain ASCII)",
           ibm: "IBMgraphics",
@@ -1176,11 +1176,6 @@ export const en = {
             "Tint shard pixels near split lines with randomized blood-red edges.",
         },
         groupCompatibility: "Runtime compatibility",
-        darkCorridorWalls367: {
-          label: "Legacy dark corridor walls",
-          description:
-            "Infer and cache dark corridor wall tiles for legacy NetHack 3.4.3/3.6.x-style runtimes, including Slash'EM.",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "Override NetHack 5.0 dark wall tiles",
           description:
@@ -1425,7 +1420,6 @@ export const en = {
         cancelDownload: "Cancel Download",
       },
       startup: {
-        chooseVariant: "Choose your NetHack variant:",
         options: "NetHack 3D Options",
         quitGame: "Quit Game",
         chooseSetup: "Choose your character setup:",
@@ -1463,8 +1457,6 @@ export const en = {
           resetControllerDefaults: "Reset Controller Defaults",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Always enabled while Vulture tiles are active.",
           darkWallsDisabledByVulture:
             " Disabled while Vulture tiles are active.",
           enableDarkWallsFirst:
@@ -1560,10 +1552,6 @@ export const en = {
         choices: {
           leftRingFinger: "Left ring-finger",
           rightRingFinger: "Right ring-finger",
-          here: "Here",
-          onGround: "On ground",
-          eligibleItems: "Eligible items",
-          allInventory: "All inventory",
         },
       },
       runtimeStartError: {

@@ -113,9 +113,8 @@ describe("ExploredMask", () => {
     expect(uniforms.uExploredMask.value).toBeNull();
   });
 
-  it("ignores 3.6.7 blank-stone fillers and cells off the map", () => {
+  it("ignores cells off the map", () => {
     const { mask, addTile, tileMap } = maskFixture();
-    addTile(3, 3, { isVoidFill: true });
     addTile(4, 3);
     const offMap = new THREE.Mesh();
     offMap.userData = { tileX: 90, tileY: 3 };

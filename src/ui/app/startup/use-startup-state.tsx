@@ -39,11 +39,11 @@ export function useStartupState() {
   );
 
   const startupDefaultCharacterPreferences =
-    startupDefaultCharacterPreferencesByRuntime["3.6.7"] ??
-    createDefaultStartupCharacterPreferences("3.6.7");
+    startupDefaultCharacterPreferencesByRuntime["5.0"] ??
+    createDefaultStartupCharacterPreferences("5.0");
 
   const startupCharacterPreferencesStateRuntimeRef =
-    useRef<NethackRuntimeVersion | null>("3.6.7");
+    useRef<NethackRuntimeVersion | null>("5.0");
 
   const [hasShownStartupMenu, setHasShownStartupMenu] = useState(false);
 
@@ -76,16 +76,15 @@ export function useStartupState2(dependencies: UseStartupState2Dependencies) {
     useState<CharacterCreationConfig | null>(null);
 
   const [startupFlowStep, setStartupFlowStep] =
-    useState<StartupFlowStep>("variant");
+    useState<StartupFlowStep>("choose");
 
-  const [runtimeVersion, setRuntimeVersion] =
-    useState<NethackRuntimeVersion>("3.6.7");
+  const runtimeVersion: NethackRuntimeVersion = "5.0";
 
   const activeRuntimeVersion =
     characterCreationConfig?.runtimeVersion ?? runtimeVersion;
 
   const activeRuntimeVersionLabel =
-    resolveRuntimeVersionDisplayLabel(activeRuntimeVersion);
+    resolveRuntimeVersionDisplayLabel();
 
   const [createRole, setCreateRole] = useState(
     startupDefaultCharacterPreferences.createRole,
@@ -142,7 +141,6 @@ export function useStartupState2(dependencies: UseStartupState2Dependencies) {
     startupFlowStep,
     setStartupFlowStep,
     runtimeVersion,
-    setRuntimeVersion,
     activeRuntimeVersion,
     activeRuntimeVersionLabel,
     createRole,

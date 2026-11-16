@@ -53,7 +53,6 @@ export interface RuntimeMenuCaptureDependencies {
     | "currentWindow"
     | "getPrintableAcceleratorCharacter"
     | "isInMultiPickup"
-    | "isLegacyMenuAcceleratorRuntime"
     | "isMultiSelectLootQuestion"
     | "lastEndedMenuHadQuestion"
     | "lastEndedMenuWindow"
@@ -140,14 +139,10 @@ export class RuntimeMenuCapture {
     const addMenuMode = pointerContract?.callbackModes?.shim_add_menu || {};
     const menuTextArgIndex = Number.isInteger(addMenuMode.menuTextArgIndex)
       ? addMenuMode.menuTextArgIndex
-      : this.deps.coordinator.runtimeVersion === "5.0"
-        ? 7
-        : 6;
+      : 7;
     const itemFlagsArgIndex = Number.isInteger(addMenuMode.itemFlagsArgIndex)
       ? addMenuMode.itemFlagsArgIndex
-      : this.deps.coordinator.runtimeVersion === "5.0"
-        ? 8
-        : 7;
+      : 8;
     const identifierMode =
       addMenuMode.identifierMode === "pointer_slot"
         ? "pointer_slot"
@@ -161,20 +156,12 @@ export class RuntimeMenuCapture {
     const identifier = args[2];
     const rawAccelerator = args[3];
     const rawGroupAccelerator = args[4];
-    const accelerator =
-      typeof rawAccelerator === "string" &&
-        this.deps.menuSelection.isLegacyMenuAcceleratorRuntime()
-        ? rawAccelerator
-        : Number.isFinite(Number(rawAccelerator))
-          ? Math.trunc(Number(rawAccelerator))
-          : rawAccelerator;
-    const groupAccelerator =
-      typeof rawGroupAccelerator === "string" &&
-        this.deps.menuSelection.isLegacyMenuAcceleratorRuntime()
-        ? rawGroupAccelerator
-        : Number.isFinite(Number(rawGroupAccelerator))
-          ? Math.trunc(Number(rawGroupAccelerator))
-          : rawGroupAccelerator;
+    const accelerator = Number.isFinite(Number(rawAccelerator))
+      ? Math.trunc(Number(rawAccelerator))
+      : rawAccelerator;
+    const groupAccelerator = Number.isFinite(Number(rawGroupAccelerator))
+      ? Math.trunc(Number(rawGroupAccelerator))
+      : rawGroupAccelerator;
     const printableGroupAccelerator =
       this.deps.menuSelection.getPrintableAcceleratorCharacter(groupAccelerator);
     const menuAttr = Number(args[5]);
@@ -229,9 +216,7 @@ export class RuntimeMenuCapture {
       resolvedMenuGlyph = finalGlyph;
 
       const helpers = globalThis.nethackGlobal?.helpers;
-      const mapHelper = this.deps.coordinator.runtimeVersion === "5.0"
-        ? helpers?.mapGlyphInfoHelper
-        : helpers?.mapglyphHelper;
+      const mapHelper = helpers?.mapGlyphInfoHelper;
       const tileIndexForGlyphHelper =
         typeof helpers?.tileIndexForGlyph === "function"
           ? helpers.tileIndexForGlyph

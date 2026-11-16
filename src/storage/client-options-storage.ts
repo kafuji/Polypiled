@@ -43,8 +43,10 @@ type StartupCharacterPreferencesStoredRecord = {
   updatedAt: number;
 };
 
+// Preferences stored for the removed NetHack 3.6.7 and Slash'EM runtimes are
+// not read back, and disappear the next time preferences are saved.
 const startupCharacterPreferenceRuntimeVersions: readonly NethackRuntimeVersion[] =
-  ["3.6.7", "5.0", "slashem"];
+  ["5.0"];
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);

@@ -8,7 +8,6 @@ import type {
   RuntimeLevelIdentity
 } from "../shared/types";
 import type { BloodGround } from "../effects/blood-ground";
-import type { DarkCorridorInference } from "./dark-corridor-inference";
 import type { PlayerStatus } from "../ui/player-status";
 import type { TileRendering } from "../rendering/tile-rendering";
 import type { TileUpdates } from "./tile-updates";
@@ -34,11 +33,6 @@ export interface LevelTerrainCacheDependencies {
     | "cloneBloodGroundCacheSnapshot"
     | "disposeBloodGroundOverlayResources"
     | "restoreBloodGroundCacheSnapshot"
-  >;
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "inferredDarkCorridorTileFlags"
-    | "inferredDarkCorridorWallTiles"
   >;
   readonly playerStatus: Pick<
     PlayerStatus,
@@ -410,28 +404,11 @@ export class LevelTerrainCache {
     return clone;
   }
 
-  cloneCoordinateMap(
-    source: Map<string, { x: number; y: number }>,
-  ): Map<string, { x: number; y: number }> {
-    const clone = new Map<string, { x: number; y: number }>();
-    for (const [key, value] of source.entries()) {
-      clone.set(key, { x: value.x, y: value.y });
-    }
-    return clone;
-  }
-
   cloneStringSet(source: Set<string>): Set<string> {
     return new Set(source);
   }
 
   captureCurrentLevelTerrainCacheSnapshot(): LevelTerrainCacheSnapshot {
-    const inferredDarkFlags = this.cloneStringSet(
-      this.dependencies.darkCorridorInference.inferredDarkCorridorTileFlags,
-    );
-    for (const key of this.dependencies.darkCorridorInference.inferredDarkCorridorWallTiles.keys()) {
-      inferredDarkFlags.add(key);
-    }
-
     return {
       tileStateCache: new Map(this.dependencies.tileUpdates.tileStateCache),
       lastKnownTerrain: this.cloneTerrainSnapshotMap(this.lastKnownTerrain),
@@ -441,10 +418,6 @@ export class LevelTerrainCache {
       suppressedLootLikeUnderPlayerCacheKeys: this.cloneStringSet(
         this.dependencies.worldClassification.suppressedLootLikeUnderPlayerCacheKeys,
       ),
-      inferredDarkCorridorWallTiles: this.cloneCoordinateMap(
-        this.dependencies.darkCorridorInference.inferredDarkCorridorWallTiles,
-      ),
-      inferredDarkCorridorTileFlags: inferredDarkFlags,
       bloodGround: this.dependencies.bloodGround.captureActiveBloodGroundCacheSnapshot(),
     };
   }
@@ -467,12 +440,6 @@ export class LevelTerrainCache {
       ),
       suppressedLootLikeUnderPlayerCacheKeys: this.cloneStringSet(
         snapshot.suppressedLootLikeUnderPlayerCacheKeys,
-      ),
-      inferredDarkCorridorWallTiles: this.cloneCoordinateMap(
-        snapshot.inferredDarkCorridorWallTiles,
-      ),
-      inferredDarkCorridorTileFlags: this.cloneStringSet(
-        snapshot.inferredDarkCorridorTileFlags,
       ),
       bloodGround: this.dependencies.bloodGround.cloneBloodGroundCacheSnapshot(snapshot.bloodGround),
     };
@@ -559,8 +526,6 @@ export class LevelTerrainCache {
       snapshot.lastKnownTerrain.size === 0 &&
       snapshot.flatFeatureUnderPlayerCache.size === 0 &&
       snapshot.suppressedLootLikeUnderPlayerCacheKeys.size === 0 &&
-      snapshot.inferredDarkCorridorWallTiles.size === 0 &&
-      snapshot.inferredDarkCorridorTileFlags.size === 0 &&
       !snapshot.bloodGround
     ) {
       return;
@@ -889,22 +854,6 @@ export class LevelTerrainCache {
     this.dependencies.worldClassification.suppressedLootLikeUnderPlayerCacheKeys = this.cloneStringSet(
       entry.suppressedLootLikeUnderPlayerCacheKeys,
     );
-    this.dependencies.darkCorridorInference.inferredDarkCorridorWallTiles = this.cloneCoordinateMap(
-      entry.inferredDarkCorridorWallTiles,
-    );
-    this.dependencies.darkCorridorInference.inferredDarkCorridorTileFlags = this.cloneStringSet(
-      entry.inferredDarkCorridorTileFlags,
-    );
-    for (const key of this.dependencies.darkCorridorInference.inferredDarkCorridorTileFlags.values()) {
-      if (this.dependencies.darkCorridorInference.inferredDarkCorridorWallTiles.has(key)) {
-        continue;
-      }
-      const parsed = this.parseTileKey(key);
-      if (!parsed) {
-        continue;
-      }
-      this.dependencies.darkCorridorInference.inferredDarkCorridorWallTiles.set(key, parsed);
-    }
     this.dependencies.tileUpdates.refreshTilesFromStateCache();
 
     for (const observed of observedTiles.values()) {

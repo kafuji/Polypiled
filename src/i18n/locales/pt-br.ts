@@ -1184,11 +1184,6 @@ export const ptBrOverrides = {
             "Tinge pixels próximos às linhas de divisão com bordas vermelho-sangue aleatórias.",
         },
         groupCompatibility: "Compatibilidade de runtime",
-        darkCorridorWalls367: {
-          label: "Paredes escuras de corredor legadas",
-          description:
-            "Infere e armazena em cache tiles de paredes de corredor escuro para runtimes legados do NetHack 3.4.3/3.6.x, incluindo Slash'EM.",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "Substituir tiles de paredes escuras do NetHack 5.0",
           description:
@@ -1445,7 +1440,6 @@ export const ptBrOverrides = {
         cancelDownload: "Cancelar download",
       },
       startup: {
-        chooseVariant: "Escolha sua variante de NetHack:",
         options: "Opções do NetHack 3D",
         quitGame: "Sair do jogo",
         chooseSetup: "Escolha a configuração do seu personagem:",
@@ -1485,8 +1479,6 @@ export const ptBrOverrides = {
           resetControllerDefaults: "Restaurar mapeamentos padrão do controle",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Sempre ativado enquanto os tiles de Vulture estiverem ativos.",
           darkWallsDisabledByVulture:
             " Desativado enquanto os tiles de Vulture estiverem ativos.",
           enableDarkWallsFirst:
@@ -1586,10 +1578,6 @@ export const ptBrOverrides = {
         choices: {
           leftRingFinger: "Dedo anelar esquerdo",
           rightRingFinger: "Dedo anelar direito",
-          here: "Aqui",
-          onGround: "No chão",
-          eligibleItems: "Itens válidos",
-          allInventory: "Inventário completo",
         },
       },
       runtimeStartError: {

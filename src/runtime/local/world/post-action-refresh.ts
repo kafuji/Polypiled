@@ -463,12 +463,6 @@ export class RuntimePostActionRefresh {
     if (normalizedText.length < 5) {
       return false;
     }
-    if (
-      this.deps.coordinator.runtimeVersion === "slashem" &&
-      /^(?:\d+|a|an)\s+gold piece(?:s)?\.$/i.test(normalizedText)
-    ) {
-      return true;
-    }
     return /^[^\s] - \S/.test(normalizedText);
   }
 

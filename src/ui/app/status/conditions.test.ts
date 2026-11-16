@@ -18,31 +18,24 @@ const sampleStats: PlayerStatsSnapshot = {
   hunger: "", encumbrance: "", conditionMask: 0, time: 1, score: 0,
 };
 
-describe("runtime-specific player status presentation", () => {
-  it("interprets the same condition bit according to its runtime", () => {
-    // Bit 1 is petrification in 3.6.7, levitation in Slash'EM and bare hands in 5.0.
-    expect(resolveConditionStatusBadges(1, "3.6.7")).toEqual([
+describe("player status presentation", () => {
+  it("interprets condition bits as NetHack 5.0 defines them", () => {
+    // Bit 0x100000 is petrification; bit 1 is bare hands.
+    expect(resolveConditionStatusBadges(0x100000)).toEqual([
       expect.objectContaining({ severity: "danger" }),
     ]);
-    expect(resolveConditionStatusBadges(1, "slashem")).toEqual([
-      expect.objectContaining({ severity: "good" }),
-    ]);
-    expect(resolveConditionStatusLineSeverity("You are levitating.", 1, "slashem"))
-      .toBe("good");
-    expect(resolveConditionStatusLineSeverity("You are levitating.", 1, "3.6.7"))
-      .toBeNull();
-    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 1, "3.6.7"))
+    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 0x100000))
       .toBe("danger");
-    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 1, "5.0"))
+    expect(resolveConditionStatusLineSeverity("You are turning to stone.", 1))
       .toBeNull();
   });
 
-  it("ignores malformed condition masks and bits absent from the runtime", () => {
+  it("ignores malformed condition masks and unknown bits", () => {
     for (const mask of [undefined, null, "1", Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(resolveConditionStatusBadges(mask, "3.6.7")).toEqual([]);
+      expect(resolveConditionStatusBadges(mask)).toEqual([]);
     }
-    expect(resolveConditionStatusBadges(0x20000000, "3.6.7")).toEqual([]);
-    expect(resolveConditionStatusBadges(0x20000000, "5.0")).toHaveLength(1);
+    expect(resolveConditionStatusBadges(0x40000000)).toEqual([]);
+    expect(resolveConditionStatusBadges(0x20000000)).toHaveLength(1);
   });
 
   it("distinguishes normal hunger, satiation and critical hunger", () => {
@@ -67,31 +60,31 @@ describe("runtime-specific player status presentation", () => {
       ...sampleStats,
       hunger: "Weak",
       encumbrance: "Burdened",
-      conditionMask: 0x20,
+      conditionMask: 0x2,
     };
-    expect(resolveCharacterStatusLineSeverity("  You are\n weak. ", stats, "3.6.7"))
+    expect(resolveCharacterStatusLineSeverity("  You are\n weak. ", stats))
       .toBe("danger");
-    expect(resolveCharacterStatusLineSeverity("You are burdened.", stats, "3.6.7"))
+    expect(resolveCharacterStatusLineSeverity("You are burdened.", stats))
       .toBe("warning");
-    expect(resolveCharacterStatusLineSeverity("You are blind.", stats, "3.6.7"))
+    expect(resolveCharacterStatusLineSeverity("You are blind.", stats))
       .toBe("warning");
-    expect(resolveCharacterStatusLineSeverity("You are stunned.", stats, "3.6.7"))
+    expect(resolveCharacterStatusLineSeverity("You are stunned.", stats))
       .toBeNull();
-    expect(resolveCharacterStatusLineSeverity("Your weakness has passed.", stats, "3.6.7"))
+    expect(resolveCharacterStatusLineSeverity("Your weakness has passed.", stats))
       .toBeNull();
   });
 
-  it("keeps hunger then load then runtime-condition badge order", () => {
+  it("keeps hunger then load then condition badge order", () => {
     const stats = {
       ...sampleStats,
       hunger: "Weak",
       encumbrance: "Burdened",
-      conditionMask: 0x20,
+      conditionMask: 0x2,
     };
-    expect(buildPlayerStatusBadges(stats, "3.6.7")).toEqual([
+    expect(buildPlayerStatusBadges(stats)).toEqual([
       { label: "Weak", severity: "danger" },
       { label: "Burdened", severity: "warning" },
-      ...resolveConditionStatusBadges(0x20, "3.6.7"),
+      ...resolveConditionStatusBadges(0x2),
     ]);
   });
 });

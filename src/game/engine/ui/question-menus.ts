@@ -12,7 +12,6 @@ import type { PointerLock } from "../input/pointer-lock";
 import type { RunTelemetry } from "../world/run-telemetry";
 import type { TilesetAssets } from "../rendering/tileset-assets";
 import type { TileUpdates } from "../world/tile-updates";
-import type { WorldClassification } from "../world/world-classification";
 
 export interface QuestionMenusDependencies {
   readonly audioHapticsPlatform: Pick<
@@ -63,10 +62,6 @@ export interface QuestionMenusDependencies {
     TileUpdates,
     "getQuestionSelectionTileRefreshAction"
     | "requestPlayerTileRefresh"
-  >;
-  readonly worldClassification: Pick<
-    WorldClassification,
-    "resolveLegacyHereChoicePreviewTileIndex"
   >;
 }
 
@@ -238,15 +233,10 @@ export class QuestionMenus {
     if (!normalized) {
       return false;
     }
-    const countedObject = /\bwhat (?:do you want|would you like) to (throw|charge|fire|ready|wield|adjust|stash|pawn)\b/.exec(normalized);
+    const countedObject = /\bwhat (?:do you want|would you like) to (throw|charge|fire|ready|wield|adjust|stash)\b/.exec(normalized);
     if (countedObject) {
-      // Match each bundled game's count-enabled getobj calls. SLASH'EM's
-      // wield/quiver prompts do not accept counts; its pawn prompt does.
-      const verb = countedObject[1];
-      if (verb === "throw" || verb === "charge") return true;
-      const version = this.dependencies.tilesetAssets.resolveRuntimeVersion();
-      if (version === "slashem") return verb === "pawn";
-      return verb !== "pawn" && (verb !== "fire" || version === "5.0");
+      // Match NetHack's count-enabled getobj calls.
+      return true;
     }
     return (
       normalized.includes("what would you like to pick up") ||
@@ -1452,11 +1442,7 @@ export class QuestionMenus {
     defaultChoice: string,
     menuItems: any[],
   ): void {
-    const runtimeVersion = this.dependencies.tilesetAssets.resolveRuntimeVersion();
-    const uiChoices =
-      runtimeVersion === "slashem"
-        ? String(choices || "").replace(/\*/g, "")
-        : choices || "";
+    const uiChoices = choices || "";
     this.activeQuestionText = question || "";
     this.activeQuestionChoices = uiChoices;
     this.activeQuestionDefaultChoice = defaultChoice || "";
@@ -1808,16 +1794,6 @@ export class QuestionMenus {
       return;
     }
     this.setQuestionActionFocusIndex(actionIndex);
-  }
-
-  resolveLegacyQuestionChoicePreviewTileIndex(
-    choice: string,
-  ): number | null {
-    const normalizedChoice = String(choice || "").trim();
-    if (normalizedChoice !== ".") {
-      return null;
-    }
-    return this.dependencies.worldClassification.resolveLegacyHereChoicePreviewTileIndex();
   }
 
   confirmQuestionMenuChoice(): void {

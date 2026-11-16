@@ -18,7 +18,6 @@ The event and command envelope types are in [runtime/types.ts](../src/runtime/ty
 | Map event batching and refresh requests | [protocol/event-batches.ts](../src/runtime/protocol/event-batches.ts), [protocol/refresh-requests.ts](../src/runtime/protocol/refresh-requests.ts), and [world/tile-updates.ts](../src/game/engine/world/tile-updates.ts) |
 | Glyph classification and features under the player | [world/world-classification.ts](../src/game/engine/world/world-classification.ts): `classifyTilePayload`, `shouldRenderFlatFeatureUnderPlayer`, `applyUnderPlayerItemGlyphEvent`, `clearUnderPlayerItemGlyphEvent` |
 | Level identity, snapshots, and restoration | [world/level-terrain-cache.ts](../src/game/engine/world/level-terrain-cache.ts): `persistActiveLevelTerrainCache`, `beginPendingLevelCacheTransition`, `maybeFinalizePendingLevelCacheTransition`, `restoreLevelTerrainCacheEntry` |
-| Dark corridor discovery and inferred walls | [world/dark-corridor-inference.ts](../src/game/engine/world/dark-corridor-inference.ts): `beginDarkCorridorDiscoveryWindowFromPlayerInput`, `requestInferredDarkCorridorWallReconcile` |
 | Player position, prediction, and stale player glyphs | [world/player-movement.ts](../src/game/engine/world/player-movement.ts): `recordPlayerMovement`, `getFpsPlayerTileRelationFlags` |
 | Runtime entity IDs and last-seen appearances | [world/runtime-entity-tracking.ts](../src/game/engine/world/runtime-entity-tracking.ts): `updateRuntimeMonsterTrackingFromTile`, `finalizePendingRuntimeMonsterVacatedTracking` |
 | Entity motion and deferred visual updates | [world/entity-movement.ts](../src/game/engine/world/entity-movement.ts): `beginOrRetargetEntityMoveTransition`, `applyDeferredEntityVisualUpdateForKey`, `updateEntityMoveTransitions` |
@@ -40,10 +39,6 @@ after pickup or a terrain change must preserve its existing billboard; the FPS
 player suppression and deferred movement checks still apply.
 
 `player_position` is the authoritative position update. The dispatcher ignores it while position-input mode is active, since a selection cursor must not move the player. It resolves any pending level transition, records movement using the old position, assigns `PlayerMovement.playerPos`, and immediately reconciles only the old/new player neighborhoods. Remaining discovery visuals keep the normal per-frame budget. `map_cursor` supplies prediction hints; it does not replace that authoritative position flow.
-
-Dark corridor observations are recorded when they enter the queue. Inference evaluates every authoritative player step and again on `map_update_complete`, which the bridge delivers after the runtime's ordered map-display or snapshot-complete boundary. It reads a temporary view of pending terrain, with newer arrivals overriding the unfinished visual queue; render caches stay untouched until their tiles are processed. Queued floors suppress inferred walls immediately. Camera/player motion and distant mesh rebuilding do not delay this evaluation. The shared frame also checks dirty observations for legacy delivery paths.
-
-Inferred walls must bypass FPS player-floor suppression, including predicted and animated step destinations. Otherwise a reconciliation during movement can leave a tile flagged as inferred but rendered as a passable floor, enabling the movement glow until another action redraws it. Real runtime player/floor observations still replace inferred walls normally. `inferred-wall-prediction.test.ts` checks wall geometry, passability, highlight visibility and subsequent authoritative replacement.
 
 ## Features and loot under the player
 

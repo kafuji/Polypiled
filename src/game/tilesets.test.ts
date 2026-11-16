@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  clearNh3dUserTilesets, findNh3dTilesetByPath, getNh3dCompatibleTilesetCatalog,
+  clearNh3dUserTilesets, findNh3dTilesetByPath, getNh3dTilesetCatalog,
   inferNh3dTilesetTileDimensions, isNh3dTilesetExactBackgroundRemovalForced,
   resolveDefaultNh3dTilesetBackgroundRemovalMode, resolveDefaultNh3dTilesetBackgroundTileId,
   resolveDefaultNh3dTilesetSolidChromaKeyColorHex,
@@ -10,39 +10,14 @@ import {
 import { shouldTranslateNh367TilesetForNh5Runtime } from "./tileset-367-to-5-translation";
 
 afterEach(() => clearNh3dUserTilesets());
-describe("Slash'EM atlas columns", () => {
-  it.each([
-    ["assets/slashem/Abigaba.bmp", 912, 888, 24],
-    ["assets/slashem/Absurd.png", 4864, 4736, 128],
-  ] as const)("preserves the built-in 38-column sheet %s", (path, width, height, size) => {
-    expect(getNh3dTilesetAtlasTileColumns(path)).toBe(38);
-    expect(inferNh3dTilesetTileDimensions(width, height, path)).toEqual({ tileWidth: size, tileHeight: size });
-  });
-
-  it("keeps old imports on 40 columns and scopes 38 columns to the opted-in sheet", () => {
-    setNh3dUserTilesets([
-      { id: "legacy", label: "Legacy", tileSize: 24, tileLayoutVersion: "slashem", blob: new Blob() },
-      { id: "native", label: "Native", tileSize: 24, atlasColumns: 38, tileLayoutVersion: "slashem", blob: new Blob() },
-    ]);
-    expect(getNh3dTilesetAtlasTileColumns("user:legacy")).toBe(40);
-    expect(inferNh3dTilesetTileDimensions(960, 888, "user:legacy")).toEqual({ tileWidth: 24, tileHeight: 24 });
-    expect(getNh3dTilesetAtlasTileColumns("user:native")).toBe(38);
-    expect(inferNh3dTilesetTileDimensions(912, 888, "user:native")).toEqual({ tileWidth: 24, tileHeight: 24 });
-    expect(findNh3dTilesetByPath("user:native")?.tileLayoutVersion).toBe("slashem");
-    expect(getNh3dCompatibleTilesetCatalog("5.0").some(entry => entry.path === "user:native")).toBe(false);
-    expect(getNh3dTilesetAtlasTileColumns("assets/3.6/DuskHack.bmp")).toBe(40);
-  });
-});
 describe("DuskHack built-in support", () => {
   it("offers its original 16px sheet for 3.6 and translates it for NetHack 5", () => {
     const path = "assets/3.6/DuskHack.bmp";
     expect(findNh3dTilesetByPath(path)).toMatchObject({ label: "DuskHack", tileSize: 16, tileLayoutVersion: "3.6.7", source: "builtin" });
-    for (const version of ["3.6.7", "5.0"] as const) {
-      expect(getNh3dCompatibleTilesetCatalog(version).some(entry => entry.path === path)).toBe(true);
-    }
-    expect(getNh3dCompatibleTilesetCatalog("slashem").some(entry => entry.path === path)).toBe(false);
+    expect(getNh3dTilesetCatalog().some(entry => entry.path === path)).toBe(true);
+    expect(getNh3dTilesetAtlasTileColumns(path)).toBe(40);
     expect(inferNh3dTilesetTileDimensions(640, 592, path)).toEqual({ tileWidth: 16, tileHeight: 16 });
-    expect(shouldTranslateNh367TilesetForNh5Runtime("5.0", 1480, "3.6.7")).toBe(true);
+    expect(shouldTranslateNh367TilesetForNh5Runtime(1480, "3.6.7")).toBe(true);
     expect(resolveDefaultNh3dTilesetBackgroundRemovalMode(path)).toBe("solid");
     expect(resolveDefaultNh3dTilesetSolidChromaKeyColorHex(path)).toBe("#000000");
     expect(resolveDefaultNh3dTilesetBackgroundTileId(path)).toBe(850);
@@ -50,8 +25,8 @@ describe("DuskHack built-in support", () => {
 });
 describe("rectangular tileset dimensions", () => {
   it.each([["3.6.7", 975, 1476, "assets/3.6/Geoduck.bmp"], ["5.0", 1500, 2304, "assets/5.0/Geoduck.bmp"]] as const)(
-    "registers the native Geoduck sheet for %s", (version, height, background, path) => {
-      expect(getNh3dCompatibleTilesetCatalog(version).some(entry => entry.path === path)).toBe(true);
+    "registers the native Geoduck sheet in the %s layout", (version, height, background, path) => {
+      expect(getNh3dTilesetCatalog().some(entry => entry.path === path)).toBe(true);
       expect(findNh3dTilesetByPath(path)).toMatchObject({ tileSize: 15, tileHeight: 25 });
       expect(inferNh3dTilesetTileDimensions(600, height, path)).toEqual({ tileWidth: 15, tileHeight: 25 });
       expect(inferNh3dTilesetTileDimensions(600, height, undefined, version)).toEqual({ tileWidth: 15, tileHeight: 25 });
@@ -65,6 +40,5 @@ describe("rectangular tileset dimensions", () => {
     expect(inferNh3dTilesetTileDimensions(600, 600)).toEqual({ tileWidth: 15, tileHeight: 15 });
     setNh3dUserTilesets([{ id: "rectangle", label: "Rectangle", tileSize: 20, tileHeight: 30, blob: new Blob() }]);
     expect(inferNh3dTilesetTileDimensions(800, 1200, "user:rectangle")).toEqual({ tileWidth: 20, tileHeight: 30 });
-    expect(getNh3dCompatibleTilesetCatalog("slashem").some(entry => entry.path.endsWith("Geoduck.bmp"))).toBe(false);
   });
 });

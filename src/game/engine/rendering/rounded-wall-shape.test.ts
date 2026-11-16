@@ -117,7 +117,7 @@ describe("diagonal passability for wall corners", () => {
   function fixture(roundedWalls: boolean) {
     const tileMap = new Map<string, THREE.Mesh>();
     const wall = new WallGeometry({
-      darkCorridorInference: { getKnownTerrainSnapshotForInferenceAtKey: () => null },
+      worldClassification: { getKnownTerrainSnapshotAtKey: () => null },
       engineState: { clientOptions: { roundedWalls } },
       tileRendering: { tileMap },
       tilesetAssets: { shouldUseVultureTiles: () => false },

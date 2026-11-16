@@ -7,9 +7,7 @@ import {
   resolveProjectRoot,
 } from "./catalog-generator.mjs";
 
-// Optional arguments name the versions to regenerate (for example `5.0`);
-// with none, every catalog is regenerated in one process, which stalls when
-// the 3.6.7 runtime starts after another one.
+// Optional arguments name the versions to regenerate; NetHack 5.0 is the only one.
 async function main() {
   const projectRoot = resolveProjectRoot();
   const requested = process.argv.slice(2);

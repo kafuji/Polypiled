@@ -55,7 +55,7 @@ JSON.stringify((() => {
     ["minimap", "renderMinimapViewportOverlay"], ["damageNumbers", "updateDamageEffects"],
     ["tileRendering", "updateEffectAnimations"], ["tileRendering", "updateTile"],
     ["tileUpdates", "flushPendingTileUpdates"], ["tileUpdates", "flushPendingTileUpdatesForPlayerPositionReconcile"],
-    ["tileUpdates", "flushPendingDarkCorridorInference"], ["tileUpdates", "refreshTilesFromStateCache"],
+    ["tileUpdates", "refreshTilesFromStateCache"],
     ["wallGeometry", "flushTileBatch"], ["floorOcclusion", "flushTileBatch"],
   ]) wrap(systems[owner], key, owner + "." + key);
   wrap(systems.webXrPresentation.input?.caster, "intersectObjects", "controllerRaycast");

@@ -8,9 +8,6 @@ import {
 import type { FpsCrosshairContextState, Nh3dClientOptions, InventoryDialogState } from "../../../game/ui-types";
 import { useI18n } from "../../../i18n";
 import { translateInventoryItem } from "../../../i18n/inventory-text";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import type * as React from "react";
 import {
   classifyInventoryCategory,
@@ -34,24 +31,16 @@ import {
 } from "../shared/translations";
 
 export interface UseInventoryContextStateRefsDependencies {
-  readonly activeRuntimeVersion: NethackRuntimeVersion;
   readonly clientOptions: Nh3dClientOptions;
 }
 
 /** Context retention, display categories and available item actions */
 export function useInventoryContextStateRefs(dependencies: UseInventoryContextStateRefsDependencies) {
   const {
-    activeRuntimeVersion,
     clientOptions,
   } = dependencies;
 
-  const inventoryItemActions = useMemo(
-    () =>
-      activeRuntimeVersion === "slashem"
-        ? inventoryContextActions.filter((action) => action.id !== "tip")
-        : inventoryContextActions,
-    [activeRuntimeVersion],
-  );
+  const inventoryItemActions = inventoryContextActions;
 
   const inventoryContextMenuRef = useRef<HTMLDivElement | null>(null);
 

@@ -1,37 +1,19 @@
 import type { TileMaterialKind } from "../glyphs";
-import type { GlyphKind } from "../glyphs/types";
-import { GLYPH_CATALOG as legacyGlyphCatalog, GLYPH_CATALOG_RANGES as legacyGlyphRanges } from "../glyphs/glyph-catalog.367.generated";
 import { translateNh5TileIndexToNh367 } from "../tileset-367-to-5-translation";
 import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../glyphs/registry";
-import type { NethackRuntimeVersion } from "../../runtime/types";
-import { VULTURE_MONSTER_KEYS_367 } from "./vulture-monster-keys.367.generated";
-import { NETHACK_367_OBJECT_TOKENS } from "./nethack-object-tokens";
+import {
+  LEGACY_CMAP_INDEX_BY_TILE,
+  LEGACY_MONSTER_KEY_BY_TILE,
+  LEGACY_OBJECT_TOKEN_BY_TILE,
+} from "./legacy-tile-identities";
 import { VultureIdlePreloader } from "./idle-preloader";
 
-// Vulture's asset names follow 3.6 identities, even when the running game uses
-// 5.0 glyphs (split cmap ranges, added species/objects, and male/female tiles).
-const legacyIdentitiesByTile = (() => {
-  const monsters = new Map<number, string>();
-  const objects = new Map<number, string>();
-  const cmap = new Map<number, number>();
-  const starts = new Map(legacyGlyphRanges.map(range => [range.kind, range.start]));
-  for (const entry of legacyGlyphCatalog) {
-    if (typeof entry.tileIndex !== "number" || entry.tileIndex < 0) continue;
-    const start = starts.get(entry.kind);
-    if (start === undefined) continue;
-    const index = entry.glyph - start;
-    if (entry.kind === "mon" || entry.kind === "statue") {
-      const key = VULTURE_MONSTER_KEYS_367[index];
-      if (key) monsters.set(entry.tileIndex, key);
-    } else if (entry.kind === "obj") {
-      const token = NETHACK_367_OBJECT_TOKENS[index];
-      if (token) objects.set(entry.tileIndex, token);
-    } else if (entry.kind === "cmap") {
-      cmap.set(entry.tileIndex, index);
-    }
-  }
-  return { monsters, objects, cmap };
-})();
+// Vulture's asset names follow NetHack 3.6 identities, while the running game
+// uses 5.0 glyphs (split cmap ranges, added species/objects, and male/female
+// tiles). A 5.0 tile is translated to its 3.6.7 tile and looked up there.
+function legacyTileForNh5Tile(tileIndex: number): number {
+  return translateNh5TileIndexToNh367(tileIndex);
+}
 
 export type VultureTileProjectionMode = "sprite" | "iso_floor";
 
@@ -493,48 +475,16 @@ export class VultureTilesetTranslator {
 
   public readonly nominalTileSize = 112;
 
-  private readonly runtimeVersion: NethackRuntimeVersion;
-
   public constructor(options: {
     dataRootUrl: string;
     onAssetReady?: () => void;
-    runtimeVersion?: NethackRuntimeVersion;
   }) {
     const normalizedDataRootUrl = trimSlashes(String(options.dataRootUrl || ""));
     this.dataRootUrl = normalizedDataRootUrl;
     this.configUrl = `${normalizedDataRootUrl}/config/vulture_tiles.conf`;
     this.onAssetReady =
       typeof options.onAssetReady === "function" ? options.onAssetReady : null;
-    this.runtimeVersion = options.runtimeVersion ?? "3.6.7";
     this.initializeLookupTables();
-  }
-
-  private shouldAvoidCatalogIdentityFallbackForRuntimeTile(
-    kind: GlyphKind | null,
-    tileIndex: number | null,
-  ): boolean {
-    if (this.runtimeVersion !== "slashem") {
-      return false;
-    }
-    if (
-      typeof tileIndex !== "number" ||
-      !Number.isFinite(tileIndex) ||
-      tileIndex < 0
-    ) {
-      return false;
-    }
-    switch (kind) {
-      case "mon":
-      case "pet":
-      case "detect":
-      case "ridden":
-      case "statue":
-      case "obj":
-      case "body":
-        return true;
-      default:
-        return false;
-    }
   }
 
   private initializeLookupTables(): void {
@@ -773,15 +723,7 @@ export class VultureTilesetTranslator {
             normalizedTileY,
           )
         : null;
-    const catalogFallbackKind = (() => {
-      const entry = getGlyphCatalogEntry(normalizedGlyph);
-      return entry?.kind ?? null;
-    })();
-    const allowCatalogFallback =
-      !this.shouldAvoidCatalogIdentityFallbackForRuntimeTile(
-        catalogFallbackKind,
-        normalizedTileIndex,
-      );
+    const allowCatalogFallback = true;
     const resolvedLookup =
       resolvedTileIndexLookup ??
       (allowCatalogFallback
@@ -1158,25 +1100,11 @@ export class VultureTilesetTranslator {
     glyphKind: string,
     glyph: number,
   ): string | null {
-    if (this.runtimeVersion === "5.0") {
-      const entry = getGlyphCatalogEntry(glyph);
-      return typeof entry?.tileIndex === "number"
-        ? legacyIdentitiesByTile.monsters.get(translateNh5TileIndexToNh367(entry.tileIndex)) ?? null
-        : null;
-    }
-    const rangeStart = this.getRangeStart(glyphKind);
-    if (rangeStart === null) {
-      return null;
-    }
-    const monsterIndex = Math.trunc(glyph) - rangeStart;
-    if (
-      monsterIndex < 0 ||
-      monsterIndex >= VULTURE_MONSTER_KEYS_367.length ||
-      !Number.isFinite(monsterIndex)
-    ) {
-      return null;
-    }
-    return VULTURE_MONSTER_KEYS_367[monsterIndex] ?? null;
+    void glyphKind;
+    const entry = getGlyphCatalogEntry(glyph);
+    return typeof entry?.tileIndex === "number"
+      ? LEGACY_MONSTER_KEY_BY_TILE.get(legacyTileForNh5Tile(entry.tileIndex)) ?? null
+      : null;
   }
 
   private ensureCmapTileLookupInitialized(): void {
@@ -1216,14 +1144,11 @@ export class VultureTilesetTranslator {
   }
 
   private resolveObjectTokenForObjectId(objectId: number): string | null {
-    if (this.runtimeVersion === "5.0") {
-      const objectStart = this.getRangeStart("obj");
-      const entry = objectStart !== null ? getGlyphCatalogEntry(objectStart + objectId) : null;
-      return entry?.kind === "obj" && typeof entry.tileIndex === "number"
-        ? legacyIdentitiesByTile.objects.get(translateNh5TileIndexToNh367(entry.tileIndex)) ?? null
-        : null;
-    }
-    return NETHACK_367_OBJECT_TOKENS[objectId] ?? null;
+    const objectStart = this.getRangeStart("obj");
+    const entry = objectStart !== null ? getGlyphCatalogEntry(objectStart + objectId) : null;
+    return entry?.kind === "obj" && typeof entry.tileIndex === "number"
+      ? LEGACY_OBJECT_TOKEN_BY_TILE.get(legacyTileForNh5Tile(entry.tileIndex)) ?? null
+      : null;
   }
 
   public setRuntimeObjectTileIndexByObjectId(
@@ -1231,9 +1156,6 @@ export class VultureTilesetTranslator {
   ): void {
     this.clearLookupDecisionCaches();
     this.objectTokenByTileIndex.clear();
-    if (this.runtimeVersion === "slashem") {
-      return;
-    }
     if (!Array.isArray(tileIndexByObjectId) || tileIndexByObjectId.length <= 0) {
       return;
     }
@@ -1343,22 +1265,15 @@ export class VultureTilesetTranslator {
     if (!entry || entry.kind !== "cmap") {
       return null;
     }
-    if (this.runtimeVersion === "5.0") {
-      // A 5.0 wall's glyph offset includes alternate-wall blocks; symidx keeps
-      // the shared stone/wall/door semantics. Later symbols have new inserted
-      // variants too, so translate their tiles into Vulture's 3.6 symbol order.
-      if (typeof entry.symidx === "number" && entry.symidx >= 0 && entry.symidx <= 18) {
-        return Math.trunc(entry.symidx);
-      }
-      return typeof entry.tileIndex === "number"
-        ? legacyIdentitiesByTile.cmap.get(translateNh5TileIndexToNh367(entry.tileIndex)) ?? null
-        : null;
+    // A 5.0 wall's glyph offset includes alternate-wall blocks; symidx keeps
+    // the shared stone/wall/door semantics. Later symbols have new inserted
+    // variants too, so translate their tiles into Vulture's 3.6 symbol order.
+    if (typeof entry.symidx === "number" && entry.symidx >= 0 && entry.symidx <= 18) {
+      return Math.trunc(entry.symidx);
     }
-    const rangeStart = this.getRangeStart("cmap");
-    if (rangeStart === null) {
-      return null;
-    }
-    return entry.glyph - rangeStart;
+    return typeof entry.tileIndex === "number"
+      ? LEGACY_CMAP_INDEX_BY_TILE.get(legacyTileForNh5Tile(entry.tileIndex)) ?? null
+      : null;
   }
 
   private resolveDirectCmapIndexFromContext(

@@ -1,28 +1,5 @@
 // @ts-nocheck
 // Legacy dynamic WASM integration; dependency membership is checked by assembly.
-const SLASHEM_META_EXTENDED_COMMAND_NAME_BY_KEY = Object.freeze({
-  a: "adjust",
-  b: "borrow",
-  c: "chat",
-  d: "dip",
-  e: "enhance",
-  f: "force",
-  i: "invoke",
-  j: "jump",
-  l: "loot",
-  m: "monster",
-  n: "name",
-  o: "offer",
-  p: "pray",
-  q: "quit",
-  r: "rub",
-  s: "sit",
-  t: "technique",
-  u: "untrap",
-  v: "version",
-  w: "wipe",
-  y: "youpoly",
-});
 import type { RuntimeCoordinator } from "../runtime-coordinator";
 import type { RuntimePointerContract } from "../abi/pointer-contract";
 import type { RuntimeMemory } from "../abi/memory";
@@ -71,20 +48,6 @@ export class RuntimeExtendedCommandCatalog {
     }
 
     const entries = this.getExtendedCommandEntries();
-    if (this.deps.coordinator.runtimeVersion === "slashem") {
-      // Slash'EM's extcmdlist does not store meta accelerators; those live in
-      // the regular command table. Prefer the source-defined Alt bindings when
-      // the corresponding extended command is available.
-      const slashEmCommandName =
-        SLASHEM_META_EXTENDED_COMMAND_NAME_BY_KEY[normalized];
-      if (
-        typeof slashEmCommandName === "string" &&
-        entries.some((entry) => entry.name === slashEmCommandName)
-      ) {
-        return slashEmCommandName;
-      }
-    }
-
     const metaKeyCode = normalized.charCodeAt(0) | 0x80;
     const keyedEntries = entries.filter(
       (entry) => entry.keyCode === metaKeyCode,

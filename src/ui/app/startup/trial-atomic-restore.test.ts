@@ -59,12 +59,12 @@ class FakeDatabase {
   }
 }
 
-const runtime = "3.6.7" as const;
-const dbName = getRuntimeSaveDbName(runtime);
+const runtime = "5.0" as const;
+const dbName = getRuntimeSaveDbName();
 const time = new Date("2026-10-04T12:00:00.000Z");
 const row = (byte: number, timestamp = time): Row => ({ timestamp, mode: 0o100666, contents: new Uint8Array([byte]) });
 const archive = () => JSON.stringify({
-  format: "nh3d-save", version: 1, runtimeVersion: runtime, compatTag: getRuntimeSaveCompatTag(runtime),
+  format: "nh3d-save", version: 1, runtimeVersion: runtime, compatTag: getRuntimeSaveCompatTag(),
   dbName, name: "Test", category: "manual", displayName: "Test", playMode: "normal", initOptions: [],
   files: [{ key: "/save/0Test", timestamp: time.toISOString(), contents: "AQ==" }],
 });
@@ -109,7 +109,7 @@ describe("atomic trial save replacement", () => {
   });
 
   it("rejects a character whose existing files span databases without writing", async () => {
-    const otherName = `/nethack/save-${getRuntimeSaveCompatTag(runtime)}`;
+    const otherName = `/nethack/save-${getRuntimeSaveCompatTag()}`;
     const target = new FakeDatabase({ "/save/0Test": row(9) });
     const other = new FakeDatabase({ "/nethack/save/0Test.0": row(8) });
     setup({ [dbName]: target, [otherName]: other });
@@ -120,7 +120,7 @@ describe("atomic trial save replacement", () => {
   });
 
   it("rejects unexpected same-name files in another database even if absent from the supplied snapshot", async () => {
-    const otherName = `/nethack/save-${getRuntimeSaveCompatTag(runtime)}`;
+    const otherName = `/nethack/save-${getRuntimeSaveCompatTag()}`;
     const target = new FakeDatabase({ "/save/0Test": row(9) });
     setup({ [dbName]: target, [otherName]: new FakeDatabase({ "/nethack/save/0Test.0": row(8) }) });
     await expect(replaceTrialSaveAtomically(archive(), runtime, "Test", existing([{ dbName, key: "/save/0Test", timestamp: time }]))).rejects.toThrow(/across save databases/);

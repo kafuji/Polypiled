@@ -125,7 +125,6 @@ export interface RuntimeInputDispatchDependencies {
     | "isFarLookPositionRequest"
     | "isLookAtMapMenuSelection"
     | "isPositionRequestContinuationInput"
-    | "pendingLegacySlashEmCursorPromptFarLook"
     | "pendingLookMenuFarLookArm"
     | "positionInputActive"
     | "setPositionInputActive"
@@ -256,11 +255,6 @@ export class RuntimeInputDispatch {
         this.deps.positionInput.farLookOrigin = null;
         this.deps.positionInput.setPositionInputActive(false);
       }
-      const legacyCursorPromptMouseExamineActive =
-        this.deps.coordinator.runtimeVersion === "slashem" &&
-        this.deps.inputRequests.activeInputRequest?.kind === "position" &&
-        this.deps.positionInput.farLookMode === "active" &&
-        this.deps.positionInput.farLookOrigin === "legacy_cursor_prompt";
       const playerX = Number(this.deps.mapCallbacks.playerPosition?.x);
       const playerY = Number(this.deps.mapCallbacks.playerPosition?.y);
       const clickedCurrentPlayerTile =
@@ -268,11 +262,7 @@ export class RuntimeInputDispatch {
         Number.isFinite(playerY) &&
         tileX === Math.trunc(playerX) &&
         tileY === Math.trunc(playerY);
-      if (legacyCursorPromptMouseExamineActive) {
-        this.deps.coordinator.logRoutine(
-          `Preserving legacy Slash'EM cursor far-look mouse examine at (${tileX}, ${tileY})`,
-        );
-      } else if (clickedCurrentPlayerTile) {
+      if (clickedCurrentPlayerTile) {
         this.deps.postActionRefresh.maybeArmPendingPostActionPlayerTileRefreshForCurrentPlayerLoot(
           `for mouse pickup intent on current player tile (${tileX}, ${tileY})`,
         );
@@ -318,10 +308,7 @@ export class RuntimeInputDispatch {
       this.deps.contextualLook.pendingContextualLookMapRouteSelection = true;
       this.deps.contextualLook.contextualLookInfoProbeMouseDeadlineMs =
         Date.now() + this.deps.contextualLook.contextualLookInfoProbeMouseWindowMs;
-      this.deps.contextualLook.contextualLookInfoAutoFlowStage =
-        this.deps.coordinator.runtimeVersion === "slashem"
-          ? "await_cursor_confirm"
-          : "await_mouse_target";
+      this.deps.contextualLook.contextualLookInfoAutoFlowStage = "await_mouse_target";
       this.deps.contextualLook.contextualLookInfoAutoFlowUntilMs = Date.now() + 15000;
       return;
     }
@@ -697,20 +684,6 @@ export class RuntimeInputDispatch {
       return;
     }
 
-    const normalizedAnsweredYnInput = String(normalizedInput || "")
-      .trim()
-      .toLowerCase();
-    if (this.deps.inputRequests.awaitingQuestionInput && this.deps.positionInput.pendingLegacySlashEmCursorPromptFarLook) {
-      if (normalizedAnsweredYnInput === "y") {
-        this.deps.coordinator.logRoutine(
-          'Arming far-look mode for legacy Slash\'EM cursor prompt on answered "y"',
-        );
-        this.deps.positionInput.farLookMode = "armed";
-        this.deps.positionInput.farLookOrigin = "legacy_cursor_prompt";
-        this.deps.positionInput.pendingLookMenuFarLookArm = false;
-      }
-      this.deps.positionInput.pendingLegacySlashEmCursorPromptFarLook = false;
-    }
     if (this.deps.inputRequests.awaitingQuestionInput && this.deps.questionInput.activeYnPrompt) {
       this.deps.postActionRefresh.armPendingPostActionPlayerTileRefreshForAnsweredYnQuestion(
         this.deps.questionInput.lastQuestionText,

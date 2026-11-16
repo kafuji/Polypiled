@@ -1099,11 +1099,6 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
             "破断線付近の破片ピクセルを、ランダムな血赤色の縁で着色します。",
         },
         groupCompatibility: "ランタイム互換性",
-        darkCorridorWalls367: {
-          label: "旧世代ランタイムの暗い通路壁",
-          description:
-            "Slash'EM を含む旧世代の NetHack 3.4.3/3.6.x 系ランタイム向けに、暗い通路壁タイルを推測してキャッシュします。",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "NetHack 5.0 の暗い壁タイルを上書き",
           description:
@@ -1354,7 +1349,6 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
         cancelDownload: "ダウンロードをキャンセル",
       },
       startup: {
-        chooseVariant: "NetHack バリアントを選択:",
         options: "NetHack 3D オプション",
         quitGame: "ゲーム終了",
         chooseSetup: "キャラクター設定を選択:",
@@ -1394,8 +1388,6 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
             "コントローラー設定をデフォルトに戻す",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Vulture タイルが有効な間は常に有効です。",
           darkWallsDisabledByVulture:
             " Vulture タイルが有効な間は無効です。",
           enableDarkWallsFirst:
@@ -1483,10 +1475,6 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
         choices: {
           leftRingFinger: "左手薬指",
           rightRingFinger: "右手薬指",
-          here: "ここ",
-          onGround: "足元",
-          eligibleItems: "候補のアイテム",
-          allInventory: "すべての持ち物",
         },
       },
       runtimeStartError: {

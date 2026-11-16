@@ -1,26 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { VultureTilesetTranslator } from "./translation";
-import { getGlyphCatalogEntry, getGlyphCatalogRanges, setActiveGlyphCatalog } from "../glyphs/registry";
+import { getGlyphCatalogEntry } from "../glyphs/registry";
+import { cmapGlyphForSymbol } from "../glyphs/test-support";
 
 let translator: VultureTilesetTranslator;
-let cmapStart: number;
-beforeEach(async () => {
-  await setActiveGlyphCatalog("3.6.7");
-  cmapStart = getGlyphCatalogRanges().find(range => range.kind === "cmap")!.start;
-  translator = new VultureTilesetTranslator({ dataRootUrl: "unused", runtimeVersion: "3.6.7" });
+beforeEach(() => {
+  translator = new VultureTilesetTranslator({ dataRootUrl: "unused" });
   Object.assign(translator, { configLoaded: true, configLoadingStarted: true });
 });
 afterEach(() => translator.dispose());
 
 function floor(cmap: number, x: number, y: number) {
-  const glyph = cmapStart + cmap;
+  const glyph = cmapGlyphForSymbol(cmap);
   return translator.resolveLookupForTile({ glyph, tileIndex: getGlyphCatalogEntry(glyph)!.tileIndex,
     tileX: x, tileY: y, materialKind: cmap === 20 ? "dark" : "floor", forBillboard: false });
 }
 function wall(cmap: number, x: number, y: number) {
   return translator.resolveWallFaceLookup({ face: "north", wallX: x, wallY: y - 1,
-    floorX: x, floorY: y, floorGlyph: cmapStart + cmap,
-    floorTileIndex: getGlyphCatalogEntry(cmapStart + cmap)!.tileIndex,
+    floorX: x, floorY: y, floorGlyph: cmapGlyphForSymbol(cmap),
+    floorTileIndex: getGlyphCatalogEntry(cmapGlyphForSymbol(cmap))!.tileIndex,
     floorMaterialKind: cmap === 20 ? "dark" : "floor", wallMaterialKind: "wall" });
 }
 

@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildLegacyInventoryQuestionMenuItems,
   getMenuSelectionInput,
   isReadOnlyQuestionOptionMenuItem,
   isSelectableQuestionMenuItem,
   isYesNoChoicePrompt,
-  orderQuestionChoicesForDisplay,
   parseQuestionChoices,
   shouldUseCompactQuestionChoiceLayout,
 } from "./question-choices";
@@ -21,39 +19,16 @@ describe("question choice interaction contracts", () => {
     expect(isYesNoChoicePrompt(["y", "n", "b"])).toBe(false);
   });
 
-  it.each(["3.6.7", "slashem"] as const)("prioritizes the local action only for legacy %s", runtime => {
-    expect(orderQuestionChoicesForDisplay(["a", "?", "."], runtime))
-      .toEqual([".", "a", "?"]);
-    expect(shouldUseCompactQuestionChoiceLayout("Use what? [a?]", ["a", "?"], runtime, false))
-      .toBe(false);
-  });
-
-  it("keeps the current runtime choice ordering and compact presentation", () => {
-    expect(orderQuestionChoicesForDisplay(["a", "?", "."], "5.0"))
-      .toEqual(["a", "?", "."]);
-    expect(shouldUseCompactQuestionChoiceLayout("Use what? [a?]", ["a", "?"], "5.0", false))
+  it("lays out a few single-character choices compactly", () => {
+    expect(shouldUseCompactQuestionChoiceLayout("Use what? [a?]", ["a", "?"], false))
       .toBe(true);
   });
 
   it("keeps adjust-letter and yes/no prompts compact even with many choices", () => {
-    expect(shouldUseCompactQuestionChoiceLayout("Adjust letter to what?", ["a", "b", "c", "d", "e"], "3.6.7", false))
+    expect(shouldUseCompactQuestionChoiceLayout("Adjust letter to what?", ["a", "b", "c", "d", "e"], false))
       .toBe(true);
-    expect(shouldUseCompactQuestionChoiceLayout("Continue?", ["y", "n", "a", "q", "?"], "slashem", true))
+    expect(shouldUseCompactQuestionChoiceLayout("Continue?", ["y", "n", "a", "q", "?"], true))
       .toBe(true);
-  });
-
-  it("preserves inventory tile metadata and original accelerators in legacy synthetic menus", () => {
-    const item = { text: "a dagger", accelerator: "a", originalAccelerator: 97, tileIndex: 40, isTileApplicable: true };
-    const [synthetic] = buildLegacyInventoryQuestionMenuItems("Use what? [a?]", ["A"], [item], "3.6.7", false);
-    expect(synthetic).toEqual({ ...item, accelerator: "A", selectionInput: "A", isSelectable: true, isCategory: false });
-    expect(item.accelerator).toBe("a");
-  });
-
-  it("falls back to ordinary choices when any synthetic inventory choice is unresolved", () => {
-    const inventory = [{ text: "a dagger", accelerator: "a" }];
-    expect(buildLegacyInventoryQuestionMenuItems("Use what? [a?]", ["a", "?"], inventory, "3.6.7", false)).toEqual([]);
-    expect(buildLegacyInventoryQuestionMenuItems("Use what? [a?]", ["a"], inventory, "5.0", false)).toEqual([]);
-    expect(buildLegacyInventoryQuestionMenuItems("Use what? [a?]", ["a"], inventory, "3.6.7", true)).toEqual([]);
   });
 
   it("preserves explicit runtime selection inputs and nonselectable decisions", () => {

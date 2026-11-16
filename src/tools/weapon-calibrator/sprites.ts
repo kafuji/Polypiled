@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GlyphTextures } from '../../game/engine/rendering/glyph-textures';
 import { flipHeldWeaponTexture } from '../../game/engine/rendering/held-weapon-texture';
 import { resolveHeldWeaponTileFlips } from '../../game/engine/rendering/held-weapon-flips';
+import { translateNh5TileIndexToNh367 } from '../../game/tileset-367-to-5-translation';
 import { defaultNh3dClientOptions } from '../../game/ui-types';
 import { inferNh3dTilesetTileDimensions, resolveDefaultNh3dTilesetBackgroundRemovalMode,
   resolveDefaultNh3dTilesetBackgroundTileId, resolveDefaultNh3dTilesetSolidChromaKeyColorHex,
@@ -14,10 +15,13 @@ export async function loadAtlas(entry: Nh3dTilesetEntry) {
   const { tileWidth: width, tileHeight: height } = inferNh3dTilesetTileDimensions(image.width, image.height, entry.path);
   const columns = Math.floor(image.width / width), count = columns * Math.floor(image.height / height);
   // Catalog data is only an initial selection hint; explicit atlas tile IDs remain authoritative.
-  const catalog = entry.tileLayoutVersion === '5.0' ? await import('../../game/glyphs/glyph-catalog.5.generated') :
-    entry.tileLayoutVersion === 'slashem' ? await import('../../game/glyphs/glyph-catalog.slashem.generated') :
-      await import('../../game/glyphs/glyph-catalog.367.generated');
-  const suggestedTile = catalog.GLYPH_CATALOG.find(glyph => glyph.kind === 'obj' && glyph.asciiChar === ')' && glyph.tileIndex >= 0 && glyph.tileIndex < count)?.tileIndex ?? 0;
+  // A 3.6.7-layout atlas is addressed through the same translation the game uses.
+  const catalog = await import('../../game/glyphs/glyph-catalog.5.generated');
+  const toAtlasTile = (tile: number) => entry.tileLayoutVersion === '5.0' ? tile : translateNh5TileIndexToNh367(tile);
+  const suggestedTile = catalog.GLYPH_CATALOG
+    .filter(glyph => glyph.kind === 'obj' && glyph.asciiChar === ')' && glyph.tileIndex >= 0)
+    .map(glyph => toAtlasTile(glyph.tileIndex))
+    .find(tile => tile >= 0 && tile < count) ?? 0;
   const options = { ...defaultNh3dClientOptions, tilesetPath: entry.path,
     tilesetBackgroundRemovalMode: resolveDefaultNh3dTilesetBackgroundRemovalMode(entry.path),
     tilesetBackgroundTileId: resolveDefaultNh3dTilesetBackgroundTileId(entry.path),

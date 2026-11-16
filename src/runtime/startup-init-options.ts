@@ -1,8 +1,3 @@
-import type { NethackRuntimeVersion } from "./types";
-
-type StartupInitOptionSupport = {
-  supportedRuntimeVersions?: readonly NethackRuntimeVersion[];
-};
 import { getTranslationStrings } from "../i18n/core";
 import { TRIAL_PLAY_MODE } from "../plus/trial/trial-play-mode";
 
@@ -12,7 +7,7 @@ export type StartupInitOptionBooleanDefinition = {
   description: string;
   control: "boolean";
   defaultValue: boolean;
-} & StartupInitOptionSupport;
+};
 
 export type StartupInitOptionSelectDefinition = {
   key: string;
@@ -24,7 +19,7 @@ export type StartupInitOptionSelectDefinition = {
     value: string;
     label: string;
   }>;
-} & StartupInitOptionSupport;
+};
 
 export type StartupInitOptionTextDefinition = {
   key: string;
@@ -34,7 +29,7 @@ export type StartupInitOptionTextDefinition = {
   defaultValue: string;
   maxLength: number;
   placeholder?: string;
-} & StartupInitOptionSupport;
+};
 
 export type StartupInitOptionNumberDefinition = {
   key: string;
@@ -45,7 +40,7 @@ export type StartupInitOptionNumberDefinition = {
   min: number;
   max: number;
   step: number;
-} & StartupInitOptionSupport;
+};
 
 export type StartupInitOptionDefinition =
   | StartupInitOptionBooleanDefinition
@@ -60,54 +55,22 @@ const startupStrings = getTranslationStrings().startupInitOptions;
 type StartupInitPassthroughDefinition = {
   key: string;
   value: string;
-  supportedRuntimeVersions?: readonly NethackRuntimeVersion[];
 };
 
-const automaticRuntimeInitOptionTokensByVersion: Readonly<
-  Record<NethackRuntimeVersion, readonly string[]>
-> = {
-  "3.6.7": [
-    "color",
-    "mouse_support",
-    "runmode:walk",
-    "time",
-    "showexp",
-    "showscore",
-    "statushilites",
-    "force_invmenu",
-    "boulder:0",
-    "clicklook",
-  ],
-  "5.0": [
-    "color",
-    "mouse_support",
-    "runmode:walk",
-    "time",
-    "showexp",
-    "showscore",
-    "statushilites",
-    "force_invmenu",
-    "boulder:0",
-    "!bones",
-  ],
-  slashem: [
-    "color",
-    "mouse_support",
-    "runmode:walk",
-    "time",
-    "showexp",
-    "showscore",
-    "boulder:0",
-  ],
-};
+const automaticRuntimeInitOptionTokens: readonly string[] = [
+  "color",
+  "mouse_support",
+  "runmode:walk",
+  "time",
+  "showexp",
+  "showscore",
+  "statushilites",
+  "force_invmenu",
+  "boulder:0",
+  "!bones",
+];
 
-const requiredStartupInitOptionTokensByVersion: Readonly<
-  Record<NethackRuntimeVersion, readonly string[]>
-> = {
-  "3.6.7": ["checkpoint"],
-  "5.0": ["checkpoint"],
-  slashem: ["checkpoint"],
-};
+const requiredStartupInitOptionTokens: readonly string[] = ["checkpoint"];
 
 export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefinition> =
   [
@@ -136,7 +99,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
           label: getTranslationStrings().plus.trialMode.playModeOption,
         },
       ],
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
     {
       key: "pauper",
@@ -144,7 +106,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       description: startupStrings.options.pauper.description,
       control: "boolean",
       defaultValue: false,
-      supportedRuntimeVersions: ["5.0"],
     },
     {
       key: "tutorial",
@@ -152,7 +113,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       description: startupStrings.options.tutorial.description,
       control: "boolean",
       defaultValue: false,
-      supportedRuntimeVersions: ["5.0"],
     },
     {
       key: "number_pad",
@@ -215,7 +175,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       min: 0,
       max: 50,
       step: 1,
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
     {
       key: "autoquiver",
@@ -230,7 +189,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       description: startupStrings.options.autoopen.description,
       control: "boolean",
       defaultValue: true,
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
     {
       key: "autodig",
@@ -308,7 +266,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       description: startupStrings.options.implicit_uncursed.description,
       control: "boolean",
       defaultValue: true,
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
     {
       key: "mention_walls",
@@ -316,7 +273,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       description: startupStrings.options.mention_walls.description,
       control: "boolean",
       defaultValue: false,
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
     // {
     //   key: "news",
@@ -338,7 +294,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       description: startupStrings.options.hilite_pile.description,
       control: "boolean",
       defaultValue: true,
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
     {
       key: "use_inverse",
@@ -364,7 +319,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
           label: startupStrings.options.symset.options.dec,
         },
       ],
-      supportedRuntimeVersions: ["3.6.7", "5.0", "slashem"],
     },
     {
       key: "sortloot",
@@ -377,7 +331,6 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
         { value: "l", label: startupStrings.options.sortloot.options.l },
         { value: "n", label: startupStrings.options.sortloot.options.n },
       ],
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
     {
       key: "sortpack",
@@ -462,8 +415,7 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       control: "text",
       defaultValue: "",
       maxLength: 64,
-      placeholder: "startupStrings.options.paranoid_confirmation.placeholder",
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
+      placeholder: startupStrings.options.paranoid_confirmation.placeholder,
     },
     {
       key: "sparkle",
@@ -510,7 +462,6 @@ const supportedPassthroughStartupInitOptionDefinitions: ReadonlyArray<StartupIni
     {
       key: "getpos.autodescribe",
       value: "nothing",
-      supportedRuntimeVersions: ["3.6.7", "5.0"],
     },
   ];
 
@@ -524,42 +475,6 @@ const supportedPassthroughStartupInitOptionDefinitionByKey = new Map<
   ]),
 );
 
-function isRuntimeVersionSupported(
-  runtimeVersion?: NethackRuntimeVersion,
-  supportedRuntimeVersions?: readonly NethackRuntimeVersion[],
-): boolean {
-  if (!runtimeVersion || !supportedRuntimeVersions?.length) {
-    return true;
-  }
-  return supportedRuntimeVersions.includes(runtimeVersion);
-}
-
-function isStartupInitOptionDefinitionSupported(
-  definition: StartupInitOptionDefinition,
-  runtimeVersion?: NethackRuntimeVersion,
-): boolean {
-  return isRuntimeVersionSupported(
-    runtimeVersion,
-    definition.supportedRuntimeVersions,
-  );
-}
-
-function getRequiredStartupInitOptionTokens(
-  runtimeVersion?: NethackRuntimeVersion,
-): readonly string[] {
-  if (runtimeVersion) {
-    return requiredStartupInitOptionTokensByVersion[runtimeVersion] ?? [];
-  }
-  const tokenByKey = new Map<string, string>();
-  for (const tokens of Object.values(
-    requiredStartupInitOptionTokensByVersion,
-  )) {
-    for (const token of tokens) {
-      tokenByKey.set(extractOptionKey(token), token);
-    }
-  }
-  return Array.from(tokenByKey.values());
-}
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -648,17 +563,10 @@ function extractOptionKey(token: string): string {
 function sanitizePassthroughStartupInitOptionToken(
   optionKey: string,
   rawValue: string,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string | null {
   const definition =
     supportedPassthroughStartupInitOptionDefinitionByKey.get(optionKey);
-  if (
-    !definition ||
-    !isRuntimeVersionSupported(
-      runtimeVersion,
-      definition.supportedRuntimeVersions,
-    )
-  ) {
+  if (!definition) {
     return null;
   }
   const normalizedValue = String(rawValue || "")
@@ -671,34 +579,22 @@ function sanitizePassthroughStartupInitOptionToken(
 }
 
 export function getStartupInitOptionDefinitions(
-  runtimeVersion?: NethackRuntimeVersion,
 ): ReadonlyArray<StartupInitOptionDefinition> {
-  if (!runtimeVersion) {
-    return startupInitOptionDefinitions;
-  }
-  return startupInitOptionDefinitions.filter((definition) =>
-    isStartupInitOptionDefinitionSupported(definition, runtimeVersion),
-  );
+  return startupInitOptionDefinitions;
 }
 
 export function isStartupInitOptionSupported(
   optionKey: string,
-  runtimeVersion?: NethackRuntimeVersion,
 ): boolean {
   const normalizedKey = String(optionKey || "")
     .trim()
     .toLowerCase();
-  const definition = startupInitOptionDefinitionByKey.get(normalizedKey);
-  if (!definition) {
-    return false;
-  }
-  return isStartupInitOptionDefinitionSupported(definition, runtimeVersion);
+  return startupInitOptionDefinitionByKey.has(normalizedKey);
 }
 
 export function getAutomaticRuntimeInitOptionTokens(
-  runtimeVersion: NethackRuntimeVersion,
 ): string[] {
-  return [...(automaticRuntimeInitOptionTokensByVersion[runtimeVersion] ?? [])];
+  return [...automaticRuntimeInitOptionTokens];
 }
 
 export function createDefaultStartupInitOptionValues(): StartupInitOptionValues {
@@ -728,10 +624,9 @@ export function normalizeStartupInitOptionValues(
 
 export function serializeStartupInitOptionTokens(
   values: StartupInitOptionValues,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string[] {
   const tokens: string[] = [];
-  for (const definition of getStartupInitOptionDefinitions(runtimeVersion)) {
+  for (const definition of getStartupInitOptionDefinitions()) {
     const normalizedValue = normalizeOptionValue(
       definition,
       values[definition.key],
@@ -750,12 +645,6 @@ export function serializeStartupInitOptionTokens(
     if (!serializedValue) {
       continue;
     }
-    if (runtimeVersion === "slashem" && definition.key === "symset") {
-      // Slash'EM predates named symbol sets. Its equivalent startup options
-      // are the legacy IBMgraphics and DECgraphics boolean flags.
-      tokens.push(serializedValue);
-      continue;
-    }
     tokens.push(`${definition.key}:${serializedValue}`);
   }
   return tokens;
@@ -763,7 +652,6 @@ export function serializeStartupInitOptionTokens(
 
 export function sanitizeStartupInitOptionToken(
   rawToken: unknown,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string | null {
   if (typeof rawToken !== "string") {
     return null;
@@ -785,15 +673,6 @@ export function sanitizeStartupInitOptionToken(
   )
     .trim()
     .toLowerCase();
-  if (
-    runtimeVersion === "slashem" &&
-    separatorIndex < 0 &&
-    (optionKey === "ibmgraphics" || optionKey === "decgraphics")
-  ) {
-    const canonicalOption =
-      optionKey === "ibmgraphics" ? "IBMgraphics" : "DECgraphics";
-    return negated ? `!${canonicalOption}` : canonicalOption;
-  }
   const definition = startupInitOptionDefinitionByKey.get(optionKey);
   if (!definition) {
     if (negated || separatorIndex < 0) {
@@ -803,11 +682,7 @@ export function sanitizeStartupInitOptionToken(
     return sanitizePassthroughStartupInitOptionToken(
       optionKey,
       rawValue,
-      runtimeVersion,
     );
-  }
-  if (!isStartupInitOptionDefinitionSupported(definition, runtimeVersion)) {
-    return null;
   }
   if (definition.control === "boolean") {
     if (separatorIndex >= 0) {
@@ -834,7 +709,6 @@ export function sanitizeStartupInitOptionToken(
 
 export function sanitizeStartupInitOptionTokens(
   rawTokens: unknown,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string[] {
   if (!Array.isArray(rawTokens) || rawTokens.length === 0) {
     return [];
@@ -843,36 +717,25 @@ export function sanitizeStartupInitOptionTokens(
   for (const rawToken of rawTokens) {
     const sanitizedToken = sanitizeStartupInitOptionToken(
       rawToken,
-      runtimeVersion,
     );
     if (!sanitizedToken) {
       continue;
     }
-    const extractedKey = extractOptionKey(sanitizedToken);
-    const semanticKey =
-      runtimeVersion === "slashem" &&
-      (extractedKey === "ibmgraphics" || extractedKey === "decgraphics")
-        ? "symset"
-        : extractedKey;
-    tokenByKey.set(semanticKey, sanitizedToken);
+    tokenByKey.set(extractOptionKey(sanitizedToken), sanitizedToken);
   }
   return Array.from(tokenByKey.values());
 }
 
 export function appendRequiredStartupInitOptionTokens(
   rawTokens: unknown,
-  runtimeVersion?: NethackRuntimeVersion,
 ): string[] {
   const tokenByKey = new Map<string, string>();
   for (const token of sanitizeStartupInitOptionTokens(
     rawTokens,
-    runtimeVersion,
   )) {
     tokenByKey.set(extractOptionKey(token), token);
   }
-  for (const requiredToken of getRequiredStartupInitOptionTokens(
-    runtimeVersion,
-  )) {
+  for (const requiredToken of requiredStartupInitOptionTokens) {
     tokenByKey.set(extractOptionKey(requiredToken), requiredToken);
   }
   return Array.from(tokenByKey.values());

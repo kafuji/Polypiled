@@ -234,10 +234,7 @@ export class RuntimeMapCallbacks {
         }
 
         const helpers = (globalThis as any).nethackGlobal?.helpers;
-        const mapHelper =
-          this.deps.coordinator.runtimeVersion === "5.0"
-            ? helpers?.mapGlyphInfoHelper
-            : helpers?.mapglyphHelper;
+        const mapHelper = helpers?.mapGlyphInfoHelper;
         let decodedGlyphFlags = null;
         let floorUnderlay = null;
 

@@ -20,7 +20,7 @@ app.whenReady().then(async () => {
       const { getRuntimeSaveCompatTag, getRuntimeSaveDbName } = await import("/src/runtime/save-storage.ts");
       const assert = (condition, message) => { if (!condition) throw new Error(message); };
       const results = [];
-      for (const runtimeVersion of ["3.6.7", "5.0", "slashem"]) {
+      for (const runtimeVersion of ["5.0"]) {
         for (const category of ["manual", "autosave"]) {
           const name = category === "manual" ? "TransferTest" : "CheckpointTest";
           const contents = btoa(String.fromCharCode(...Array.from({ length: 256 }, (_, i) => i)));
@@ -52,7 +52,7 @@ app.whenReady().then(async () => {
       // A storage collision must roll back every shard, even when discovery
       // ignores the pre-existing record because it lacks a timestamp.
       const db = await new Promise((resolve, reject) => {
-        const request = indexedDB.open(getRuntimeSaveDbName("3.6.7"));
+        const request = indexedDB.open(getRuntimeSaveDbName("5.0"));
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
@@ -68,19 +68,19 @@ app.whenReady().then(async () => {
         tx.objectStore("FILE_DATA").add({ contents: new Uint8Array([42]) }, "/save/0AbortTest.1");
       });
       const rollbackArchive = {
-        format: "nh3d-save", version: 1, runtimeVersion: "3.6.7",
-        compatTag: getRuntimeSaveCompatTag("3.6.7"), dbName: getRuntimeSaveDbName("3.6.7"),
+        format: "nh3d-save", version: 1, runtimeVersion: "5.0",
+        compatTag: getRuntimeSaveCompatTag("5.0"), dbName: getRuntimeSaveDbName("5.0"),
         name: "AbortTest", category: "autosave", displayName: "AbortTest", playMode: null, initOptions: [],
         files: [0, 1].map(level => ({ key: `/save/0AbortTest.${level}`, timestamp: new Date().toISOString(), contents: "AAEC" })),
       };
       let rejected = false;
-      try { await importSavedGame(JSON.stringify(rollbackArchive), "3.6.7"); } catch { rejected = true; }
+      try { await importSavedGame(JSON.stringify(rollbackArchive), "5.0"); } catch { rejected = true; }
       assert(rejected, "Storage collision was not rejected");
       assert(await read("/save/0AbortTest.0") === undefined, "Partial checkpoint survived failed import");
       assert((await read("/save/0AbortTest.1")).contents[0] === 42, "Existing bytes overwritten");
       const controller = new AbortController();
       controller.abort();
-      try { await importSavedGame(JSON.stringify(rollbackArchive), "3.6.7", controller.signal); throw new Error("Cancelled import ran"); }
+      try { await importSavedGame(JSON.stringify(rollbackArchive), "5.0", controller.signal); throw new Error("Cancelled import ran"); }
       catch (error) { assert(error.name === "AbortError", "Cancelled import was not aborted"); }
       db.close();
       results.push("Failed imports roll back all files; cancelled imports leave storage untouched");
@@ -94,7 +94,6 @@ app.whenReady().then(async () => {
         throw new Error("Timed out waiting for startup controls: " + document.body.innerText.slice(-1500));
       };
       const buttons = () => [...document.querySelectorAll("button")].filter(button => button.getBoundingClientRect().height > 0);
-      (await waitFor(() => buttons().find(button => button.textContent.includes("NetHack 3.6.7")))).click();
       (await waitFor(() => buttons().find(button => button.textContent.trim().endsWith("Options")))).click();
       (await waitFor(() => document.getElementById("nh3d-client-options-tab-saves"))).click();
       await waitFor(() => document.querySelector('[aria-label="Export save: TransferTest display"]'));
@@ -102,8 +101,8 @@ app.whenReady().then(async () => {
     await run(async () => {
       const { exportSavedGame } = await import("/src/ui/app/startup/save-transfer.ts");
       const { fetchSavedGames } = await import("/src/ui/app/startup/saved-games.ts");
-      const save = (await fetchSavedGames("3.6.7")).find(save => save.name === "TransferTest");
-      const archive = JSON.parse(await exportSavedGame(save, "3.6.7"));
+      const save = (await fetchSavedGames("5.0")).find(save => save.name === "TransferTest");
+      const archive = JSON.parse(await exportSavedGame(save, "5.0"));
       archive.name = "ImportedFromUi";
       archive.displayName = "Imported from file";
       archive.files[0].key = "/save/0ImportedFromUi";

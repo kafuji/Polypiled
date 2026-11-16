@@ -84,9 +84,9 @@ export async function fetchSavedGames(
   runtimeVersion: NethackRuntimeVersion,
 ): Promise<SaveGameRecord[]> {
   const saves = new Map<string, SaveGameRecord>();
-  const dbNames = await resolveRuntimeSaveDbNames(runtimeVersion);
+  const dbNames = await resolveRuntimeSaveDbNames();
   const checkpointRecoverySupported =
-    supportsRuntimeCheckpointRecovery(runtimeVersion);
+    supportsRuntimeCheckpointRecovery();
   const savePresentationMetadataByKey = readSavePresentationMetadataByKey();
 
   for (const dbName of dbNames) {
@@ -225,9 +225,8 @@ export async function fetchSavedGames(
               Array.isArray(presentationMetadata.initOptions)
               ? resolveSaveResumeInitOptionTokens(
                 presentationMetadata.initOptions,
-                runtimeVersion,
               )
-              : resolveSaveResumeInitOptionTokens([], runtimeVersion);
+              : resolveSaveResumeInitOptionTokens([]);
           const existing = saves.get(logicalKey);
           if (existing) {
             existing.files.push({

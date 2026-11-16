@@ -45,7 +45,8 @@ describe("assembled startup and snapshot contracts", () => {
       characterCreation: { mode: "random", name: " Alice,  Rogue " },
       initOptions: ["checkpoint", "extmenu"],
     };
-    const result = systems.startupOptions.buildRuntimeModuleStartupOptions("3.6.7");
+    vi.stubEnv("VITE_NH3D_WASM_5_HAS_CHECKPOINT_RESUME_BRIDGE", "true");
+    const result = systems.startupOptions.buildRuntimeModuleStartupOptions("5.0");
     expect(result.runtimeOptions).toContain("name:Alice Rogue");
     expect(result.runtimeOptions.indexOf("name:Alice Rogue")).toBeLessThan(result.runtimeOptions.indexOf("extmenu"));
     expect(result.runtimeOptions[result.runtimeOptions.length - 1]).toBe("windowtype:shim");
@@ -63,17 +64,18 @@ describe("assembled startup and snapshot contracts", () => {
     vi.stubEnv("BASE_URL", "./");
     vi.stubGlobal("location", { href: "file:///C:/Game/dist/assets/runtime-worker.js" });
     vi.spyOn(systems.assets, "readRuntimeBuildTag").mockReturnValue("build-42");
-    expect(systems.assets.resolveWasmAssetUrl("/nethack-5.wasm", "5.0")).toBe("file:///C:/Game/dist/nethack-5.wasm");
+    expect(systems.assets.resolveWasmAssetUrl("/nethack-5.wasm")).toBe("file:///C:/Game/dist/nethack-5.wasm");
   });
 
-  it("retains HTTP deployment base paths and per-runtime module/wasm names", () => {
+  it("retains HTTP deployment base paths and the runtime module/wasm names", () => {
     vi.stubEnv("BASE_URL", "/play/");
     vi.stubGlobal("location", { href: "https://example.test/play/assets/runtime-worker.js" });
     vi.spyOn(systems.assets, "readRuntimeBuildTag").mockReturnValue("build-42");
-    expect(systems.assets.resolveWasmAssetUrl("slashem.wasm", "slashem")).toBe("https://example.test/play/slashem.wasm?nh3d_rt=build-42");
-    expect((["3.6.7", "5.0", "slashem"] as const).map(version => [
-      systems.assets.getRuntimeModuleAssetPath(version), systems.assets.getRuntimeWasmAssetPath(version),
-    ])).toEqual([["nethack-367.js", "nethack-367.wasm"], ["nethack-5.js", "nethack-5.wasm"], ["slashem.js", "slashem.wasm"]]);
+    expect(systems.assets.resolveWasmAssetUrl("nethack-5.wasm")).toBe("https://example.test/play/nethack-5.wasm?nh3d_rt=build-42");
+    expect([systems.assets.getRuntimeModuleAssetPath(), systems.assets.getRuntimeWasmAssetPath()])
+      .toEqual(["nethack-5.js", "nethack-5.wasm"]);
+    // A stored choice of a removed runtime starts NetHack 5.0.
+    expect(["3.6.7", "slashem", undefined].map(value => systems.assets.normalizeRuntimeVersion(value))).toEqual(["5.0", "5.0", "5.0"]);
   });
 
   it("waits for hydration before callback registration/main and preserves module method receivers", async () => {

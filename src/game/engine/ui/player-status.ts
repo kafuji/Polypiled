@@ -6,7 +6,6 @@ import type { CorePlayerStatField } from "../shared/types";
 import type { AudioHapticsPlatform } from "../audio/audio-haptics-platform";
 import type { CombatAttribution } from "../world/combat-attribution";
 import type { DamageNumbers } from "../effects/damage-numbers";
-import type { DarkCorridorInference } from "../world/dark-corridor-inference";
 import type { EngineState } from "../runtime/engine-state";
 import type { ExtendedCommands } from "./extended-commands";
 import type { InputCommands } from "../input/input-commands";
@@ -32,10 +31,6 @@ export interface PlayerStatusDependencies {
   readonly damageNumbers: Pick<
     DamageNumbers,
     "spawnPlayerHealNumberParticle"
-  >;
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "requestInferredDarkCorridorWallReconcile"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -378,9 +373,7 @@ export class PlayerStatus {
     value: string | number | null,
     data: any,
   ): void {
-    const runtimeVersion =
-      this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7";
-    const legacyByIndex5: { [key: number]: string } = {
+    const legacyByIndex: { [key: number]: string } = {
       0: "name",
       1: "strength",
       2: "dexterity",
@@ -404,32 +397,6 @@ export class PlayerStatus {
       20: "dlevel",
       21: "gold",
     };
-    const legacyByIndex367: { [key: number]: string } = {
-      0: "name",
-      1: "strength",
-      2: "dexterity",
-      3: "constitution",
-      4: "intelligence",
-      5: "wisdom",
-      6: "charisma",
-      7: "alignment",
-      8: "score",
-      9: "encumbrance",
-      10: "gold",
-      11: "power",
-      12: "maxpower",
-      13: "level",
-      14: "armor",
-      16: "time",
-      17: "hunger",
-      18: "hp",
-      19: "maxhp",
-      20: "levelDescriptor",
-      21: "experience",
-    };
-    const legacyByIndex =
-      runtimeVersion === "5.0" ? legacyByIndex5 : legacyByIndex367;
-
     const byName: { [key: string]: string } = {
       BL_TITLE: "name",
       BL_STR: "strength",
@@ -481,15 +448,11 @@ export class PlayerStatus {
     }
 
     if (isConditionMaskField) {
-      const previousConditionMask = this.statusConditionMask;
       const parsedConditionMask = this.parseStatusConditionMaskValue(value);
       if (parsedConditionMask !== null) {
         this.statusConditionMask = parsedConditionMask;
       }
       this.playerStats.conditionMask = this.statusConditionMask;
-      if (previousConditionMask !== this.statusConditionMask) {
-        this.dependencies.darkCorridorInference.requestInferredDarkCorridorWallReconcile({ forceImmediate: true });
-      }
       this.updateStatsDisplay();
       return;
     }

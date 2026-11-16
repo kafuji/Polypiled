@@ -140,11 +140,11 @@ export class RuntimeMouseInput {
       return contractType;
     }
 
-    // NetHack 3.6.7 exposes nh_poskey(int*, int*, int*), while 5.0 uses
-    // nh_poskey(coordxy*, coordxy*, int*) with coordxy=int16_t. Never infer
-    // the write width from pointer spacing because stack layout varies by
-    // build/platform and can turn a safe write into stack corruption.
-    return this.deps.coordinator.runtimeVersion === "5.0" ? "i16" : "i32";
+    // NetHack 5.0 uses nh_poskey(coordxy*, coordxy*, int*) with
+    // coordxy=int16_t. Never infer the write width from pointer spacing
+    // because stack layout varies by build/platform and can turn a safe write
+    // into stack corruption.
+    return "i16";
   }
 
   writePoskeyTargetValue(targetPtr, value, label, storeType = "i32") {
@@ -206,7 +206,7 @@ export class RuntimeMouseInput {
     this.deps.coordinator.logRoutine(
       `Delivered mouse input to nh_poskey: (${mouseX}, ${mouseY}) mod=${mouseMod} (xPtr=${xTargetPtr}, yPtr=${yTargetPtr}, modPtr=${modTargetPtr}, coordType=${coordStoreType})`,
     );
-    if (this.deps.coordinator.runtimeVersion === "5.0" && mouseMod > 0) {
+    if (mouseMod > 0) {
       this.deps.tileContextMenus.runtime5TileContextAutoPickFirstUntilMs =
         Date.now() + this.deps.tileContextMenus.runtime5TileContextAutoPickFirstWindowMs;
     }

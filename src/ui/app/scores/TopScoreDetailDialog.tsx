@@ -2,9 +2,6 @@ import {
   Fragment,
   type CSSProperties
 } from "react";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   type TopScoreInventoryItem,
   type TopScoreRecord
@@ -68,7 +65,7 @@ export interface TopScoreDetailDialogProps {
   selectedTopScoreKillBreakdownGroups: TopScoreBreakdownGroup[];
   selectedTopScoreLootTimelineSections: TopScoreLootTimelineSection[];
   selectedTopScoreInventorySections: TopScoreInventorySection[];
-  renderTopScoreInventoryPreview: (item: TopScoreInventoryItem, runtimeVersion: NethackRuntimeVersion) => JSX.Element;
+  renderTopScoreInventoryPreview: (item: TopScoreInventoryItem) => JSX.Element;
   selectedTopScoreFinalAttributesReport: TopScoreRawReportSection | null;
   selectedTopScorePostmortemReportSections: TopScoreRawReportSection[];
 }
@@ -695,10 +692,7 @@ export function TopScoreDetailDialog({
                               key={`${section.title}-${index}-${item.text}`}
                             >
                               <div className="nh3d-top-score-inventory-card-leading">
-                                {renderTopScoreInventoryPreview(
-                                  item,
-                                  selectedTopScore.detail!.runtimeVersion,
-                                )}
+                                {renderTopScoreInventoryPreview(item)}
                                 <span className="nh3d-top-score-inventory-key">
                                   {item.accelerator ?? "-"}
                                 </span>

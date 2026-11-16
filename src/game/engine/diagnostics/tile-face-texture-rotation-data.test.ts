@@ -30,7 +30,6 @@ describe("tile face texture rotation data", () => {
       }),
     ).toEqual({
       "5.0:tile:412": { east: 90, west: 270 },
-      "3.6.7:tile:20": { south: 180 },
     });
   });
 
@@ -38,12 +37,12 @@ describe("tile face texture rotation data", () => {
     expect(
       serializeTileFaceTextureRotationOverrides({
         "5.0:tile:9": { west: 270, east: 90 },
-        "3.6.7:tile:2": { top: 360, north: 180 },
+        "5.0:tile:2": { top: 360, north: 180 },
       }),
     ).toEqual({
       formatVersion: 1,
       rotations: {
-        "3.6.7:tile:2": { north: 180 },
+        "5.0:tile:2": { north: 180 },
         "5.0:tile:9": { east: 90, west: 270 },
       },
     });

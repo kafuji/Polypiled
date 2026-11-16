@@ -1,6 +1,3 @@
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   supportsRuntimeTopScores
 } from "../../../runtime/runtime-capabilities";
@@ -15,9 +12,11 @@ import {
   RuntimeVersionBadge
 } from "./RuntimeVersionBadge";
 import {
-  commonStrings,
   t
 } from "../shared/translations";
+import {
+  requestGameQuit
+} from "../shared/platform";
 
 export interface StartupMenuDialogProps {
   startupInitialLoadingVisible: boolean;
@@ -29,7 +28,6 @@ export interface StartupMenuDialogProps {
   startupSelectedRuntimeVersionLabel: string | null;
   setStartupFlowStep: React.Dispatch<React.SetStateAction<StartupFlowStep>>;
   handleResumeClick: () => Promise<void>;
-  runtimeVersion: NethackRuntimeVersion;
   openTopScoresDialog: () => void;
   openClientOptionsDialog: () => void;
 }
@@ -44,7 +42,6 @@ export function StartupMenuDialog({
   startupSelectedRuntimeVersionLabel,
   setStartupFlowStep,
   handleResumeClick,
-  runtimeVersion,
   openTopScoresDialog,
   openClientOptionsDialog,
 }: StartupMenuDialogProps) {
@@ -96,7 +93,7 @@ export function StartupMenuDialog({
           >
             {t.dialogs.startup.loadGame}
           </button>
-          {supportsRuntimeTopScores(runtimeVersion) ? (
+          {supportsRuntimeTopScores() ? (
             <button
               className="nh3d-choice-button nh3d-character-setup-choice-button"
               onClick={openTopScoresDialog}
@@ -114,10 +111,12 @@ export function StartupMenuDialog({
           </button>
           <button
             className="nh3d-choice-button nh3d-character-setup-choice-button"
-            onClick={() => setStartupFlowStep("variant")}
+            onClick={() => {
+              void requestGameQuit();
+            }}
             type="button"
           >
-            {commonStrings.back}
+            {t.dialogs.startup.quitGame}
           </button>
         </div>
       </div>

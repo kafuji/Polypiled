@@ -44,8 +44,7 @@ export function toUserTilesetRegistrations(
     label: record.label,
     tileSize: record.tileSize,
     tileHeight: record.tileHeight,
-    tileLayoutVersion: record.tileLayoutVersion === "slashem-38" ? "slashem" : record.tileLayoutVersion,
-    atlasColumns: record.tileLayoutVersion === "slashem-38" ? 38 : 40,
+    tileLayoutVersion: record.tileLayoutVersion,
     blob: record.blob,
   }));
 }
@@ -64,9 +63,7 @@ export async function inferTilesetTileDimensionsFromBlob(
       image.onload = () =>
         resolve(
           inferNh3dTilesetTileDimensions(
-            image.naturalWidth, image.naturalHeight, undefined,
-            tileLayoutVersion === "slashem-38" ? "slashem" : tileLayoutVersion,
-            tileLayoutVersion === "slashem-38" ? 38 : undefined,
+            image.naturalWidth, image.naturalHeight, undefined, tileLayoutVersion,
           ),
         );
       image.onerror = () => reject(new Error(t.tilesets.failedToReadImage));

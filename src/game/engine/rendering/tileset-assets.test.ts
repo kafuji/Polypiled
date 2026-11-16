@@ -1,21 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TilesetAssets, type TilesetAssetsDependencies } from "./tileset-assets";
 import { nh5OutputRows, nh5ExpectedTileCount, translateNh367TileIndexToNh5 } from "../../tileset-367-to-5-translation";
-import { DarkCorridorInference, type DarkCorridorInferenceDependencies } from "../world/dark-corridor-inference";
-import type { NethackRuntimeVersion } from "../../../runtime/types";
+import { DarkWallOverrides, type DarkWallOverridesDependencies } from "./dark-wall-overrides";
 import type { Nh3dClientOptions } from "../../ui-types";
-import * as THREE from "three";
 import { clearNh3dUserTilesets, resolveNh3dTilesetAssetUrl, setNh3dUserTilesets } from "../../tilesets";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
-it("detects an edited user atlas under the same path so changed columns reload", () => {
+it("detects an edited user atlas under the same path so it reloads", () => {
   const assets = new TilesetAssets({} as TilesetAssetsDependencies);
-  const registration = { id: "columns", label: "Columns", tileSize: 24, tileLayoutVersion: "slashem" as const, blob: new Blob() };
+  const registration = { id: "columns", label: "Columns", tileSize: 24, tileLayoutVersion: "3.6.7" as const, blob: new Blob() };
   try {
     setNh3dUserTilesets([registration]);
     assets.tilesetTextureAssetUrl = resolveNh3dTilesetAssetUrl("user:columns");
     expect(assets.hasTilesetSourceChanged("user:columns")).toBe(false);
-    setNh3dUserTilesets([{ ...registration, atlasColumns: 38 }]);
+    setNh3dUserTilesets([{ ...registration, blob: new Blob(["edited"]) }]);
     expect(assets.hasTilesetSourceChanged("user:columns")).toBe(true);
   } finally { clearNh3dUserTilesets(); }
 });
@@ -27,52 +25,8 @@ function canvasFixture() {
   const assets = new TilesetAssets({ engineState: { clientOptions: { tilesetBackgroundTileId: 41 } } } as unknown as TilesetAssetsDependencies);
   return { assets, drawImage, getImageData };
 }
-it.each(["3.6.7", "5.0", "slashem"] as const)("reloads an unchanged tileset path when a retained renderer switches to %s", version => {
-  const config = { runtimeVersion: "5.0" as NethackRuntimeVersion };
-  const assets = new TilesetAssets({ engineState: { characterCreationConfig: config } } as TilesetAssetsDependencies);
-  const options = { tilesetPath: "assets/3.6/Nevanda.png" } as Nh3dClientOptions;
-  assets.tilesetTextureRuntimeVersion = version === "5.0" ? "3.6.7" : "5.0";
-  config.runtimeVersion = version;
-  assets.loadTilesetTexture = vi.fn(() => { assets.tilesetTextureRuntimeVersion = assets.resolveRuntimeVersion(); });
-  assets.ensureTilesetRuntime(options);
-  expect(assets.loadTilesetTexture).toHaveBeenCalledExactlyOnceWith(options);
-  assets.ensureTilesetRuntime(options);
-  expect(assets.loadTilesetTexture).toHaveBeenCalledOnce();
-});
-it("replaces a compiled NH5 atlas with the original sheet when returning to 3.6.7", async () => {
-  vi.useFakeTimers();
-  const { assets } = canvasFixture();
-  const config = { runtimeVersion: "5.0" as NethackRuntimeVersion };
-  const options = { tilesetMode: "tiles", tilesetPath: "assets/3.6/Nevanda.png" } as Nh3dClientOptions;
-  Object.assign((assets as any).dependencies, {
-    engineState: { characterCreationConfig: config, clientOptions: options, disposed: false },
-    renderPipeline: { syncWorldTileScale: vi.fn() }, promptDialogs: { syncLoadingVisibility: vi.fn() },
-    tileUpdates: { refreshTilesFromStateCache: vi.fn() },
-    vultureProjectionDebug: { syncVultureWallProjectionDebugPanelVisibility: vi.fn() },
-  });
-  const source = { width: 1280, height: 1248 } as HTMLImageElement;
-  assets.loadTilesetImage = vi.fn(async () => source);
-  assets.disposeVultureTilesetTranslator = vi.fn();
-  assets.invalidateTilesetDependentCaches = vi.fn();
-  assets.captureTilesetBackgroundReferenceTile = vi.fn();
-  assets.createTilesetTextureFromSource = image => new THREE.Texture(image);
-  assets.loadTilesetTexture(options);
-  await vi.runAllTimersAsync();
-  expect(assets.loadedTilesetTileLayoutVersion).toBe("5.0");
-  const compiled = assets.tilesetTexture!;
-  expect(compiled.image).not.toBe(source);
-  const dispose = vi.spyOn(compiled, "dispose");
-  config.runtimeVersion = "3.6.7";
-  assets.ensureTilesetRuntime(options);
-  await vi.runAllTimersAsync();
-  expect(assets.tilesetTexture!.image).toBe(source);
-  expect(assets.loadedTilesetTileLayoutVersion).toBe("3.6.7");
-  expect(assets.tilesetTextureRuntimeVersion).toBe("3.6.7");
-  expect(dispose).toHaveBeenCalledOnce();
-  expect(assets.tilesetCompilationLoadingVisible).toBe(false);
-});
 describe("rectangular atlas loading", () => {
-  it.each(["raw","compiled"] as const)("preserves the selected inferred wall tile in a %s legacy pack on NH5",async layout=>{
+  it.each(["raw","compiled"] as const)("preserves the selected dark wall tile in a %s legacy pack",async layout=>{
     const {assets,drawImage}=canvasFixture();
     assets.resolveRuntimeVersion=()=>"5.0";
     assets.loadedTilesetSourceLayoutVersion="3.6.7";
@@ -82,9 +36,9 @@ describe("rectangular atlas loading", () => {
     const selected=866, runtime=translateNh367TileIndexToNh5(selected);
     expect(runtime).not.toBe(selected);
     const options={darkCorridorWallTileOverrideEnabled:true,darkCorridorWallTileOverrideTileId:selected,darkCorridorWallSolidColorOverrideEnabled:false};
-    const inference=new DarkCorridorInference({engineState:{clientOptions:options},tilesetAssets:assets} as unknown as DarkCorridorInferenceDependencies);
-    expect(inference.resolveInferredDarkCorridorWallTileTextureIndex(0,true)).toBe(runtime);
-    expect(inference.resolveInferredDarkCorridorWallTileTextureIndex(17,false)).toBe(17);
+    const overrides=new DarkWallOverrides({engineState:{clientOptions:options},tilesetAssets:assets} as unknown as DarkWallOverridesDependencies);
+    expect(overrides.resolveTileTextureIndex(0,true)).toBe(runtime);
+    expect(overrides.resolveTileTextureIndex(17,false)).toBe(17);
     expect(assets.resolveSourceTileIndexForRuntime(runtime)).toBe(selected);
     const atlasTile=assets.resolveAtlasTileIndexForRuntime(runtime,assets.resolveLoadedAtlasTileCount());
     if(layout==="raw") expect(atlasTile).toBe(selected);
@@ -95,9 +49,9 @@ describe("rectangular atlas loading", () => {
       expect(cell.slice(1,3)).toEqual([(selected%40)*16,Math.floor(selected/40)*16]);
     }
     options.darkCorridorWallSolidColorOverrideEnabled=true;
-    expect(inference.resolveInferredDarkCorridorWallTileTextureIndex(17,true)).toBe(17);
+    expect(overrides.resolveTileTextureIndex(17,true)).toBe(17);
     options.darkCorridorWallSolidColorOverrideEnabled=false;options.darkCorridorWallTileOverrideEnabled=false;
-    expect(inference.resolveInferredDarkCorridorWallTileTextureIndex(17,true)).toBe(17);
+    expect(overrides.resolveTileTextureIndex(17,true)).toBe(17);
   });
   it("extracts a second-row reference cell with its native height", () => {
     const { assets, drawImage, getImageData } = canvasFixture();
@@ -140,7 +94,6 @@ describe("high-resolution tiles", () => {
   it.each([
     ["5.0", "tiles", true, "assets/5.0/PixelHack.png", true],
     ["5.0", "tiles", false, "assets/5.0/PixelHack.png", false],
-    ["3.6.7", "tiles", true, "assets/3.6/Nevanda.png", false],
     ["5.0", "ascii", true, "assets/5.0/PixelHack.png", false],
     ["5.0", "tiles", true, "vulture:assets/vulture/win/vulture/gamedata", false],
   ] as const)("runtime %s, mode %s, option %s, %s -> active %s", (runtimeVersion, tilesetMode, tilesetUseHiResTiles, tilesetPath, active) => {

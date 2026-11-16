@@ -25,7 +25,7 @@ const sellQuestion = () => runtime.handleUICallback("shim_yn_function", [
 ]);
 
 describe("background inventory refresh command boundaries", () => {
-  it.each(["5.0", "slashem"] as const)(
+  it.each(["5.0"] as const)(
     "keeps refreshes before and during a %s sale out of its answer queue", async version => {
       runtime.runtimeVersion = version;
       runtime.sendInput(silentInventoryRefreshCommand);

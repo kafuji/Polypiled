@@ -1,7 +1,7 @@
 import { usesTileTextures } from "../../terrain-tile-options";
 import { TILE_SIZE } from "../../constants";
 import { isDoorwayCmapGlyph } from "../../glyphs/behavior";
-import { getActiveGlyphCatalogVersion, getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
+import { getGlyphCatalogEntry } from "../../glyphs/registry";
 import type { TileMaterialKind } from "../../glyphs";
 import { type VultureWallFaceDirection } from "../../vulture/translation";
 import type {
@@ -12,7 +12,7 @@ import type {
   VultureWallPlaneRenderConfig
 } from "../shared/types";
 import type { Camera } from "../camera/camera";
-import type { DarkCorridorInference } from "../world/dark-corridor-inference";
+import type { DarkWallOverrides } from "./dark-wall-overrides";
 import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "./entity-billboards";
 import type { LevelTerrainCache } from "../world/level-terrain-cache";
@@ -28,11 +28,11 @@ export interface VultureWallsDependencies {
     Camera,
     "camera"
   >;
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "resolveInferredDarkCorridorWallSolidColorGridDarknessPercent"
-    | "resolveInferredDarkCorridorWallSolidColorGridEnabled"
-    | "resolveInferredDarkCorridorWallSolidColorHex"
+  readonly darkWallOverrides: Pick<
+    DarkWallOverrides,
+    "resolveSolidColorGridDarknessPercent"
+    | "resolveSolidColorGridEnabled"
+    | "resolveSolidColorHex"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -337,11 +337,7 @@ export class VultureWalls {
       : typeof entry.symidx === "number" && Number.isFinite(entry.symidx) && entry.symidx >= 0
         ? Math.trunc(entry.symidx)
         : null;
-    if (symidx !== null) return symidx >= 3 && symidx <= 11;
-    // 3.6.7 has contiguous cmap glyphs; 5.0's expanded glyph ranges do not.
-    if (getActiveGlyphCatalogVersion() !== "3.6.7") return false;
-    const start = getGlyphCatalogRanges().find(range => range.kind === "cmap")?.start;
-    return start !== undefined && glyph - start >= 3 && glyph - start <= 11;
+    return symidx !== null && symidx >= 3 && symidx <= 11;
   }
 
   resolveVultureWallPlaneRenderConfig(
@@ -393,9 +389,7 @@ export class VultureWalls {
       south: southNeighborLookup,
     };
     const isCornerOrJunction = this.isVultureCornerOrJunctionWallAt(wallX, wallY);
-    const isInferredCorridorWall = this.dependencies.tileRendering.tileMap
-      .get(`${wallX},${wallY}`)?.userData?.isInferredDarkCorridorWall === true;
-    const useAllExposedFaces = isCornerOrJunction || isInferredCorridorWall;
+    const useAllExposedFaces = isCornerOrJunction;
     // Diagonal floor decor does not expose a cardinal face. Synthesizing faces
     // from it draws wall wings into adjacent walls or unseen space.
     const doorwayNeighborByDirection: Record<VultureWallFaceSlot, boolean> = {
@@ -699,16 +693,16 @@ export class VultureWalls {
         : -1;
     const darkCorridorWallCompatibilityActive =
       this.dependencies.tilesetAssets.isDarkCorridorWallCompatibilityActiveOnMesh(mesh);
-    const inferredDarkWallSolidColorHex =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorHex(
+    const darkWallSolidColorHex =
+      this.dependencies.darkWallOverrides.resolveSolidColorHex(
         darkCorridorWallCompatibilityActive,
       );
-    const inferredDarkWallSolidColorGridEnabled =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorGridEnabled(
+    const darkWallSolidColorGridEnabled =
+      this.dependencies.darkWallOverrides.resolveSolidColorGridEnabled(
         darkCorridorWallCompatibilityActive,
       );
-    const inferredDarkWallSolidColorGridDarknessPercent =
-      this.dependencies.darkCorridorInference.resolveInferredDarkCorridorWallSolidColorGridDarknessPercent(
+    const darkWallSolidColorGridDarknessPercent =
+      this.dependencies.darkWallOverrides.resolveSolidColorGridDarknessPercent(
         darkCorridorWallCompatibilityActive,
       );
     this.dependencies.tileMaterials.applyGlyphMaterial(
@@ -721,9 +715,9 @@ export class VultureWalls {
       darkenFactor,
       this.dependencies.movementInput.isFpsMode() && !darkCorridorWallCompatibilityActive,
       tileIndex,
-      inferredDarkWallSolidColorHex,
-      inferredDarkWallSolidColorGridEnabled,
-      inferredDarkWallSolidColorGridDarknessPercent,
+      darkWallSolidColorHex,
+      darkWallSolidColorGridEnabled,
+      darkWallSolidColorGridDarknessPercent,
       glyphBackgroundColor,
     );
   }

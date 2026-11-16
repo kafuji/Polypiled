@@ -32,9 +32,6 @@ export class RuntimeTileContextMenus {
   }
 
   shouldAutoPickFirstRuntime5TileContextAction(menuQuestion, menuItems) {
-    if (this.deps.coordinator.runtimeVersion !== "5.0") {
-      return false;
-    }
     if (this.deps.inventoryContext.hasPendingInventoryContextSelection()) {
       return false;
     }

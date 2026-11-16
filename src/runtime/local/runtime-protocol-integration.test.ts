@@ -106,7 +106,7 @@ describe("assembled protocol contracts", () => {
     expect(handshake).toEqual(expect.objectContaining({
       protocolVersion: 1,
       sessionId: "session-a",
-      runtimeVersion: "3.6.7",
+      runtimeVersion: "5.0",
       pointerAbiValidated: true,
       mapDimensions: { columns: 80, rows: 21 },
       capabilities: expect.objectContaining({
@@ -149,7 +149,7 @@ describe("assembled protocol contracts", () => {
     const glyphAtHelper = vi.fn(() => 110);
     vi.stubGlobal("nethackGlobal", {
       globals: { u: { uz: { dnum: 0, dlevel: 1 } } },
-      helpers: { glyphAtHelper, mapglyphHelper: () => ({ ch: 43, color: 7, tileidx: 12 }) },
+      helpers: { glyphAtHelper, mapGlyphInfoHelper: () => ({ ch: 43, color: 7, tileidx: 12 }) },
     });
     runtime.emit({ type: "protocol_probe" });
     const scope = { ...runtime.protocol.scope, level: { ...runtime.protocol.scope.level! } };
@@ -200,7 +200,7 @@ describe("assembled protocol contracts", () => {
       globals: { u: { uz: { dnum: 0, dlevel: 1 } } },
       helpers: {
         glyphAtHelper: () => 110,
-        mapglyphHelper: () => { throw new Error("decode failed"); },
+        mapGlyphInfoHelper: () => { throw new Error("decode failed"); },
       },
     });
     runtime.emit({ type: "protocol_probe" });

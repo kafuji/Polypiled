@@ -60,7 +60,6 @@ export interface RuntimeMessagesDependencies {
     RuntimeWindows,
     "getRuntimeWindowId"
     | "isMessageWindow"
-    | "shouldSuppressRedundantStatusWindowText"
   >;
   readonly windowText: Pick<
     RuntimeWindowText,
@@ -83,9 +82,6 @@ export class RuntimeMessages {
   handleShimPutstr(args) {
     const [win, textAttr, textStr] = args;
     this.deps.coordinator.logRoutine(`💬 TEXT [Win ${win}]: "${textStr}"`);
-    if (this.deps.windows.shouldSuppressRedundantStatusWindowText(win)) {
-      return 0;
-    }
     this.deps.windowText.appendWindowTextBuffer(win, textStr);
     if (this.deps.windows.isMessageWindow(win)) {
       this.deps.positionInput.activateTargetPositionInputFromPrompt(textStr);
@@ -154,7 +150,6 @@ export class RuntimeMessages {
     }
     if (
       normalizedRawText &&
-      this.deps.coordinator.runtimeVersion === "5.0" &&
       this.deps.recovery.isAutosaveResumeRequested() &&
       !this.deps.recovery.didAutoQueueRawRecoverChoice
     ) {

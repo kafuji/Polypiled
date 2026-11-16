@@ -141,13 +141,10 @@ export class TilesetAssets {
 
   vultureTilesetDataRootUrl = "";
 
-  vultureTilesetTranslatorRuntimeVersion: NethackRuntimeVersion | null =
-    null;
-
   tilesetCompilationLoadingVisible = false;
 
   tilesetTextureLoadRequestId = 0;
-  tilesetTextureRuntimeVersion: NethackRuntimeVersion | null = null;
+  tilesetTextureLoadStarted = false;
   tilesetTextureAssetUrl: string | null = null;
 
   hasTilesetSourceChanged(path: string): boolean {
@@ -199,7 +196,6 @@ export class TilesetAssets {
     return (
       options.tilesetMode === "tiles" &&
       options.tilesetUseHiResTiles === true &&
-      this.resolveRuntimeVersion() === "5.0" &&
       !this.isVultureTilesActive(options)
     );
   }
@@ -329,7 +325,6 @@ export class TilesetAssets {
     this.vultureTilesetTranslator?.dispose();
     this.vultureTilesetTranslator = null;
     this.vultureTilesetDataRootUrl = "";
-    this.vultureTilesetTranslatorRuntimeVersion = null;
     this.dependencies.vultureWalls.pendingVultureRoomDecorReconcileKeys.clear();
     this.dependencies.vultureWalls.vultureRoomDecorReconcileScheduled = false;
     this.dependencies.vultureProjection.disposeVulturePrebakedProjectionManifest();
@@ -339,15 +334,13 @@ export class TilesetAssets {
     const normalizedDataRootUrl = String(dataRootUrl || "")
       .trim()
       .replace(/\/+$/, "");
-    const runtimeVersion = this.resolveRuntimeVersion();
     if (!normalizedDataRootUrl) {
       this.disposeVultureTilesetTranslator();
       return;
     }
     if (
       this.vultureTilesetTranslator &&
-      this.vultureTilesetDataRootUrl === normalizedDataRootUrl &&
-      this.vultureTilesetTranslatorRuntimeVersion === runtimeVersion
+      this.vultureTilesetDataRootUrl === normalizedDataRootUrl
     ) {
       return;
     }
@@ -355,14 +348,12 @@ export class TilesetAssets {
     this.vultureTilesetTranslator = new VultureTilesetTranslator({
       dataRootUrl: normalizedDataRootUrl,
       onAssetReady: this.handleVultureTilesetAssetReady,
-      runtimeVersion,
     });
     this.vultureTilesetTranslator.setRuntimeObjectTileIndexByObjectId(
       this.dependencies.playerStatus.runtimeObjectTileIndexByObjectId,
     );
     this.vultureTilesetTranslator.ensureAssetLoadingStarted();
     this.vultureTilesetDataRootUrl = normalizedDataRootUrl;
-    this.vultureTilesetTranslatorRuntimeVersion = runtimeVersion;
     this.dependencies.vultureProjection.ensureVulturePrebakedProjectionManifest(normalizedDataRootUrl);
   }
 
@@ -467,7 +458,6 @@ export class TilesetAssets {
     atlasTileCount: number,
   ): boolean {
     return shouldTranslateNh367TilesetForNh5Runtime(
-      this.resolveRuntimeVersion(),
       atlasTileCount,
       tileLayoutVersion,
     );
@@ -577,15 +567,14 @@ export class TilesetAssets {
     return outputCanvas;
   }
 
-  ensureTilesetRuntime(options: Nh3dClientOptions): void {
-    // A retained startup renderer can change games without changing the pack's
-    // path. A NetHack 5 compiled atlas must never be reused as a 3.6.7 atlas.
-    if (this.tilesetTextureRuntimeVersion !== this.resolveRuntimeVersion()) this.loadTilesetTexture(options);
+  /** Loads the tileset once when the startup renderer becomes the game renderer. */
+  ensureTilesetTextureLoaded(options: Nh3dClientOptions): void {
+    if (!this.tilesetTextureLoadStarted) this.loadTilesetTexture(options);
   }
 
   loadTilesetTexture(options: Nh3dClientOptions): void {
     const loadRequestId = ++this.tilesetTextureLoadRequestId;
-    this.tilesetTextureRuntimeVersion = this.resolveRuntimeVersion();
+    this.tilesetTextureLoadStarted = true;
     this.syncHiResTilePack();
     const shouldShowCompileLoading = usesTileTextures(options);
     this.setTilesetCompilationLoadingVisible(shouldShowCompileLoading);
@@ -755,13 +744,10 @@ export class TilesetAssets {
   }
 
   resolveRuntimeVersion(): NethackRuntimeVersion {
-    return this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7";
+    return this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "5.0";
   }
 
   shouldUseNh5LegacyTilesetCompatibility(): boolean {
-    if (this.resolveRuntimeVersion() !== "5.0") {
-      return false;
-    }
     if (this.loadedTilesetTileLayoutVersion === "5.0") {
       return false;
     }
@@ -769,7 +755,6 @@ export class TilesetAssets {
       return true;
     }
     return shouldTranslateNh367TilesetForNh5Runtime(
-      "5.0",
       this.resolveLoadedAtlasTileCount(),
       this.loadedTilesetTileLayoutVersion,
     );
@@ -782,9 +767,6 @@ export class TilesetAssets {
     runtimeSymidx: number | null = null,
   ): boolean {
     if (!usesWallTiles(this.dependencies.engineState.clientOptions)) {
-      return false;
-    }
-    if (this.resolveRuntimeVersion() !== "5.0") {
       return false;
     }
     if (!this.dependencies.engineState.clientOptions.overrideNh5DarkCorridorWallTiles) {
@@ -859,10 +841,7 @@ export class TilesetAssets {
   isDarkCorridorWallCompatibilityActiveOnMesh(
     mesh: THREE.Mesh,
   ): boolean {
-    return (
-      mesh.userData?.isInferredDarkCorridorWall === true ||
-      mesh.userData?.useDarkCorridorWallCompatibility === true
-    );
+    return mesh.userData?.useDarkCorridorWallCompatibility === true;
   }
 
   resolveAtlasTileIndexForRuntime(
@@ -876,7 +855,6 @@ export class TilesetAssets {
     try {
       if (
         !shouldTranslateNh367TilesetForNh5Runtime(
-          this.resolveRuntimeVersion(),
           atlasTileCount,
           this.loadedTilesetTileLayoutVersion,
         )
@@ -964,10 +942,9 @@ export class TilesetAssets {
   private usesNh367SourceTileIndices(): boolean {
     // A compiled atlas has NH5 dimensions but its authored settings still
     // refer to the original 3.6.7 pack. Use the same rule in both directions.
-    const compiledLegacyAtlas = this.resolveRuntimeVersion() === "5.0" &&
+    const compiledLegacyAtlas =
       this.loadedTilesetSourceLayoutVersion === "3.6.7" && this.loadedTilesetTileLayoutVersion === "5.0";
-    return compiledLegacyAtlas || shouldTranslateNh367TilesetForNh5Runtime(
-      this.resolveRuntimeVersion(), this.resolveLoadedAtlasTileCount(), this.loadedTilesetSourceLayoutVersion,
+    return compiledLegacyAtlas || shouldTranslateNh367TilesetForNh5Runtime(this.resolveLoadedAtlasTileCount(), this.loadedTilesetSourceLayoutVersion,
     );
   }
 

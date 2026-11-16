@@ -5,6 +5,7 @@ import { createEngineSystems } from "../create-engine-systems";
 import type { EngineCoordinator } from "../engine-coordinator";
 import { getGlyphCatalogRanges } from "../../glyphs/registry";
 import { classifyTileBehavior, getDefaultFloorGlyph } from "../../glyphs/behavior";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 
 afterEach(() => vi.restoreAllMocks());
 afterAll(() => vi.unstubAllGlobals());
@@ -20,7 +21,6 @@ function overheadTilesFixture() {
   vi.spyOn(s.vultureWalls, "refreshVultureWallMaterialsNear").mockImplementation(() => {});
   vi.spyOn(s.minimap, "queueMinimapTileUpdate").mockImplementation(() => {});
   const ranges = getGlyphCatalogRanges();
-  const cmap = ranges.find((range) => range.kind === "cmap")!.start;
   const player = ranges.find((range) => range.kind === "mon")!.start;
   const object = ranges.find((range) => range.kind === "obj")!.start;
   const standOn = (glyph: number, char: string) => {
@@ -31,16 +31,16 @@ function overheadTilesFixture() {
     s.tileRendering.updateTile(4, 5, player, "@", 15, { runtimeTrackedEntityId: 0 });
   };
   const underlayCalls = () => billboard.mock.calls.filter((call) => call[0] === "4,5|underlay-feature");
-  return { s, cmap, object, standOn, underlayCalls };
+  return { s, object, standOn, underlayCalls };
 }
 
 describe("feature under the player in overhead tiles mode", () => {
   // 24 = down stairs: the floor tile keeps showing the stairs.
   // 12 = doorway without a door: like any entity in a doorway, the player
   // stands on plain room floor (see isDisallowedSpecialDotFloorBehavior).
-  it.each([[24, ">", "self"], [12, ".", "floor"]])("draws cmap %s on the floor without a standing copy", (index, char, base) => {
-    const { s, cmap, standOn, underlayCalls } = overheadTilesFixture();
-    const glyph = cmap + index;
+  it.each([[26, ">", "self"], [12, ".", "floor"]])("draws cmap %s on the floor without a standing copy", (index, char, base) => {
+    const { s, standOn, underlayCalls } = overheadTilesFixture();
+    const glyph = cmapGlyphForSymbol(index);
     const behavior = classifyTileBehavior({ glyph, runtimeChar: char, runtimeColor: 7, priorTerrain: null });
     expect(s.worldClassification.shouldRenderFlatFeatureUnderPlayer(behavior)).toBe(true);
     expect(s.worldClassification.isFlatTerrainFeatureUnderPlayer(behavior)).toBe(true);

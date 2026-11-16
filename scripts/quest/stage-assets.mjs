@@ -5,9 +5,7 @@ import { fileURLToPath } from "node:url";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const requiredFiles = [
   "index.html", "quest-ui-probe.html", "quest-build.json",
-  "nethack-367.js", "nethack-367.wasm",
   "nethack-5.js", "nethack-5.wasm",
-  "slashem.js", "slashem.wasm",
 ];
 
 function requireChild(parent, child) {

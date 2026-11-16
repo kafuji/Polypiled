@@ -1,6 +1,6 @@
 import type { TopScoreTimelineEvent } from "./top-score-storage";
 
-/** Prefer the native report; older snapshots and Slash'EM can use known visits. */
+/** Prefer the native report; older snapshots can use known visits. */
 export function resolveArchivedDungeonOverview(
   report: readonly string[] | null | undefined,
   timeline: readonly TopScoreTimelineEvent[] = [],

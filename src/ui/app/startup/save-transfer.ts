@@ -51,11 +51,11 @@ export function parseSaveArchive(text: string, runtimeVersion: NethackRuntimeVer
   let archive: SaveArchive;
   try { archive = JSON.parse(text); } catch { return invalid(); }
   if (!archive || archive.format !== "nh3d-save" || archive.version !== 1) invalid();
-  if (archive.runtimeVersion !== runtimeVersion || archive.compatTag !== getRuntimeSaveCompatTag(runtimeVersion)) {
+  if (archive.runtimeVersion !== runtimeVersion || archive.compatTag !== getRuntimeSaveCompatTag()) {
     throw new SaveTransferError("incompatible");
   }
-  const saveDbs = getRuntimeSaveDbNames(runtimeVersion);
-  const rootDbs = getRuntimeRootPersistenceDbNames(runtimeVersion);
+  const saveDbs = getRuntimeSaveDbNames();
+  const rootDbs = getRuntimeRootPersistenceDbNames();
   if (![...saveDbs, ...rootDbs].includes(archive.dbName) ||
       typeof archive.name !== "string" || !archive.name || archive.name.length > 256 ||
       !["manual", "autosave"].includes(archive.category) ||
@@ -141,7 +141,7 @@ export async function exportSavedGame(
   } finally { db.close(); }
   const text = JSON.stringify({
     format: "nh3d-save", version: 1, runtimeVersion,
-    compatTag: getRuntimeSaveCompatTag(runtimeVersion), dbName: newestFile.dbName,
+    compatTag: getRuntimeSaveCompatTag(), dbName: newestFile.dbName,
     name: save.name, category: save.category, displayName: save.displayName,
     playMode: save.displayPlayMode, initOptions: save.initOptions ?? [], files,
   } satisfies SaveArchive);
@@ -237,8 +237,8 @@ export async function replaceTrialSaveAtomically(
   const listDatabases = (indexedDB as IDBFactory & { databases?: () => Promise<Array<{ name?: string }>> }).databases;
   if (typeof listDatabases !== "function") throw new Error("Cannot safely enumerate save databases");
   const databases = await listDatabases.call(indexedDB);
-  const compatTag = getRuntimeSaveCompatTag(runtimeVersion);
-  const known = new Set([...getRuntimeSaveDbNames(runtimeVersion), ...getRuntimeRootPersistenceDbNames(runtimeVersion)]);
+  const compatTag = getRuntimeSaveCompatTag();
+  const known = new Set([...getRuntimeSaveDbNames(), ...getRuntimeRootPersistenceDbNames()]);
   const otherNames = databases.flatMap(({ name }) => {
     if (typeof name !== "string" || name === archive.dbName) return [];
     const matches = known.has(name) || name === `save-${compatTag}` || name.endsWith(`/save-${compatTag}`) || name === `root-${compatTag}` || name.endsWith(`/root-${compatTag}`);

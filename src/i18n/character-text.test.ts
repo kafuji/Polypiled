@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { translateCharacterBadge, translateCharacterFieldLabel, translateCharacterFieldValue, translateCharacterLine, translateCharacterSectionTitle } from "./character-text";
+import { translateCharacterLine, translateCharacterSectionTitle } from "./character-text";
 
 describe("character information presentation", () => {
   it("translates actual background and core statistics without losing values", () => {
@@ -65,15 +65,10 @@ describe("character information presentation", () => {
       .toBe("  合計プレイ時間：1時間2分3秒。");
   });
 
-  it("keeps player names, unknown field values and other locales unchanged", () => {
-    expect(translateCharacterFieldLabel("Alignment", "ja")).toBe("属性");
+  it("keeps unknown titles and other locales unchanged", () => {
     expect(translateCharacterSectionTitle("Miscellaneous", "ja")).toBe("その他");
     expect(translateCharacterSectionTitle("Overview", "ja")).toBe("概要");
     expect(translateCharacterSectionTitle("Unknown", "ja")).toBe("Unknown");
-    expect(translateCharacterFieldValue("Alignment", "lawful", "ja")).toBe("秩序");
-    expect(translateCharacterFieldValue("Name", "Wizard", "ja")).toBe("Wizard");
-    expect(translateCharacterFieldValue("Role", "Some new role", "ja")).toBe("Some new role");
-    expect(translateCharacterBadge("Current", "ja")).toBe("現在");
     expect(translateCharacterLine("You are unencumbered.", "en")).toBe("You are unencumbered.");
     expect(translateCharacterLine("constructor", "ja")).toBe("constructor");
   });

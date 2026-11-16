@@ -28,7 +28,7 @@ class LocalNetHackRuntime {
   readonly runtimeSourceUrl = import.meta.url;
 
   constructor(eventHandler: RuntimeEventHandler, startupOptions: RuntimeStartupOptions | null = null) {
-    this.runtimeVersion = "3.6.7";
+    this.runtimeVersion = "5.0";
     this.eventHandler = eventHandler;
     this.startupOptions =
       startupOptions && typeof startupOptions === "object"
@@ -80,13 +80,7 @@ class LocalNetHackRuntime {
       ? { columns, rows }
       : { columns: 80, rows: 21 };
     const pointerContract = this.systems.pointerContract.getRuntimePointerContract();
-    const pointerAbi = pointerContract.abiTag || (
-      this.runtimeVersion === "5.0"
-        ? "nh5-pointer-v1"
-        : this.runtimeVersion === "slashem"
-          ? "slashem-pointer-v1"
-          : "nh367-pointer-v1"
-    );
+    const pointerAbi = pointerContract.abiTag || "nh5-pointer-v1";
     return { protocolVersion: 1, sessionId, runtimeVersion: this.runtimeVersion,
       artifactTag: this.systems.assets.readRuntimeBuildTag() || null,
       pointerAbi,
@@ -166,7 +160,6 @@ class LocalNetHackRuntime {
     this.systems.positionInput.farLookMode = "none";
     this.systems.positionInput.farLookOrigin = null;
     this.systems.positionInput.pendingLookMenuFarLookArm = false;
-    this.systems.positionInput.pendingLegacySlashEmCursorPromptFarLook = false;
     this.systems.positionInput.pendingTravelPositionInputArm = false;
     this.systems.contextualLook.contextualGlanceProbeMouseDeadlineMs = 0;
     this.systems.contextualLook.contextualGlanceAutoCancelPositionUntilMs = 0;
@@ -174,8 +167,6 @@ class LocalNetHackRuntime {
     this.systems.contextualLook.pendingContextualLookMapRouteSelection = false;
     this.systems.contextualLook.contextualLookInfoAutoFlowStage = "none";
     this.systems.contextualLook.contextualLookInfoAutoFlowUntilMs = 0;
-    this.systems.questionInput.legacyAutoHelpYnPromptSignature = "";
-    this.systems.questionInput.legacyAutoHelpYnPromptUntilMs = 0;
     this.systems.postActionRefresh.pendingPostActionPlayerTileRefreshReason = null;
     this.systems.postActionRefresh.pendingPostActionPlayerTileRefreshTarget = null;
     this.systems.postActionRefresh.pendingPostActionPlayerTileRefreshSnapshot = null;
@@ -362,7 +353,7 @@ class LocalNetHackRuntime {
       case "set_shim_font_name":
         return 0;
       case "shim_get_color_string":
-        // 3.6.7 shim marshalling for string returns writes into ret_ptr directly.
+        // Shim marshalling for string returns writes into ret_ptr directly.
         // Keep this empty to avoid corrupting the stack frame.
         return "";
       case "shim_start_screen":

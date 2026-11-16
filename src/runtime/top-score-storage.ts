@@ -811,7 +811,7 @@ export async function saveTopScoreDetailSnapshot(input: {
   postmortemReports?: GameOverPostmortemReports | null;
   trial?: boolean; // nh3d-plus
 }): Promise<string> {
-  if (!supportsRuntimeTopScores(input.runtimeVersion)) {
+  if (!supportsRuntimeTopScores()) {
     return "";
   }
 
@@ -986,12 +986,11 @@ async function readScoreFilesFromDatabase(
 }
 
 async function readRuntimeScoreFiles(
-  runtimeVersion: NethackRuntimeVersion,
 ): Promise<StoredScoreFile[]> {
   if (typeof indexedDB === "undefined") {
     return [];
   }
-  const dbNames = await resolveRuntimeSaveDbNames(runtimeVersion);
+  const dbNames = await resolveRuntimeSaveDbNames();
   const allFiles: StoredScoreFile[] = [];
   for (const dbName of dbNames) {
     try {
@@ -1501,11 +1500,11 @@ function attachDetailsToScores(
 export async function fetchTopScores(
   runtimeVersion: NethackRuntimeVersion,
 ): Promise<TopScoreRecord[]> {
-  if (!supportsRuntimeTopScores(runtimeVersion)) {
+  if (!supportsRuntimeTopScores()) {
     return [];
   }
   const details = await loadTopScoreDetailSnapshots(runtimeVersion);
-  const files = await readRuntimeScoreFiles(runtimeVersion);
+  const files = await readRuntimeScoreFiles();
   const xlogRecords = files
     .filter((file) => file.filename === "xlogfile")
     .flatMap(parseXlogScoreFile);

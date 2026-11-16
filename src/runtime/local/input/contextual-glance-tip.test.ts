@@ -45,10 +45,9 @@ it("suppresses the first automatic glance tip without consuming the target or in
   expect(events.some(event => event.type === "info_menu")).toBe(false);
 });
 
-it.each(["manual", "after-target", "unrelated", "3.6.7", "slashem"])("preserves tip/report presentation for %s", mode => {
+it.each(["manual", "after-target", "unrelated"])("preserves tip/report presentation for %s", mode => {
   if (mode !== "manual") runtime.sendInput("__CTX_GLANCE_PROBE__");
   if (mode === "after-target") systems.contextualLook.contextualGlanceProbeMouseDeadlineMs = 0;
-  if (mode === "3.6.7" || mode === "slashem") runtime.runtimeVersion = mode;
   emitTip(mode === "unrelated" ? "Unrelated game information" : title);
   expect(events.filter(event => event.type === "info_menu")).toHaveLength(1);
 });

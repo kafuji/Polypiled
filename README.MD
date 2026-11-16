@@ -69,9 +69,9 @@ Use graphical tiles, 3D ASCII, or Vulture artwork in the overhead and first-pers
 
 ## Features
 
-### Authentic NetHack, Your Choice of Variant
+### Authentic NetHack
 
-Choose **NetHack 5.0**, **NetHack 3.6.7**, or **Slash'Em**, with separate saves for each. Create a character or roll a random hero, save your character preferences, and resume long-running adventures. Configure startup options such as autopickup, pet names, and native highlighting, plus variant-specific choices including Explore Mode and NetHack 5's tutorial and Pauper Mode.
+Play **NetHack 5.0**. Create a character or roll a random hero, save your character preferences, and resume long-running adventures. Configure startup options such as autopickup, pet names, and native highlighting, plus variant-specific choices including Explore Mode and NetHack 5's tutorial and Pauper Mode.
 
 ### Controls That Fit Your Setup
 

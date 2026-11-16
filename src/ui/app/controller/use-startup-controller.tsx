@@ -241,10 +241,10 @@ export function useStartupController(dependencies: UseStartupControllerDependenc
       // XR B arrives through the same key route as gameplay's Back command.
       if (document.documentElement.classList.contains("nh3d-webxr-active") &&
           document.documentElement.classList.contains("nh3d-xr-menu") &&
-          startupFlowStep !== "variant") {
+          startupFlowStep !== "choose") {
         event.preventDefault();
         event.stopPropagation();
-        setStartupFlowStep(startupFlowStep === "choose" ? "variant" : "choose");
+        setStartupFlowStep("choose");
         return;
       }
 
@@ -726,9 +726,7 @@ export function useStartupController(dependencies: UseStartupControllerDependenc
           closeControllerRemapDialog();
         } else if (isClientOptionsVisible) {
           requestCloseClientOptionsDialog();
-        } else if (startupFlowStep === "choose") {
-          setStartupFlowStep("variant");
-        } else if (startupFlowStep !== "variant") {
+        } else if (startupFlowStep !== "choose") {
           setStartupFlowStep("choose");
         }
       }

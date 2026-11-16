@@ -59,10 +59,6 @@ export const plusEn = {
     active: (count: number) => `${count} active`,
   },
   tilesetLayouts: {
-    slashem: "Slash'EM layout",
-    slashem40: "Slash'EM layout (40 columns)",
-    slashem38: "Slash'EM layout (38 columns)",
-    nethack343: "NetHack 3.4.3 layout",
     unknown: "Unknown layout",
   },
   engine: {

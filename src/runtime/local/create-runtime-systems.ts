@@ -29,7 +29,6 @@ import { RuntimePointerContract } from "./abi/pointer-contract";
 import { RuntimeMemory } from "./abi/memory";
 import { RuntimeCheckpoints } from "./persistence/checkpoint-files";
 import { RuntimeCheckpointRecovery } from "./persistence/checkpoint-recovery";
-import { RuntimeSlashEmLocks } from "./persistence/slashem-locks";
 import { RuntimePersistence } from "./persistence/startup-persistence";
 import { RuntimeMapCallbacks } from "./world/map-callbacks";
 import { RuntimeMessages } from "./messages/message-callbacks";
@@ -70,7 +69,6 @@ export interface RuntimeSystems {
   readonly memory: RuntimeMemory;
   readonly checkpoints: RuntimeCheckpoints;
   readonly recovery: RuntimeCheckpointRecovery;
-  readonly slashEmLocks: RuntimeSlashEmLocks;
   readonly persistence: RuntimePersistence;
   readonly mapCallbacks: RuntimeMapCallbacks;
   readonly messages: RuntimeMessages;
@@ -148,10 +146,8 @@ export function createRuntimeSystems(coordinator: RuntimeCoordinator): RuntimeSy
     get coordinator() { return coordinator; },
     get gameOver() { return gameOver; },
     get inputRequests() { return inputRequests; },
-    get inventorySnapshots() { return inventorySnapshots; },
     get keyboardInput() { return keyboardInput; },
     get menuSelection() { return menuSelection; },
-    get positionInput() { return positionInput; },
     get recovery() { return recovery; },
   });
   const contextualLook: RuntimeContextualLook = new RuntimeContextualLook({
@@ -287,7 +283,6 @@ export function createRuntimeSystems(coordinator: RuntimeCoordinator): RuntimeSy
     get persistence() { return persistence; },
     get pointerContract() { return pointerContract; },
     get recovery() { return recovery; },
-    get slashEmLocks() { return slashEmLocks; },
     get startupDiagnostics() { return startupDiagnostics; },
     get startupOptions() { return startupOptions; },
     get status() { return status; },
@@ -318,9 +313,6 @@ export function createRuntimeSystems(coordinator: RuntimeCoordinator): RuntimeSy
     get coordinator() { return coordinator; },
     get menuSelection() { return menuSelection; },
     get startupOptions() { return startupOptions; },
-  });
-  const slashEmLocks: RuntimeSlashEmLocks = new RuntimeSlashEmLocks({
-    get coordinator() { return coordinator; },
   });
   const persistence: RuntimePersistence = new RuntimePersistence({
     get checkpoints() { return checkpoints; },
@@ -405,7 +397,6 @@ export function createRuntimeSystems(coordinator: RuntimeCoordinator): RuntimeSy
     memory,
     checkpoints,
     recovery,
-    slashEmLocks,
     persistence,
     mapCallbacks,
     messages,

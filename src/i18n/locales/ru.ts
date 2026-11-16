@@ -1168,11 +1168,6 @@ export const ru = {
             "Окрашивать пиксели осколков у линий раскола случайными кроваво-красными краями.",
         },
         groupCompatibility: "Совместимость runtime",
-        darkCorridorWalls367: {
-          label: "Классические тёмные стены коридоров",
-          description:
-            "Определять и кэшировать тайлы тёмных стен коридоров для устаревших runtime NetHack 3.4.3/3.6.x, включая Slash'EM.",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "Переопределять тёмные стены NetHack 5.0",
           description:
@@ -1420,7 +1415,6 @@ export const ru = {
         cancelDownload: "Отменить загрузку",
       },
       startup: {
-        chooseVariant: "Выберите вариант NetHack:",
         options: "Параметры NetHack 3D",
         quitGame: "Выйти из игры",
         chooseSetup: "Выберите настройку персонажа:",
@@ -1458,8 +1452,6 @@ export const ru = {
           resetControllerDefaults: "Сбросить назначения контроллера",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Всегда включено, пока активны тайлы Vulture.",
           darkWallsDisabledByVulture:
             " Отключено, пока активны тайлы Vulture.",
           enableDarkWallsFirst:
@@ -1556,10 +1548,6 @@ export const ru = {
         choices: {
           leftRingFinger: "Левый безымянный палец",
           rightRingFinger: "Правый безымянный палец",
-          here: "Здесь",
-          onGround: "На земле",
-          eligibleItems: "Подходящие предметы",
-          allInventory: "Весь инвентарь",
         },
       },
       runtimeStartError: {

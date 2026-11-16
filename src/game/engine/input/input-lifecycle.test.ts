@@ -212,7 +212,6 @@ function commandFixture() {
     audioHapticsPlatform: { armPendingPlayerFootstepSound, clearPendingThrownWeaponDirectionSound: vi.fn() },
     camera,
     combatAttribution: { pendingPointerAttackTargetContext: null, updateDirectionalAttackContext: vi.fn(), armPendingFpsHeldWeaponMeleeSwipeFromMovementInput },
-    darkCorridorInference: { shouldEnableBlindDarkCorridorInferenceForInput: () => false, beginDarkCorridorDiscoveryWindowFromPlayerInput: vi.fn() },
     directionPrompts,
     engineMessages: { logNameInputTrace: vi.fn() },
     tilesetAssets: { vultureTilesetTranslator: null },

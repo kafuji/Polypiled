@@ -23,7 +23,7 @@ export interface LocalMcpAppDependencies {
 }
 
 type Operation = { id: number; method: string; status: "pending" | "completed" | "cancelled" | "failed"; error?: string };
-const versions = new Set<NethackRuntimeVersion>(["3.6.7", "5.0", "slashem"]);
+const versions = new Set<NethackRuntimeVersion>(["5.0"]);
 
 /** Keep one controller for the page lifetime; dependencies are read live on each request. */
 export function createLocalMcpAppController(read: () => LocalMcpAppDependencies) {
@@ -104,10 +104,10 @@ export function createLocalMcpAppController(read: () => LocalMcpAppDependencies)
         if (params.mode !== "random" && params.mode !== "create") throw new Error("mode must be random or create");
         if (typeof params.name !== "string" || !params.name.trim()) throw new Error("A character name is required");
         if (params.playmode !== undefined && (typeof params.playmode !== "string" || !["normal", "explore", "debug", "trial"].includes(params.playmode))) throw new Error("Unsupported playmode");
-        if (params.playmode !== undefined && params.playmode !== "normal" && !isStartupInitOptionSupported("playmode", runtimeVersion)) throw new Error("This runtime does not support the requested playmode");
+        if (params.playmode !== undefined && params.playmode !== "normal" && !isStartupInitOptionSupported("playmode")) throw new Error("This runtime does not support the requested playmode");
         const startupValues = { ...deps.startupInitOptionValues, ...(params.playmode !== undefined ? { playmode: params.playmode as string } : {}) };
         const config: CharacterCreationConfig = { mode: params.mode, runtimeVersion, name: params.name,
-          initOptions: serializeStartupInitOptionTokens(startupValues, runtimeVersion) };
+          initOptions: serializeStartupInitOptionTokens(startupValues) };
         if (params.mode === "create") {
           const provided = { role: params.role, race: params.race, gender: params.gender, align: params.align };
           if (Object.values(provided).some(value => typeof value !== "string" || !value.trim())) throw new Error("role, race, gender and align are required for create mode");

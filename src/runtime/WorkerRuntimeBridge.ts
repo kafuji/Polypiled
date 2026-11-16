@@ -328,9 +328,6 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
   private deliverEvent(event: RuntimeEvent): void {
     if (event.type === "runtime_boundary") {
       this.lastBoundary = { reason: String(event.reason), sequence: this.receiver.lastProcessedSequence + 1 };
-      if (event.reason === "map-display" || event.reason === "snapshot-complete") {
-        this.onEvent({ type: "map_update_complete" });
-      }
       return;
     }
     if (event.type === "runtime_terminated") {
@@ -401,7 +398,7 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
   }
 
   private acceptsHandshake(protocol: RuntimeProtocolHandshake | undefined): protocol is RuntimeProtocolHandshake {
-    const expectedRuntime = this.startupOptions?.runtimeVersion ?? "3.6.7";
+    const expectedRuntime = this.startupOptions?.runtimeVersion ?? "5.0";
     return Boolean(
       protocol &&
       protocol.protocolVersion === 1 &&

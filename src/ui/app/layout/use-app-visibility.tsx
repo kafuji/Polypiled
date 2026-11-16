@@ -6,9 +6,6 @@ import type { CharacterCreationConfig, InfoMenuState, Nh3dClientOptions, Nethack
 import {
   useGameStore
 } from "../../../state/gameStore";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   type Nh3dTilesetEntry
 } from "../../../game/tilesets";
@@ -62,7 +59,6 @@ export interface UseAppVisibilityDependencies {
   readonly gameMessages: string[];
   readonly statusText: string;
   readonly startupFlowStep: StartupFlowStep;
-  readonly runtimeVersion: NethackRuntimeVersion;
   readonly setStartupBuildLabelClickCount: React.Dispatch<React.SetStateAction<number>>;
   readonly setStartupBuildLabelToastVisible: React.Dispatch<React.SetStateAction<boolean>>;
   readonly startupBuildLabelToastTimerRef: React.MutableRefObject<number | null>;
@@ -101,7 +97,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     gameMessages,
     statusText,
     startupFlowStep,
-    runtimeVersion,
     setStartupBuildLabelClickCount,
     setStartupBuildLabelToastVisible,
     startupBuildLabelToastTimerRef,
@@ -276,10 +271,9 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     t.update.runtimeStoppedBeforeStartup
     : "";
 
-  const startupSelectedRuntimeVersionLabel =
-    startupMenuVisible && startupFlowStep !== "variant"
-      ? resolveRuntimeVersionDisplayLabel(runtimeVersion)
-      : null;
+  const startupSelectedRuntimeVersionLabel = startupMenuVisible
+    ? resolveRuntimeVersionDisplayLabel()
+    : null;
 
   useEffect(() => {
     if (startupMenuVisible) {
@@ -292,11 +286,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
       startupBuildLabelToastTimerRef.current = null;
     }
   }, [startupMenuVisible]);
-
-  const startupVariantDialogVisible =
-    startupMenuVisible &&
-    startupFlowStep === "variant" &&
-    !startupUpdateDialogOpen;
 
   const startupChooseDialogVisible =
     startupMenuVisible &&
@@ -411,7 +400,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     runtimeInitializationErrorVisible,
     runtimeInitializationErrorMessage,
     startupSelectedRuntimeVersionLabel,
-    startupVariantDialogVisible,
     startupChooseDialogVisible,
     startupResumeDialogVisible,
     startupRandomDialogVisible,

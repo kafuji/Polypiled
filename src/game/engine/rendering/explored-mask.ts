@@ -256,9 +256,6 @@ export class ExploredMask {
     const present = this.present;
     present.fill(0);
     for (const [key, mesh] of this.dependencies.tileRendering.tileMap) {
-      // 3.6.7 reports unexplored stone as a blank glyph that is drawn as a flat
-      // dark tile; it is not known terrain.
-      if (mesh.userData?.isVoidFill === true) continue;
       let x = mesh.userData?.tileX;
       let y = mesh.userData?.tileY;
       if (typeof x !== "number" || typeof y !== "number") {

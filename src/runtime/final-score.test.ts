@@ -31,7 +31,7 @@ describe("runtime final score capture", () => {
   });
   afterEach(() => { runtime.shutdown("test complete"); vi.restoreAllMocks(); });
 
-  it.each(["3.6.7", "5.0", "slashem"] as const)("captures %s summary points even when a death line precedes them", version => {
+  it.each(["5.0"] as const)("captures %s summary points even when a death line precedes them", version => {
     runtime.runtimeVersion = version;
     systems.gameOver.beginGameOverSequence("possessions-question");
     for (const text of ["Goodbye Alan18 the Rogue...", "Killed by an energy vortex.", "You died in Sokoban on dungeon level 6 with 42100 points,"]) {

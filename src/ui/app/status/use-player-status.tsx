@@ -199,7 +199,7 @@ export function usePlayerStatusPresentation(dependencies: UsePlayerStatusPresent
   );
 
   const playerStatusBadges = useMemo(
-    () => buildPlayerStatusBadges(playerStats, activeRuntimeVersion),
+    () => buildPlayerStatusBadges(playerStats),
     [activeRuntimeVersion, playerStats],
   );
 
@@ -230,7 +230,6 @@ export function usePlayerStatusPresentation(dependencies: UsePlayerStatusPresent
               const severity = resolveCharacterStatusLineSeverity(
                 line,
                 playerStats,
-                activeRuntimeVersion,
               );
               return (
                 <div

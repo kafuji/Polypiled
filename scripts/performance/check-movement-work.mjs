@@ -6,7 +6,7 @@ import path from 'node:path';
 import {build} from 'esbuild';
 const root=(await import('node:url')).fileURLToPath(new URL('../../',import.meta.url));
 const scenario=process.argv[2]??'nh5-movement';
-if(!['corridor-movement','nh5-movement','nh5-frame-preparation'].includes(scenario))throw new Error('Choose corridor-movement, nh5-movement, or nh5-frame-preparation.');
+if(!['nh5-movement','nh5-frame-preparation'].includes(scenario))throw new Error('Choose nh5-movement or nh5-frame-preparation.');
 const fixture=await build({stdin:{resolveDir:root,contents:(await import('node:fs')).readFileSync(path.join(root,'scripts/performance/fixtures/'+scenario+'.js'),'utf8')},bundle:true,format:'iife',write:false,logLevel:'silent',define:{'import.meta.env':'{}'},loader:{'.c':'text'}});
 const profile=path.join(root,'.wired-dev/movement-benchmark-'+scenario);mkdirSync(profile,{recursive:true});
 const chrome=spawn(process.env.QUEST_CHROME ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--remote-debugging-pipe','--user-data-dir='+profile,'--no-first-run','--no-default-browser-check','about:blank'],{stdio:['ignore','ignore','ignore','pipe','pipe'],windowsHide:true});

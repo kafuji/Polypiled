@@ -1,11 +1,9 @@
-import { resolveSlashEmCommandInputBinding } from "../../slashem-command-capabilities";
 import { nh3dOpenCharacterSheetEventName } from "../../ui-types";
 import type { RepeatableActionSpec } from "../shared/types";
 import type { AudioHapticsPlatform } from "../audio/audio-haptics-platform";
 import type { Camera } from "../camera/camera";
 import type { CombatAttribution } from "../world/combat-attribution";
 import type { ControllerGameplay } from "./controller-gameplay";
-import type { DarkCorridorInference } from "../world/dark-corridor-inference";
 import type { DirectionPrompts } from "../ui/direction-prompts";
 import type { EngineMessages } from "../ui/engine-messages";
 import type { EngineState } from "../runtime/engine-state";
@@ -49,11 +47,6 @@ export interface InputCommandsDependencies {
     ControllerGameplay,
     "consumeControllerFpsDirectionPromptUi"
     | "controllerDirectionPromptPreviewInput"
-  >;
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "beginDarkCorridorDiscoveryWindowFromPlayerInput"
-    | "shouldEnableBlindDarkCorridorInferenceForInput"
   >;
   readonly directionPrompts: Pick<
     DirectionPrompts,
@@ -327,46 +320,21 @@ export class InputCommands {
     this.dependencies.tileContextActions.fpsCrosshairGlancePending = null;
   }
 
-  shouldUseLegacyTileContextLookProbe(): boolean {
-    return this.dependencies.tilesetAssets.resolveRuntimeVersion() === "slashem";
-  }
-
   resolvePreferredKeyboardInputForExtendedCommand(
     normalizedCommandText: string,
   ):
     | { kind: "input"; input: string }
     | { kind: "sequence"; inputs: string[] }
     | null {
-    if (this.dependencies.tilesetAssets.resolveRuntimeVersion() === "slashem") {
-      const binding = resolveSlashEmCommandInputBinding(normalizedCommandText);
-      if (binding) {
-        const input =
-          binding.modifier === "ctrl"
-            ? `${this.ctrlInputPrefix}${binding.key}`
-            : binding.modifier === "meta"
-              ? `${this.metaInputPrefix}${binding.key}`
-              : binding.key;
-        return { kind: "input", input };
-      }
-    }
-
     switch (normalizedCommandText) {
       case "apply":
         return { kind: "input", input: "a" };
-      case "attributes":
-        return this.dependencies.tilesetAssets.resolveRuntimeVersion() === "slashem"
-          ? { kind: "input", input: `${this.ctrlInputPrefix}x` }
-          : null;
       case "call":
         return { kind: "input", input: "C" };
       case "cast":
         return { kind: "input", input: "Z" };
       case "close":
         return { kind: "input", input: "c" };
-      case "known":
-        return this.dependencies.tilesetAssets.resolveRuntimeVersion() === "slashem"
-          ? { kind: "input", input: "\\" }
-          : null;
       case "dip":
         return { kind: "input", input: `${this.metaInputPrefix}d` };
       case "drop":
@@ -399,10 +367,6 @@ export class InputCommands {
         return { kind: "input", input: "o" };
       case "pickup":
         return { kind: "input", input: "," };
-      case "pray":
-        return this.dependencies.tilesetAssets.resolveRuntimeVersion() === "slashem"
-          ? { kind: "input", input: `${this.metaInputPrefix}p` }
-          : null;
       case "puton":
         return { kind: "input", input: "P" };
       case "quaff":
@@ -417,12 +381,6 @@ export class InputCommands {
         return { kind: "input", input: `${this.metaInputPrefix}r` };
       case "search":
         return { kind: "input", input: "s" };
-      case "seespells":
-        return this.dependencies.tilesetAssets.resolveRuntimeVersion() === "slashem"
-          ? { kind: "sequence", inputs: ["I", "+"] }
-          : null;
-      case "spells":
-        return null;
       case "takeoff":
         return { kind: "input", input: "T" };
       case "throw":
@@ -1226,11 +1184,6 @@ export class InputCommands {
     }
 
     if (this.dependencies.engineState.session) {
-      const allowBlindSearchInference =
-        this.dependencies.darkCorridorInference.shouldEnableBlindDarkCorridorInferenceForInput(resolvedInput);
-      this.dependencies.darkCorridorInference.beginDarkCorridorDiscoveryWindowFromPlayerInput({
-        allowBlindSearchInference,
-      });
       // Workaround for a race condition in contextual command handling.
       // TODO: remove once the underlying ordering issue is fixed.
       this.dependencies.engineState.session.sendInput(resolvedInput, { delayMs: options.delayMs, requestId: options.requestId });
@@ -1277,12 +1230,6 @@ export class InputCommands {
       }
     }
 
-    const allowBlindSearchInference =
-      inputs.length === 1 &&
-      this.dependencies.darkCorridorInference.shouldEnableBlindDarkCorridorInferenceForInput(inputs[0]);
-    this.dependencies.darkCorridorInference.beginDarkCorridorDiscoveryWindowFromPlayerInput({
-      allowBlindSearchInference,
-    });
     // Workaround for a race condition in contextual command handling.
     // TODO: remove once the underlying ordering issue is fixed.
     this.dependencies.engineState.session.sendInputSequence(inputs, { delayMs: options.delayMs, ...(options.requestId !== undefined ? { requestId: options.requestId } : {}) });
@@ -1315,9 +1262,6 @@ export class InputCommands {
       this.dependencies.audioHapticsPlatform.armPendingPlayerFootstepSound();
       this.dependencies.movementInput.armPlayerCliparoundInputCooldown();
     }
-    this.dependencies.darkCorridorInference.beginDarkCorridorDiscoveryWindowFromPlayerInput({
-      allowBlindSearchInference: false,
-    });
     this.dependencies.engineState.session.sendMouseInput(x, y, button);
   }
 }

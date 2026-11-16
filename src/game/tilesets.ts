@@ -2,12 +2,13 @@ import {
   GENERATED_TILESET_MANIFEST,
   type GeneratedTilesetManifestEntry,
 } from "./tilesets.generated";
-import type { NethackRuntimeVersion } from "../runtime/types";
 
 export type Nh3dTilesetSource = "builtin" | "user" | "vulture";
+// The order of tiles in an atlas image, named after the NetHack version whose
+// tile files define it. This is not the game being run: the game is always
+// NetHack 5.0, and a "3.6.7" atlas is drawn through
+// tileset-367-to-5-translation.ts.
 export type Nh3dTilesetTileLayoutVersion =
-  | "slashem"
-  | "3.4.3"
   | "3.6.7"
   | "5.0"
   | "unknown";
@@ -21,13 +22,11 @@ type Nh3dBaseTilesetEntry = Omit<
 };
 
 export type Nh3dTilesetEntry = Nh3dBaseTilesetEntry & {
-  readonly atlasColumns?: number;
   readonly source: Nh3dTilesetSource;
   readonly assetUrl: string;
 };
 
 export type Nh3dUserTilesetRegistration = {
-  readonly atlasColumns?: number;
   readonly id: string;
   readonly label: string;
   readonly tileSize: number;
@@ -42,7 +41,6 @@ const fallbackBackgroundRemovalMode: Nh3dTilesetBackgroundRemovalMode = "tile";
 const fallbackSolidChromaKeyColorHex = "#466d6c";
 const fallbackWeaponSpriteFlipX = true;
 export const nh3dTilesetAtlasTileColumns = 40;
-const builtinSlashEmTilesetPathPrefix = "assets/slashem/";
 const builtinNh5TilesetPathPrefix = "assets/5.0/";
 const builtinPixelHackTilesetPath = "assets/5.0/PixelHack.png";
 const userTilesetPathPrefix = "user:";
@@ -72,10 +70,6 @@ const tilesetSolidChromaKeyPresetByLabel: Readonly<Record<string, string>> = {
   "Vanilla NetHack Tiles": "#476C6C",
   "NetHack Modern": "#000000",
 };
-const tilesetAtlasTileColumnsPresetByPath: Readonly<Record<string, number>> = {
-  "assets/slashem/Abigaba.bmp": 38,
-  "assets/slashem/Absurd.png": 38,
-};
 const geoduckBackgroundTileByPath: Readonly<Record<string, number>> = {
   "assets/3.6/Geoduck.bmp": 1476,
   "assets/5.0/Geoduck.bmp": 2304,
@@ -90,7 +84,6 @@ const tilesetBackgroundRemovalModePresetByPath: Readonly<
 > = {
   "assets/3.6/Geoduck.bmp": "tile",
   "assets/5.0/Geoduck.bmp": "tile",
-  "assets/slashem/Absurd.png": "none",
   [builtinPixelHackTilesetPath]: "tile",
   "assets/5.0/Nevanda (5.0).png": "solid",
   "assets/5.0/Vanilla NetHack Tiles (5.0).png": "solid",
@@ -112,78 +105,19 @@ function normalizeTilesetPresetLookupLabel(label: string): string {
 function normalizeGeneratedTileLayoutVersion(
   tileLayoutVersion: GeneratedTilesetManifestEntry["tileLayoutVersion"],
 ): Nh3dTilesetTileLayoutVersion {
-  if (tileLayoutVersion === "slashem") {
-    return "slashem";
-  }
-  if (tileLayoutVersion === "5.0") {
-    return "5.0";
-  }
-  if (tileLayoutVersion === "3.4.3") {
-    return "3.4.3";
-  }
-  return "3.6.7";
+  return tileLayoutVersion === "5.0" ? "5.0" : "3.6.7";
 }
 
 function normalizeUserTilesetTileLayoutVersion(
   tileLayoutVersion: Nh3dTilesetTileLayoutVersion | undefined,
 ): Nh3dTilesetTileLayoutVersion {
-  if (tileLayoutVersion === "slashem") {
-    return "slashem";
-  }
   if (tileLayoutVersion === "5.0") {
     return "5.0";
   }
   if (tileLayoutVersion === "3.6.7") {
     return "3.6.7";
   }
-  if (tileLayoutVersion === "3.4.3") {
-    return "3.4.3";
-  }
   return "unknown";
-}
-
-export function isNh3dTilesetLayoutCompatibleWithRuntime(
-  tileLayoutVersion: Nh3dTilesetTileLayoutVersion,
-  runtimeVersion: NethackRuntimeVersion,
-): boolean {
-  if (tileLayoutVersion === "unknown") {
-    return true;
-  }
-  if (tileLayoutVersion === "slashem") {
-    return runtimeVersion === "slashem";
-  }
-  if (tileLayoutVersion === "3.4.3") {
-    return runtimeVersion === "slashem";
-  }
-  if (tileLayoutVersion === "3.6.7") {
-    return runtimeVersion === "3.6.7" || runtimeVersion === "5.0";
-  }
-  return runtimeVersion === "5.0";
-}
-
-function isNh3dTilesetCompatibleWithRuntime(
-  tileset: Nh3dTilesetEntry,
-  runtimeVersion: NethackRuntimeVersion,
-): boolean {
-  return isNh3dTilesetLayoutCompatibleWithRuntime(
-    tileset.tileLayoutVersion,
-    runtimeVersion,
-  );
-}
-
-function findLabelMatchedCompatibleTileset(
-  label: string,
-  runtimeVersion: NethackRuntimeVersion,
-): Nh3dTilesetEntry | null {
-  const normalizedLookupLabel = normalizeTilesetPresetLookupLabel(label).toLowerCase();
-  return (
-    tilesetCatalog.find(
-      (entry) =>
-        isNh3dTilesetCompatibleWithRuntime(entry, runtimeVersion) &&
-        normalizeTilesetPresetLookupLabel(entry.label).toLowerCase() ===
-          normalizedLookupLabel,
-    ) ?? null
-  );
 }
 
 function isBuiltinNh5Tileset(tileset: Nh3dTilesetEntry): boolean {
@@ -203,11 +137,8 @@ export function inferNh3dTilesetTileDimensions(
   height: number,
   path?: string | null,
   layoutVersion?: Nh3dTilesetTileLayoutVersion,
-  atlasColumns?: number,
 ): { tileWidth: number; tileHeight: number } {
-  const tileWidth = Number.isSafeInteger(atlasColumns) && atlasColumns! > 0 && width > 0
-    ? Math.max(1, Math.trunc(width / atlasColumns!))
-    : inferNh3dTilesetTileSizeFromAtlasWidthForPath(width, path);
+  const tileWidth = inferNh3dTilesetTileSizeFromAtlasWidthForPath(width, path);
   const entry = findNh3dTilesetByPath(path);
   if (entry?.tileHeight && entry.tileHeight > 0) {
     return { tileWidth, tileHeight: Math.max(1, Math.round(entry.tileHeight * tileWidth / entry.tileSize)) };
@@ -228,15 +159,7 @@ export function inferNh3dTilesetTileDimensions(
 export function getNh3dTilesetAtlasTileColumns(
   path: string | null | undefined,
 ): number {
-  const normalizedPath = String(path || "").trim();
-  const registeredColumns = findNh3dTilesetByPath(path)?.atlasColumns;
-  if (Number.isSafeInteger(registeredColumns) && registeredColumns! > 0) return registeredColumns!;
-  const preset =
-    tilesetAtlasTileColumnsPresetByPath[normalizedPath] ??
-    tilesetAtlasTileColumnsPresetByPath[String(findNh3dTilesetByPath(path)?.path || "").trim()];
-  if (typeof preset === "number" && Number.isFinite(preset)) {
-    return Math.max(1, Math.trunc(preset));
-  }
+  void path;
   return nh3dTilesetAtlasTileColumns;
 }
 
@@ -414,7 +337,6 @@ export function setNh3dUserTilesets(
       label,
       tileSize,
       tileHeight: registration.tileHeight,
-      atlasColumns: registration.atlasColumns === 38 ? 38 : nh3dTilesetAtlasTileColumns,
       source: "user",
       assetUrl,
       tileLayoutVersion,
@@ -433,26 +355,11 @@ export function getNh3dTilesetCatalog(): ReadonlyArray<Nh3dTilesetEntry> {
   return tilesetCatalog;
 }
 
-export function getNh3dCompatibleTilesetCatalog(
-  runtimeVersion: NethackRuntimeVersion,
-): ReadonlyArray<Nh3dTilesetEntry> {
-  return tilesetCatalog.filter((entry) =>
-    isNh3dTilesetCompatibleWithRuntime(entry, runtimeVersion),
-  );
-}
-
 export const nh3dTilesetCatalog: ReadonlyArray<Nh3dTilesetEntry> =
   builtinTilesets;
 
 const preferredDefaultTilesetPath = "assets/3.6/Nevanda.png";
 const preferredDefaultTilesetLabel = "Nevanda";
-const preferredDefaultTilesetPathByRuntime: Readonly<
-  Partial<Record<NethackRuntimeVersion, string>>
-> = {
-  "3.6.7": preferredDefaultTilesetPath,
-  slashem: "assets/slashem/Absurd.png",
-  "5.0": builtinPixelHackTilesetPath,
-};
 export const defaultNh3dTilesetPath: string =
   builtinTilesets.find((entry) => entry.path === preferredDefaultTilesetPath)
     ?.path ??
@@ -461,23 +368,11 @@ export const defaultNh3dTilesetPath: string =
   builtinTilesets[0]?.path ??
   "";
 
-function getDefaultNh3dTilesetPathForRuntime(
-  runtimeVersion: NethackRuntimeVersion,
-): string {
-  const preferredPath = preferredDefaultTilesetPathByRuntime[runtimeVersion];
-  const preferredTileset = preferredPath
-    ? builtinTilesets.find((entry) => entry.path === preferredPath)
-    : undefined;
-  if (
-    preferredTileset &&
-    isNh3dTilesetCompatibleWithRuntime(preferredTileset, runtimeVersion)
-  ) {
-    return preferredTileset.path;
-  }
-  return (
-    getNh3dCompatibleTilesetCatalog(runtimeVersion)[0]?.path ??
-    defaultNh3dTilesetPath
-  );
+/** The tileset a player gets until they pick one: PixelHack. */
+function getPreferredNh3dTilesetPath(): string {
+  return builtinTilesets.find((entry) => entry.path === builtinPixelHackTilesetPath)?.path ??
+    tilesetCatalog[0]?.path ??
+    defaultNh3dTilesetPath;
 }
 
 export function findNh3dTilesetByPath(
@@ -528,38 +423,19 @@ export function resolveNh3dTilesetTileLayoutVersion(
   return findNh3dTilesetByPath(path)?.tileLayoutVersion ?? "unknown";
 }
 
-export function resolveNh3dCompatibleTilesetPathForRuntime(
+/**
+ * The tileset to use for a stored choice. An unknown path (a removed or
+ * deleted tileset) and the client-option default (the 3.6 Nevanda sheet, which
+ * means the player never picked one) both resolve to PixelHack.
+ */
+export function resolveNh3dTilesetPathForGame(
   path: string | null | undefined,
-  runtimeVersion: NethackRuntimeVersion,
 ): string {
   const selectedTileset = findNh3dTilesetByPath(path);
-  if (!selectedTileset) {
-    return getDefaultNh3dTilesetPathForRuntime(runtimeVersion);
+  if (!selectedTileset || selectedTileset.path === defaultNh3dTilesetPath) {
+    return getPreferredNh3dTilesetPath();
   }
-  // A user still on the app-wide default tileset has not deliberately picked
-  // one, so honor the runtime's own default rather than keeping the generic
-  // default just because it happens to be layout-compatible. This is what makes
-  // e.g. PixelHack the default for a fresh NetHack 5.0 player instead of the
-  // cross-compatible 3.6 Nevanda default. Runtimes whose default already is the
-  // app-wide default (3.6.7) are unaffected.
-  if (selectedTileset.path === defaultNh3dTilesetPath) {
-    const runtimeDefaultPath =
-      getDefaultNh3dTilesetPathForRuntime(runtimeVersion);
-    if (runtimeDefaultPath && runtimeDefaultPath !== selectedTileset.path) {
-      return runtimeDefaultPath;
-    }
-  }
-  if (isNh3dTilesetCompatibleWithRuntime(selectedTileset, runtimeVersion)) {
-    return selectedTileset.path;
-  }
-  const labelMatchedTileset = findLabelMatchedCompatibleTileset(
-    selectedTileset.label,
-    runtimeVersion,
-  );
-  if (labelMatchedTileset) {
-    return labelMatchedTileset.path;
-  }
-  return getDefaultNh3dTilesetPathForRuntime(runtimeVersion);
+  return selectedTileset.path;
 }
 
 export function resolveNh3dFuseBaseTilesetPathForLegacyNh5Runtime(
@@ -649,12 +525,6 @@ export function resolveDefaultNh3dTilesetBackgroundRemovalMode(
   const preset = tilesetBackgroundRemovalModePresetByPath[tileset.path];
   if (preset === "none" || preset === "solid" || preset === "tile") {
     return preset;
-  }
-  if (
-    tileset.source === "builtin" &&
-    String(tileset.path || "").startsWith(builtinSlashEmTilesetPathPrefix)
-  ) {
-    return "solid";
   }
   if (isBuiltinNh5Tileset(tileset)) {
     return "solid";

@@ -1,5 +1,5 @@
 import { LevelTerrainCache } from "./world/level-terrain-cache";
-import { DarkCorridorInference } from "./world/dark-corridor-inference";
+import { DarkWallOverrides } from "./rendering/dark-wall-overrides";
 import { Minimap } from "./ui/minimap";
 import { TileUpdates } from "./world/tile-updates";
 import { WorldClassification } from "./world/world-classification";
@@ -65,7 +65,7 @@ import type { EngineCoordinator } from "./engine-coordinator";
 
 export interface EngineSystems {
   readonly levelTerrainCache: LevelTerrainCache;
-  readonly darkCorridorInference: DarkCorridorInference;
+  readonly darkWallOverrides: DarkWallOverrides;
   readonly minimap: Minimap;
   readonly tileUpdates: TileUpdates;
   readonly worldClassification: WorldClassification;
@@ -137,7 +137,6 @@ export interface EngineSystems {
 export function createEngineSystems(coordinator: EngineCoordinator): EngineSystems {
   const levelTerrainCache: LevelTerrainCache = new LevelTerrainCache({
     get bloodGround() { return bloodGround; },
-    get darkCorridorInference() { return darkCorridorInference; },
     get playerStatus() { return playerStatus; },
     get tileRendering() { return tileRendering; },
     get tileUpdates() { return tileUpdates; },
@@ -145,29 +144,10 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get vultureWalls() { return vultureWalls; },
     get worldClassification() { return worldClassification; },
   });
-  const darkCorridorInference: DarkCorridorInference = new DarkCorridorInference({
-    get directionPrompts() { return directionPrompts; },
+  const darkWallOverrides: DarkWallOverrides = new DarkWallOverrides({
     get engineState() { return engineState; },
-    get entityBillboards() { return entityBillboards; },
-    get glyphTextures() { return glyphTextures; },
-    get levelTerrainCache() { return levelTerrainCache; },
-    get lighting() { return lighting; },
-    get minimap() { return minimap; },
     get movementInput() { return movementInput; },
-    get playerMovement() { return playerMovement; },
-    get playerStatus() { return playerStatus; },
-    get positionSelection() { return positionSelection; },
-    get promptDialogs() { return promptDialogs; },
-    get questionMenus() { return questionMenus; },
-    get renderPipeline() { return renderPipeline; },
-    get terminalRendering() { return terminalRendering; },
-    get tileRendering() { return tileRendering; },
-    get tileUpdates() { return tileUpdates; },
     get tilesetAssets() { return tilesetAssets; },
-    get vultureWalls() { return vultureWalls; },
-    get wallGeometry() { return wallGeometry; },
-    get wallOverlays() { return wallOverlays; },
-    get worldClassification() { return worldClassification; },
   });
   const minimap: Minimap = new Minimap({
     get tilesetAssets() { return tilesetAssets; },
@@ -189,7 +169,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get floorOcclusion() { return floorOcclusion; },
     get wallGeometry() { return wallGeometry; },
     get camera() { return camera; },
-    get darkCorridorInference() { return darkCorridorInference; },
     get engineState() { return engineState; },
     get entityBillboards() { return entityBillboards; },
     get entityMovement() { return entityMovement; },
@@ -207,7 +186,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get worldClassification() { return worldClassification; },
   });
   const worldClassification: WorldClassification = new WorldClassification({
-    get darkCorridorInference() { return darkCorridorInference; },
     get engineState() { return engineState; },
     get entityBillboards() { return entityBillboards; },
     get levelTerrainCache() { return levelTerrainCache; },
@@ -298,7 +276,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get audioHapticsPlatform() { return audioHapticsPlatform; },
     get combatAttribution() { return combatAttribution; },
     get damageNumbers() { return damageNumbers; },
-    get darkCorridorInference() { return darkCorridorInference; },
     get engineState() { return engineState; },
     get extendedCommands() { return extendedCommands; },
     get inputCommands() { return inputCommands; },
@@ -386,7 +363,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
   });
   const vultureWalls: VultureWalls = new VultureWalls({
     get camera() { return camera; },
-    get darkCorridorInference() { return darkCorridorInference; },
     get engineState() { return engineState; },
     get entityBillboards() { return entityBillboards; },
     get levelTerrainCache() { return levelTerrainCache; },
@@ -396,6 +372,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get tileRendering() { return tileRendering; },
     get tilesetAssets() { return tilesetAssets; },
     get wallOverlays() { return wallOverlays; },
+    get darkWallOverrides() { return darkWallOverrides; },
   });
   const glyphTextures: GlyphTextures = new GlyphTextures({
     get engineState() { return engineState; },
@@ -428,7 +405,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get wallGeometry() { return wallGeometry; },
   });
   const wallGeometry: WallGeometry = new WallGeometry({
-    get darkCorridorInference() { return darkCorridorInference; },
     get engineState() { return engineState; },
     get floorOcclusion() { return floorOcclusion; },
     get glyphTextures() { return glyphTextures; },
@@ -442,6 +418,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get vultureWalls() { return vultureWalls; },
     get wallOverlays() { return wallOverlays; },
     get worldClassification() { return worldClassification; },
+    get darkWallOverrides() { return darkWallOverrides; },
   });
   const damageFlashes: DamageFlashes = new DamageFlashes({
     get engineState() { return engineState; },
@@ -494,7 +471,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get bloodGround() { return bloodGround; },
     get camera() { return camera; },
     coordinator,
-    get darkCorridorInference() { return darkCorridorInference; },
     get engineState() { return engineState; },
     get entityBillboards() { return entityBillboards; },
     get floorOcclusion() { return floorOcclusion; },
@@ -513,7 +489,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
   });
   const tileRendering: TileRendering = new TileRendering({
     get lightField() { return lightField; },
-    get darkCorridorInference() { return darkCorridorInference; },
     get engineState() { return engineState; },
     get entityBillboards() { return entityBillboards; },
     get floorOcclusion() { return floorOcclusion; },
@@ -535,6 +510,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get wallGeometry() { return wallGeometry; },
     get wallOverlays() { return wallOverlays; },
     get worldClassification() { return worldClassification; },
+    get darkWallOverrides() { return darkWallOverrides; },
   });
   const playerWeaponOverlay: PlayerWeaponOverlay = new PlayerWeaponOverlay({
     get camera() { return camera; },
@@ -604,7 +580,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get camera() { return camera; },
     get combatAttribution() { return combatAttribution; },
     get controllerGameplay() { return controllerGameplay; },
-    get darkCorridorInference() { return darkCorridorInference; },
     get directionPrompts() { return directionPrompts; },
     get engineMessages() { return engineMessages; },
     get engineState() { return engineState; },
@@ -642,7 +617,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get runTelemetry() { return runTelemetry; },
     get tileUpdates() { return tileUpdates; },
     get tilesetAssets() { return tilesetAssets; },
-    get worldClassification() { return worldClassification; },
   });
   const promptDialogs: PromptDialogs = new PromptDialogs({
     get directionPrompts() { return directionPrompts; },
@@ -757,7 +731,6 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get aimHighlights() { return aimHighlights; },
     get camera() { return camera; },
     get controllerGameplay() { return controllerGameplay; },
-    get darkCorridorInference() { return darkCorridorInference; },
     get directionPrompts() { return directionPrompts; },
     get engineMessages() { return engineMessages; },
     get engineState() { return engineState; },
@@ -953,7 +926,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     questSceneExport,
     webXrPresentation,
     levelTerrainCache,
-    darkCorridorInference,
+    darkWallOverrides,
     minimap,
     tileUpdates,
     worldClassification,

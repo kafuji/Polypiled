@@ -16,10 +16,10 @@ function fixture(t) {
   const target = join(root, "quest/app/build/generated/gameAssets/game");
   mkdirSync(source, { recursive: true });
   mkdirSync(target, { recursive: true });
-  for (const file of ["index.html", "quest-ui-probe.html", "nethack-367.js", "nethack-5.js", "slashem.js"]) {
+  for (const file of ["index.html", "quest-ui-probe.html", "nethack-5.js"]) {
     writeFileSync(join(source, file), "fixture");
   }
-  for (const file of ["nethack-367.wasm", "nethack-5.wasm", "slashem.wasm"]) {
+  for (const file of ["nethack-5.wasm"]) {
     writeFileSync(join(source, file), Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]));
   }
   writeFileSync(join(source, "quest-build.json"), JSON.stringify({ target: "quest-ui-proof", base: "/", entry: "quest-ui-probe.html" }));
@@ -47,8 +47,8 @@ test("rejects missing entry chunks and external HTML dependencies before replaci
 
 test("rejects missing runtime assets without removing the previous staged bundle", (t) => {
   const { root, source, target } = fixture(t);
-  rmSync(join(source, "slashem.wasm"));
-  assert.throws(() => stageQuestAssets(root), /Incomplete Quest build: slashem.wasm/);
+  rmSync(join(source, "nethack-5.wasm"));
+  assert.throws(() => stageQuestAssets(root), /Incomplete Quest build: nethack-5.wasm/);
   assert.equal(existsSync(join(target, "previous.txt")), true);
 });
 

@@ -1,14 +1,13 @@
 import * as THREE from "three";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { VultureWalls, type VultureWallsDependencies } from "./vulture-walls";
 import { WallOverlays, type WallOverlaysDependencies } from "./wall-overlays";
-import { getGlyphCatalogEntry, getGlyphCatalogRanges, setActiveGlyphCatalog } from "../../glyphs/registry";
+import { getGlyphCatalogEntry } from "../../glyphs/registry";
+import { cmapGlyphForSymbol } from "../../glyphs/test-support";
 import type { VultureWallFaceSlot } from "../shared/types";
 
-beforeEach(async () => { await setActiveGlyphCatalog("3.6.7"); });
-
 function fixture(cmap: number, floors: VultureWallFaceSlot[]) {
-  const glyph = getGlyphCatalogRanges().find(range => range.kind === "cmap")!.start + cmap;
+  const glyph = cmapGlyphForSymbol(cmap);
   const mesh = new THREE.Mesh(); mesh.userData.tileTextureSourceGlyph = glyph;
   const tileMap = new Map([["4,5", mesh]]);
   const snapshot = vi.fn(() => null as { glyph: number; symidx: number } | null);
@@ -22,32 +21,11 @@ function fixture(cmap: number, floors: VultureWallFaceSlot[]) {
     ? { category: "wall", name: `WALL_ROUGH_F_${face[0].toUpperCase()}`, projection: "sprite", wallFace: face }
     : null);
   vi.spyOn(walls, "isVultureDoorwayNeighborFloor").mockReturnValue(false);
-  const char = walls.resolveWallOrientationChar(String.fromCodePoint(getGlyphCatalogEntry(glyph)!.ch), glyph);
+  const char = walls.resolveWallOrientationChar(getGlyphCatalogEntry(glyph)!.asciiChar ?? "", glyph);
   return { walls, mesh, glyph, snapshot, tileMap, config: () => walls.resolveVultureWallPlaneRenderConfig(4, 5, "wall", char) };
 }
 
 describe("Vulture corner and junction wall faces", () => {
-  it.each([
-    ["east", "north"], ["east", "south"],
-    ["west", "north"], ["west", "south"],
-  ] as VultureWallFaceSlot[][])("renders both inferred cave bend faces %s/%s", (first, second) => {
-    const f = fixture(0, [first, second]);
-    f.mesh.userData.isInferredDarkCorridorWall = true;
-    const config = f.config();
-    expect(config?.slices.map(slice => slice.direction).sort()).toEqual([first, second].sort());
-    expect(config?.slices).toHaveLength(2);
-  });
-
-  it("does not infer a cave face from diagonal floor across an unmapped edge", () => {
-    const f = fixture(0, []);
-    f.mesh.userData.isInferredDarkCorridorWall = true;
-    vi.mocked(f.walls.resolveVultureWallNeighborFaceLookup).mockImplementation((face, _wx, _wy, fx, fy) =>
-      fx === 5 && fy === 6
-        ? { category: "wall", name: "WALL_ROUGH_F_E", projection: "sprite", wallFace: face }
-        : null);
-    expect(f.config()).toBeNull();
-  });
-
   it.each([
     [3, ["east", "south"]], [4, ["west", "south"]],
     [5, ["east", "north"]], [6, ["west", "north"]],

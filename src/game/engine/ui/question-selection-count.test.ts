@@ -2,7 +2,7 @@ import { expect, it, vi } from "vitest";
 import { QuestionMenus, type QuestionMenusDependencies } from "./question-menus";
 import type { NethackRuntimeVersion } from "../../../runtime/types";
 
-function fixture(version: NethackRuntimeVersion = "3.6.7") {
+function fixture(version: NethackRuntimeVersion = "5.0") {
   const sendInput = vi.fn(), sendInputSequence = vi.fn();
   const questions = new QuestionMenus({
     tilesetAssets: { resolveRuntimeVersion: () => version },
@@ -61,10 +61,7 @@ it.each(["Pick up what?", "What would you like to pick up?", "What do you want t
 it.each(["What type of objects?", "Drop what type of items?", "What do you want to eat?", "What do you want to read?", "Choose a role", "Really quit?"])("does not offer an unsupported quantity for %s", text => {
   expect(fixture().questions.isCountableInventorySelectionQuestion(text)).toBe(false);
 });
-it("respects count support differences between bundled games", () => {
-  const slashem = fixture("slashem").questions;
-  for (const verb of ["ready", "wield", "adjust", "stash", "fire"]) expect(slashem.isCountableInventorySelectionQuestion(`What do you want to ${verb}?`)).toBe(false);
-  expect(slashem.isCountableInventorySelectionQuestion("What do you want to pawn?")).toBe(true);
-  expect(fixture("5.0").questions.isCountableInventorySelectionQuestion("What do you want to fire?")).toBe(true);
-  expect(fixture().questions.isCountableInventorySelectionQuestion("What do you want to fire?")).toBe(false);
+it("offers quantity when firing and not for unrelated prompts", () => {
+  expect(fixture().questions.isCountableInventorySelectionQuestion("What do you want to fire?")).toBe(true);
+  expect(fixture().questions.isCountableInventorySelectionQuestion("What do you want to pawn?")).toBe(false);
 });

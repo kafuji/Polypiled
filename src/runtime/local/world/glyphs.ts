@@ -50,14 +50,11 @@ export class RuntimeGlyphs {
     if (!glyphInfo || typeof glyphInfo !== "object") {
       return null;
     }
-    // 5.0 map_glyphinfo exposes "glyphflags"; the 3.6.7/Slash'EM mapglyph
-    // helper returns the same MG_* bits as "special".
+    // map_glyphinfo exposes the MG_* bits as "glyphflags".
     const glyphFlagsCandidate =
       typeof glyphInfo.glyphflags === "number"
         ? glyphInfo.glyphflags
-        : typeof glyphInfo.glyphFlags === "number"
-          ? glyphInfo.glyphFlags
-          : glyphInfo.special;
+        : glyphInfo.glyphFlags;
     if (
       typeof glyphFlagsCandidate === "number" &&
       Number.isFinite(glyphFlagsCandidate)

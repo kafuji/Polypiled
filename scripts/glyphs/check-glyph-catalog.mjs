@@ -6,7 +6,7 @@ import {
   resolveProjectRoot,
 } from "./catalog-generator.mjs";
 
-function resolveExpectedGlyphKinds(version) {
+function resolveExpectedGlyphKinds() {
   const expectedKinds = [
     "mon",
     "pet",
@@ -21,9 +21,7 @@ function resolveExpectedGlyphKinds(version) {
     "swallow",
     "warning",
   ];
-  if (version !== "slashem") {
-    expectedKinds.push("statue");
-  }
+  expectedKinds.push("statue");
   return expectedKinds;
 }
 
@@ -42,7 +40,7 @@ function validateGeneratedSource(source, version) {
   }
 
   const seenKinds = new Set(entries.map((match) => match[2]));
-  const expectedKinds = new Set(resolveExpectedGlyphKinds(version));
+  const expectedKinds = new Set(resolveExpectedGlyphKinds());
   for (const kind of expectedKinds) {
     if (!seenKinds.has(kind)) {
       throw new Error(`Missing expected glyph kind '${kind}' in catalog`);
@@ -88,7 +86,9 @@ async function main() {
       fs.readFile(outputPath, "utf8"),
     ]);
 
-    if (currentSource !== expectedSource) {
+    // Git may check the file out with CRLF line endings (core.autocrlf).
+    const normalizeLineEndings = (text) => text.replace(/\r\n/g, "\n");
+    if (normalizeLineEndings(currentSource) !== normalizeLineEndings(expectedSource)) {
       console.error(
         `Glyph catalog is stale (${target.version}): ${outputPath}\nRun: npm run glyphs:generate`,
       );

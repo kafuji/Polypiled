@@ -1,30 +1,4 @@
 
-export const STATUS_FIELD_MAP_367 = {
-    0: "BL_TITLE", 
-    1: "BL_STR", 
-    2: "BL_DX", 
-    3: "BL_CO", 
-    4: "BL_IN", 
-    5: "BL_WI",
-    6: "BL_CH", 
-    7: "BL_ALIGN", 
-    8: "BL_SCORE", 
-    9: "BL_CAP", 
-    10: "BL_GOLD",
-    11: "BL_ENE", 
-    12: "BL_ENEMAX", 
-    13: "BL_XP", 
-    14: "BL_AC", 
-    15: "BL_HD",
-    16: "BL_TIME", 
-    17: "BL_HUNGER", 
-    18: "BL_HP", 
-    19: "BL_HPMAX", 
-    20: "BL_LEVELDESC",
-    21: "BL_EXP", 
-    22: "BL_CONDITION"
-};
-
 export const STATUS_FIELD_MAP_5 = {
     0: "BL_TITLE",
     1: "BL_STR",

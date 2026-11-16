@@ -29,7 +29,7 @@ function beginTargeting(channel: "message" | "raw" | "bold" = "message") {
   else systems.messages.handleShimRawPrintBold([prompt]);
 }
 
-describe.each(["3.6.7", "5.0", "slashem"] as const)("polearm targeting in %s", version => {
+describe.each(["5.0"] as const)("polearm targeting in %s", version => {
   beforeEach(() => { runtime.runtimeVersion = version; });
 
   it.each(["message", "raw", "bold"] as const)("claims the cursor before the first cliparound from a %s prompt", async channel => {

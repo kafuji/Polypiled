@@ -4,13 +4,9 @@ import { isTrialPlayMode, toRuntimePlayModeTokens } from "./trial-play-mode";
 
 describe("trial play mode", () => {
   it("survives startup option sanitizing so saves remember the mode", () => {
-    const tokens = sanitizeStartupInitOptionTokens(["playmode:trial", "autopickup"], "3.6.7");
+    const tokens = sanitizeStartupInitOptionTokens(["playmode:trial", "autopickup"]);
     expect(tokens).toContain("playmode:trial");
     expect(isTrialPlayMode(tokens)).toBe(true);
-  });
-
-  it("is not offered where NetHack has no playmode option", () => {
-    expect(sanitizeStartupInitOptionTokens(["playmode:trial"], "slashem")).toEqual([]);
   });
 
   it("reaches NetHack as a normal game", () => {

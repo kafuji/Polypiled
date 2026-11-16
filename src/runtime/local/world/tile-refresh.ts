@@ -304,19 +304,10 @@ export class RuntimeTileRefresh {
         typeof helpers.topItemTileIndexUnderPlayer === "function"
         ? helpers.topItemTileIndexUnderPlayer
         : null;
-    const mapHelper = helpers
-      ? this.deps.coordinator.runtimeVersion === "5.0"
-        ? typeof helpers.mapGlyphInfoHelper === "function"
-          ? canQueryWasmHelpers
-            ? helpers.mapGlyphInfoHelper
-            : null
-          : null
-        : typeof helpers.mapglyphHelper === "function"
-          ? canQueryWasmHelpers
-            ? helpers.mapglyphHelper
-            : null
-          : null
-      : null;
+    const mapHelper =
+      canQueryWasmHelpers && helpers && typeof helpers.mapGlyphInfoHelper === "function"
+        ? helpers.mapGlyphInfoHelper
+        : null;
 
     const updateTileFromGlyph = (glyph) => {
       if (!Number.isFinite(glyph)) {
@@ -567,19 +558,10 @@ export class RuntimeTileRefresh {
       canQueryWasmHelpers && helpers && typeof helpers.glyphAtHelper === "function"
         ? helpers.glyphAtHelper
         : null;
-    const mapHelper = helpers
-      ? this.deps.coordinator.runtimeVersion === "5.0"
-        ? typeof helpers.mapGlyphInfoHelper === "function"
-          ? canQueryWasmHelpers
-            ? helpers.mapGlyphInfoHelper
-            : null
-          : null
-        : typeof helpers.mapglyphHelper === "function"
-          ? canQueryWasmHelpers
-            ? helpers.mapglyphHelper
-            : null
-          : null
-      : null;
+    const mapHelper =
+      canQueryWasmHelpers && helpers && typeof helpers.mapGlyphInfoHelper === "function"
+        ? helpers.mapGlyphInfoHelper
+        : null;
 
     const constants = globalThis.nethackGlobal?.constants;
     const dimensions = resolveRuntimeMapDimensions({ columns: constants?.COLNO, rows: constants?.ROWNO });

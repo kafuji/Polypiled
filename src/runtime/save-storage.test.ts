@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import type { NethackRuntimeVersion } from "./types";
 import {
   MIN_RECOVERABLE_CHECKPOINT_LEVEL_ZERO_BYTES,
   getRuntimeCheckpointMountDir,
@@ -15,114 +14,84 @@ import {
   supportsRuntimeRootPersistence,
 } from "./save-storage";
 
-// Every runtime the app can launch. Loading (normal + autosave) must behave
-// consistently for all of them.
-const RUNTIMES: NethackRuntimeVersion[] = ["3.6.7", "5.0", "slashem"];
-
 describe("save-storage: normal (manual) save loading", () => {
-  it.each(RUNTIMES)(
-    "%s stores manual saves on the /save mount",
-    (runtimeVersion) => {
-      expect(getRuntimeSaveMountDir(runtimeVersion)).toBe("/save");
-    },
-  );
-
-  it.each(RUNTIMES)(
-    "%s resolves the save mount relative to the runtime cwd",
-    (runtimeVersion) => {
-      expect(getRuntimeSaveMountDir(runtimeVersion, "/nethack")).toBe(
-        "/nethack/save",
-      );
-      // Trailing slashes / bare root normalize to the top-level mount.
-      expect(getRuntimeSaveMountDir(runtimeVersion, "/")).toBe("/save");
-      expect(getRuntimeSaveMountDir(runtimeVersion, "")).toBe("/save");
-    },
-  );
-
-  it.each(RUNTIMES)(
-    "%s backs the /save mount with a /save-<compat> IndexedDB database",
-    (runtimeVersion) => {
-      const dbName = getRuntimeSaveDbName(runtimeVersion);
-      expect(dbName).toBe(`/save-${getRuntimeSaveCompatTag(runtimeVersion)}`);
-      expect(dbName.startsWith("/save-")).toBe(true);
-    },
-  );
-
-  it("keeps each runtime's manual saves in a distinct database", () => {
-    const dbNames = RUNTIMES.map((rv) => getRuntimeSaveDbName(rv));
-    expect(new Set(dbNames).size).toBe(RUNTIMES.length);
+  it("stores manual saves on the /save mount", () => {
+    expect(getRuntimeSaveMountDir()).toBe("/save");
   });
 
-  it.each(RUNTIMES)(
-    "%s enumerates save databases across known playground roots",
-    (runtimeVersion) => {
-      const names = getRuntimeSaveDbNames(runtimeVersion);
-      const tag = getRuntimeSaveCompatTag(runtimeVersion);
-      expect(names).toContain(`/save-${tag}`);
-      expect(names).toContain(`/nethack/save-${tag}`);
-    },
-  );
+  it("resolves the save mount relative to the runtime cwd", () => {
+    expect(getRuntimeSaveMountDir("/nethack")).toBe(
+      "/nethack/save",
+    );
+    // Trailing slashes / bare root normalize to the top-level mount.
+    expect(getRuntimeSaveMountDir("/")).toBe("/save");
+    expect(getRuntimeSaveMountDir("")).toBe("/save");
+  });
+
+  it("backs the /save mount with a /save-<compat> IndexedDB database", () => {
+    const dbName = getRuntimeSaveDbName();
+    expect(dbName).toBe(`/save-${getRuntimeSaveCompatTag()}`);
+    expect(dbName.startsWith("/save-")).toBe(true);
+  });
+
+  it("does not reuse the databases of the removed runtimes", () => {
+    const dbName = getRuntimeSaveDbName();
+    expect(dbName).not.toContain("367");
+    expect(dbName).not.toContain("slashem");
+  });
+
+  it("enumerates save databases across known playground roots", () => {
+    const names = getRuntimeSaveDbNames();
+    const tag = getRuntimeSaveCompatTag();
+    expect(names).toContain(`/save-${tag}`);
+    expect(names).toContain(`/nethack/save-${tag}`);
+  });
 });
 
 describe("save-storage: autosave (checkpoint) loading", () => {
-  // Regression: when 5.0/SlashEm gained root persistence, checkpoint storage
+  // Regression: when root persistence was added, checkpoint storage
   // was moved from the /save mount to "/", stranding autosaves. Checkpoints
   // must resolve to the /save mount for EVERY runtime, root persistence or not.
-  it.each(RUNTIMES)(
-    "%s stores autosave checkpoints on the /save mount, never at root",
-    (runtimeVersion) => {
-      const checkpointDir = getRuntimeCheckpointMountDir(runtimeVersion);
-      expect(checkpointDir).toBe("/save");
-      expect(checkpointDir).not.toBe("/");
-    },
-  );
+  it("stores autosave checkpoints on the /save mount, never at root", () => {
+    const checkpointDir = getRuntimeCheckpointMountDir();
+    expect(checkpointDir).toBe("/save");
+    expect(checkpointDir).not.toBe("/");
+  });
 
-  it.each(RUNTIMES)(
-    "%s checkpoint mount matches the manual save mount (shared /save path)",
-    (runtimeVersion) => {
-      expect(getRuntimeCheckpointMountDir(runtimeVersion)).toBe(
-        getRuntimeSaveMountDir(runtimeVersion),
-      );
-    },
-  );
+  it("checkpoint mount matches the manual save mount (shared /save path)", () => {
+    expect(getRuntimeCheckpointMountDir()).toBe(
+      getRuntimeSaveMountDir(),
+    );
+  });
 
-  it.each(RUNTIMES)(
-    "%s checkpoint mount honors the runtime cwd",
-    (runtimeVersion) => {
-      expect(getRuntimeCheckpointMountDir(runtimeVersion, "/nethack")).toBe(
-        "/nethack/save",
-      );
-    },
-  );
+  it("checkpoint mount honors the runtime cwd", () => {
+    expect(getRuntimeCheckpointMountDir("/nethack")).toBe(
+      "/nethack/save",
+    );
+  });
 });
 
 describe("save-storage: root persistence stays decoupled from checkpoints", () => {
   // Root persistence must remain enabled so top-scores/record/xlogfile/bones
   // survive reloads, but it must NOT be the home of checkpoint shards.
-  it.each(RUNTIMES)("%s enables root persistence", (runtimeVersion) => {
-    expect(supportsRuntimeRootPersistence(runtimeVersion)).toBe(true);
+  it("enables root persistence", () => {
+    expect(supportsRuntimeRootPersistence()).toBe(true);
   });
 
-  it.each(RUNTIMES)(
-    "%s keeps the root-persistence database separate from the save database",
-    (runtimeVersion) => {
-      const rootDb = getRuntimeRootPersistenceDbName(runtimeVersion);
-      const saveDb = getRuntimeSaveDbName(runtimeVersion);
-      expect(rootDb).toBe(`/root-${getRuntimeSaveCompatTag(runtimeVersion)}`);
-      expect(rootDb).not.toBe(saveDb);
-    },
-  );
+  it("keeps the root-persistence database separate from the save database", () => {
+    const rootDb = getRuntimeRootPersistenceDbName();
+    const saveDb = getRuntimeSaveDbName();
+    expect(rootDb).toBe(`/root-${getRuntimeSaveCompatTag()}`);
+    expect(rootDb).not.toBe(saveDb);
+  });
 
-  it.each(RUNTIMES)(
-    "%s exposes both the save and root databases for top-score reads",
-    async (runtimeVersion) => {
-      // In the Node test env indexedDB is undefined, so this resolves to the
-      // static set (save DBs + root persistence DB) without enumeration.
-      const names = await resolveRuntimeSaveDbNames(runtimeVersion);
-      expect(names).toContain(getRuntimeSaveDbName(runtimeVersion));
-      expect(names).toContain(getRuntimeRootPersistenceDbName(runtimeVersion));
-    },
-  );
+  it("exposes both the save and root databases for top-score reads", async () => {
+    // In the Node test env indexedDB is undefined, so this resolves to the
+    // static set (save DBs + root persistence DB) without enumeration.
+    const names = await resolveRuntimeSaveDbNames();
+    expect(names).toContain(getRuntimeSaveDbName());
+    expect(names).toContain(getRuntimeRootPersistenceDbName());
+  });
 });
 
 describe("save-storage: checkpoint level-file classification", () => {

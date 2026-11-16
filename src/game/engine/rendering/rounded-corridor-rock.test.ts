@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
-import { DarkCorridorInference, type DarkCorridorInferenceDependencies } from "../world/dark-corridor-inference";
+import { DarkWallOverrides, type DarkWallOverridesDependencies } from "./dark-wall-overrides";
 import { WallGeometry, type WallGeometryDependencies } from "./wall-geometry";
 
 describe("rock beside dark corridors with a high-resolution stone tile", () => {
   it("drops the flat colour only for blocks whose tile has high-resolution art", () => {
-    const inference = new DarkCorridorInference({
+    const overrides = new DarkWallOverrides({
       engineState: {
         clientOptions: {
           darkCorridorWallSolidColorOverrideEnabled: true,
@@ -18,12 +18,12 @@ describe("rock beside dark corridors with a high-resolution stone tile", () => {
         isVultureTilesActive: () => false,
         resolveHiResTile: (tile: number) => (tile === 7 ? {} : null),
       },
-    } as unknown as DarkCorridorInferenceDependencies);
-    expect(inference.resolveInferredDarkCorridorWallSolidColorHexForTile(true, 7, true)).toBeNull();
-    expect(inference.resolveInferredDarkCorridorWallSolidColorHexForTile(true, 8, true)).toBe("#223344");
+    } as unknown as DarkWallOverridesDependencies);
+    expect(overrides.resolveSolidColorHexForTile(true, 7, true)).toBeNull();
+    expect(overrides.resolveSolidColorHexForTile(true, 8, true)).toBe("#223344");
     // ASCII walls have no tile art to show, so they keep the colour.
-    expect(inference.resolveInferredDarkCorridorWallSolidColorHexForTile(true, 7, false)).toBe("#223344");
-    expect(inference.resolveInferredDarkCorridorWallSolidColorHexForTile(false, 7, true)).toBeNull();
+    expect(overrides.resolveSolidColorHexForTile(true, 7, false)).toBe("#223344");
+    expect(overrides.resolveSolidColorHexForTile(false, 7, true)).toBeNull();
   });
 
   it("keeps the stone tile when a block is rebuilt with a rounded corner", () => {
@@ -40,11 +40,10 @@ describe("rock beside dark corridors with a high-resolution stone tile", () => {
     const solidColour = vi.fn(() => null);
     const applyGlyphMaterial = vi.fn();
     const wall = new WallGeometry({
-      darkCorridorInference: {
-        getKnownTerrainSnapshotForInferenceAtKey: () => null,
-        resolveInferredDarkCorridorWallSolidColorHexForTile: solidColour,
-        resolveInferredDarkCorridorWallSolidColorGridEnabled: () => false,
-        resolveInferredDarkCorridorWallSolidColorGridDarknessPercent: () => 15,
+      darkWallOverrides: {
+        resolveSolidColorHexForTile: solidColour,
+        resolveSolidColorGridEnabled: () => false,
+        resolveSolidColorGridDarknessPercent: () => 15,
       },
       engineState: { clientOptions: { roundedWalls: true, tilesetMode: "tiles" } },
       floorOcclusion: {
@@ -58,6 +57,7 @@ describe("rock beside dark corridors with a high-resolution stone tile", () => {
       tileRendering: { tileMap },
       tilesetAssets: { shouldUseVultureTiles: () => false, isDarkCorridorWallCompatibilityActiveOnMesh: () => true },
       vultureWalls: { resolveWallOrientationChar: () => "-" },
+      worldClassification: { getKnownTerrainSnapshotAtKey: () => null },
     } as unknown as WallGeometryDependencies);
     vi.spyOn(wall, "upsertFpsWallChamferFloorMesh").mockImplementation(() => {});
 

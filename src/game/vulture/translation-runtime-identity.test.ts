@@ -1,18 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { VultureTilesetTranslator } from "./translation";
-import { getGlyphCatalogEntry, getGlyphCatalogEntriesForVersion, getGlyphCatalogRanges, setActiveGlyphCatalog } from "../glyphs/registry";
-import { NETHACK_367_OBJECT_TOKENS } from "./nethack-object-tokens";
-import { GLYPH_CATALOG as legacyCatalog } from "../glyphs/glyph-catalog.367.generated";
+import { getGlyphCatalogEntry, getGlyphCatalogEntriesForVersion, getGlyphCatalogRanges } from "../glyphs/registry";
+import { LEGACY_CMAP_INDEX_BY_TILE, LEGACY_MONSTER_KEY_BY_TILE, LEGACY_OBJECT_TOKEN_BY_TILE } from "./legacy-tile-identities";
 import { translateNh367TileIndexToNh5 } from "../tileset-367-to-5-translation";
 
 let translator: VultureTilesetTranslator;
-beforeEach(async () => {
-  await setActiveGlyphCatalog("5.0");
-  translator = new VultureTilesetTranslator({ dataRootUrl: "unused", runtimeVersion: "5.0" });
+beforeEach(() => {
+  translator = new VultureTilesetTranslator({ dataRootUrl: "unused" });
   // Identity resolution does not require network image/config loading.
   Object.assign(translator, { configLoaded: true, configLoadingStarted: true });
 });
-afterEach(async () => { translator.dispose(); await setActiveGlyphCatalog("3.6.7"); });
+afterEach(() => { translator.dispose(); });
 
 function lookup(glyph: number, useTileIndex = true, forBillboard = false) {
   return translator.resolveLookupForTile({ glyph,
@@ -36,7 +34,7 @@ describe("NetHack 5 Vulture identities", () => {
     expect(lookup(glyph, true, true)).toEqual({ category: "monster", name: "PM_ARCHEOLOGIST", projection: "sprite" });
   });
   it("maps both statue sexes through the legacy species tile identity", async () => {
-    const catalog = await getGlyphCatalogEntriesForVersion("5.0");
+    const catalog = await getGlyphCatalogEntriesForVersion();
     const male = catalog.find(entry => entry.kind === "statue" && entry.tileIndex === translateNh367TileIndexToNh5(1417))!;
     expect(male).toBeDefined();
     expect(lookup(male.glyph, true, true)?.name).toBe("PM_ARCHEOLOGIST");
@@ -45,11 +43,9 @@ describe("NetHack 5 Vulture identities", () => {
     expect(lookup(female.glyph, true, true)?.name).toBe("PM_ARCHEOLOGIST");
   });
   it("preserves randomized object appearance mappings using the native object ID", async () => {
-    const objectId = NETHACK_367_OBJECT_TOKENS.indexOf("POT_HEALING");
-    expect(objectId).toBeGreaterThan(0);
-    const legacyEntry = legacyCatalog.find(entry => entry.glyph === 1906 + objectId)!;
-    const catalog = await getGlyphCatalogEntriesForVersion("5.0");
-    const native = catalog.find(entry => entry.kind === "obj" && entry.tileIndex === translateNh367TileIndexToNh5(legacyEntry.tileIndex!))!;
+    const legacyTile = [...LEGACY_OBJECT_TOKEN_BY_TILE].find(([, token]) => token === "POT_HEALING")![0];
+    const catalog = await getGlyphCatalogEntriesForVersion();
+    const native = catalog.find(entry => entry.kind === "obj" && entry.tileIndex === translateNh367TileIndexToNh5(legacyTile))!;
     expect(native).toBeDefined();
     expect(lookup(native.glyph, true, true)?.name).toBe("POT_HEALING");
     const nativeTileByObjectId: number[] = [];
@@ -65,7 +61,7 @@ describe("NetHack 5 Vulture identities", () => {
 
 
 it("normalizes every native 5 wall/corner variant to the original wall symbol", async () => {
-  const variants = (await getGlyphCatalogEntriesForVersion("5.0")).filter(entry => entry.kind === "cmap" && entry.symidx! >= 1 && entry.symidx! <= 11);
+  const variants = (await getGlyphCatalogEntriesForVersion()).filter(entry => entry.kind === "cmap" && entry.symidx! >= 1 && entry.symidx! <= 11);
   expect(variants.length).toBeGreaterThan(11);
   for (const entry of variants) {
     expect(translator.resolveCmapIndexForTileIndex(entry.tileIndex!), `glyph ${entry.glyph}`).toBe(entry.symidx);
@@ -74,17 +70,15 @@ it("normalizes every native 5 wall/corner variant to the original wall symbol", 
   }
 });
 
-it("preserves the 3.6 identity path and SlashEM runtime-identity guard", async () => {
-  translator.dispose();
-  await setActiveGlyphCatalog("3.6.7");
-  translator = new VultureTilesetTranslator({ dataRootUrl: "unused", runtimeVersion: "3.6.7" });
-  Object.assign(translator, { configLoaded: true, configLoadingStarted: true });
-  expect(lookup(2359 + 19)?.category).toBe("floor");
-  expect(lookup(2359 + 13)?.name).toBe("VDOOR_WOOD_OPEN");
-  expect(lookup(327, true, true)?.name).toBe("PM_ARCHEOLOGIST");
-  translator.dispose();
-  await setActiveGlyphCatalog("slashem");
-  translator = new VultureTilesetTranslator({ dataRootUrl: "unused", runtimeVersion: "slashem" });
-  Object.assign(translator, { configLoaded: true, configLoadingStarted: true });
-  expect(lookup(0, true, true)).toBeNull();
+describe("3.6.7 tile identity table", () => {
+  it("covers every monster with its statue, every object and every map symbol", () => {
+    expect(LEGACY_MONSTER_KEY_BY_TILE.size).toBe(762);
+    expect(new Set(LEGACY_MONSTER_KEY_BY_TILE.values()).size).toBe(381);
+    expect(LEGACY_OBJECT_TOKEN_BY_TILE.size).toBe(453);
+    expect(LEGACY_CMAP_INDEX_BY_TILE.size).toBe(87);
+    expect(LEGACY_MONSTER_KEY_BY_TILE.get(0)).toBe("PM_GIANT_ANT");
+    expect(LEGACY_MONSTER_KEY_BY_TILE.get(1082)).toBe("PM_GIANT_ANT");
+    expect(LEGACY_OBJECT_TOKEN_BY_TILE.get(394)).toBe("STRANGE_OBJECT");
+    expect(LEGACY_CMAP_INDEX_BY_TILE.get(850)).toBe(0);
+  });
 });

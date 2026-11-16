@@ -185,7 +185,6 @@ export function CreateCharacterDialog({
         onExpandedChange={setStartupInitOptionsExpanded}
         onOptionValueChange={updateStartupInitOptionValue}
         onResetDefaults={resetStartupInitOptionValues}
-        runtimeVersion={runtimeVersion}
         values={startupInitOptionValues}
       />
       <div className="nh3d-menu-actions">

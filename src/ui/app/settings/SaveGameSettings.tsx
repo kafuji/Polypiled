@@ -48,7 +48,7 @@ export function SaveGameSettings({ runtimeVersion, gameActive }: {
   };
 
   return <>
-    <div className="nh3d-options-group-title">{resolveRuntimeVersionDisplayLabel(runtimeVersion)}</div>
+    <div className="nh3d-options-group-title">{resolveRuntimeVersionDisplayLabel()}</div>
     <div className="nh3d-option-row">
       <div className="nh3d-option-copy">
         <OptionLabelWithInfo label={strings.importLabel} description={strings.importDescription} />

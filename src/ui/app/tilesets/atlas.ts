@@ -1,6 +1,3 @@
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   shouldTranslateNh367TilesetForNh5Runtime,
   translateNh5TileIndexToNh367
@@ -309,7 +306,6 @@ export function getAtlasTilePixels(
 }
 
 export function resolvePreviewAtlasTileIdForRuntime(
-  runtimeVersion: NethackRuntimeVersion,
   tileId: number,
   atlasTileCount: number,
 ): number {
@@ -319,7 +315,7 @@ export function resolvePreviewAtlasTileIdForRuntime(
   }
   try {
     if (
-      !shouldTranslateNh367TilesetForNh5Runtime(runtimeVersion, atlasTileCount)
+      !shouldTranslateNh367TilesetForNh5Runtime(atlasTileCount)
     ) {
       return normalizedTileId;
     }

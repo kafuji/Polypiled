@@ -101,7 +101,7 @@ export function useNewGamePrompt(dependencies: UseNewGamePromptDependencies) {
     setCharacterSheetInterceptionArmed(false);
     characterSheetAwaitingInfoRef.current = false;
     setCharacterCreationConfig(null);
-    setStartupFlowStep("variant");
+    setStartupFlowStep("choose");
   };
 
   const dismissNewGamePromptUntilInteraction = (): void => {

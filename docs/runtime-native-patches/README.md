@@ -4,8 +4,6 @@ These review patches were generated before WSL source modification and then appl
 
 | Patch | Applied commit |
 | --- | --- |
-| `367.patch` | NetHack 3.6.7 `692645376` |
 | `5.patch` | NetHack 5.0 `1bf23b861` |
-| `slashem.patch` | SLASH’EM `1d0efa3` |
 
-The NetHack monorepo records the two updated submodule pointers in `555f43f`. Generated JavaScript and WASM artifacts are intentionally absent from these patches.
+Generated JavaScript and WASM artifacts are intentionally absent from this patch. The patches for NetHack 3.6.7 and SLASH’EM were removed together with those runtimes.

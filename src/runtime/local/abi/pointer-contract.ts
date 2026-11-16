@@ -37,20 +37,11 @@ export class RuntimePointerContract {
     return normalized || fallback;
   }
 
-  readConfiguredPointerAbiTag(runtimeVersion = this.deps.coordinator.runtimeVersion) {
-    const fallback =
-      runtimeVersion === "5.0"
-        ? "nh5-pointer-v1"
-        : runtimeVersion === "slashem"
-          ? "slashem-pointer-v1"
-          : "nh367-pointer-v1";
-    const rawValue =
-      runtimeVersion === "5.0"
-        ? import.meta.env.VITE_NH3D_WASM_5_POINTER_ABI_TAG
-        : runtimeVersion === "slashem"
-          ? import.meta.env.VITE_NH3D_WASM_SLASHEM_POINTER_ABI_TAG
-          : import.meta.env.VITE_NH3D_WASM_367_POINTER_ABI_TAG;
-    return this.normalizePointerAbiTag(rawValue, fallback);
+  readConfiguredPointerAbiTag() {
+    return this.normalizePointerAbiTag(
+      import.meta.env.VITE_NH3D_WASM_5_POINTER_ABI_TAG,
+      "nh5-pointer-v1",
+    );
   }
 
   readRuntimeExportedPointerAbiTag() {
@@ -81,31 +72,20 @@ export class RuntimePointerContract {
     return this.normalizePointerAbiTag(rawValue, "");
   }
 
-  buildDefaultRuntimePointerContract(runtimeVersion = this.deps.coordinator.runtimeVersion) {
-    const is5 = runtimeVersion === "5.0";
-    const isSlashEm = runtimeVersion === "slashem";
-    const addMenuArgCounts = is5 ? [9] : [8];
-    const printGlyphArgCounts = is5 ? [5, 7] : isSlashEm ? [4, 6] : [4, 5, 7];
+  buildDefaultRuntimePointerContract() {
     return {
-      abiTag: this.readConfiguredPointerAbiTag(runtimeVersion),
+      abiTag: this.readConfiguredPointerAbiTag(),
       callbackArgCounts: {
         shim_nh_poskey: [3],
         shim_getlin: [2],
         shim_select_menu: [3],
-        shim_add_menu: addMenuArgCounts,
-        // Forked wasm-367 emits [win, x, y, glyph, bkglyph] (5 args) and the
-        // tracked build extends that to [win, x, y, glyph, bkglyph,
-        // monsterId, attackingTargetId] (7 args), where monsterId is >0 for
-        // tracked monsters and 0 for the player tile when supported.
-        // Slash'EM emits [win, x, y, glyph] (4 args) and the tracked build
-        // extends that to [win, x, y, glyph, monsterId, attackingTargetId]
-        // (6 args), because this shim signature has no background glyph arg.
-        // 5.0 emits [win, x, y, glyphinfo_ptr, bkglyphinfo_ptr] (5 args),
-        // and the tracked build extends that to [win, x, y, glyphinfo_ptr,
-        // bkglyphinfo_ptr, monsterId, attackingTargetId] (7 args), where
-        // monsterId is >0 for tracked monsters and 0 for the player tile.
-        // Keep 4-arg compatibility only for alternate 3.6.7 builds.
-        shim_print_glyph: printGlyphArgCounts,
+        shim_add_menu: [9],
+        // NetHack 5.0 emits [win, x, y, glyphinfo_ptr, bkglyphinfo_ptr]
+        // (5 args), and the tracked build extends that to [win, x, y,
+        // glyphinfo_ptr, bkglyphinfo_ptr, monsterId, attackingTargetId]
+        // (7 args), where monsterId is >0 for tracked monsters and 0 for the
+        // player tile.
+        shim_print_glyph: [5, 7],
         shim_monster_attack: [4],
         shim_monster_killed: [4],
         shim_status_update: [6],
@@ -140,38 +120,24 @@ export class RuntimePointerContract {
             required: true,
           },
         ],
-        ...(is5
-          ? {
-            shim_add_menu: [
-              {
-                index: 1,
-                label: "menu_glyphinfo_ptr",
-                bytes: 36,
-                alignment: 4,
-                required: false,
-              },
-            ],
-            shim_print_glyph: [
-              {
-                index: 3,
-                label: "print_glyphinfo_ptr",
-                bytes: 36,
-                alignment: 4,
-                required: true,
-              },
-            ],
-          }
-          : {
-            shim_add_menu: [
-              {
-                index: 2,
-                label: "menu_identifier_ptr",
-                bytes: 4,
-                alignment: 4,
-                required: false,
-              },
-            ],
-          }),
+        shim_add_menu: [
+          {
+            index: 1,
+            label: "menu_glyphinfo_ptr",
+            bytes: 36,
+            alignment: 4,
+            required: false,
+          },
+        ],
+        shim_print_glyph: [
+          {
+            index: 3,
+            label: "print_glyphinfo_ptr",
+            bytes: 36,
+            alignment: 4,
+            required: true,
+          },
+        ],
         shim_status_update: [
           {
             index: 1,
@@ -185,7 +151,7 @@ export class RuntimePointerContract {
       callbackModes: {
         shim_nh_poskey: {
           pointerArgsAreDirect: true,
-          coordArgType: is5 ? "i16" : "i32",
+          coordArgType: "i16",
         },
         shim_getlin: {
           pointerArgsAreDirect: true,
@@ -195,52 +161,50 @@ export class RuntimePointerContract {
           menuListMode: "pointer_to_pointer",
         },
         shim_add_menu: {
-          identifierMode: is5 ? "value" : "pointer_slot",
-          menuTextArgIndex: is5 ? 7 : 6,
-          itemFlagsArgIndex: is5 ? 8 : 7,
-          glyphArgMode: is5 ? "glyphinfo_ptr" : "glyph_value",
+          identifierMode: "value",
+          menuTextArgIndex: 7,
+          itemFlagsArgIndex: 8,
+          glyphArgMode: "glyphinfo_ptr",
         },
         shim_print_glyph: {
-          glyphArgMode: is5 ? "glyphinfo_ptr" : "glyph_value",
-          trackedEntityArgIndex: is5 ? 5 : isSlashEm ? 4 : 5,
-          attackingTargetArgIndex: is5 ? 6 : isSlashEm ? 5 : 6,
+          glyphArgMode: "glyphinfo_ptr",
+          trackedEntityArgIndex: 5,
+          attackingTargetArgIndex: 6,
         },
       },
       extcmd: {
         exportedPointerName: "extcmdlist",
         exportedPointerMode: "direct_or_slot",
-        stride: isSlashEm ? 16 : 24,
-        textPtrOffset: isSlashEm ? 0 : 4,
-        flagsOffset: isSlashEm ? 12 : 16,
+        stride: 24,
+        textPtrOffset: 4,
+        flagsOffset: 16,
         maxEntries: 512,
-        minEntries: isSlashEm ? 20 : 10,
-        requiredNames: isSlashEm ? ["2weapon", "pray"] : ["#", "pray"],
+        minEntries: 10,
+        requiredNames: ["#", "pray"],
       },
       menuItem: {
         // NetHack 5.0's `anything` union includes int64/uint64 members, so
-        // `struct mi` (menu_item) is widened versus 3.6.x on wasm32.
-        // Layout used by select_menu() output in wasm-5:
+        // `struct mi` (menu_item) is 16 bytes on wasm32. Layout used by
+        // select_menu() output:
         //   item @ +0, count @ +8, itemflags @ +12, sizeof(menu_item) == 16.
-        stride: is5 ? 16 : 8,
-        countOffset: is5 ? 8 : 4,
-        itemFlagsOffset: is5 ? 12 : null,
+        stride: 16,
+        countOffset: 8,
+        itemFlagsOffset: 12,
       },
-      glyphInfo: is5
-        ? {
-          minBytes: 36,
-          glyphOffset: 0,
-          ttyCharOffset: 4,
-          colorOffset: 16,
-          tileIndexOffset: 30,
-          tileIndexType: "i16",
-          pointerAlignment: 4,
-        }
-        : null,
+      glyphInfo: {
+        minBytes: 36,
+        glyphOffset: 0,
+        ttyCharOffset: 4,
+        colorOffset: 16,
+        tileIndexOffset: 30,
+        tileIndexType: "i16",
+        pointerAlignment: 4,
+      },
     };
   }
 
   resolveRuntimePointerContract() {
-    const defaults = this.buildDefaultRuntimePointerContract(this.deps.coordinator.runtimeVersion);
+    const defaults = this.buildDefaultRuntimePointerContract();
     return defaults;
   }
 
@@ -261,7 +225,7 @@ export class RuntimePointerContract {
       throw new Error("Missing runtime pointer contract.");
     }
 
-    const configuredAbiTag = this.readConfiguredPointerAbiTag(this.deps.coordinator.runtimeVersion);
+    const configuredAbiTag = this.readConfiguredPointerAbiTag();
     const runtimeAbiTag = this.readRuntimeExportedPointerAbiTag();
     if (
       runtimeAbiTag &&

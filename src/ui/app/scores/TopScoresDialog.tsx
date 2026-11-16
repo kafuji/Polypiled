@@ -102,7 +102,7 @@ export function TopScoresDialog({
       {renderMobileDialogCloseButton(closeTopScoresDialog, translateScoreText("Close top scores", locale))}
       {topScoresDialogRuntime ? (
         <RuntimeVersionBadge
-          label={resolveRuntimeVersionDisplayLabel(topScoresDialogRuntime)}
+          label={resolveRuntimeVersionDisplayLabel()}
           startup
         />
       ) : null}

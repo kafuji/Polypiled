@@ -13,9 +13,6 @@ import {
   Nh3dIconArrowDown,
   Nh3dIconArrowUp
 } from "../../icons";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import { CastSpellMenu, type CastSpellMenuData } from "../../modals/cast-menu";
 import { TechniqueMenu, type TechniqueMenuData } from "../../modals/technique-menu";
 import AnimatedDialog from "../../modals/AnimatedDialog";
@@ -49,7 +46,6 @@ export interface QuestionDialogProps {
   isYesNoQuestionChoices: boolean;
   enhanceMenuData: EnhanceMenuData | null;
   castMenuData: CastSpellMenuData | null;
-  useSlashEmLegacyShortcutChoiceDialog: boolean;
   techniqueMenuData: TechniqueMenuData | null;
   renderMobileDialogCloseButton: (onClick: () => void, label?: string) => JSX.Element | null;
   controller: Nethack3DEngineController | null;
@@ -72,7 +68,6 @@ export interface QuestionDialogProps {
   orderedQuestionChoices: string[];
   useInventoryChoiceLabels: boolean;
   questionChoiceSourceItems: NethackMenuItem[];
-  activeRuntimeVersion: NethackRuntimeVersion;
   showQuestionCancelButton: boolean;
   questionMenuPageCount: number;
   questionMenuPageIndex: number;
@@ -83,7 +78,6 @@ export function QuestionDialog({
   isYesNoQuestionChoices,
   enhanceMenuData,
   castMenuData,
-  useSlashEmLegacyShortcutChoiceDialog,
   techniqueMenuData,
   renderMobileDialogCloseButton,
   controller,
@@ -106,7 +100,6 @@ export function QuestionDialog({
   orderedQuestionChoices,
   useInventoryChoiceLabels,
   questionChoiceSourceItems,
-  activeRuntimeVersion,
   showQuestionCancelButton,
   questionMenuPageCount,
   questionMenuPageIndex,
@@ -141,9 +134,6 @@ export function QuestionDialog({
         ? " nh3d-dialog-question-yes-no"
         : ""
         }${enhanceMenuData ? " nh3d-dialog-question-enhance" : ""}${castMenuData ? " nh3d-dialog-question-cast" : ""
-        }${useSlashEmLegacyShortcutChoiceDialog
-          ? " nh3d-dialog-question-legacy-shortcuts"
-          : ""
         }${techniqueMenuData ? " nh3d-dialog-question-technique" : ""}`}
       open={Boolean(question)}
       id="question-dialog"
@@ -576,10 +566,7 @@ export function QuestionDialog({
               <div className="nh3d-overflow-glow-frame">
                 <div
                   className={`nh3d-choice-list${useCompactQuestionChoiceLayout ? " is-compact" : ""
-                    }${isYesNoQuestionChoices ? " is-yes-no" : ""}${useSlashEmLegacyShortcutChoiceDialog
-                      ? " nh3d-choice-list-legacy-shortcuts"
-                      : ""
-                    }`}
+                    }${isYesNoQuestionChoices ? " is-yes-no" : ""}`}
                   data-nh3d-overflow-glow
                   data-nh3d-overflow-glow-host="parent"
                 >
@@ -594,22 +581,12 @@ export function QuestionDialog({
                     const choiceSourceItemTileApplicable =
                       Boolean(choiceSourceItem) &&
                       isMenuItemTileApplicable(choiceSourceItem);
-                    const legacyChoicePreviewTileIndex =
-                      useSlashEmLegacyShortcutChoiceDialog &&
-                        normalizedChoice === "."
-                        ? controller?.resolveLegacyQuestionChoicePreviewTileIndex(
-                          normalizedChoice,
-                        ) ?? null
-                        : null;
                     const resolvedChoiceTileIndex =
-                      legacyChoicePreviewTileIndex ??
-                      (choiceSourceItemTileApplicable && choiceSourceItem
+                      choiceSourceItemTileApplicable && choiceSourceItem
                         ? resolveMenuItemTileIndex(choiceSourceItem)
-                        : null);
+                        : null;
                     const tileApplicable =
-                      tilesUiEnabled &&
-                      (choiceSourceItemTileApplicable ||
-                        legacyChoicePreviewTileIndex !== null);
+                      tilesUiEnabled && choiceSourceItemTileApplicable;
                     const tileIndex = tileApplicable
                       ? resolvedChoiceTileIndex
                       : null;
@@ -625,7 +602,6 @@ export function QuestionDialog({
                       question.text,
                       normalizedChoice,
                       questionChoiceSourceItems,
-                      activeRuntimeVersion,
                       useInventoryChoiceLabels,
                     );
                     const itemText = choiceSourceItem?.text?.trim();

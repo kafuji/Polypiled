@@ -20,9 +20,9 @@ function handshake(sessionId: string): RuntimeProtocolHandshake {
   return {
     protocolVersion: 1,
     sessionId,
-    runtimeVersion: "3.6.7",
+    runtimeVersion: "5.0",
     artifactTag: "test",
-    pointerAbi: "nh367-pointer-v1",
+    pointerAbi: "nh5-pointer-v1",
     pointerAbiValidated: true,
     mapDimensions: { columns: 80, rows: 21 },
     capabilities: {
@@ -174,7 +174,7 @@ describe("versioned worker bridge", () => {
     expect(bridge.getAutomationInputWait()?.requestId).toBe(11);
     bridge.dispose();
   });
-  it("signals completed map observations without forwarding protocol bookkeeping", async () => {
+  it("records boundaries without forwarding protocol bookkeeping", async () => {
     const events: any[] = [], bridge = new WorkerRuntimeBridge(event => events.push(event));
     const started = bridge.start();
     FakeWorker.current.emit({ type: "runtime_ready", protocol: handshake(bridge.sessionId) });
@@ -183,14 +183,15 @@ describe("versioned worker bridge", () => {
       { type: "map_glyph", x: 2, y: 3, glyph: 4 },
       { type: "runtime_boundary", reason: "snapshot-complete" },
     ]));
-    expect(events).toEqual([{ type: "map_glyph", x: 2, y: 3, glyph: 4 }, {type:"map_update_complete"}]);
+    expect(events).toEqual([{ type: "map_glyph", x: 2, y: 3, glyph: 4 }]);
     expect(bridge.lastBoundary).toEqual({ reason: "snapshot-complete", sequence: 2 });
     FakeWorker.current.emit(batch(bridge.sessionId, 2, 3, [
       { type: "runtime_boundary", reason: "status-flush" },
       { type: "map_glyph", x: 3, y: 3, glyph: 4 },
       { type: "runtime_boundary", reason: "map-display" },
     ]));
-    expect(events.slice(2)).toEqual([{ type: "map_glyph", x: 3, y: 3, glyph: 4 }, {type:"map_update_complete"}]);
+    expect(events.slice(1)).toEqual([{ type: "map_glyph", x: 3, y: 3, glyph: 4 }]);
+    expect(bridge.lastBoundary).toEqual({ reason: "map-display", sequence: 5 });
     bridge.dispose();
   });
   it("keeps unknown key waits as typeahead unless an explicit prompt identifies the response", async () => {
@@ -214,7 +215,7 @@ describe("versioned worker bridge", () => {
   });
   it("queues pre-start refreshes, identifies commands and targets an active prompt wait", async () => {
     const events: any[] = [];
-    const bridge = new WorkerRuntimeBridge(event => events.push(event), { runtimeVersion: "3.6.7" });
+    const bridge = new WorkerRuntimeBridge(event => events.push(event), { runtimeVersion: "5.0" });
     const refresh = bridge.requestAreaUpdate(5, 6, 1);
     expect(FakeWorker.current.messages).toEqual([]);
     const started = bridge.start();
@@ -304,10 +305,11 @@ describe("versioned worker bridge", () => {
 
   it("rejects the wrong runtime or an unvalidated pointer ABI", async () => {
     for (const protocol of [
-      { ...handshake("placeholder"), runtimeVersion: "5.0" as const },
+      // A worker left over from a build that still shipped NetHack 3.6.7.
+      { ...handshake("placeholder"), runtimeVersion: "3.6.7" as unknown as "5.0" },
       { ...handshake("placeholder"), pointerAbiValidated: false },
     ]) {
-      const bridge = new WorkerRuntimeBridge(() => {}, { runtimeVersion: "3.6.7" });
+      const bridge = new WorkerRuntimeBridge(() => {}, { runtimeVersion: "5.0" });
       const started = bridge.start();
       FakeWorker.current.emit({
         type: "runtime_ready",

@@ -75,10 +75,6 @@ export class RuntimeWindows {
     return Number(winId) === this.getRuntimeWindowId("WIN_STATUS");
   }
 
-  shouldSuppressRedundantStatusWindowText(winId) {
-    return this.deps.coordinator.runtimeVersion === "slashem" && this.isStatusWindow(winId);
-  }
-
   isMapWindow(winId) {
     return Number(winId) === this.getRuntimeWindowId("WIN_MAP");
   }

@@ -251,7 +251,6 @@ export function useAppModel() {
     startupFlowStep,
     setStartupFlowStep,
     runtimeVersion,
-    setRuntimeVersion,
     activeRuntimeVersion,
     activeRuntimeVersionLabel,
     createRole,
@@ -679,16 +678,13 @@ export function useAppModel() {
 
   const {
     characterSheet,
-    isLegacySlashEmBaseAttributesSheet,
     displayedCharacterStatEntries,
     isCharacterSheetVisible,
     hasCharacterStatValues,
     hasCharacterStatLimits,
-    showLegacySlashEmDeitiesPanel,
     characterExperienceProgress,
   } = useCharacterSheetView({
     get displayedInfoMenu() { return displayedInfoMenu; },
-    get activeRuntimeVersion() { return activeRuntimeVersion; },
     get playerStats() { return playerStats; },
     get characterSheetInterceptionArmed() { return characterSheetInterceptionArmed; },
   });
@@ -805,7 +801,6 @@ export function useAppModel() {
     inventoryFixedTileSizeMode,
     inventoryFixedIconSizePx,
   } = useInventoryContextStateRefs({
-    get activeRuntimeVersion() { return activeRuntimeVersion; },
     get clientOptions() { return clientOptions; },
   });
 
@@ -985,7 +980,6 @@ export function useAppModel() {
     get selectedTileAtlasLoadRequested() { return selectedTileAtlasLoadRequested; },
     get tileAtlasImage() { return tileAtlasImage; },
     get clientOptions() { return clientOptions; },
-    get activeRuntimeVersion() { return activeRuntimeVersion; },
   });
 
   const {
@@ -1086,7 +1080,6 @@ export function useAppModel() {
     runtimeInitializationErrorVisible,
     runtimeInitializationErrorMessage,
     startupSelectedRuntimeVersionLabel,
-    startupVariantDialogVisible,
     startupChooseDialogVisible,
     startupResumeDialogVisible,
     startupRandomDialogVisible,
@@ -1124,7 +1117,6 @@ export function useAppModel() {
     get gameMessages() { return gameMessages; },
     get statusText() { return statusText; },
     get startupFlowStep() { return startupFlowStep; },
-    get runtimeVersion() { return runtimeVersion; },
     get setStartupBuildLabelClickCount() { return setStartupBuildLabelClickCount; },
     get setStartupBuildLabelToastVisible() { return setStartupBuildLabelToastVisible; },
     get startupBuildLabelToastTimerRef() { return startupBuildLabelToastTimerRef; },
@@ -1264,7 +1256,6 @@ export function useAppModel() {
     castMenuData,
     techniqueMenuData,
     displayedQuestionMenuItems,
-    useSlashEmLegacyShortcutChoiceDialog,
     questionChoiceSourceItems,
     shouldRenderQuestionMenuItems,
     questionSelectableMenuItemCount,
@@ -1272,7 +1263,6 @@ export function useAppModel() {
     showPickupToggleAllButton,
   } = useQuestionModel({
     get question() { return question; },
-    get activeRuntimeVersion() { return activeRuntimeVersion; },
     get displayedInfoMenu() { return displayedInfoMenu; },
     get inventory() { return inventory; },
     get isMobileViewport() { return isMobileViewport; },
@@ -1504,7 +1494,6 @@ export function useAppModel() {
     get setTilesetManagerEditPath() { return setTilesetManagerEditPath; },
     get setTilesetManagerName() { return setTilesetManagerName; },
     get setTilesetManagerTileLayoutVersion() { return setTilesetManagerTileLayoutVersion; },
-    get activeRuntimeVersion() { return activeRuntimeVersion; },
     get setTilesetManagerAtlasState() { return setTilesetManagerAtlasState; },
     get setTilesetManagerAtlasImage() { return setTilesetManagerAtlasImage; },
     get setIsTilesetBackgroundTilePickerVisible() { return setIsTilesetBackgroundTilePickerVisible; },
@@ -1957,16 +1946,6 @@ export function useAppModel() {
       toggleStartupUpdateDetails,
       closeStartupUpdateDialog,
     },
-    variantDialog: {
-      startupInitialLoadingVisible,
-      startupVariantDialogVisible,
-      handleStartupMainMenuBlurCapture,
-      handleStartupMainMenuChangeCapture,
-      handleStartupMainMenuKeyDown,
-      handleStartupMainMenuPointerDownCapture,
-      setRuntimeVersion,
-      setStartupFlowStep,
-    },
     startupMenuDialog: {
       startupInitialLoadingVisible,
       startupChooseDialogVisible,
@@ -2302,7 +2281,6 @@ export function useAppModel() {
       isYesNoQuestionChoices,
       enhanceMenuData,
       castMenuData,
-      useSlashEmLegacyShortcutChoiceDialog,
       techniqueMenuData,
       renderMobileDialogCloseButton,
       controller,
@@ -2325,7 +2303,6 @@ export function useAppModel() {
       orderedQuestionChoices,
       useInventoryChoiceLabels,
       questionChoiceSourceItems,
-      activeRuntimeVersion,
       showQuestionCancelButton,
       questionMenuPageCount,
       questionMenuPageIndex,
@@ -2369,12 +2346,9 @@ export function useAppModel() {
       closeInfoMenuDialog,
       characterSheet,
       characterExperienceProgress,
-      isLegacySlashEmBaseAttributesSheet,
-      showLegacySlashEmDeitiesPanel,
       displayedCharacterStatEntries,
       playerStats,
       renderCharacterCurrentStatusPanel,
-      playerStatusBadges,
       renderCharacterCurrentAttributesPanel,
       controller,
       characterCommandActions,

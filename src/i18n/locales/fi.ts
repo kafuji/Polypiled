@@ -1110,11 +1110,6 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
             "Sävytä sirpaleiden pikseleitä jakoviivojen läheltä satunnaisilla verenpunaisilla reunoilla.",
         },
         groupCompatibility: "Ajonaikainen yhteensopivuus",
-        darkCorridorWalls367: {
-          label: "Perinteiset tummat käytäväseinät",
-          description:
-            "Päättele ja välimuistita tummien käytäväseinien ruudut vanhoille NetHack 3.4.3/3.6.x -ajoalustoille, mukaan lukien Slash'EM.",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "Ohita NetHack 5.0:n tummat seinäruudut",
           description:
@@ -1361,7 +1356,6 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
         cancelDownload: "Peruuta lataus",
       },
       startup: {
-        chooseVariant: "Valitse NetHack-variaatiosi:",
         options: "NetHack 3D -asetukset",
         quitGame: "Lopeta peli",
         chooseSetup: "Valitse hahmosi asetukset:",
@@ -1401,8 +1395,6 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
           resetControllerDefaults: "Palauta ohjaimen oletukset",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Aina käytössä, kun Vulture-ruudut ovat aktiivisia.",
           darkWallsDisabledByVulture:
             " Pois käytöstä, kun Vulture-ruudut ovat aktiivisia.",
           enableDarkWallsFirst:
@@ -1490,10 +1482,6 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
         choices: {
           leftRingFinger: "Vasen nimetön",
           rightRingFinger: "Oikea nimetön",
-          here: "Tässä",
-          onGround: "Maassa",
-          eligibleItems: "Kelvolliset esineet",
-          allInventory: "Koko inventaario",
         },
       },
       runtimeStartError: {

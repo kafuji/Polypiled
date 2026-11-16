@@ -18,7 +18,6 @@ import type {
 } from "./types";
 import {
   commonStrings,
-  plusStrings,
   t
 } from "../shared/translations";
 import {
@@ -185,29 +184,12 @@ export function TilesetManagerDialog({
                     className="nh3d-startup-config-select"
                     id="nh3d-tileset-version"
                     onChange={(event) => {
-                      // Switching between Slash'EM column counts should keep
-                      // automatic square cells square, while retaining custom heights.
-                      if (event.target.value.startsWith("slashem") &&
-                          tilesetManagerTileHeight === String(tilesetManagerTileDimensions?.tileWidth)) {
-                        setTilesetManagerTileHeight("");
-                      }
                       setTilesetManagerTileLayoutVersion(
-                        event.target.value === "slashem-38"
-                          ? "slashem-38"
-                          : event.target.value === "slashem"
-                            ? "slashem"
-                            : event.target.value === "5.0"
-                              ? "5.0"
-                              : event.target.value === "3.4.3"
-                                ? "3.4.3"
-                                : "3.6.7",
+                        event.target.value === "5.0" ? "5.0" : "3.6.7",
                       );
                     }}
                     value={tilesetManagerTileLayoutVersion}
                   >
-                    <option value="slashem">{plusStrings.tilesetLayouts.slashem40}</option>
-                    <option value="slashem-38">{plusStrings.tilesetLayouts.slashem38}</option>
-                    <option value="3.4.3">{plusStrings.tilesetLayouts.nethack343}</option>
                     <option value="3.6.7">
                       {t.dialogs.tilesetManager.layout367}
                     </option>

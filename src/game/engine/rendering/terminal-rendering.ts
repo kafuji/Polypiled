@@ -10,12 +10,10 @@ import {
   type TerminalCellPresentation,
   type TerminalRenderOptionStates
 } from "../../terminal/terminal-display";
-import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
 import type { TileUpdateOptions, TerminalCellTextureEntry } from "../shared/types";
 import type { BloodGround } from "../effects/blood-ground";
 import type { Camera } from "../camera/camera";
 import type { EngineCoordinator } from "../engine-coordinator";
-import type { DarkCorridorInference } from "../world/dark-corridor-inference";
 import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "./entity-billboards";
 import type { FloorOcclusion } from "./floor-occlusion";
@@ -51,10 +49,6 @@ export interface TerminalRenderingDependencies {
   readonly coordinator: Pick<
     EngineCoordinator,
     "applyPlayMode"
-  >;
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "clearAllInferredDarkCorridorWallMeshes"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -220,7 +214,6 @@ export class TerminalRendering {
     this.dependencies.wallOverlays.disposeAllWallSideTileOverlays();
     this.dependencies.floorOcclusion.clearFloorBlockAmbientOcclusion();
     this.dependencies.wallGeometry.clearFpsWallChamferFloorMeshes();
-    this.dependencies.darkCorridorInference.clearAllInferredDarkCorridorWallMeshes();
     this.dependencies.positionSelection.clearPositionCursor();
     this.dependencies.bloodGround.updateBloodGroundOverlayVisibility();
     this.dependencies.camera.cameraDistance = this.dependencies.camera.terminalFitCameraDistance;
@@ -383,34 +376,9 @@ export class TerminalRendering {
     this.terminalCellTextureCache.clear();
   }
 
-  resolveSlashEmTerminalCmapIndex(glyph: number): number | null {
-    if (
-      (this.dependencies.engineState.characterCreationConfig.runtimeVersion ?? "3.6.7") !== "slashem"
-    ) {
-      return null;
-    }
-    const normalizedGlyph = Math.trunc(glyph);
-    const entry = getGlyphCatalogEntry(normalizedGlyph);
-    if (!entry || entry.kind !== "cmap") {
-      return null;
-    }
-    const cmapRange = getGlyphCatalogRanges().find(
-      (range) => range.kind === "cmap",
-    );
-    if (!cmapRange || normalizedGlyph < cmapRange.start) {
-      return null;
-    }
-    const cmapIndex = normalizedGlyph - Math.trunc(cmapRange.start);
-    return cmapIndex >= 0 && cmapIndex < cmapRange.endExclusive - cmapRange.start
-      ? cmapIndex
-      : null;
-  }
-
-
   // Terminal-mode replacement for the 3D tile pipeline: renders one map cell
   // as a flat plane whose texture shows the runtime character and color with
-  // tty-style MG_* highlighting. Slash'EM's legacy symbol-set substitution is
-  // applied client-side because its shim build omits tty graphics. Interaction
+  // tty-style MG_* highlighting. Interaction
   // metadata (userData) is still derived from the glyph catalog so clicking,
   // context menus, and the minimap behave identically to the other modes.
   updateTerminalCell(
@@ -483,7 +451,6 @@ export class TerminalRendering {
           ? options.runtimeGlyphFlags
           : null,
       optionStates: this.terminalRenderOptionStates,
-      slashEmCmapIndex: this.resolveSlashEmTerminalCmapIndex(glyph),
     });
     const nextTextureKey =
       this.buildScaledTerminalCellTextureKey(presentation);
@@ -534,7 +501,6 @@ export class TerminalRendering {
     // Terminal cells are flat; interaction logic still needs the semantic
     // terrain classification for context menus and travel targeting.
     mesh.userData.isWall = false;
-    mesh.userData.isInferredDarkCorridorWall = false;
     mesh.userData.useDarkCorridorWallCompatibility = false;
     mesh.userData.materialKind = behavior.materialKind;
     mesh.userData.effectKind = behavior.effectKind;

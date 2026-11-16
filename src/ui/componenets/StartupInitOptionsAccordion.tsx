@@ -1,5 +1,4 @@
 import { useId, type ChangeEvent } from "react";
-import type { NethackRuntimeVersion } from "../../runtime/types";
 import { getTranslationStrings } from "../../i18n/core";
 import {
   StartupInitOptionValues,
@@ -10,7 +9,6 @@ import {
 
 type StartupInitOptionsAccordionProps = {
   expanded: boolean;
-  runtimeVersion: NethackRuntimeVersion;
   values: StartupInitOptionValues;
   onExpandedChange: (expanded: boolean) => void;
   onOptionValueChange: (key: string, value: StartupInitOptionValue) => void;
@@ -210,7 +208,6 @@ function renderNumberOption(
 
 export default function StartupInitOptionsAccordion({
   expanded,
-  runtimeVersion,
   values,
   onExpandedChange,
   onOptionValueChange,
@@ -220,7 +217,7 @@ export default function StartupInitOptionsAccordion({
   const accordionIdPrefix = useId().replace(/:/g, "");
   const summaryId = `${accordionIdPrefix}-summary`;
   const panelId = `${accordionIdPrefix}-panel`;
-  const optionDefinitions = getStartupInitOptionDefinitions(runtimeVersion);
+  const optionDefinitions = getStartupInitOptionDefinitions();
 
   return (
     <details

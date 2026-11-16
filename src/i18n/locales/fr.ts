@@ -1194,11 +1194,6 @@ export const fr = {
             "Teinte les pixels des eclats proches des lignes de fracture avec des bords rouge sang aleatoires.",
         },
         groupCompatibility: "Compatibilite d'execution",
-        darkCorridorWalls367: {
-          label: "Murs de couloir sombres legacy",
-          description:
-            "Deduit et met en cache les tuiles de murs de couloir sombres pour les runtimes NetHack 3.4.3/3.6.x anciens, y compris Slash'EM.",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "Remplacer les tuiles de murs sombres NetHack 5.0",
           description:
@@ -1452,7 +1447,6 @@ export const fr = {
         cancelDownload: "Annuler le telechargement",
       },
       startup: {
-        chooseVariant: "Choisissez votre variante de NetHack :",
         options: "Options de NetHack 3D",
         quitGame: "Quitter le jeu",
         chooseSetup: "Choisissez la configuration de votre personnage :",
@@ -1492,8 +1486,6 @@ export const fr = {
           resetControllerDefaults: "Reinitialiser la manette par defaut",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Toujours active lorsque les tuiles Vulture sont utilisees.",
           darkWallsDisabledByVulture:
             " Desactivee lorsque les tuiles Vulture sont utilisees.",
           enableDarkWallsFirst:
@@ -1590,10 +1582,6 @@ export const fr = {
         choices: {
           leftRingFinger: "Annulaire gauche",
           rightRingFinger: "Annulaire droit",
-          here: "Ici",
-          onGround: "Au sol",
-          eligibleItems: "Objets valides",
-          allInventory: "Tout l'inventaire",
         },
       },
       runtimeStartError: {

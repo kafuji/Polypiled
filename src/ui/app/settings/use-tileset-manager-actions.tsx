@@ -7,9 +7,6 @@ import type { Nh3dClientOptions, Nethack3DEngineController } from "../../../game
 import {
   normalizeNh3dClientOptions
 } from "../../../game/ui-types";
-import type {
-  NethackRuntimeVersion
-} from "../../../runtime/types";
 import {
   findNh3dTilesetByPath,
   isNh3dTilesetPathAvailable,
@@ -66,7 +63,6 @@ export interface UseTilesetManagerActionsDependencies {
   readonly setTilesetManagerEditPath: React.Dispatch<React.SetStateAction<string>>;
   readonly setTilesetManagerName: React.Dispatch<React.SetStateAction<string>>;
   readonly setTilesetManagerTileLayoutVersion: React.Dispatch<React.SetStateAction<StoredUserTilesetTileLayoutVersion>>;
-  readonly activeRuntimeVersion: NethackRuntimeVersion;
   readonly setTilesetManagerAtlasState: React.Dispatch<React.SetStateAction<TileAtlasState>>;
   readonly setTilesetManagerAtlasImage: React.Dispatch<React.SetStateAction<HTMLImageElement | null>>;
   readonly setIsTilesetBackgroundTilePickerVisible: React.Dispatch<React.SetStateAction<boolean>>;
@@ -106,7 +102,6 @@ export function useTilesetManagerActions(dependencies: UseTilesetManagerActionsD
     setTilesetManagerEditPath,
     setTilesetManagerName,
     setTilesetManagerTileLayoutVersion,
-    activeRuntimeVersion,
     setTilesetManagerAtlasState,
     setTilesetManagerAtlasImage,
     setIsTilesetBackgroundTilePickerVisible,
@@ -177,11 +172,7 @@ export function useTilesetManagerActions(dependencies: UseTilesetManagerActionsD
     setTilesetManagerName("");
     setTilesetManagerTileHeight("");
     setTilesetManagerTileDimensions(null);
-    setTilesetManagerTileLayoutVersion(
-      activeRuntimeVersion === "slashem"
-        ? "slashem"
-        : defaultUserTilesetTileLayoutVersion,
-    );
+    setTilesetManagerTileLayoutVersion(defaultUserTilesetTileLayoutVersion);
     setTilesetManagerAtlasState(createDefaultTileAtlasState());
     setTilesetManagerAtlasImage(null);
     resetTilesetManagerSelectedFile();
@@ -213,13 +204,9 @@ export function useTilesetManagerActions(dependencies: UseTilesetManagerActionsD
     setTilesetManagerTileLayoutVersion(
       userRecord
         ? userRecord.tileLayoutVersion
-        : tilesetEntry.tileLayoutVersion === "slashem"
-          ? "slashem"
-          : tilesetEntry.tileLayoutVersion === "3.4.3"
-            ? "3.4.3"
-            : tilesetEntry.tileLayoutVersion === "5.0"
-              ? "5.0"
-              : "3.6.7",
+        : tilesetEntry.tileLayoutVersion === "5.0"
+          ? "5.0"
+          : "3.6.7",
     );
     if (tilesetPath !== currentEditPath) {
       setTilesetManagerAtlasState(createDefaultTileAtlasState());

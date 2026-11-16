@@ -10,9 +10,6 @@ import {
   nh3dCloseControllerActionWheelEventName,
   nh3dToggleControllerActionWheelEventName
 } from "../../../game/ui-types";
-import {
-  augmentRuntimeCommandNames
-} from "../../../game/slashem-command-capabilities";
 import type {
   NethackRuntimeVersion
 } from "../../../runtime/types";
@@ -156,8 +153,8 @@ export function useCommandActionsCommands(dependencies: UseCommandActionsCommand
       seen.add(normalized);
       uniqueCommands.push(normalized);
     }
-    return augmentRuntimeCommandNames(activeRuntimeVersion, uniqueCommands);
-  }, [activeRuntimeVersion, extendedCommands]);
+    return uniqueCommands;
+  }, [extendedCommands]);
 
   const mobileCommonExtendedCommandNames = useMemo(() => {
     const available = new Set(mobileExtendedCommandNames);
@@ -172,7 +169,6 @@ export function useCommandActionsCommands(dependencies: UseCommandActionsCommand
     }
     const initOptionTokens = sanitizeStartupInitOptionTokens(
       characterCreationConfig.initOptions,
-      characterCreationConfig.runtimeVersion ?? runtimeVersion,
     );
     for (const token of initOptionTokens) {
       const normalizedToken = String(token || "")
@@ -210,7 +206,6 @@ export function useCommandActionsCommands(dependencies: UseCommandActionsCommand
     () =>
       resolveCharacterCommandActions(
         mobileExtendedCommandNames,
-        activeRuntimeVersion,
       ),
     [activeRuntimeVersion, mobileExtendedCommandNames],
   );

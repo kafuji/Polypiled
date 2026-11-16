@@ -6,14 +6,8 @@ import { translateSkillName } from "./game-skills";
 import { translateMonsterName } from "./game-monsters";
 import { translateCurrency } from "./currency-text";
 
-// Presentation-only translations for NetHack's enlightenment and SLASH'EM
-// base-attributes windows. The unmodified input remains authoritative for
+// Presentation-only translations for NetHack's enlightenment window. The unmodified input remains authoritative for
 // parsing, highlighting, severity, choices and saved state.
-const labels: Readonly<Record<string, string>> = {
-  Name: "名前", Role: "職業", Race: "種族", Gender: "性別", Alignment: "属性", Deity: "神",
-  Title: "称号", Level: "レベル", Strength: "筋力", Dexterity: "器用さ", Constitution: "耐久力",
-  Intelligence: "知力", Wisdom: "判断力", Charisma: "魅力", Lawful: "秩序", Neutral: "中立", Chaotic: "混沌",
-};
 const sectionTitles: Readonly<Record<string, string>> = {
   overview: "概要", miscellaneous: "その他", deities: "神々", background: "来歴", basics: "基本情報",
   characteristics: "能力値", status: "状態", attributes: "特性", resistances: "耐性", troubles: "異常状態",
@@ -140,10 +134,6 @@ export function translateIdentityWord(word: string): string | undefined {
   return Object.prototype.hasOwnProperty.call(values, word) ? values[word] : undefined;
 }
 
-export function translateCharacterFieldLabel(label: string, locale: SupportedLocale): string {
-  return locale === "ja" ? own(labels, label) : label;
-}
-
 export function translateCharacterSectionTitle(title: string, locale: SupportedLocale): string {
   if (locale !== "ja") return title;
   const whitespace = /^([ \t]*)(.*?)([ \t]*)$/.exec(title);
@@ -163,19 +153,6 @@ export function translateCharacterSectionTitle(title: string, locale: SupportedL
     return `${leading}${attributes[1]}の能力：${trailing}`;
   }
   return title;
-}
-
-export function translateCharacterFieldValue(label: string, value: string, locale: SupportedLocale): string {
-  if (locale !== "ja") return value;
-  // Name, deity and unknown fields can contain player input or proper names.
-  if (/^(?:role|race|gender|alignment)$/i.test(label)) return own(values, value);
-  if (/^title$/i.test(label)) return translatePlayerRank(value, locale);
-  return value;
-}
-
-export function translateCharacterBadge(badge: string, locale: SupportedLocale): string {
-  if (locale !== "ja") return badge;
-  return badge === "Starting" ? "初期" : badge === "Current" ? "現在" : badge;
 }
 
 /** Translate known character information only at the display boundary. */

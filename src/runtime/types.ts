@@ -15,7 +15,9 @@ export type RuntimeEvent = {
 
 export type RuntimeEventHandler = (event: RuntimeEvent) => void;
 
-export type NethackRuntimeVersion = "3.6.7" | "5.0" | "slashem";
+/** The game core this client runs. NetHack 5.0 is the only one. */
+export type NethackRuntimeVersion = "5.0";
+export const NETHACK_RUNTIME_VERSION: NethackRuntimeVersion = "5.0";
 
 export interface RuntimeInputOptions { delayMs?: number; requestId?: number | null }
 

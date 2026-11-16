@@ -1,5 +1,7 @@
 # Runtime contract performance implementation
 
+> Historical record. This was written while the client also ran NetHack 3.6.7 and SLASH'EM from external WSL checkouts. Both runtimes have since been removed; the game core is now `core/NetHack` (see `core/README.md`).
+
 Execution started from `d8fd25f` on `vr-v2`. The supplied proposal was saved first, unchanged, in [runtime-protocol-plan.md](runtime-protocol-plan.md).
 
 ## Work plan

@@ -1,6 +1,5 @@
 import type { TileBehaviorResult } from "../../glyphs";
 import type { Camera } from "../camera/camera";
-import type { DarkCorridorInference } from "./dark-corridor-inference";
 import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "../rendering/entity-billboards";
 import type { EntityMovement } from "./entity-movement";
@@ -27,12 +26,6 @@ export interface TileUpdatesDependencies {
   readonly camera: Pick<
     Camera,
     "fpsStepCameraActive"
-  >;
-  readonly darkCorridorInference: Pick<
-    DarkCorridorInference,
-    "recordNewlyDiscoveredDarkCorridorTileForCurrentInput"
-    | "requestInferredDarkCorridorWallReconcile"
-    | "invalidateInferredWallVisuals"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -158,7 +151,6 @@ export class TileUpdates {
     }
   }
 
-  private corridorInferenceDirty = false;
 
   pendingPlayerTileRefreshOnNextPosition: boolean = true;
 
@@ -219,11 +211,9 @@ export class TileUpdates {
   }
 
   refreshTilesFromStateCache(): void {
-    this.dependencies.darkCorridorInference.invalidateInferredWallVisuals();
     // Asset completion must not rebuild an explored level in one task. Read
     // each cell's current state when its turn comes, never a stale snapshot.
     for (const key of this.tileStateCache.keys()) this.pendingTileVisualRefreshKeys.add(key);
-    this.corridorInferenceDirty = true;
     this.schedulePendingTileFlush();
   }
 
@@ -245,15 +235,11 @@ export class TileUpdates {
     }
 
     const key = `${tile.x},${tile.y}`;
-    // Capture input-scoped discovery as soon as the observation arrives. The
-    // visual rebuild may intentionally span later frames on limited devices.
-    this.dependencies.darkCorridorInference.recordNewlyDiscoveredDarkCorridorTileForCurrentInput(tile);
     const pendingTile = this.pendingTileUpdates.get(key);
     if (pendingTile) {
       this.dependencies.worldClassification.seedTerrainCacheFromSupersededPendingUpdate(key, pendingTile, tile);
     }
     this.pendingTileUpdates.set(key, tile);
-    this.corridorInferenceDirty = true;
     this.schedulePendingTileFlush();
   }
 
@@ -780,29 +766,6 @@ export class TileUpdates {
       }
       this.refreshTileVisualFromStateCache(tileX, tileY);
     }
-  }
-
-  flushPendingDarkCorridorInference(force = false): void {
-    if (!force && !this.corridorInferenceDirty) return;
-    this.corridorInferenceDirty = false;
-    this.dependencies.floorOcclusion.beginTileBatch();
-    this.dependencies.wallGeometry.beginTileBatch();
-    try {
-      this.dependencies.darkCorridorInference.requestInferredDarkCorridorWallReconcile({ forceImmediate: true });
-    } finally {
-      try { this.dependencies.wallGeometry.endTileBatch(); }
-      finally { this.dependencies.floorOcclusion.endTileBatch(); }
-    }
-  }
-
-  collectPendingTileUpdates(): ReadonlyMap<string, any> {
-    const pending = new Map<string, any>();
-    for (let index = this.pendingTileFlushQueueIndex; index < this.pendingTileFlushQueue.length; index++) {
-      const tile = this.pendingTileFlushQueue[index];
-      pending.set(`${tile.x},${tile.y}`, tile);
-    }
-    for (const [key, tile] of this.pendingTileUpdates) pending.set(key, tile);
-    return pending;
   }
 
   flushPendingTileUpdatesForPlayerPositionReconcile(

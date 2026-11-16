@@ -11,7 +11,7 @@ const visit = (location: string, turn: number): TopScoreTimelineEvent => ({
   id: `${location}-${turn}`, kind: "location", label: "Reached new depth", summary: `Reached ${location}.`, location, turn,
 });
 
-it("recovers recorded visits from old or Slash'EM snapshots without inventing level details", () => {
+it("recovers recorded visits from old snapshots without inventing level details", () => {
   expect(resolveArchivedDungeonOverview(null, [visit("Sokoban 3", 16000), visit("Dlvl:1", 1), visit("Dlvl:1", 50)])).toEqual([
     "Recorded dungeon visits",
     "From this run's timeline; the native dungeon overview was not available.",

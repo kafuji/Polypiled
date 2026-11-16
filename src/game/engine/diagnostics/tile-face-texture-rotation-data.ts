@@ -89,7 +89,7 @@ export function normalizeTileFaceTextureRotationOverrides(
     if (
       !variant ||
       variant.length > 80 ||
-      !/^(?:3\.6\.7|5\.0|slashem):tile:\d+$/.test(variant) ||
+      !/^5\.0:tile:\d+$/.test(variant) ||
       !rawFaces ||
       typeof rawFaces !== "object" ||
       Array.isArray(rawFaces)

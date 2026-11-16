@@ -28,13 +28,11 @@ describe("live score timeline capture", () => {
     expect(extractPrependedMessages([], initial)).toEqual([]);
   });
 
-  it("deduplicates SLASH-EM location label changes by depth while keeping branches distinct in NetHack", () => {
+  it("keeps dungeon branches at the same depth distinct", () => {
     const dungeon = { ...sampleStats, dungeon: "Dungeons of Doom", dlevel: 3, locationLabel: "Dlvl:3" };
     const mines = { ...dungeon, dungeon: "Gnomish Mines", locationLabel: "Mines:3" };
-    expect(resolveTopScoreLiveLocationKey(dungeon, "slashem", dungeon.locationLabel))
-      .toBe(resolveTopScoreLiveLocationKey(mines, "slashem", mines.locationLabel));
-    expect(resolveTopScoreLiveLocationKey(dungeon, "3.6.7", dungeon.locationLabel))
-      .not.toBe(resolveTopScoreLiveLocationKey(mines, "3.6.7", mines.locationLabel));
+    expect(resolveTopScoreLiveLocationKey(dungeon, dungeon.locationLabel))
+      .not.toBe(resolveTopScoreLiveLocationKey(mines, mines.locationLabel));
     expect(resolveTopScoreLiveLocationLabel(dungeon)).toBe("Dlvl:3");
     expect(resolveTopScoreLiveLocationLabel({ ...dungeon, locationLabel: "" })).toBe("Dungeons of Doom 3");
   });

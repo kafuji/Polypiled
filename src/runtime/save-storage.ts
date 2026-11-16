@@ -1,5 +1,3 @@
-import type { NethackRuntimeVersion } from "./types";
-
 const knownSaveRuntimeRoots = ["/", "/nethack"] as const;
 // NetHack's recover_savefile() expects level-0 checkpoint files to contain
 // more than the bare pid lock. A real checkpoint header is significantly
@@ -63,28 +61,13 @@ export function isRecoverableCheckpointLevelZeroByteLength(
 }
 
 export function getRuntimeSaveCompatTag(
-  runtimeVersion: NethackRuntimeVersion,
 ): string {
-  const fallback =
-    runtimeVersion === "5.0"
-      ? "wasm-5"
-      : runtimeVersion === "slashem"
-        ? "slashem-343"
-        : "wasm-367";
-  const rawCompatTag =
-    runtimeVersion === "5.0"
-      ? import.meta.env.VITE_NH3D_WASM_5_COMPAT_TAG
-      : runtimeVersion === "slashem"
-        ? import.meta.env.VITE_NH3D_WASM_SLASHEM_COMPAT_TAG
-        : import.meta.env.VITE_NH3D_WASM_367_COMPAT_TAG;
-  return normalizeCompatTag(rawCompatTag, fallback);
+  return normalizeCompatTag(import.meta.env.VITE_NH3D_WASM_5_COMPAT_TAG, "wasm-5");
 }
 
 export function getRuntimeSaveMountDir(
-  runtimeVersion: NethackRuntimeVersion,
   cwd = "/",
 ): string {
-  void runtimeVersion;
   const normalizedRoot = normalizeRuntimeRoot(cwd);
   const saveLeaf = "save";
   return normalizedRoot === "/"
@@ -99,14 +82,12 @@ export function getRuntimeSaveMountDir(
  * persistence — so autosaves round-trip through the proven syncfs path instead
  * of the root-persistence layer (which only owns other top-level game data such
  * as record/xlogfile/bones). This decoupling is the fix for autosaves breaking
- * when 5.0/SlashEm gained root persistence, so keep checkpoints here for every
- * runtime.
+ * when root persistence was added, so keep checkpoints here.
  */
 export function getRuntimeCheckpointMountDir(
-  runtimeVersion: NethackRuntimeVersion,
   cwd = "/",
 ): string {
-  return getRuntimeSaveMountDir(runtimeVersion, cwd);
+  return getRuntimeSaveMountDir(cwd);
 }
 
 /**
@@ -120,49 +101,40 @@ export function isCheckpointLevelFilename(
 }
 
 export function getRuntimeSaveDbName(
-  runtimeVersion: NethackRuntimeVersion,
   cwd = "/",
 ): string {
   const normalizedRoot = normalizeRuntimeRoot(cwd);
-  const saveLeaf = `save-${getRuntimeSaveCompatTag(runtimeVersion)}`;
+  const saveLeaf = `save-${getRuntimeSaveCompatTag()}`;
   return normalizedRoot === "/"
     ? `/${saveLeaf}`
     : `${normalizedRoot}/${saveLeaf}`;
 }
 
 export function getRuntimeSaveDbNames(
-  runtimeVersion: NethackRuntimeVersion,
 ): string[] {
   return Array.from(
     new Set(
       knownSaveRuntimeRoots.map((root) =>
-        getRuntimeSaveDbName(runtimeVersion, root),
+        getRuntimeSaveDbName(root),
       ),
     ),
   );
 }
 
 export function getRuntimeRootPersistenceDbName(
-  runtimeVersion: NethackRuntimeVersion,
 ): string {
-  return `/root-${getRuntimeSaveCompatTag(runtimeVersion)}`;
+  return `/root-${getRuntimeSaveCompatTag()}`;
 }
 
 export function supportsRuntimeRootPersistence(
-  runtimeVersion: NethackRuntimeVersion,
 ): boolean {
-  return (
-    runtimeVersion === "3.6.7" ||
-    runtimeVersion === "5.0" ||
-    runtimeVersion === "slashem"
-  );
+  return true;
 }
 
 export function getRuntimeRootPersistenceDbNames(
-  runtimeVersion: NethackRuntimeVersion,
 ): string[] {
-  return supportsRuntimeRootPersistence(runtimeVersion)
-    ? [getRuntimeRootPersistenceDbName(runtimeVersion)]
+  return supportsRuntimeRootPersistence()
+    ? [getRuntimeRootPersistenceDbName()]
     : [];
 }
 
@@ -171,11 +143,10 @@ type IndexedDbDatabaseListEntry = {
 };
 
 export async function resolveRuntimeSaveDbNames(
-  runtimeVersion: NethackRuntimeVersion,
 ): Promise<string[]> {
-  const staticNames = getRuntimeSaveDbNames(runtimeVersion);
-  const rootPersistenceNames = getRuntimeRootPersistenceDbNames(runtimeVersion);
-  const compatTag = getRuntimeSaveCompatTag(runtimeVersion);
+  const staticNames = getRuntimeSaveDbNames();
+  const rootPersistenceNames = getRuntimeRootPersistenceDbNames();
+  const compatTag = getRuntimeSaveCompatTag();
   const matchingNames = new Set([...staticNames, ...rootPersistenceNames]);
 
   if (
@@ -201,7 +172,7 @@ export async function resolveRuntimeSaveDbNames(
         if (
           name === `save-${compatTag}` ||
           name.endsWith(`/save-${compatTag}`) ||
-          (supportsRuntimeRootPersistence(runtimeVersion) &&
+          (supportsRuntimeRootPersistence() &&
             (name === `root-${compatTag}` ||
               name.endsWith(`/root-${compatTag}`)))
         ) {

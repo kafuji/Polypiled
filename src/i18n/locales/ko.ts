@@ -1161,11 +1161,6 @@ export const ko = {
             "분할선 근처의 파편 픽셀에 무작위 혈흔 테두리 색을 입힙니다.",
         },
         groupCompatibility: "런타임 호환성",
-        darkCorridorWalls367: {
-          label: "레거시 어두운 복도 벽",
-          description:
-            "Slash'EM을 포함한 레거시 NetHack 3.4.3/3.6.x 계열 런타임용 어두운 복도 벽 타일을 추론하고 캐시합니다.",
-        },
         overrideNh5DarkCorridorWallTiles: {
           label: "NetHack 5.0 어두운 벽 타일 덮어쓰기",
           description:
@@ -1411,7 +1406,6 @@ export const ko = {
         cancelDownload: "다운로드 취소",
       },
       startup: {
-        chooseVariant: "NetHack 변형을 선택하세요:",
         options: "NetHack 3D 옵션",
         quitGame: "게임 종료",
         chooseSetup: "캐릭터 설정을 선택하세요:",
@@ -1450,8 +1444,6 @@ export const ko = {
           resetControllerDefaults: "컨트롤러 기본값 복원",
         },
         hints: {
-          darkWallsAlwaysEnabled:
-            " Vulture 타일이 활성화되어 있는 동안에는 항상 활성화됩니다.",
           darkWallsDisabledByVulture:
             " Vulture 타일이 활성화되어 있는 동안에는 비활성화됩니다.",
           enableDarkWallsFirst:
@@ -1547,10 +1539,6 @@ export const ko = {
         choices: {
           leftRingFinger: "왼손 약지",
           rightRingFinger: "오른손 약지",
-          here: "여기서",
-          onGround: "바닥에서",
-          eligibleItems: "가능한 아이템",
-          allInventory: "전체 인벤토리",
         },
       },
       runtimeStartError: {

@@ -89,13 +89,7 @@ Start here before making changes.
 
 ## NetHack Reference
 
-- The WSL-hosted NetHack code is the source of truth for game behavior, data files, and shim expectations:
-  - Forked NetHack WASM monorepo reference: `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo`.
-  - Forked 3.6.7 WASM package path: `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo\packages\wasm-367`.
-  - Forked NetHack 3.6.7 source inside that package: `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo\packages\wasm-367\NetHack`.
-  - Forked 3.7 WASM package path: `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo\packages\wasm-37`.
-  - Forked NetHack 3.7 source inside that package: `\\wsl.localhost\Ubuntu\home\james\Repos\forked\neth4ck-monorepo\packages\wasm-37\NetHack`.
-  - Forked SLASH-EM (NetHack 3.4.3-based variant) WASM build and source code: `\\wsl.localhost\Ubuntu\home\james\Repos\slashem-wasm`.
+- The game is NetHack 5.0, and `core/NetHack` (vendored source, see `core/README.md`) is the source of truth for game behavior, data files, and shim expectations. NetHack 3.6.7 and Slash'EM are no longer supported.
 - Never modify the imported NetHack source unless the user explicitly asks for it.
 - Prefer not patching WASM shims, as changes there are expensive. Adjust our runtime integration instead when possible. If shim changes are unavoidable, call that out clearly before doing it and confirm with the user first.
 
@@ -103,14 +97,14 @@ Start here before making changes.
 
 - Vulture source code lives in `third_party/vulture`.
 - Do not modify Vulture source code.
-- If a Vulture asset or reference file is needed at runtime, place it under `imported/vulture` or the app asset tree instead of editing the vendor copy.
+- If a Vulture asset or reference file is needed at runtime, place it in the app asset tree instead of editing the vendor copy.
 - The port is still in progress from 3.60 to 3.6.7, so be careful when reading old assumptions in Vulture code or docs.
 
 ## Current WASM Shim Caveats
 
 - `shim_getmsghistory` and `shim_get_color_string` are declared as string-return callbacks. The current marshalling path is not a reliable `char *` return pathway, so keep returning empty strings for now.
 - `set_shim_font_name` uses return type `"2"` in shim metadata, but the current helper marshalling does not implement that return type explicitly. Treat it as unsupported or no-op and return `0`.
-- `shim_askname` in 3.6.7 is declared as `void`. The JS return value is not authoritative, so the runtime should write the chosen name into runtime globals and treat the return value as advisory only.
+- `shim_askname` is declared as `void`. The JS return value is not authoritative, so the runtime should write the chosen name into runtime globals and treat the return value as advisory only.
 
 ## Validation
 
