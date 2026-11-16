@@ -102,7 +102,8 @@ export function translateHelpDocument(lines: readonly string[], locale: Supporte
   if (!first || !last) return null;
   const document = documents.find((entry) => entry.firstLine.test(first.trim()) && entry.lastLine.test(last.trim())
     && (!entry.contains || entry.contains.test(content.join("\n"))));
-  return document ? document.translation.replace(/\n$/, "") : null;
+  // The files may be checked out with CRLF line endings (core.autocrlf).
+  return document ? document.translation.replace(/\r\n/g, "\n").replace(/\n$/, "") : null;
 }
 
 /** Help menu entries and title. */
