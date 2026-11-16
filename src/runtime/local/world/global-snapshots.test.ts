@@ -44,6 +44,16 @@ describe("RuntimeGlobalSnapshots level identity", () => {
     expect(at(25)).toBeNull();
   });
 
+  it("counts the levels of the current dungeon, such as Gehennom", () => {
+    const identity = snapshotsWithGlobals({
+      u: { uz: { dnum: 1, dlevel: 22 } },
+      dungeons: [...dungeons, { dname: "The Gnomish Mines", ledger_start: 49, depth_start: 3 }],
+    }).resolveRuntimeLevelIdentity();
+    expect(identity?.dungeonName).toBe("Gehennom");
+    expect(identity?.dungeonLevelCount).toBe(22);
+    expect(identity?.mainDungeonLevelCount).toBe(27);
+  });
+
   it("leaves the count unknown when only one dungeon is exported", () => {
     const identity = snapshotsWithGlobals({
       u: { uz: { dnum: 0, dlevel: 3 } },

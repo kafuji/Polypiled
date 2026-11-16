@@ -298,17 +298,25 @@ export class RuntimeGlobalSnapshots {
    * (dungeon 0) has as many levels as dungeon 1's ledger starts after it.
    */
   resolveMainDungeonLevelCount(dungeons) {
-    const doom = this.resolveDungeonByIndex(dungeons, 0);
-    const next = this.resolveDungeonByIndex(dungeons, 1);
-    if (!doom || typeof doom !== "object" || !next || typeof next !== "object") {
+    return this.resolveDungeonLevelCount(dungeons, 0);
+  }
+
+  /**
+   * Levels in a dungeon: ledger numbers run on from one dungeon to the next,
+   * so it is the gap to the next dungeon's ledger start.
+   */
+  resolveDungeonLevelCount(dungeons, dnum) {
+    const dungeon = this.resolveDungeonByIndex(dungeons, dnum);
+    const next = this.resolveDungeonByIndex(dungeons, dnum + 1);
+    if (!dungeon || typeof dungeon !== "object" || !next || typeof next !== "object") {
       return null;
     }
-    const doomStart = this.deps.memory.normalizeRuntimeInteger(doom.ledger_start);
+    const start = this.deps.memory.normalizeRuntimeInteger(dungeon.ledger_start);
     const nextStart = this.deps.memory.normalizeRuntimeInteger(next.ledger_start);
-    if (doomStart === null || nextStart === null || nextStart <= doomStart) {
+    if (start === null || nextStart === null || nextStart <= start) {
       return null;
     }
-    return Math.trunc(nextStart - doomStart);
+    return Math.trunc(nextStart - start);
   }
 
   /** Exact Medusa / Castle match, for runtimes that export those topology levels. */
@@ -397,6 +405,7 @@ export class RuntimeGlobalSnapshots {
         dungeonName,
         branchTag,
         mainDungeonLevelCount: this.resolveMainDungeonLevelCount(dungeons),
+        dungeonLevelCount: this.resolveDungeonLevelCount(dungeons, dnum),
         specialLevel: this.resolveRuntimeSpecialLevel(dnum, dlevel, topology),
       };
     } catch (error) {

@@ -479,6 +479,8 @@ export type RuntimeLevelIdentity = {
   branchTag: string | null;
   /** Levels in the Dungeons of Doom (dungeon 0); its last level is the Castle. */
   mainDungeonLevelCount: number | null;
+  /** Levels in the current dungeon; Gehennom's last one is Moloch's Sanctum. */
+  dungeonLevelCount: number | null;
   /** Exact special level, only when the runtime exports its topology. */
   specialLevel: "medusa" | "castle" | null;
 };
