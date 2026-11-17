@@ -73,8 +73,10 @@ export interface LightFieldTuning {
   vignette: number;
   /** Brightness of glowing monsters and lava. */
   glowLight: number;
-  /** Colour saturation of terrain the hero only remembers (1 = unchanged). */
+  /** Colour saturation of places the hero does not see (1 = unchanged). */
   memorySaturation: number;
+  /** Brightness of places the hero does not see, relative to seeing them. */
+  memoryBrightness: number;
   /** Radius of the area a light scroll or spell lights, tinted blue. */
   magicLightRadius: number;
 }
@@ -92,7 +94,8 @@ export const DEFAULT_LIGHT_FIELD_TUNING: Readonly<LightFieldTuning> = {
   fadeMs: 220,
   vignette: 0.3,
   glowLight: 0.9,
-  memorySaturation: 0.5,
+  memorySaturation: 0.4,
+  memoryBrightness: 0.5,
   magicLightRadius: 5,
 };
 
@@ -101,7 +104,7 @@ const ROOM_TINT: readonly [number, number, number] = [1.0, 0.97, 0.9];
 const PERSONAL_TINT: readonly [number, number, number] = [0.9, 0.92, 1.0];
 /** Light from a light scroll or spell: a cooler, slightly blue white. */
 const MAGIC_TINT: readonly [number, number, number] = [0.78, 0.88, 1.12];
-/** Remembered terrain drifts slightly toward blue as it loses colour. */
+/** Remembered places drift slightly toward blue as they lose colour. */
 const MEMORY_TINT: readonly [number, number, number] = [0.94, 0.97, 1.06];
 
 interface PlacedGlow {
@@ -320,14 +323,24 @@ export class LightField {
     return knowledge?.available ? knowledge : null;
   }
 
+  /**
+   * With lighting on, the field runs whenever the game reports what the hero
+   * sees: with dynamic lighting off it then only tells seen from remembered
+   * (see isSightOnly).
+   */
   isActive(): boolean {
     const options = this.dependencies.engineState.clientOptions;
     return (
       options.lightingEnabled === true &&
-      options.dynamicLighting === true &&
+      (options.dynamicLighting === true || this.knowledge() !== null) &&
       !this.dependencies.terminalRendering.isTerminalDisplayMode() &&
       !this.dependencies.tilesetAssets.shouldUseVultureTiles()
     );
+  }
+
+  /** Dynamic lighting is off: no lights, only seen versus remembered places. */
+  isSightOnly(): boolean {
+    return this.dependencies.engineState.clientOptions.dynamicLighting !== true;
   }
 
   /** A new level starts dark; its lights fade in as it is drawn. */
@@ -412,12 +425,27 @@ export class LightField {
     uniforms.uLightField.value = texture;
     uniforms.uLightFieldGrid.value.set(this.columns, this.rows);
     uniforms.uLightFieldEnabled.value = 1;
+    const brightness = this.tuning.memoryBrightness;
+    uniforms.uMemoryLook.value.set(
+      this.tuning.memorySaturation,
+      MEMORY_TINT[0] * brightness,
+      MEMORY_TINT[1] * brightness,
+      MEMORY_TINT[2] * brightness,
+    );
+    if (this.isSightOnly()) {
+      // The texture holds plain light (1) and what the hero sees; the usual
+      // distance darkening stays as it is without dynamic lighting.
+      uniforms.uMaxDarkAlpha.value = this.dependencies.lighting.lightingVignetteMaxDarkAlpha;
+      uniforms.uAmbientLight.value.set(1, 1, 1);
+      uniforms.uLightParams.value.set(1, 0, LIGHT_FIELD_RANGE, 1);
+      uniforms.uPlayerLightColor.value.set(0, 0, 0);
+      return;
+    }
     uniforms.uMaxDarkAlpha.value = this.tuning.vignette;
     const ambient = this.tuning.ambient;
     uniforms.uAmbientLight.value.set(ambient * AMBIENT_TINT[0], ambient * AMBIENT_TINT[1], ambient * AMBIENT_TINT[2]);
     // w = 1: alpha holds what the hero sees (reported by the game), and only that counts as seen.
     uniforms.uLightParams.value.set(this.tuning.maxLight, this.tuning.playerLightInRoom, LIGHT_FIELD_RANGE, knowledge ? 1 : 0);
-    uniforms.uMemoryLook.value.set(this.tuning.memorySaturation, MEMORY_TINT[0], MEMORY_TINT[1], MEMORY_TINT[2]);
     this.updatePlayerLightUniforms(timeMs / 1000, lightRadius);
   }
 
@@ -443,6 +471,7 @@ export class LightField {
     this.seen.fill(0);
     this.glows = [];
     const knowledge = this.knowledge();
+    const sightOnly = this.isSightOnly();
     for (const [key, mesh] of this.dependencies.tileRendering.tileMap) {
       let x = mesh.userData?.tileX;
       let y = mesh.userData?.tileY;
@@ -462,23 +491,30 @@ export class LightField {
           if (lit === "room") this.litRoom[index] = 1;
           else if (lit === "corridor") this.litCorridor[index] = 1;
         }
-        const glow = isLavaCmapGlyph(glyph) ? LAVA_GLOW : knowledge ? null : resolveGlowingMonsterLight(glyph);
+        const glow = sightOnly ? null : isLavaCmapGlyph(glyph) ? LAVA_GLOW : knowledge ? null : resolveGlowingMonsterLight(glyph);
         if (glow) this.glows.push({ x, y, light: glow });
       }
     }
     if (!knowledge) return;
+    // The hero always knows their own spot (blind, or engulfed, too).
+    const { playerMovement } = this.dependencies;
+    if (playerMovement.hasSeenPlayerPosition) {
+      const { x, y } = playerMovement.playerPos;
+      if (x >= 0 && y >= 0 && x < this.columns && y < this.rows) this.seen[y * this.columns + x] = 1;
+    }
     // The game says which locations are lit and which ones the hero sees.
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.columns; x++) {
         const index = y * this.columns + x;
         if (knowledge.canSee(x, y)) this.seen[index] = 1;
+        if (sightOnly) continue;
         if (!knowledge.isLitLocation(x, y)) continue;
         const terrain = knowledge.terrain(x, y);
         if (terrain === KnowledgeTerrain.corridor) this.litCorridor[index] = 1;
         else if (isRoomFloorTerrain(terrain)) this.litRoom[index] = 1;
       }
     }
-    for (const light of knowledge.lights) {
+    for (const light of sightOnly ? [] : knowledge.lights) {
       const glow = glowFromKnowledgeLight(light);
       if (glow) this.glows.push({ x: light.x, y: light.y, light: glow });
     }
@@ -492,7 +528,7 @@ export class LightField {
       hash = Math.imul(hash, 16777619);
     }
     const glows = this.glows.map((glow) => `${glow.x},${glow.y},${glow.light.color.join(",")}`).join(";");
-    const source = this.knowledge() ? "k" : "e";
+    const source = this.isSightOnly() ? "s" : this.knowledge() ? "k" : "e";
     return `${source}|${hash >>> 0}|${player ? `${player.x},${player.y}` : "-"}|${lightRadius}|${glows}`;
   }
 
@@ -500,6 +536,18 @@ export class LightField {
     const { columns, rows, subcells, target, tuning } = this;
     const width = columns * subcells;
     const height = rows * subcells;
+    if (this.isSightOnly()) {
+      // No lights: plain light everywhere, alpha what the hero sees.
+      this.rooms = [];
+      for (let ty = 0; ty < height; ty++) {
+        for (let tx = 0; tx < width; tx++) {
+          const base = (ty * width + tx) * 4;
+          target[base] = target[base + 1] = target[base + 2] = 1;
+          target[base + 3] = this.seen[Math.floor(ty / subcells) * columns + Math.floor(tx / subcells)];
+        }
+      }
+      return;
+    }
     // RGB holds all static light, starting from the ambient level everywhere.
     for (let i = 0; i < target.length; i += 4) {
       target[i] = tuning.ambient * AMBIENT_TINT[0];

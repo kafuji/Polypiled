@@ -21,9 +21,10 @@ function fixture() {
   const tileMap = new Map<string, THREE.Mesh>();
   const uniforms = createWorldShadingUniforms({ maxDarkAlpha: 0.82, bloodGroundStrength: 1, bloodGroundSpecularReferenceStrength: 1 });
   const knowledge = new PlayerKnowledge();
+  const clientOptions = { lightingEnabled: true, dynamicLighting: true };
   const lights = new LightField({
     camera: { camera: new THREE.PerspectiveCamera() },
-    engineState: { clientOptions: { lightingEnabled: true, dynamicLighting: true } },
+    engineState: { clientOptions },
     lighting: { vignetteUniforms: uniforms, lightingVignetteMaxDarkAlpha: 0.82 },
     movementInput: { isFpsMode: () => false },
     playerKnowledge: knowledge,
@@ -53,7 +54,7 @@ function fixture() {
     const base = ((y * LIGHT_FIELD_SUBCELLS + middle) * width + x * LIGHT_FIELD_SUBCELLS + middle) * 4;
     return [...[0, 1, 2].map((c) => (data[base + c] / 255) * LIGHT_FIELD_RANGE), data[base + 3] / 255];
   };
-  return { lights, uniforms, knowledge, report, texel };
+  return { lights, uniforms, knowledge, report, texel, clientOptions };
 }
 
 describe("LightField with the game's knowledge", () => {
@@ -109,6 +110,54 @@ describe("LightField with the game's knowledge", () => {
     // Estimated from the lit floor glyphs: the whole room counts as lit.
     expect(lights.rooms).toHaveLength(1);
     lights.dispose();
+  });
+
+  it("draws what the hero does not see at half brightness and with less colour", () => {
+    const { lights, uniforms, report } = fixture();
+    report(() => KnowledgeVision.canSee | KnowledgeVision.lit);
+    lights.update(0);
+    const look = uniforms.uMemoryLook.value;
+    expect(look.x).toBeCloseTo(lights.tuning.memorySaturation);
+    expect(lights.tuning.memoryBrightness).toBe(0.5);
+    // The tint carries the brightness; it stays close to grey.
+    for (const channel of [look.y, look.z, look.w]) expect(channel).toBeGreaterThan(0.45);
+    for (const channel of [look.y, look.z, look.w]) expect(channel).toBeLessThan(0.55);
+    lights.dispose();
+  });
+
+  it("counts the hero's own spot as seen even when blind", () => {
+    const { lights, report, texel } = fixture();
+    report(() => KnowledgeVision.wasLit); // blind: nothing in sight
+    lights.update(0);
+    expect(texel(5, 4)[3]).toBe(1);
+    expect(texel(6, 4)[3]).toBe(0);
+    lights.dispose();
+  });
+
+  it("still tells seen from remembered with dynamic lighting off", () => {
+    const { lights, uniforms, report, texel, clientOptions } = fixture();
+    clientOptions.dynamicLighting = false;
+    report((x) => (x <= 5 ? KnowledgeVision.canSee | KnowledgeVision.lit : KnowledgeVision.wasLit));
+    lights.update(0);
+    expect(lights.isActive()).toBe(true);
+    expect(uniforms.uLightFieldEnabled.value).toBe(1);
+    expect(uniforms.uLightParams.value.w).toBe(1);
+    expect(uniforms.uAmbientLight.value.x).toBe(1);
+    expect(uniforms.uPlayerLightColor.value.length()).toBe(0);
+    expect(lights.rooms).toEqual([]);
+    const [red, green, blue, seen] = texel(3, 4);
+    expect([red, green, blue].map((c) => Math.round(c * 100) / 100)).toEqual([1, 1, 1]);
+    expect(seen).toBe(1);
+    expect(texel(8, 4)[3]).toBe(0);
+    lights.dispose();
+  });
+
+  it("stays off without dynamic lighting until the game reports vision", () => {
+    const { lights, uniforms, clientOptions } = fixture();
+    clientOptions.dynamicLighting = false;
+    lights.update(0);
+    expect(lights.isActive()).toBe(false);
+    expect(uniforms.uLightFieldEnabled.value).toBe(0);
   });
 
   it("turns lights others hold into glows", () => {

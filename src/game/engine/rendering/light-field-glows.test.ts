@@ -99,7 +99,7 @@ describe("LightField glows, magic light and memory", () => {
     lights.dispose();
   });
 
-  it("fades the colour of remembered terrain only", () => {
+  it("draws unseen places as remembered, entities by the cell they stand on", () => {
     const shading = new WorldShading({ maxDarkAlpha: 0.8, bloodGroundStrength: 1, bloodGroundSpecularReferenceStrength: 1 });
     const compile = (material: THREE.Material, options = {}) => {
       const base = material instanceof THREE.SpriteMaterial ? THREE.ShaderLib.sprite : THREE.ShaderLib.basic;
@@ -108,8 +108,14 @@ describe("LightField glows, magic light and memory", () => {
       material.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
       return shader;
     };
-    expect(compile(new THREE.MeshBasicMaterial()).fragmentShader).toContain("memorySaturation");
-    expect(compile(new THREE.MeshBasicMaterial(), { entity: true }).fragmentShader).not.toContain("memorySaturation");
-    expect(compile(new THREE.SpriteMaterial()).fragmentShader).not.toContain("memorySaturation");
+    const terrain = compile(new THREE.MeshBasicMaterial());
+    expect(terrain.fragmentShader).toContain("memorySaturation");
+    expect(terrain.fragmentShader).not.toContain("entitySeen");
+    for (const entity of [compile(new THREE.MeshBasicMaterial(), { entity: true }), compile(new THREE.SpriteMaterial())]) {
+      // Only with the game's vision report (uLightParams.w), read at the entity's origin.
+      expect(entity.fragmentShader).toContain("entitySeen");
+      expect(entity.fragmentShader).toContain("step(0.5, uLightParams.w)");
+      expect(entity.vertexShader).toContain("vEntityOrigin = modelMatrix[3].xyz");
+    }
   });
 });
