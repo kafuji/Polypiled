@@ -2766,7 +2766,11 @@ commands_init(void)
         if (extcmd->key)
             cmdbind_add(extcmd->key, extcmd, FALSE);
 
-    (void) bind_mousebtn(1, "therecmdmenu");
+    /* Polypiled: a plain left click always moves (or attacks a hostile
+       in the way) and travels when farther away; #therecmdmenu's
+       context choices such as "Throw something" or "Ride" are never
+       picked by an ordinary click */
+    (void) bind_mousebtn(1, "mouseaction");
     (void) bind_mousebtn(2, "clicklook");
 
     /* number_pad */
