@@ -8,7 +8,7 @@ export const GLYPH_CATALOG_META: GlyphCatalogMeta = {
   sourceJsPath: "public/nethack-5.js",
   sourceWasmPath: "public/nethack-5.wasm",
   sourceJsSha256: "907603b0c4cff8406ec070856663bc68b42b069ba7ebd80ed335678a9a5c7660",
-  sourceWasmSha256: "8eace00e914fa790e0730dbcc941aeec133265d1e3a19a9d349f368aa2a5414e",
+  sourceWasmSha256: "c030fc5189ea8600094ae45611bf803879f35e8a6eaece1e3fae6ba91ca4885c",
   maxGlyph: 9624,
   noGlyph: 9624,
 };
