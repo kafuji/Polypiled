@@ -404,10 +404,8 @@ describe_decor(void)
                 Strcpy(fbuf, dfeature);
             Sprintf(outbuf, "%s.", upstart(fbuf));
         }
-        if (ltyp == ICE && flags.mention_decor)
-            Norep("%s", outbuf);
-        else
-            pline("%s", outbuf);
+        /* Polypiled: the shell's floor panel names the terrain here */
+        nhUse(outbuf);
     } else if (!Underwater) {
         if (IS_POOL(iflags.prev_decor)
             || IS_LAVA(iflags.prev_decor)
@@ -451,7 +449,7 @@ check_here(boolean picked_some)
         flush_screen(1);
         (void) look_here(ct, lhflags);
     } else {
-        read_engr_at(u.ux, u.uy);
+        quietly_read_engr_at(u.ux, u.uy); /* Polypiled: floor panel */
     }
 }
 
@@ -704,7 +702,7 @@ pickup(int what) /* should be a long */
                            || is_lava(u.ux, u.uy))) {
             if (flags.mention_decor)
                 (void) describe_decor();
-            read_engr_at(u.ux, u.uy);
+            quietly_read_engr_at(u.ux, u.uy); /* Polypiled: floor panel */
             return 0;
         }
         /* no pickup if levitating & not on air or water level */
@@ -714,7 +712,7 @@ pickup(int what) /* should be a long */
             if ((gm.multi && !svc.context.run)
                 || (autopickup && !flags.pickup)
                 || (t && (uteetering_at_seen_pit(t) || uescaped_shaft(t))))
-                read_engr_at(u.ux, u.uy);
+                quietly_read_engr_at(u.ux, u.uy); /* Polypiled */
             return 0;
         }
         /* multi && !svc.context.run means they are in the middle of some

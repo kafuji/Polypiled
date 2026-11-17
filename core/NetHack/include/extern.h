@@ -1034,6 +1034,7 @@ extern struct engr *sengr_at(const char *, coordxy, coordxy, boolean) NONNULLARG
 extern void u_wipe_engr(int);
 extern void wipe_engr_at(coordxy, coordxy, xint16, boolean);
 extern void read_engr_at(coordxy, coordxy);
+extern void quietly_read_engr_at(coordxy, coordxy);
 extern void make_engr_at(coordxy, coordxy, const char *, const char *, long, int) NONNULLARG3;
 extern void del_engr_at(coordxy, coordxy);
 extern int freehand(void);

@@ -11,6 +11,7 @@ const floor = (overrides: Partial<FloorHere> = {}): FloorHere => ({
   x: 3,
   y: 4,
   feature: "staircase down",
+  trap: null,
   engraving: null,
   hidden: false,
   objects: [],
@@ -45,6 +46,11 @@ describe("FloorPanel", () => {
     const html = render();
     expect(html).toContain("下り階段");
     expect(html).toContain(t.floorPanel.nothing);
+  });
+
+  it("names a trap the hero has seen here", () => {
+    useGameStore.getState().setFloorHere(floor({ feature: "floor of a room", trap: "bear trap" }));
+    expect(render()).toContain("トラバサミ");
   });
 
   it("lists the first objects with their tiles and counts the rest", () => {

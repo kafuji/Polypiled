@@ -80,7 +80,7 @@ moveloop_preamble(boolean resuming)
     }
     disp.botlx = TRUE; /* for STATUS_HILITES */
     if (resuming) { /* restoring old game */
-        read_engr_at(u.ux, u.uy); /* subset of pickup() */
+        quietly_read_engr_at(u.ux, u.uy); /* subset of pickup() */
         fix_shop_damage();
     }
 

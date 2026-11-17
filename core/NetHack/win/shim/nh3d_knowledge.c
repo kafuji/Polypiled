@@ -546,7 +546,8 @@ nh3d_fill_level(int *out)
 
 /*
  * What is under the hero, for the shell's floor panel: the terrain feature
- * as ':' would describe it, an engraving the hero has read (or felt), and
+ * as ':' would describe it, a trap the hero has seen, an engraving the hero
+ * has read (or felt), and
  * the objects lying here with the names look_here() would print (shop
  * prices included).  Objects are listed only when the hero can see them:
  * not while blind, engulfed, or when they are under lava or water.  Sent as
@@ -630,6 +631,7 @@ nh3d_build_floor_here(struct nh3d_json *js)
 {
     char featbuf[BUFSZ];
     struct engr *ep = engr_at(u.ux, u.uy);
+    struct trap *trap;
     struct obj *otmp;
     boolean hidden;
     long count = 0;
@@ -641,6 +643,12 @@ nh3d_build_floor_here(struct nh3d_json *js)
     nh3d_json_int(js, u.uy);
     nh3d_json_raw(js, ",\"feature\":");
     nh3d_json_string(js, u.uswallow ? "" : nh3d_floor_feature(featbuf));
+
+    nh3d_json_raw(js, ",\"trap\":");
+    if (!u.uswallow && (trap = t_at(u.ux, u.uy)) != 0 && trap->tseen)
+        nh3d_json_string(js, trapname(trap->ttyp, FALSE));
+    else
+        nh3d_json_raw(js, "null");
 
     nh3d_json_raw(js, ",\"engraving\":");
     if (!u.uswallow && ep && ep->eread && ep->engr_txt[remembered_text]

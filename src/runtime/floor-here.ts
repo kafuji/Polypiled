@@ -1,7 +1,8 @@
 /**
  * What lies under the hero, sent by the game core whenever it changes
  * (core/NetHack/win/shim/nh3d_knowledge.c, notification "shim_floor_here"):
- * the terrain as ':' describes it, an engraving the hero has read or felt,
+ * the terrain as ':' describes it, a trap the hero has seen, an engraving
+ * the hero has read or felt,
  * and the objects here with the names the game would print. Objects are
  * listed only when the hero can see them; an object type the hero does not
  * know comes as its class's generic glyph with the tile of its appearance.
@@ -26,6 +27,8 @@ export interface FloorHere {
   readonly y: number;
   /** "floor of a room", "staircase down", "altar to Anhur (chaotic)", ...; empty when engulfed. */
   readonly feature: string;
+  /** A trap the hero has seen here ("bear trap"), if any. */
+  readonly trap: string | null;
   readonly engraving: FloorHereEngraving | null;
   /** The hero cannot see what lies here (blind, engulfed, under lava or water). */
   readonly hidden: boolean;
@@ -64,6 +67,7 @@ export function parseFloorHere(raw: unknown): FloorHere | null {
     x: data.x,
     y: data.y,
     feature: data.feature,
+    trap: typeof data.trap === "string" && data.trap ? data.trap : null,
     engraving:
       engraving && typeof engraving === "object" && typeof engraving.text === "string" && isInt(engraving.type)
         ? { type: engraving.type, text: engraving.text }

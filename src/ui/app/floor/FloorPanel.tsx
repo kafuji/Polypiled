@@ -27,8 +27,8 @@ function engravingLabel(engraving: FloorHereEngraving): string {
 }
 
 /**
- * What lies under the hero, always on screen: the terrain, an engraving the
- * hero has read, and the objects here (the first few, then a count), so
+ * What lies under the hero, always on screen: the terrain, a trap the hero
+ * has seen, an engraving the hero has read, and the objects here (the first few, then a count), so
  * there is no need to look with ':' or to wait for a pile popup.
  */
 export function FloorPanel(props: FloorPanelProps) {
@@ -47,6 +47,9 @@ export function FloorPanelView({ visible, renderTilePreview, floorHere }: FloorP
       <div className="nh3d-floor-panel-feature">
         <span className="nh3d-floor-panel-label">{t.floorPanel.label}</span>
         {feature ? <span className="nh3d-floor-panel-terrain">{feature}</span> : null}
+        {floorHere.trap ? (
+          <span className="nh3d-floor-panel-trap">{translateGroundObject(floorHere.trap, locale)}</span>
+        ) : null}
       </div>
       {floorHere.engraving ? (
         <div className="nh3d-floor-panel-engraving">

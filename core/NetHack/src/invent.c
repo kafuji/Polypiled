@@ -4212,6 +4212,13 @@ look_here(
         }
         return (!!Blind ? ECMD_TIME : ECMD_OK);
     }
+    /* Polypiled: stepping onto objects the hero can see says nothing; the
+       shell's floor panel shows the terrain, trap, engraving and objects.
+       ':' (obj_cnt 0) and a blind hero feeling around are unchanged. */
+    if (obj_cnt > 0 && !Blind) {
+        quietly_read_engr_at(u.ux, u.uy);
+        return ECMD_OK;
+    }
     if (!skip_objects) {
         NhRegion *reg;
         char regbuf[QBUFSZ];

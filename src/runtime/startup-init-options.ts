@@ -171,8 +171,9 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       label: startupStrings.options.pile_limit.label,
       description: startupStrings.options.pile_limit.description,
       control: "number",
-      // 2: one object is named in a message, more say "There are several
-      // objects here." without a popup; the floor panel lists them.
+      // 2: with the floor panel the core says nothing when the hero steps
+      // onto objects they can see; this limit still applies to a blind hero
+      // feeling a pile (one object named, more summed up without a popup).
       defaultValue: 2,
       min: 0,
       max: 50,

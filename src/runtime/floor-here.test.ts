@@ -7,6 +7,7 @@ const sample = {
   x: 12,
   y: 7,
   feature: "fountain",
+  trap: "bear trap",
   engraving: { type: 1, text: "Elbereth" },
   hidden: false,
   objects: [
@@ -22,6 +23,7 @@ describe("floor information from the core", () => {
       x: 12,
       y: 7,
       feature: "fountain",
+      trap: "bear trap",
       engraving: { type: 1, text: "Elbereth" },
       hidden: false,
       objects: [
@@ -33,7 +35,8 @@ describe("floor information from the core", () => {
   });
 
   it("keeps a hidden floor and a missing engraving", () => {
-    const parsed = parseFloorHere(JSON.stringify({ ...sample, engraving: null, hidden: true, objects: [], count: 0 }));
+    const parsed = parseFloorHere(JSON.stringify({ ...sample, trap: null, engraving: null, hidden: true, objects: [], count: 0 }));
+    expect(parsed?.trap).toBeNull();
     expect(parsed?.hidden).toBe(true);
     expect(parsed?.engraving).toBeNull();
     expect(parsed?.objects).toEqual([]);

@@ -39,6 +39,7 @@ struct _doengrave_ctx {
     size_t len;          /* # of nonspace chars of new engraving text */
 };
 #ifndef SFCTOOL
+staticfn void sense_engr(coordxy, coordxy, boolean);
 staticfn int stylus_ok(struct obj *);
 staticfn boolean u_can_engrave(void);
 staticfn void doengrave_ctx_init(struct _doengrave_ctx *);
@@ -315,8 +316,8 @@ engr_can_be_felt(struct engr *ep)
     return canfeel;
 }
 
-void
-read_engr_at(coordxy x, coordxy y)
+staticfn void
+sense_engr(coordxy x, coordxy y, boolean verbose)
 {
     struct engr *ep = engr_at(x, y);
     const char *eloc = surface(x, y);
@@ -330,28 +331,32 @@ read_engr_at(coordxy x, coordxy y)
         case DUST:
             if (!Blind) {
                 sensed = 1;
-                pline("%s is written here in the %s.", Something,
-                      is_ice(x, y) ? "frost" : "dust");
+                if (verbose)
+                    pline("%s is written here in the %s.", Something,
+                          is_ice(x, y) ? "frost" : "dust");
             }
             break;
         case ENGRAVE:
         case HEADSTONE:
             if (!Blind || can_reach_floor(TRUE)) {
                 sensed = 1;
-                pline("%s is engraved here on the %s.", Something, eloc);
+                if (verbose)
+                    pline("%s is engraved here on the %s.", Something, eloc);
             }
             break;
         case BURN:
             if (!Blind || can_reach_floor(TRUE)) {
                 sensed = 1;
-                pline("Some text has been %s into the %s here.",
-                      is_ice(x, y) ? "melted" : "burned", eloc);
+                if (verbose)
+                    pline("Some text has been %s into the %s here.",
+                          is_ice(x, y) ? "melted" : "burned", eloc);
             }
             break;
         case MARK:
             if (!Blind) {
                 sensed = 1;
-                pline("There's some graffiti on the %s here.", eloc);
+                if (verbose)
+                    pline("There's some graffiti on the %s here.", eloc);
             }
             break;
         case ENGR_BLOOD:
@@ -361,7 +366,8 @@ read_engr_at(coordxy x, coordxy y)
              */
             if (!Blind) {
                 sensed = 1;
-                You_see("a message scrawled in blood here.");
+                if (verbose)
+                    You_see("a message scrawled in blood here.");
             }
             break;
         default:
@@ -394,8 +400,9 @@ read_engr_at(coordxy x, coordxy y)
                      && strchr(".!?", et[elen - 1]))) {
                 endpunct = ".";
             }
-            You("%s: \"%s\"%s", (Blind) ? "feel the words" : "read", et,
-                endpunct);
+            if (verbose)
+                You("%s: \"%s\"%s", (Blind) ? "feel the words" : "read", et,
+                    endpunct);
             Strcpy(ep->engr_txt[remembered_text], ep->engr_txt[actual_text]);
             ep->eread = 1;
             ep->erevealed = 1;
@@ -403,6 +410,21 @@ read_engr_at(coordxy x, coordxy y)
                 nomul(0);
         }
     }
+}
+
+/* read (or feel) the engraving at x,y and say so */
+void
+read_engr_at(coordxy x, coordxy y)
+{
+    sense_engr(x, y, TRUE);
+}
+
+/* Polypiled: take in the engraving at x,y as read_engr_at() does, without
+   the messages; the shell's floor panel shows what the hero has read */
+void
+quietly_read_engr_at(coordxy x, coordxy y)
+{
+    sense_engr(x, y, FALSE);
 }
 
 void
