@@ -9,9 +9,6 @@ import type {
   StartupFlowStep
 } from "./character-preferences";
 import {
-  RuntimeVersionBadge
-} from "./RuntimeVersionBadge";
-import {
   t
 } from "../shared/translations";
 import {
@@ -25,7 +22,6 @@ export interface StartupMenuDialogProps {
   handleStartupMainMenuChangeCapture: (event: React.FormEvent<HTMLDivElement>) => void;
   handleStartupMainMenuKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   handleStartupMainMenuPointerDownCapture: (event: React.PointerEvent<HTMLDivElement>) => void;
-  startupSelectedRuntimeVersionLabel: string | null;
   setStartupFlowStep: React.Dispatch<React.SetStateAction<StartupFlowStep>>;
   handleResumeClick: () => Promise<void>;
   openTopScoresDialog: () => void;
@@ -39,7 +35,6 @@ export function StartupMenuDialog({
   handleStartupMainMenuChangeCapture,
   handleStartupMainMenuKeyDown,
   handleStartupMainMenuPointerDownCapture,
-  startupSelectedRuntimeVersionLabel,
   setStartupFlowStep,
   handleResumeClick,
   openTopScoresDialog,
@@ -57,15 +52,6 @@ export function StartupMenuDialog({
       onKeyDown={handleStartupMainMenuKeyDown}
       onPointerDownCapture={handleStartupMainMenuPointerDownCapture}
     >
-      {startupSelectedRuntimeVersionLabel ? (
-        <RuntimeVersionBadge
-          label={startupSelectedRuntimeVersionLabel}
-          startup
-        />
-      ) : null}
-      <div className="nh3d-question-text">
-        {t.dialogs.startup.chooseSetup}
-      </div>
       <div className="nh3d-overflow-glow-frame">
         <div
           className="nh3d-choice-list nh3d-choice-list-startup-choose"
@@ -74,17 +60,10 @@ export function StartupMenuDialog({
         >
           <button
             className="nh3d-choice-button nh3d-character-setup-choice-button"
-            onClick={() => setStartupFlowStep("random")}
-            type="button"
-          >
-            {t.dialogs.startup.randomCharacter}
-          </button>
-          <button
-            className="nh3d-choice-button nh3d-character-setup-choice-button"
             onClick={() => setStartupFlowStep("create")}
             type="button"
           >
-            {t.dialogs.startup.createCharacter}
+            {t.dialogs.startup.newGame}
           </button>
           <button
             className="nh3d-choice-button nh3d-character-setup-choice-button"

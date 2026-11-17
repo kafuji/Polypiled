@@ -6,9 +6,6 @@ import {
   t
 } from "../shared/translations";
 import {
-  RuntimeVersionBadge
-} from "../startup/RuntimeVersionBadge";
-import {
   requestGameQuit
 } from "../shared/platform";
 import type { Nethack3DEngineController } from "../../../game/ui-types";
@@ -28,7 +25,6 @@ export interface UsePauseMenuDependencies {
   readonly setIsPauseMenuVisible: React.Dispatch<React.SetStateAction<boolean>>;
   readonly setIsExitConfirmationVisible: React.Dispatch<React.SetStateAction<boolean>>;
   readonly startNewGameFromPrompt: () => void;
-  readonly activeRuntimeVersionLabel: string;
   readonly openClientOptionsDialog: () => void;
   readonly trialSlots: TrialSlotMenuState; // nh3d-plus
 }
@@ -42,7 +38,6 @@ export function usePauseMenu(dependencies: UsePauseMenuDependencies) {
     setIsPauseMenuVisible,
     setIsExitConfirmationVisible,
     startNewGameFromPrompt,
-    activeRuntimeVersionLabel,
     openClientOptionsDialog,
     trialSlots,
   } = dependencies;
@@ -95,13 +90,6 @@ export function usePauseMenu(dependencies: UsePauseMenuDependencies) {
         ) : (
           <>
             <div className="nh3d-options-title nh3d-pause-menu-title">
-              <RuntimeVersionBadge label={activeRuntimeVersionLabel} />
-              <span
-                className="nh3d-pause-menu-title-separator"
-                aria-hidden="true"
-              >
-                {"\u2014"}
-              </span>
               <span className="nh3d-pause-menu-title-text">
                 {t.dialogs.pauseMenu.title}
               </span>

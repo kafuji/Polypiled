@@ -24,9 +24,6 @@ import {
 import type {
   StartupFlowStep
 } from "./character-preferences";
-import {
-  resolveRuntimeVersionDisplayLabel
-} from "./RuntimeVersionBadge";
 import type {
   SaveGameRecord
 } from "./saved-games";
@@ -83,8 +80,6 @@ export function useStartupState2(dependencies: UseStartupState2Dependencies) {
   const activeRuntimeVersion =
     characterCreationConfig?.runtimeVersion ?? runtimeVersion;
 
-  const activeRuntimeVersionLabel =
-    resolveRuntimeVersionDisplayLabel();
 
   const [createRole, setCreateRole] = useState(
     startupDefaultCharacterPreferences.createRole,
@@ -100,10 +95,6 @@ export function useStartupState2(dependencies: UseStartupState2Dependencies) {
 
   const [createAlign, setCreateAlign] = useState(
     startupDefaultCharacterPreferences.createAlign,
-  );
-
-  const [randomCharacterName, setRandomCharacterName] = useState(
-    startupDefaultCharacterPreferences.randomName,
   );
 
   const [createCharacterName, setCreateCharacterName] = useState(
@@ -142,7 +133,6 @@ export function useStartupState2(dependencies: UseStartupState2Dependencies) {
     setStartupFlowStep,
     runtimeVersion,
     activeRuntimeVersion,
-    activeRuntimeVersionLabel,
     createRole,
     setCreateRole,
     createRace,
@@ -151,8 +141,6 @@ export function useStartupState2(dependencies: UseStartupState2Dependencies) {
     setCreateGender,
     createAlign,
     setCreateAlign,
-    randomCharacterName,
-    setRandomCharacterName,
     createCharacterName,
     setCreateCharacterName,
     startupCharacterPreferencesByRuntime,

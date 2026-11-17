@@ -1,70 +1,28 @@
 import type { CSSProperties } from "react";
 import { commonStrings } from "../shared/translations";
 
-const logoLayers = [
-  `
-  +$$&&&&&$;         :X$&&&&$X:                       :X$&&&&&$X;     :X&&&&&&&$+                               .;;+X$;                                               
-    +X&&&&&$X          X&&&$+                           +X&&&$+:        xX&&&&+:                              .$&&&&&+:                                               
-    :x&&&&&&&$:        X$&&X;                           ;X&&&$x.        +X&&&$x.                                X$&&$+:                                               
-    :x&&&&&&&&$x       X&&&X;                   x&:     ;X&&&$X.        +X&&&$x.                                X$&&&x:                                               
-    :x&&x&&&&&&&$      X&&&X:        _       .$&&+:     ;X&&&$x.        +X&&&$x.                                X$&&&x.                                               
-    :X&&x;X&&&&&&&:    X&&&X:   :+$&&&&&+   :&&&&$Xxxx; ;X&&&$X;.:;::::.xX&&&$x.   ;+$&&&&$+        :;+XXXXx;:  X$&&$x.   .XXXX+                                      
-    :X&&x::+&&&&&&&x   X$&&x:  X&&$;;X&&&$ ;$&&&&XXXX;  ;x$$$$&&&&&&&&&&&&$$$$x  +&$X+;+$&&&$.    :$&&$x++$&&$+ X$$$$+.   +$$+:                                       
-    :X&$x:  ;$&$&&$&&  +$&&x: $&&x:  :X&&x+  $&&&;.     ;+XXXXXXXXXXXXXXXX$$$X+  :+:    ;$$$Xx   X&&$;:   .++:  xX$$X+. ;&$+:                                         
-    :X$$x:   ;+$$$$$&&:;X$$+.;X&&x  +$$&&xx  $&&&+.     ;+XXX+;. .. .   ;xXXXX+        :$$$$X+  x$$$;;          xXXXX+:$$Xx;                                          
-    :X$Xx:    .;$XXXX$&$XX$+.;X&&&$Xx;:      $&$$;.     :+Xxx+;.        ;xXXxx+    ;XXX++XXXX+  xXXX;:          +XxxxxX$XXxx;                                         
-    :+Xx+:      ;XXXXXX&&xX+ ;;$$Xx:         $$XX;.     :+x+++;.        ;+x+++;  ;XX+:. ;xxxx+  +xxX++          +x+++::+XxX++:                                        
-    :+X++:       :+xxxxxX+x; .;xXX$$:     ,  XXxX+:     :;x+++;.        ;+++++; ;xx++   ;x++++  ;+x+x++         +x+++:.:;++x++:                                       
-    :;x++:        :;x+++++x;  :;+XX$&&$XXX;  ++xx&&X+x; :;+++;;.        ;+++++; ;;++xX;;xx++++: .;;++xXXx;:;;+: ;x+++:. :;+++++;                                      
-    X$++X&+         :x++++x;   .::+X$$$+::   .;;XX$+::  xX;;;;+;        xx;;;;+: ::+++;:: ++;;;.  ::;++++x+::.  Xx;;;+:  .:++++++.                                    
-  :+;;:::::;x+        ;++X+:       :;;;:        ::;:.  ;::::::::::;   .;::::::::::: ...    ::.       .:::::.  .;::::::::::  ::::::::                                   
-                                                                                                                                                                      
-                                                                                                                                                                      
-                                            ;&&&&&&&&&&&&&&&&&&x   x&&&&&&&&&&&&&$X+:.                                                                                
-                                            :;&&&&&&&&&&&&&&&&+:   :;&&&&&$&&&&&&&&&&&&+                                                                              
-                                            ;+:::::::::$&&&&$:.    :+&&&&&:.    ::&&&&&&$;                                                                            
-                                                      $&&&&X:.      ;X&&&&&:.     :;$&&&&&&                                                                           
-                                                    $&&&&X;:;+;:    +$&&&&&:.      ++&&&&&XX                                                                           
-                                                  :X$$$$&&&&&&&&&+  ;x&&&&&:.      +X&&&&&+x                                                                           
-                                                        .:X&&&&&&$; :+$$$$$:.      +X&$$$&++                                                                           
-                                                          :+$$$$$:: :;XxxxX..      xxXXxxX;+                                                                           
-                                                          :;XxxxX.. .:x+++x..     :+X++++::                                                                            
-                                            x&+         :XX;;;;;.   :+;;;+.     XXx;;;+::                                                                             
-                                            :;xx$&&$$XXX$X;:::;:.   .;+;;;++&$&&&x;;;+;:                                                                               
-                                             ::::::;;;;;::::::      x+;:::;;;;:::::::                                                                                  
-                                                                      `,
-  `
-  +$$&&&&&$;         :X$&&&&$X:                       :X$&&&&&$X;     :X&&&&&&&$+                               .;;+X$;                                               
-    +X&&&&&$X          X&&&$+                           +X&&&$+:        xX&&&&+:                              .$&&&&&+:                                               
-    :x&&&&&&&$:        X$&&X;                           ;X&&&$x.        +X&&&$x.                                X$&&$+:                                               
-    :x&&&&&&&&$x       X&&&X;                   x&:     ;X&&&$X.        +X&&&$x.                                X$&&&x:                                               
-    :x&&x&&&&&&&$      X&&&X:        _       .$&&+:     ;X&&&$x.        +X&&&$x.                                X$&&&x.                                               
-    :X&&x;X&&&&&&&:    X&&&X:   :+$&&&&&+   :&&&&$Xxxx; ;X&&&$X;.:;::::.xX&&&$x.   ;+$&&&&$+        :;+XXXXx;:  X$&&$x.   .XXXX+                                      
-    :X&&x::+&&&&&&&x   X$&&x:  X&&$;;X&&&$ ;$&&&&XXXX;  ;x$$$$&&&&&&&&&&&&$$$$x  +&$X+;+$&&&$.    :$&&$x++$&&$+ X$$$$+.   +$$+:                                       
-    :X&$x:  ;$&$&&$&&  +$&&x: $&&x:  :X&&x+  $&&&;.     ;+XXXXXXXXXXXXXXXX$$$X+  :+:    ;$$$Xx   X&&$;:   .++:  xX$$X+. ;&$+:                                         
-    :X$$x:   ;+$$$$$&&:;X$$+.;X&&x  +$$&&xx  $&&&+.     ;+XXX+;. .. .   ;xXXXX+        :$$$$X+  x$$$;;          xXXXX+:$$Xx;                                          
-    :X$Xx:    .;$XXXX$&$XX$+.;X&&&$Xx;:      $&$$;.     :+Xxx+;.        ;xXXxx+    ;XXX++XXXX+  xXXX;:          +XxxxxX$XXxx;                                         
-    :+Xx+:      ;XXXXXX&&xX+ ;;$$Xx:         $$XX;.     :+x+++;.        ;+x+++;  ;XX+:. ;xxxx+  +xxX++          +x+++::+XxX++:                                        
-    :+X++:       :+xxxxxX+x; .;xXX$$:     ,  XXxX+:     :;x+++;.        ;+++++; ;xx++   ;x++++  ;+x+x++         +x+++:.:;++x++:                                       
-    :;x++:        :;x+++++x;  :;+XX$&&$XXX;  ++xx&&X+x; :;+++;;.        ;+++++; ;;++xX;;xx++++: .;;++xXXx;:;;+: ;x+++:. :;+++++;                                      
-    X$++X&+         :x++++x;   .::+X$$$+::   .;;XX$+::  xX;;;;+;        xx;;;;+: ::+++;:: ++;;;.  ::;++++x+::.  Xx;;;+:  .:++++++.                                    
-  :+;;:::::;x+        ;++X+:       :;;;:        ::;:.  ;::::::::::;   .;::::::::::: ...    ::.       .:::::.  .;::::::::::  ::::::::                                   
-                                                                                                                                                                      
-                                                                                                                                                                      
-                                            ;&&&&&&&&&&&&&&&&&&x   x&&&&&&&&&&&&&$X+:.                                                                                
-                                            :;&&&&&&&&&&&&&&&&+:   :;&&&&&$&&&&&&&&&&&&+                                                                              
-                                            ;+:::::::::$&&&&$:.    :+&&&&&:.    ::&&&&&&$;                                                                            
-                                                      $&&&&X:.      ;X&&&&&:.     :;$&&&&&&                                                                            
-                                                    $&&&&X;:;+;:    +$&&&&&:.      ++&&&&&XX                                                                           
-                                                  :X$$$$&&&&&&&&&+  ;x&&&&&:.      +X&&&&&+x                                                                           
-                                                        .:X&&&&&&$; :+$$$$$:.      +X&$$$&++                                                                           
-                                                          :+$$$$$:: :;XxxxX..      xxXXxxX;+                                                                           
-                                                          :;XxxxX.. .:x+++x..     :+X++++::                                                                            
-                                            x&+         :XX;;;;;.   :+;;;+.     XXx;;;+::                                                                             
-                                            :;xx$&&$$XXX$X;:::;:.   .;+;;;++&$&&&x;;;+;:                                                                               
-                                             ::::::;;;;;::::::      x+;:::;;;;:::::::                                                                                  
-                                                                      `
-];
+// Both layers draw the same art; the subtitle is plain text under it.
+const logoArt = `
+                                            ;x$$&&&&$                                               :X&&$x   .xX$&&&&&.                               .xX$$&&&&X
+xX$&&&&&&XXX$&&$Xx+:                          .X&&&&$                                               $&&&&&+     +&&&&&.                                  .X&&&&X
+   X$$$$$    .x$$$$$X                          +$$$$X                                               .xXXX+      :$$$$$.                                   +$$$$X
+   x$$$$$      X$$$$$;                         +$$$$X                                                           :$$$$$.                                   +$$$$X
+   x$$$$$      x$$$$$;     .:+xx++xx+;.        ;$$$$X  .+++++++++;  .++++++;;;+++xx; :+xxxx+:     ;;;++xxx:     :$$$$$.       .;+x++xx+;.        .:+xxxxx+x$$$$X
+   x$$$$$     :$$$$$+    .+X$$X.   ;$$$X;      ;$$$$X   .;X$$$$X.    .:$X;..:;X$$$$X+;;;X$$$$X:   .:+$$$$$;     :$$$$$.     :x$$X:  .X$$$x.    .+X$$$+. .;X$$$$x
+   +XXXXX:::;xXXXX+:    .XXXXX.     ;XXXXx     ;XXXXx     .XXXXX;     ;X:     +XXXX+     +XXXXX.     XXXXX;     :XXXXX.    ;XXXX+    ;XXXXX   .xXXXX;     ;XXXXx
+   +XXXXX;;;;;::.       xXXXXX      :XXXXX;    ;XXXXx      .XXXXX;   :X:      +XXXX+      XXXXXx     XXXXX;     .XXXXX.   .XXXXX+;;;;+XXXXX:  +XXXXX      ;XXXXx
+   +XXXXX               XXXXXx      .XXXXX+    ;XXXXx       .xXXXX; .X;       +XXXX;      xXXXXx     XXXXX;     .XXXXX.   ;XXXXX;..........   xXXXX+      ;XXXXx
+   +xxxxx               +xxxxx      :xxxxx:    ;xxxxx        .xxxxx;x;        +xxxx;      xxxxx+     xxxxx;     .xxxxx.   .xxxxx+             ;xxxxx.     ;xxxx+
+   +xxxxx               .xxxxx.     ;xxxx;     ;xxxx+         .xxxxx+         ;xxxx;     :xxxx+.     xxxxx:     .xxxxx.    :xxxxx;       :+.  .+xxxx;     ;xxxx+
+.::+xxxxx;:..            .;+xx+.  .;xxx+.    ..+xxxxx:.        .xxx+          ;xxxxx;...:xxx+:     .:xxxxx+:. ..;xxxxx;..   .;xxxx+;:::;++:    .;xxxx+;::;+xxxxx;:.
+::::::::::::.               .:;;;;;;:..      ::::::::::.        .++           ;++++;.:;;;;:.      .:::::::::: .:::::::::.     ..:;;;;;:..        .:;;;;;...::::....
+                                                         ::::  .;;            ;++++:
+                                                        :+++++:+:             ;++++;
+                                                        .:;++;:.           .:;++++++;;:.
+`;
+const logoLayers = [logoArt, logoArt];
+// Part of the title, so it stays English in every locale.
+const logoSubtitle = "a NetHack variant";
 
 // Preserve desktop's original spacing, but give VR the visible art's bounds.
 const logoLayouts = logoLayers.map(logo => {
@@ -82,7 +40,7 @@ export interface StartupLogoProps {
 export function StartupLogo({ asciiLogoVisible }: StartupLogoProps) {
   if (!asciiLogoVisible) return null;
   return (
-    <div className="logo-container" role="img" aria-label={commonStrings.appName}>
+    <div className="logo-container" role="img" aria-label={`${commonStrings.appName}: ${logoSubtitle}`}>
       {logoLayouts.map(({ rows, left, width }, layer) => {
         return <pre className="nethack-ascii-logo" aria-hidden="true" key={layer}
           style={{ "--nh3d-logo-ink-left": `${left}ch`, "--nh3d-logo-ink-width": `${width}ch` } as CSSProperties}>
@@ -90,6 +48,10 @@ export function StartupLogo({ asciiLogoVisible }: StartupLogoProps) {
             style={{ "--nh3d-logo-wave-delay": `${index * 4.5 / Math.max(1, rows.length - 1)}s` } as CSSProperties}>
             {row || " "}
           </span>)}
+          {layer === 0 ? <span className="nh3d-logo-row nh3d-logo-subtitle"
+            style={{ "--nh3d-logo-wave-delay": "4.5s" } as CSSProperties}>
+            {logoSubtitle}
+          </span> : null}
         </pre>;
       })}
     </div>

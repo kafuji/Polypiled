@@ -29,7 +29,6 @@ export interface UseSettingsHydrationDependencies {
   readonly startupDefaultCharacterPreferencesByRuntime: Partial<Record<NethackRuntimeVersion, StartupCharacterPreferences>>;
   readonly setStartupCharacterPreferencesByRuntime: React.Dispatch<React.SetStateAction<Partial<Record<NethackRuntimeVersion, StartupCharacterPreferences>>>>;
   readonly runtimeVersion: NethackRuntimeVersion;
-  readonly setRandomCharacterName: React.Dispatch<React.SetStateAction<string>>;
   readonly setCreateCharacterName: React.Dispatch<React.SetStateAction<string>>;
   readonly setCreateRole: React.Dispatch<React.SetStateAction<string>>;
   readonly setCreateRace: React.Dispatch<React.SetStateAction<string>>;
@@ -51,7 +50,6 @@ export function useSettingsHydration(dependencies: UseSettingsHydrationDependenc
     startupDefaultCharacterPreferencesByRuntime,
     setStartupCharacterPreferencesByRuntime,
     runtimeVersion,
-    setRandomCharacterName,
     setCreateCharacterName,
     setCreateRole,
     setCreateRace,
@@ -91,10 +89,6 @@ export function useSettingsHydration(dependencies: UseSettingsHydrationDependenc
         const defaultRuntimePreferences =
           startupDefaultCharacterPreferencesByRuntime[runtimeVersion] ??
           createDefaultStartupCharacterPreferences(runtimeVersion);
-        setRandomCharacterName(
-          hydratedRuntimePreferences.randomName ||
-          defaultRuntimePreferences.randomName,
-        );
         setCreateCharacterName(
           hydratedRuntimePreferences.createName ||
           defaultRuntimePreferences.createName,

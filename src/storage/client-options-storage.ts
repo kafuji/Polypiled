@@ -25,7 +25,6 @@ type StartupInitOptionsStoredRecord = {
 };
 
 export type StartupCharacterPreferences = {
-  randomName: string;
   createName: string;
   createRole: string;
   createRace: string;
@@ -200,7 +199,6 @@ function normalizePersistedStartupCharacterPreferences(
   }
   const value = rawValue as Partial<StartupCharacterPreferences>;
   return {
-    randomName: sanitizeStartupPreferenceText(value.randomName, 30),
     createName: sanitizeStartupPreferenceText(value.createName, 30),
     createRole: sanitizeStartupPreferenceText(value.createRole, 30),
     createRace: sanitizeStartupPreferenceText(value.createRace, 30),

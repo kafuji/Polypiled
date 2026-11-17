@@ -62,7 +62,6 @@ export interface UseCharacterCreationDependencies {
   readonly setCharacterCreationConfig: React.Dispatch<React.SetStateAction<CharacterCreationConfig | null>>;
   readonly setStartupInitOptionValues: React.Dispatch<React.SetStateAction<StartupInitOptionValues>>;
   readonly startupInitOptionValues: StartupInitOptionValues;
-  readonly randomCharacterName: string;
   readonly createCharacterName: string;
   readonly normalizedCreateCharacterSelection: StartupCreateCharacterSelection;
   readonly createRole: string;
@@ -78,7 +77,6 @@ export interface UseCharacterCreationDependencies {
   readonly setStartupCharacterPreferencesByRuntime: React.Dispatch<React.SetStateAction<Partial<Record<NethackRuntimeVersion, StartupCharacterPreferences>>>>;
   readonly startupCharacterPreferencesByRuntime: Partial<Record<NethackRuntimeVersion, StartupCharacterPreferences>>;
   readonly startupDefaultCharacterPreferencesByRuntime: Partial<Record<NethackRuntimeVersion, StartupCharacterPreferences>>;
-  readonly setRandomCharacterName: React.Dispatch<React.SetStateAction<string>>;
   readonly setCreateCharacterName: React.Dispatch<React.SetStateAction<string>>;
 }
 
@@ -89,7 +87,6 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
     setCharacterCreationConfig,
     setStartupInitOptionValues,
     startupInitOptionValues,
-    randomCharacterName,
     createCharacterName,
     normalizedCreateCharacterSelection,
     createRole,
@@ -105,7 +102,6 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
     setStartupCharacterPreferencesByRuntime,
     startupCharacterPreferencesByRuntime,
     startupDefaultCharacterPreferencesByRuntime,
-    setRandomCharacterName,
     setCreateCharacterName,
   } = dependencies;
 
@@ -225,7 +221,6 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
 
   const startupCharacterPreferences = useMemo<StartupCharacterPreferences>(
     () => ({
-      randomName: randomCharacterName,
       createName: createCharacterName,
       createRole: normalizedCreateCharacterSelection.role,
       createRace: normalizedCreateCharacterSelection.race,
@@ -233,7 +228,6 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
       createAlign: normalizedCreateCharacterSelection.align,
     }),
     [
-      randomCharacterName,
       createCharacterName,
       normalizedCreateCharacterSelection.role,
       normalizedCreateCharacterSelection.race,
@@ -309,9 +303,6 @@ export function useCharacterCreation(dependencies: UseCharacterCreationDependenc
     const defaultRuntimePreferences =
       startupDefaultCharacterPreferencesByRuntime[runtimeVersion] ??
       createDefaultStartupCharacterPreferences(runtimeVersion);
-    setRandomCharacterName(
-      runtimePreferences.randomName || defaultRuntimePreferences.randomName,
-    );
     setCreateCharacterName(
       runtimePreferences.createName || defaultRuntimePreferences.createName,
     );
