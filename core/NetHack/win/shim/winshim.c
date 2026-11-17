@@ -309,7 +309,28 @@ VDECLCB(shim_suspend_nhwindows,(const char *str), "vs", P2V str)
 VDECLCB(shim_resume_nhwindows,(void), "v")
 DECLCB(winid, shim_create_nhwindow, (int type), "ii", A2P type)
 VDECLCB(shim_clear_nhwindow,(winid window), "vi", A2P window)
+/* Before the map is shown, queue the hero's knowledge of it
+   (nh3d_knowledge.c); local_callback() delivers it ahead of this call. */
+#ifdef __EMSCRIPTEN__
+void nh3d_knowledge_publish(void);
+void shim_display_nhwindow(winid window, boolean blocking);
+
+void
+shim_display_nhwindow(winid window, boolean blocking)
+{
+    void *args[] = { A2P window, A2P blocking };
+
+    debugf("SHIM GRAPHICS: shim_display_nhwindow\n");
+    if (window == WIN_MAP && window != WIN_ERR)
+        nh3d_knowledge_publish();
+    if (!shim_callback_name)
+        return;
+    local_callback(shim_callback_name, "shim_display_nhwindow", NULL, "vib",
+                   args);
+}
+#else
 VDECLCB(shim_display_nhwindow,(winid window, boolean blocking), "vib", A2P window, A2P blocking)
+#endif
 VDECLCB(shim_destroy_nhwindow,(winid window), "vi", A2P window)
 VDECLCB(shim_curs,(winid a, int x, int y), "viii", A2P a, A2P x, A2P y)
 VDECLCB(shim_putstr,(winid w, int attr, const char *str), "viis", A2P w, A2P attr, P2V str)

@@ -1,8 +1,11 @@
 /**
  * Light sources the hero carries, read from the inventory text the game sends
  * ("a brass lantern (lit)", "2 wax candles (lit)", "the Candelabrum of
- * Invocation (7 candles, lit)", "Sunsword (weapon in hand, lit)").
+ * Invocation (7 candles, lit)", "Sunsword (weapon in hand, lit)"), or,
+ * with a core that sends knowledge frames, from the lights it reports.
  */
+
+import type { KnowledgeLight, KnowledgeLightKind } from "../../../runtime/knowledge";
 
 export type CarriedLightKind = "candle" | "lamp" | "lantern" | "magic" | "sunlight";
 
@@ -69,6 +72,43 @@ export function classifyCarriedLight(text: string): CarriedLight | null {
   return { kind: "lamp", radius: 1 };
 }
 
+function isStronger(light: CarriedLight, best: CarriedLight | null): boolean {
+  return (
+    !best ||
+    light.radius > best.radius ||
+    (light.radius === best.radius && KIND_PRIORITY.indexOf(light.kind) < KIND_PRIORITY.indexOf(best.kind))
+  );
+}
+
+/** How each kind of light the game reports looks when the hero carries it. */
+const KNOWLEDGE_LIGHT_LOOKS: Readonly<Record<KnowledgeLightKind, CarriedLightKind>> = {
+  candle: "candle",
+  lamp: "lamp",
+  potion: "lamp",
+  other: "lamp",
+  lantern: "lantern",
+  "magic-lamp": "magic",
+  sunsword: "sunlight",
+  // The hero polymorphed into a light-emitting form.
+  monster: "magic",
+};
+
+/**
+ * The strongest light the hero carries or gives off, from the lights the game
+ * reports in its knowledge frames. The radius is the game's own.
+ */
+export function resolveCarriedLightFromKnowledge(
+  lights: readonly KnowledgeLight[],
+): CarriedLight | null {
+  let best: CarriedLight | null = null;
+  for (const light of lights) {
+    if (!light.carriedByHero || light.range <= 0) continue;
+    const candidate: CarriedLight = { kind: KNOWLEDGE_LIGHT_LOOKS[light.kind], radius: light.range };
+    if (isStronger(candidate, best)) best = candidate;
+  }
+  return best;
+}
+
 /** The strongest lit light source in an inventory snapshot, if any. */
 export function resolveCarriedLight(
   inventory: readonly unknown[] | null | undefined,
@@ -79,14 +119,7 @@ export function resolveCarriedLight(
     const record = item as { text?: unknown; isCategory?: unknown };
     if (record.isCategory === true) continue;
     const light = classifyCarriedLight(String(record.text ?? ""));
-    if (!light) continue;
-    if (
-      !best ||
-      light.radius > best.radius ||
-      (light.radius === best.radius && KIND_PRIORITY.indexOf(light.kind) < KIND_PRIORITY.indexOf(best.kind))
-    ) {
-      best = light;
-    }
+    if (light && isStronger(light, best)) best = light;
   }
   return best;
 }

@@ -958,6 +958,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
         }
         break;
 
+      case "knowledge_frame":
+        if (data.frame) this.systems.playerKnowledge.apply(data.frame);
+        break;
+
       case "monster_attack": {
         const targetEntityId = this.systems.runtimeEntityTracking.normalizeRuntimeTargetEntityId(
           data.targetId,
@@ -1571,6 +1575,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         break;
 
       case "runtime_terminated":
+        this.systems.playerKnowledge.reset();
         this.systems.promptDialogs.handleRuntimeTermination(
           typeof data.reason === "string" ? data.reason : "",
         );

@@ -3,6 +3,7 @@
 
 import type { RuntimeCoordinator } from "../runtime-coordinator";
 import { isLoggingEnabled } from "../../../logging";
+import { decodeKnowledgeFrame } from "../../knowledge";
 import type { RuntimePointerContract } from "../abi/pointer-contract";
 import type { RuntimeGlyphs } from "./glyphs";
 import type { RuntimeMemory } from "../abi/memory";
@@ -358,6 +359,24 @@ export class RuntimeMapCallbacks {
       return 0;
     }
   }
+
+  /** Knowledge frame from the core (see src/runtime/knowledge.ts), queued before each map display. */
+  handleShimKnowledgeFrame(args) {
+    const frame = decodeKnowledgeFrame(args[0]);
+    if (!frame) {
+      if (!this.reportedUnreadableKnowledgeFrame) {
+        this.reportedUnreadableKnowledgeFrame = true;
+        console.warn("Ignoring a knowledge frame this client cannot read (format version or length mismatch).");
+      }
+      return 0;
+    }
+    if (this.deps.coordinator.eventHandler) {
+      this.deps.coordinator.emit({ type: "knowledge_frame", frame });
+    }
+    return 0;
+  }
+
+  private reportedUnreadableKnowledgeFrame = false;
 
   handleShimMonsterAttack(args) {
     {

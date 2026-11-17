@@ -18,6 +18,7 @@ import { VultureProjectionDebug } from "./diagnostics/vulture-projection-debug";
 import { Lighting } from "./rendering/lighting";
 import { ExploredMask } from "./rendering/explored-mask";
 import { LightField } from "./rendering/light-field";
+import { PlayerKnowledge } from "./world/player-knowledge";
 import { WallTops } from "./rendering/wall-tops";
 import { RenderPipeline } from "./rendering/render-pipeline";
 import { WebXrPresentation } from "./rendering/webxr-presentation";
@@ -84,6 +85,7 @@ export interface EngineSystems {
   readonly lighting: Lighting;
   readonly exploredMask: ExploredMask;
   readonly lightField: LightField;
+  readonly playerKnowledge: PlayerKnowledge;
   readonly wallTops: WallTops;
   readonly renderPipeline: RenderPipeline;
   readonly questSceneExport: QuestSceneExport;
@@ -880,11 +882,13 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get tilesetAssets() { return tilesetAssets; },
     get wallGeometry() { return wallGeometry; },
   });
+  const playerKnowledge = new PlayerKnowledge();
   const lightField = new LightField({
     get camera() { return camera; },
     get engineState() { return engineState; },
     get lighting() { return lighting; },
     get movementInput() { return movementInput; },
+    get playerKnowledge() { return playerKnowledge; },
     get playerMovement() { return playerMovement; },
     get promptDialogs() { return promptDialogs; },
     get terminalRendering() { return terminalRendering; },
@@ -945,6 +949,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     lighting,
     exploredMask,
     lightField,
+    playerKnowledge,
     wallTops,
     renderPipeline,
     bloodGround,

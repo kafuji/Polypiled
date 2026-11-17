@@ -276,6 +276,9 @@ class LocalNetHackRuntime {
       case "shim_monster_killed":
         return this.systems.mapCallbacks.handleShimMonsterKilled(args);
 
+      case "shim_knowledge_frame":
+        return this.systems.mapCallbacks.handleShimKnowledgeFrame(args);
+
       case "shim_player_selection":
         console.log("NetHack player selection started");
         // TO-DO: Is it OK we ignore this?
