@@ -318,7 +318,7 @@
       "kind": "overlay",
       "ref": "floor",
       "refNote": "Image 1 is the floor of this dungeon, for scale and colour only; do not paint the floor.",
-      "prompt": "Only the scratches of an engraving: a few short lines of crude, illegible runes scratched into stone with a dagger point, thin pale grey-white scratch marks spread over the middle of the image, about two thirds of its width. Paint nothing but the scratch marks themselves; everything else is fully transparent.",
+      "prompt": "Only an engraving cut into stone: a single short row of crude, illegible runes and angular sigils, deeply chiselled, across the middle of the image about three quarters of its width. Each stroke is a bold groove: a dark, almost black channel with a thin pale chipped edge along it, so the writing stands out clearly against grey stone and stays readable when the image is shrunk to 64 pixels. Paint nothing but the carved strokes themselves; everything else is fully transparent.",
       "outputs": [
         {
           "key": "engraving_in_a_room",
@@ -331,7 +331,7 @@
           "tint": 0.85
         }
       ],
-      "opacity": 0.6
+      "opacity": 0.92
     },
     {
       "name": "trap_plate",

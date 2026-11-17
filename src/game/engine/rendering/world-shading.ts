@@ -139,7 +139,9 @@ const EXPLORED_MASK_GLSL = `
  * lit room, texture range, 1 when alpha holds what the game says the hero sees). On terrain, anything neither lit above
  * the ambient level nor reached by the hero's light is only remembered (with
  * the game's report: anything the hero does not see): it loses colour toward
- * uMemoryLook (saturation, then an RGB tint).
+ * uMemoryLook (saturation, then an RGB tint that also holds the brightness).
+ * Monsters and items get the same look on cells the hero does not see, when
+ * the game reports vision.
  */
 const LIGHT_FIELD_PREFIX_GLSL = `
         uniform sampler2D uLightField;
@@ -153,6 +155,11 @@ const LIGHT_FIELD_PREFIX_GLSL = `
         uniform vec4 uMemoryLook;
 `;
 
+/** The origin of an entity's object, so a whole sprite reads one light cell. */
+const ENTITY_ORIGIN_VARYING_GLSL = `
+        varying vec3 vEntityOrigin;
+`;
+
 function lightFieldGlsl(useSurfaceNormal: boolean): string {
   const normal = useSurfaceNormal
     ? `
@@ -162,16 +169,22 @@ function lightFieldGlsl(useSurfaceNormal: boolean): string {
   const facing = useSurfaceNormal
     ? "clamp(dot(lightNormal, toPlayerLight / max(playerLightDistance, 0.0001)) * 0.75 + 0.25, 0.0, 1.0)"
     : "1.0";
-  // Only terrain is remembered; monsters and items are drawn as last seen.
-  const memory = useSurfaceNormal
+  // Terrain the hero does not see is drawn as remembered. Monsters and items
+  // are too, but only when the game reports what the hero sees (they stand on
+  // the cell at their origin, so the whole sprite reads that one cell).
+  const seen = useSurfaceNormal
     ? `
           // uLightParams.w = 1: alpha is what the hero sees, as the game reports it.
-          float seen = mix(max(litAboveAmbient, lightSample.a), lightSample.a, uLightParams.w);
+          float seen = mix(max(litAboveAmbient, lightSample.a), lightSample.a, uLightParams.w);`
+    : `
+          vec2 entityLightCell = vec2(vEntityOrigin.x / max(uWorldTileScaleX, 0.000001), -vEntityOrigin.y) / ${TILE_SIZE.toFixed(6)};
+          float entitySeen = texture2D(uLightField, (entityLightCell + 0.5) / uLightFieldGrid).a;
+          float seen = mix(1.0, entitySeen, step(0.5, uLightParams.w));`;
+  const memory = `${seen}
           float memorySaturation = mix(uMemoryLook.x, 1.0, seen);
           float memoryLuma = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
           gl_FragColor.rgb = mix(vec3(memoryLuma), gl_FragColor.rgb, memorySaturation) *
-            mix(uMemoryLook.yzw, vec3(1.0), seen);`
-    : "";
+            mix(uMemoryLook.yzw, vec3(1.0), seen);`;
   return `
         if (uLightFieldEnabled > 0.0) {
           vec3 lightPoint = vec3(logicalWorldPosition, vWorldPos.z);
@@ -284,7 +297,7 @@ export function createWorldShadingUniforms(initial: WorldShadingInitialValues) {
     uPlayerLightColor: { value: new THREE.Vector3(0, 0, 0) },
     uPlayerLightRadius: { value: 1 },
     uLightParams: { value: new THREE.Vector4(1.35, 0.6, 2, 0) },
-    /** Remembered terrain: (saturation, RGB tint). */
+    /** Remembered places: (saturation, RGB tint times brightness). */
     uMemoryLook: { value: new THREE.Vector4(1, 1, 1, 1) },
     /** Seconds; drives moving liquid surfaces. */
     uWorldTime: { value: 0 },
@@ -369,7 +382,7 @@ export class WorldShading {
     const liquidKeySuffix = liquid ? "_liquid_v1" : "";
     // Force Three.js to compile a unique shader for this patch
     material.customProgramCacheKey = () =>
-      `vignette_patch_v11${shaderKeySuffix}${bloodGroundGuardKeySuffix}${faceShadeKeySuffix}${exploredMaskKeySuffix}${lightNormalKeySuffix}${liquidKeySuffix}`;
+      `vignette_patch_v12${shaderKeySuffix}${bloodGroundGuardKeySuffix}${faceShadeKeySuffix}${exploredMaskKeySuffix}${lightNormalKeySuffix}${liquidKeySuffix}`;
 
     material.onBeforeCompile = (shader) => {
       // Bind our class-level uniforms to this specific shader
@@ -417,6 +430,7 @@ export class WorldShading {
       // Inject varying into Vertex Shader
       shader.vertexShader = `
         varying vec3 vWorldPos;
+        ${terrain ? "" : ENTITY_ORIGIN_VARYING_GLSL}
         ${shader.vertexShader}
       `;
 
@@ -430,7 +444,12 @@ export class WorldShading {
           #ifdef USE_INSTANCING
             tempWorldPosition = instanceMatrix * tempWorldPosition;
           #endif
-          vWorldPos = (modelMatrix * tempWorldPosition).xyz;`,
+          vWorldPos = (modelMatrix * tempWorldPosition).xyz;${terrain ? "" : `
+          #ifdef USE_INSTANCING
+            vEntityOrigin = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+          #else
+            vEntityOrigin = modelMatrix[3].xyz;
+          #endif`}`,
         );
       } else if (shader.vertexShader.includes("#include <fog_vertex>")) {
         // --- 2D SPRITES / BILLBOARDS ---
@@ -438,7 +457,8 @@ export class WorldShading {
           "#include <fog_vertex>",
           `#include <fog_vertex>
           // modelMatrix[3] is the translation column (vec4). Extract xyz for world position.
-          vWorldPos = modelMatrix[3].xyz;`,
+          vWorldPos = modelMatrix[3].xyz;${terrain ? "" : `
+          vEntityOrigin = modelMatrix[3].xyz;`}`,
         );
       }
 
@@ -941,6 +961,7 @@ export class WorldShading {
         uniform bool uIsFpsMode;
         uniform vec4 uFaceShade;
         varying vec3 vWorldPos;
+        ${terrain ? "" : ENTITY_ORIGIN_VARYING_GLSL}
         ${bloodGroundSpecularPrefix}
         ${LIGHT_FIELD_PREFIX_GLSL}
         ${faceShade ? WALL_TOP_PREFIX_GLSL : ""}

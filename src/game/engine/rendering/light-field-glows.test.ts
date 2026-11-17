@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { isLavaCmapGlyph, isLitFloorCmapGlyph } from "../../glyphs/behavior";
+import { classifyTileBehavior, getDefaultDarkFloorGlyph, isCorridorFloorCmapGlyph, isLavaCmapGlyph, isLitFloorCmapGlyph } from "../../glyphs/behavior";
 import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
 import { NH5_TILE_KEYS } from "../../hires-tiles/tile-keys.5.generated";
 import { resolveGlowingMonsterLight } from "./glowing-monsters";
@@ -22,6 +22,20 @@ describe("light-related glyphs", () => {
     expect(isLitFloorCmapGlyph(cmapGlyph(23))).toBe("corridor");
     expect(isLavaCmapGlyph(cmapGlyph(40))).toBe(true);
     expect(isLavaCmapGlyph(cmapGlyph(34))).toBe(false); // a grave
+  });
+
+  it("draws an engraving in a room at full brightness (5.0 symbol numbers)", () => {
+    const engraving = classifyTileBehavior({ glyph: cmapGlyph(21) });
+    expect(engraving.isDarkOverlay).toBe(false);
+    expect(engraving.darkenFactor).toBe(1);
+    expect(classifyTileBehavior({ glyph: cmapGlyph(20) }).darkenFactor).toBe(1); // dark room floor is drawn as is
+    expect(classifyTileBehavior({ glyph: cmapGlyph(0) }).isDarkOverlay).toBe(true); // stone
+    expect(getGlyphCatalogEntry(getDefaultDarkFloorGlyph())?.symidx).toBe(22); // dark corridor, not an engraving
+  });
+
+  it("finds corridor floor of every kind", () => {
+    expect([22, 23, 24].map((symidx) => isCorridorFloorCmapGlyph(cmapGlyph(symidx)))).toEqual([true, true, true]);
+    expect([19, 20, 21, 0].map((symidx) => isCorridorFloorCmapGlyph(cmapGlyph(symidx)))).toEqual([false, false, false, false]);
   });
 
   it("recognises glowing monsters", () => {
@@ -99,7 +113,7 @@ describe("LightField glows, magic light and memory", () => {
     lights.dispose();
   });
 
-  it("fades the colour of remembered terrain only", () => {
+  it("draws unseen places as remembered, entities by the cell they stand on", () => {
     const shading = new WorldShading({ maxDarkAlpha: 0.8, bloodGroundStrength: 1, bloodGroundSpecularReferenceStrength: 1 });
     const compile = (material: THREE.Material, options = {}) => {
       const base = material instanceof THREE.SpriteMaterial ? THREE.ShaderLib.sprite : THREE.ShaderLib.basic;
@@ -108,8 +122,14 @@ describe("LightField glows, magic light and memory", () => {
       material.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
       return shader;
     };
-    expect(compile(new THREE.MeshBasicMaterial()).fragmentShader).toContain("memorySaturation");
-    expect(compile(new THREE.MeshBasicMaterial(), { entity: true }).fragmentShader).not.toContain("memorySaturation");
-    expect(compile(new THREE.SpriteMaterial()).fragmentShader).not.toContain("memorySaturation");
+    const terrain = compile(new THREE.MeshBasicMaterial());
+    expect(terrain.fragmentShader).toContain("memorySaturation");
+    expect(terrain.fragmentShader).not.toContain("entitySeen");
+    for (const entity of [compile(new THREE.MeshBasicMaterial(), { entity: true }), compile(new THREE.SpriteMaterial())]) {
+      // Only with the game's vision report (uLightParams.w), read at the entity's origin.
+      expect(entity.fragmentShader).toContain("entitySeen");
+      expect(entity.fragmentShader).toContain("step(0.5, uLightParams.w)");
+      expect(entity.vertexShader).toContain("vEntityOrigin = modelMatrix[3].xyz");
+    }
   });
 });

@@ -158,8 +158,9 @@ export function getDefaultFloorGlyph(): number {
 }
 
 export function getDefaultDarkFloorGlyph(): number {
-  // drawing.c: index 21 is dark corridor, which is a good unseen-dark fallback.
-  return getRepresentativeCmapGlyph(21) ?? getDefaultFloorGlyph();
+  // defsym.h: S_corr (dark corridor) is 22 in NetHack 5.0, a good unseen-dark
+  // fallback. (21 is S_engroom, an engraving in a room, since 5.0.)
+  return getRepresentativeCmapGlyph(22) ?? getDefaultFloorGlyph();
 }
 
 export function getDefaultDarkWallGlyph(): number {
@@ -195,6 +196,12 @@ export function isLitFloorCmapGlyph(glyph: number): "room" | "corridor" | null {
   return null;
 }
 
+/** Corridor floor: dark, lit, or with an engraving (S_corr, S_litcorr, S_engrcorr). */
+export function isCorridorFloorCmapGlyph(glyph: number): boolean {
+  const cmapIndex = getCmapIndex(glyph, null);
+  return cmapIndex === 22 || cmapIndex === 23 || cmapIndex === 24;
+}
+
 /** Stone and the wall pieces (S_stone..S_trwall). */
 export function isWallBlockCmapGlyph(glyph: number): boolean {
   const cmapIndex = getCmapIndex(glyph, null);
@@ -214,7 +221,7 @@ export function isLavaCmapGlyph(glyph: number): boolean {
 }
 
 export function isDarkCorridorCmapGlyph(glyph: number): boolean {
-  return getCmapIndex(glyph, null) === 21;
+  return getCmapIndex(glyph, null) === 22;
 }
 
 export function isDoorwayCmapGlyph(glyph: number): boolean {
@@ -690,10 +697,12 @@ export function classifyTileBehavior(input: {
     input.glyph,
     runtimeCmapIndexForInputGlyph,
   );
+  // Stone and the dark part of a room. (In NetHack 3.6, 21 was the dark
+  // corridor; in 5.0 it is S_engroom, an engraving in a lit room, which must
+  // not be darkened.)
   const isDarkOverlay =
     darkOverlayIndex === 0 ||
-    darkOverlayIndex === 20 ||
-    darkOverlayIndex === 21;
+    darkOverlayIndex === 20;
   // Player location is authoritative from shim_cliparound (player_position),
   // not from glyph range heuristics.
   const isPlayerGlyph = false;
@@ -711,7 +720,7 @@ export function classifyTileBehavior(input: {
         input.priorTerrain.kind ?? null,
       );
     }
-    darkenFactor = darkOverlayIndex === 21 ? 0.45 : 0.6;
+    darkenFactor = 0.6;
   }
 
   const disposition = inferDisposition(effective);
