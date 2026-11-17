@@ -2380,6 +2380,16 @@ export class VultureTilesetTranslator {
       }
       case "obj":
       case "body": {
+        // The tile the game draws shows what the object looks like. Its glyph
+        // may be a generic class glyph (a type the hero does not know), and
+        // the type's own image would not match its shuffled appearance anyway.
+        if (forBillboard && entry.kind === "obj" && typeof tileIndex === "number" && Number.isFinite(tileIndex) && tileIndex >= 0) {
+          const appearanceToken = LEGACY_OBJECT_TOKEN_BY_TILE.get(legacyTileForNh5Tile(Math.trunc(tileIndex)));
+          if (appearanceToken) {
+            this.objectTokenByTileIndex.set(Math.trunc(tileIndex), appearanceToken);
+            return { category: "object", name: appearanceToken, projection: "sprite" };
+          }
+        }
         if (
           forBillboard &&
           typeof tileIndex === "number" &&

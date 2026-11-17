@@ -125,9 +125,130 @@ enum nh3d_light_kind {
 #define LSF_SHOW 0x1
 #endif
 
-extern int glyph_to_tile_index(int);
+#ifdef TILES_IN_GLYPHMAP
+extern glyph_map glyphmap[MAX_GLYPH];
+#endif
 
 void nh3d_knowledge_publish(void);
+int nh3d_public_glyph(int);
+int nh3d_public_tile(int);
+int nh3d_appearance_tile(int);
+void nh3d_public_glyphinfo(const glyph_info *, glyph_info *);
+
+/*
+ * Object identity.
+ *
+ * An object glyph names the object's real type, and its tile is the tile of
+ * that type's appearance; types sharing a description ("gray stone",
+ * "lamp", glass and gems of one colour) even have tiles of their own.  So
+ * while the hero does not know a type, the shell is given the generic glyph
+ * of its class and the tile of what it looks like, the same tile for every
+ * type that looks alike.  Before a game starts the descriptions are not
+ * shuffled yet and nothing is hidden (the glyph catalog is generated then).
+ */
+
+static int
+nh3d_raw_tile(int glyph)
+{
+#ifdef TILES_IN_GLYPHMAP
+    if (glyph >= 0 && glyph < MAX_GLYPH)
+        return glyphmap[glyph].tileidx;
+#else
+    nhUse(glyph);
+#endif
+    return -1;
+}
+
+/* the type an ordinary object glyph shows, or -1 */
+static int
+nh3d_glyph_otyp(int glyph, boolean *piletop)
+{
+    if (glyph >= GLYPH_OBJ_OFF && glyph < GLYPH_OBJ_OFF + NUM_OBJECTS) {
+        *piletop = FALSE;
+        return glyph - GLYPH_OBJ_OFF;
+    }
+    if (glyph >= GLYPH_OBJ_PILETOP_OFF
+        && glyph < GLYPH_OBJ_PILETOP_OFF + NUM_OBJECTS) {
+        *piletop = TRUE;
+        return glyph - GLYPH_OBJ_PILETOP_OFF;
+    }
+    return -1;
+}
+
+/* the glyph shows a type the hero does not know */
+static boolean
+nh3d_glyph_hides_type(int glyph, int *otyp, boolean *piletop)
+{
+    int typ = nh3d_glyph_otyp(glyph, piletop);
+
+    if (typ < 0 || u.uz.dlevel <= 0)
+        return FALSE;
+    if (objects[typ].oc_name_known || !OBJ_DESCR(objects[typ]))
+        return FALSE;
+    *otyp = typ;
+    return TRUE;
+}
+
+int
+nh3d_public_glyph(int glyph)
+{
+    int otyp;
+    boolean piletop;
+
+    if (!nh3d_glyph_hides_type(glyph, &otyp, &piletop))
+        return glyph;
+    return (int) objects[otyp].oc_class
+           + (piletop ? GLYPH_OBJ_PILETOP_OFF : GLYPH_OBJ_OFF);
+}
+
+/* the tile of what the glyph looks like, the same for look-alike types */
+int
+nh3d_appearance_tile(int glyph)
+{
+    int otyp, owner, shown, oclass, k;
+    boolean piletop;
+    const char *descr;
+
+    if (!nh3d_glyph_hides_type(glyph, &otyp, &piletop))
+        return nh3d_raw_tile(glyph);
+    /* the first type whose own description reads the same */
+    descr = obj_descr[objects[otyp].oc_descr_idx].oc_descr;
+    oclass = objects[otyp].oc_class;
+    owner = objects[otyp].oc_descr_idx;
+    for (k = svb.bases[oclass]; k < NUM_OBJECTS && objects[k].oc_class == oclass;
+         k++)
+        if (obj_descr[k].oc_descr && !strcmp(obj_descr[k].oc_descr, descr)) {
+            owner = k;
+            break;
+        }
+    /* that description's own tile now belongs to whichever type has it */
+    shown = otyp;
+    for (k = 0; k < NUM_OBJECTS; k++)
+        if (objects[k].oc_descr_idx == owner) {
+            shown = k;
+            break;
+        }
+    return nh3d_raw_tile(shown
+                         + (piletop ? GLYPH_OBJ_PILETOP_OFF : GLYPH_OBJ_OFF));
+}
+
+/* the tile for a glyph the shell asks about: never one that tells a type */
+int
+nh3d_public_tile(int glyph)
+{
+    return nh3d_raw_tile(nh3d_public_glyph(glyph));
+}
+
+/* what the shell is shown in place of a glyph the game displays */
+void
+nh3d_public_glyphinfo(const glyph_info *in, glyph_info *out)
+{
+    *out = *in;
+    if (nh3d_public_glyph(in->glyph) != in->glyph) {
+        out->gm.tileidx = (short) nh3d_appearance_tile(in->glyph);
+        out->glyph = nh3d_public_glyph(in->glyph);
+    }
+}
 
 static int nh3d_frame[NH3D_MAX_WORDS];
 static int nh3d_prev_cells[ROWNO][COLNO][NH3D_CELL_WORDS];
@@ -146,7 +267,7 @@ nh3d_tile(int glyph)
 
     if (glyph < 0 || glyph >= MAX_GLYPH)
         return 0xffff;
-    tile = glyph_to_tile_index(glyph);
+    tile = nh3d_appearance_tile(glyph);
     return (tile < 0) ? 0xffff : (tile & 0xffff);
 }
 

@@ -265,7 +265,10 @@ export class RuntimeMapCallbacks {
               ) {
                 decodedColor = glyphInfo.color;
               }
-              decodedTileIndex = this.deps.runtimeGlyphs.extractGlyphInfoTileIndex(glyphInfo);
+              // Keep the tile the game printed: for an object of a type the
+              // hero does not know, the glyph is its class's generic glyph and
+              // only the printed tile shows what it looks like.
+              decodedTileIndex ??= this.deps.runtimeGlyphs.extractGlyphInfoTileIndex(glyphInfo);
               decodedSymidx = this.deps.runtimeGlyphs.extractGlyphInfoSymidx(glyphInfo);
               decodedGlyphFlags = this.deps.runtimeGlyphs.extractGlyphInfoGlyphFlags(glyphInfo);
             }

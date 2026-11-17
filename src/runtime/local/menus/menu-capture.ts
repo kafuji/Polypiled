@@ -235,7 +235,9 @@ export class RuntimeMenuCapture {
           isTileApplicable = false;
         }
 
-        if (isTileApplicable && tileIndexForGlyphHelper) {
+        // The tile in the menu's glyph info comes first: for an object of a
+        // type the hero does not know, only it shows what the item looks like.
+        if (isTileApplicable && tileIndexForGlyphHelper && menuItemTileIndex === null) {
           try {
             const helperTileIndex = tileIndexForGlyphHelper(finalGlyph);
             if (

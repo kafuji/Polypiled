@@ -43,6 +43,10 @@ static int nh3d_monster_id_from_tile(coordxy, coordxy, int);
 static int nh3d_get_recent_attack_target_id(int);
 static void nh3d_record_recent_attack(unsigned, int);
 static void nh3d_queue_shim_notification(const char *, int, int, int, int);
+#ifdef __EMSCRIPTEN__
+/* nh3d_knowledge.c: what the shell may be shown of a glyph */
+void nh3d_public_glyphinfo(const glyph_info *, glyph_info *);
+#endif
 
 static boolean
 nh3d_monster_has_trackable_glyph(struct monst *mtmp)
@@ -336,10 +340,37 @@ VDECLCB(shim_curs,(winid a, int x, int y), "viii", A2P a, A2P x, A2P y)
 VDECLCB(shim_putstr,(winid w, int attr, const char *str), "viis", A2P w, A2P attr, P2V str)
 VDECLCB(shim_display_file,(const char *name, boolean complain), "vsb", P2V name, A2P complain)
 VDECLCB(shim_start_menu,(winid window, unsigned long mbehavior), "vii", A2P window, A2P mbehavior)
+#ifdef __EMSCRIPTEN__
+/* menus show objects too (inventory, pickup): same rule as the map */
+void shim_add_menu(winid window, const glyph_info *glyphinfo,
+                   const ANY_P *identifier, char ch, char gch, int attr,
+                   int clr, const char *str, unsigned int itemflags);
+
+void
+shim_add_menu(winid window, const glyph_info *glyphinfo,
+              const ANY_P *identifier, char ch, char gch, int attr, int clr,
+              const char *str, unsigned int itemflags)
+{
+    glyph_info shown = nul_glyphinfo;
+    void *args[] = { A2P window, P2V &shown, P2V identifier, A2P ch,
+                     A2P gch, A2P attr, A2P clr, P2V str, A2P itemflags };
+
+    debugf("SHIM GRAPHICS: shim_add_menu\n");
+    if (glyphinfo)
+        nh3d_public_glyphinfo(glyphinfo, &shown);
+    else
+        args[1] = (void *) 0;
+    if (!shim_callback_name)
+        return;
+    local_callback(shim_callback_name, "shim_add_menu", NULL, "vipi00iisi",
+                   args);
+}
+#else
 VDECLCB(shim_add_menu,
     (winid window, const glyph_info *glyphinfo, const ANY_P *identifier, char ch, char gch, int attr, int clr, const char *str, unsigned int itemflags),
     "vipi00iisi",
     A2P window, P2V glyphinfo, P2V identifier, A2P ch, A2P gch, A2P attr, A2P clr, P2V str, A2P itemflags)
+#endif
 VDECLCB(shim_end_menu,(winid window, const char *prompt), "vis", A2P window, P2V prompt)
 /* XXX: shim_select_menu menu_list is an output */
 DECLCB(int, shim_select_menu,(winid window, int how, MENU_ITEM_P **menu_list), "iiip", A2P window, A2P how, P2V menu_list)
@@ -389,8 +420,19 @@ shim_print_glyph(winid w, coordxy x, coordxy y, const glyph_info *glyphinfo,
     debugf("SHIM GRAPHICS: shim_print_glyph\n");
 #ifdef __EMSCRIPTEN__
     if (shim_callback_name) {
-        void *args[] = { A2P w, A2P x, A2P y, P2V glyphinfo, P2V bkglyphinfo,
+        /* the shell never sees a type the hero does not know */
+        glyph_info shown = nul_glyphinfo, shownbk = nul_glyphinfo;
+        void *args[] = { A2P w, A2P x, A2P y, P2V &shown, P2V &shownbk,
                          A2P monster_id, A2P attacking_target_id };
+
+        if (glyphinfo)
+            nh3d_public_glyphinfo(glyphinfo, &shown);
+        else
+            args[3] = (void *) 0;
+        if (bkglyphinfo)
+            nh3d_public_glyphinfo(bkglyphinfo, &shownbk);
+        else
+            args[4] = (void *) 0;
         local_callback(shim_callback_name, "shim_print_glyph", NULL,
                        "vi11ppii", args);
     }
