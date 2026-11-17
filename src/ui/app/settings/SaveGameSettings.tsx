@@ -3,7 +3,6 @@ import type { NethackRuntimeVersion } from "../../../runtime/types";
 import { t } from "../shared/translations";
 import { fetchSavedGames, type SaveGameRecord } from "../startup/saved-games";
 import { exportSavedGame, importSavedGame, MAX_SAVE_ARCHIVE_BYTES, SaveTransferError } from "../startup/save-transfer";
-import { resolveRuntimeVersionDisplayLabel } from "../startup/RuntimeVersionBadge";
 import { OptionLabelWithInfo } from "./OptionLabelWithInfo";
 
 export function SaveGameSettings({ runtimeVersion, gameActive }: {
@@ -48,7 +47,7 @@ export function SaveGameSettings({ runtimeVersion, gameActive }: {
   };
 
   return <>
-    <div className="nh3d-options-group-title">{resolveRuntimeVersionDisplayLabel()}</div>
+    <div className="nh3d-options-group-title">NetHack 5.0</div>
     <div className="nh3d-option-row">
       <div className="nh3d-option-copy">
         <OptionLabelWithInfo label={strings.importLabel} description={strings.importDescription} />

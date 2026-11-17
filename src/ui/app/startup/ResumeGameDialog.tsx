@@ -20,9 +20,6 @@ import type {
   StartupFlowStep
 } from "./character-preferences";
 import {
-  RuntimeVersionBadge
-} from "./RuntimeVersionBadge";
-import {
   commonStrings,
   plusStrings,
   t
@@ -42,7 +39,6 @@ export interface ResumeGameDialogProps {
   handleStartupMainMenuChangeCapture: (event: React.FormEvent<HTMLDivElement>) => void;
   handleStartupMainMenuKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   handleStartupMainMenuPointerDownCapture: (event: React.PointerEvent<HTMLDivElement>) => void;
-  startupSelectedRuntimeVersionLabel: string | null;
   isLoadingSaves: boolean;
   savedGameSections: ({ key: "manual"; label: string; saves: SaveGameRecord[]; } | { key: "autosave"; label: string; saves: SaveGameRecord[]; })[];
   clientOptions: Nh3dClientOptions;
@@ -61,7 +57,6 @@ export function ResumeGameDialog({
   handleStartupMainMenuChangeCapture,
   handleStartupMainMenuKeyDown,
   handleStartupMainMenuPointerDownCapture,
-  startupSelectedRuntimeVersionLabel,
   isLoadingSaves,
   savedGameSections,
   clientOptions,
@@ -121,12 +116,6 @@ export function ResumeGameDialog({
       onKeyDown={handleStartupMainMenuKeyDown}
       onPointerDownCapture={handleStartupMainMenuPointerDownCapture}
     >
-      {startupSelectedRuntimeVersionLabel ? (
-        <RuntimeVersionBadge
-          label={startupSelectedRuntimeVersionLabel}
-          startup
-        />
-      ) : null}
       <div className="nh3d-question-text">
         {t.dialogs.startup.selectSavedGame}
       </div>

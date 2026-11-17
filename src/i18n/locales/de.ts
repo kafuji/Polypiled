@@ -1377,15 +1377,11 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
         cancelDownload: "Download abbrechen",
       },
       startup: {
-        options: "Polypiled-Optionen",
+        options: "Optionen",
         quitGame: "Spiel beenden",
-        chooseSetup: "W\u00e4hle deine Charakterkonfiguration:",
-        randomCharacter: "Zufallscharakter",
-        createCharacter: "Charakter erstellen",
-        loadGame: "Spiel laden",
+        newGame: "Neues Spiel",
+        loadGame: "Laden",
         selectSavedGame: "W\u00e4hle einen Spielstand:",
-        enterRandomName:
-          "Gib einen Namen f\u00fcr deinen Zufallscharakter ein:",
         createCharacterPrompt: "Erstelle deinen Charakter:",
         name: "Name",
         role: "Rolle",
@@ -1393,6 +1389,7 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
         gender: "Geschlecht",
         alignment: "Gesinnung",
         startGame: "Spiel starten",
+        randomize: "Zuf\u00e4llig",
       },
       clientOptions: {
         closeLabel: "NetHack-3D-Optionen schlie\u00dfen",

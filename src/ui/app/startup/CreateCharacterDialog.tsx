@@ -11,13 +11,11 @@ import {
 } from "../../../runtime/startup-init-options";
 import StartupInitOptionsAccordion from "../../componenets/StartupInitOptionsAccordion";
 import AnimatedDialog from "../../modals/AnimatedDialog";
+import { pickRandomStartupCreateCharacterSelection } from "../../../game/helpers/startup-character-constraints";
 import type * as React from "react";
 import type {
   StartupFlowStep
 } from "./character-preferences";
-import {
-  RuntimeVersionBadge
-} from "./RuntimeVersionBadge";
 import {
   commonStrings,
   t
@@ -39,7 +37,6 @@ export interface CreateCharacterDialogProps {
   handleStartupMainMenuChangeCapture: (event: React.FormEvent<HTMLDivElement>) => void;
   handleStartupMainMenuKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   handleStartupMainMenuPointerDownCapture: (event: React.PointerEvent<HTMLDivElement>) => void;
-  startupSelectedRuntimeVersionLabel: string | null;
   setCreateCharacterName: React.Dispatch<React.SetStateAction<string>>;
   createCharacterName: string;
   setCreateRole: React.Dispatch<React.SetStateAction<string>>;
@@ -57,7 +54,6 @@ export interface CreateCharacterDialogProps {
   clientOptions: Nh3dClientOptions;
   startupInitOptionTokens: string[];
   setStartupFlowStep: React.Dispatch<React.SetStateAction<StartupFlowStep>>;
-  openClientOptionsDialog: () => void;
 }
 
 export function CreateCharacterDialog({
@@ -68,7 +64,6 @@ export function CreateCharacterDialog({
   handleStartupMainMenuChangeCapture,
   handleStartupMainMenuKeyDown,
   handleStartupMainMenuPointerDownCapture,
-  startupSelectedRuntimeVersionLabel,
   setCreateCharacterName,
   createCharacterName,
   setCreateRole,
@@ -86,7 +81,6 @@ export function CreateCharacterDialog({
   clientOptions,
   startupInitOptionTokens,
   setStartupFlowStep,
-  openClientOptionsDialog,
 }: CreateCharacterDialogProps) {
   const { locale } = useI18n();
   return (
@@ -101,12 +95,6 @@ export function CreateCharacterDialog({
       onKeyDown={handleStartupMainMenuKeyDown}
       onPointerDownCapture={handleStartupMainMenuPointerDownCapture}
     >
-      {startupSelectedRuntimeVersionLabel ? (
-        <RuntimeVersionBadge
-          label={startupSelectedRuntimeVersionLabel}
-          startup
-        />
-      ) : null}
       <div className="nh3d-question-text">
         {t.dialogs.startup.createCharacterPrompt}
       </div>
@@ -208,18 +196,24 @@ export function CreateCharacterDialog({
           {t.dialogs.startup.startGame}
         </button>
         <button
+          className="nh3d-menu-action-button"
+          onClick={() => {
+            const pick = pickRandomStartupCreateCharacterSelection(runtimeVersion);
+            setCreateRole(pick.role);
+            setCreateRace(pick.race);
+            setCreateGender(pick.gender);
+            setCreateAlign(pick.align);
+          }}
+          type="button"
+        >
+          {t.dialogs.startup.randomize}
+        </button>
+        <button
           className="nh3d-menu-action-button nh3d-menu-action-cancel"
           onClick={() => setStartupFlowStep("choose")}
           type="button"
         >
           {commonStrings.back}
-        </button>
-        <button
-          className="nh3d-menu-action-button"
-          onClick={openClientOptionsDialog}
-          type="button"
-        >
-          {t.dialogs.startup.options}
         </button>
       </div>
     </AnimatedDialog>

@@ -14,10 +14,6 @@ import type {
   TopScoreSortOption
 } from "./types";
 import {
-  RuntimeVersionBadge,
-  resolveRuntimeVersionDisplayLabel
-} from "../startup/RuntimeVersionBadge";
-import {
   topScoreSortOptions
 } from "./sorting";
 import {
@@ -100,12 +96,6 @@ export function TopScoresDialog({
       onPointerDownCapture={handleStartupMainMenuPointerDownCapture}
     >
       {renderMobileDialogCloseButton(closeTopScoresDialog, translateScoreText("Close top scores", locale))}
-      {topScoresDialogRuntime ? (
-        <RuntimeVersionBadge
-          label={resolveRuntimeVersionDisplayLabel()}
-          startup
-        />
-      ) : null}
       <div className="nh3d-options-title">{translateScoreText("Top Scores", locale)}</div>
       <div className="nh3d-top-scores-summary">
         {topScoresSummaryStats.length > 0 ? (
