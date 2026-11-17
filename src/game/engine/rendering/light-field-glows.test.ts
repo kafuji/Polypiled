@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { isCorridorFloorCmapGlyph, isLavaCmapGlyph, isLitFloorCmapGlyph } from "../../glyphs/behavior";
+import { classifyTileBehavior, getDefaultDarkFloorGlyph, isCorridorFloorCmapGlyph, isLavaCmapGlyph, isLitFloorCmapGlyph } from "../../glyphs/behavior";
 import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
 import { NH5_TILE_KEYS } from "../../hires-tiles/tile-keys.5.generated";
 import { resolveGlowingMonsterLight } from "./glowing-monsters";
@@ -22,6 +22,15 @@ describe("light-related glyphs", () => {
     expect(isLitFloorCmapGlyph(cmapGlyph(23))).toBe("corridor");
     expect(isLavaCmapGlyph(cmapGlyph(40))).toBe(true);
     expect(isLavaCmapGlyph(cmapGlyph(34))).toBe(false); // a grave
+  });
+
+  it("draws an engraving in a room at full brightness (5.0 symbol numbers)", () => {
+    const engraving = classifyTileBehavior({ glyph: cmapGlyph(21) });
+    expect(engraving.isDarkOverlay).toBe(false);
+    expect(engraving.darkenFactor).toBe(1);
+    expect(classifyTileBehavior({ glyph: cmapGlyph(20) }).darkenFactor).toBe(1); // dark room floor is drawn as is
+    expect(classifyTileBehavior({ glyph: cmapGlyph(0) }).isDarkOverlay).toBe(true); // stone
+    expect(getGlyphCatalogEntry(getDefaultDarkFloorGlyph())?.symidx).toBe(22); // dark corridor, not an engraving
   });
 
   it("finds corridor floor of every kind", () => {
