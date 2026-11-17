@@ -848,20 +848,30 @@ free_nhuuid(void)
 }
 
 #ifdef __EMSCRIPTEN__
-/* tile index lookup for glyphs (used by JS helpers) */
-extern glyph_map glyphmap[MAX_GLYPH];
+/* Everything handed to the shell here goes through nh3d_knowledge.c's
+   rules: an object type the hero does not know shows as its class's
+   generic glyph, with the tile of what it looks like. */
+extern int nh3d_public_glyph(int);
+extern int nh3d_public_tile(int);
+extern int nh3d_appearance_tile(int);
 
+/* tile index lookup for glyphs (used by JS helpers) */
 EMSCRIPTEN_KEEPALIVE
 int
 glyph_to_tile_index(int glyph)
 {
     if (glyph < 0 || glyph >= MAX_GLYPH)
         return -1;
-#ifdef TILES_IN_GLYPHMAP
-    return (int) glyphmap[glyph].tileidx;
-#else
-    return -1;
-#endif
+    return nh3d_public_tile(glyph);
+}
+
+/* map_glyphinfo() for a glyph the shell names, under the same rules */
+EMSCRIPTEN_KEEPALIVE
+void
+nh3d_map_glyphinfo(int x, int y, int glyph, int mgflags, glyph_info *out)
+{
+    map_glyphinfo((coordxy) x, (coordxy) y, nh3d_public_glyph(glyph),
+                  (unsigned) mgflags, out);
 }
 
 /* Return the currently displayed glyph (top-of-pile when visible). */
@@ -869,22 +879,24 @@ EMSCRIPTEN_KEEPALIVE
 int
 glyph_at_position(int x, int y)
 {
-    return glyph_at((coordxy) x, (coordxy) y);
+    return nh3d_public_glyph(glyph_at((coordxy) x, (coordxy) y));
 }
 
-/* Return underlying terrain/background glyph at map position. */
+/* Return underlying terrain/background glyph at map position, for
+   locations the hero has seen; never-seen terrain stays unknown. */
 EMSCRIPTEN_KEEPALIVE
 int
 floor_glyph_at_position(int x, int y)
 {
     if (x < 0 || y < 0 || x >= COLNO || y >= ROWNO)
         return -1;
+    if (u.uz.dlevel > 0 && !levl[x][y].seenv)
+        return -1;
     return back_to_glyph((coordxy) x, (coordxy) y);
 }
 
-EMSCRIPTEN_KEEPALIVE
-int
-nh_top_item_glyph_under_player(void)
+static int
+nh_top_item_raw_glyph_under_player(void)
 {
     struct obj *item;
 
@@ -900,13 +912,22 @@ nh_top_item_glyph_under_player(void)
 
 EMSCRIPTEN_KEEPALIVE
 int
+nh_top_item_glyph_under_player(void)
+{
+    int glyph = nh_top_item_raw_glyph_under_player();
+
+    return (glyph < 0) ? -1 : nh3d_public_glyph(glyph);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int
 nh_top_item_tile_index_under_player(void)
 {
-    int glyph = nh_top_item_glyph_under_player();
+    int glyph = nh_top_item_raw_glyph_under_player();
 
     if (glyph < 0)
         return -1;
-    return glyph_to_tile_index(glyph);
+    return nh3d_appearance_tile(glyph);
 }
 
 /***
@@ -1045,7 +1066,7 @@ EM_JS(void, js_helpers_init, (), {
         /* sizeof(glyph_info) = 36 on WASM32 with ENHANCED_SYMBOLS */
         mgflags = mgflags || 0;
         var ptr = _malloc(36);
-        _map_glyphinfo(x, y, glyph, mgflags, ptr);
+        _nh3d_map_glyphinfo(x, y, glyph, mgflags, ptr);
         var result = {
             glyph:       getValue(ptr +  0, "i32"),
             ttychar:     getValue(ptr +  4, "i32"),
