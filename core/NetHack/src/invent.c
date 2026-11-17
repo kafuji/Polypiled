@@ -4166,6 +4166,12 @@ look_here(
     /* default pile_limit is 5; a value of 0 means "never skip"
        (and 1 effectively forces "always skip") */
     skip_objects = (flags.pile_limit > 0 && obj_cnt >= flags.pile_limit);
+    /* Polypiled: the shell's floor panel always lists what lies here, so
+       stepping onto a pile never opens a list; one object is still named.
+       ':' (obj_cnt 0) lists as before.  Not left to pile_limit, which a
+       restored game takes from its save file. */
+    if (obj_cnt >= 2)
+        skip_objects = TRUE;
     if (u.uswallow) {
         struct monst *mtmp = u.ustuck;
 
