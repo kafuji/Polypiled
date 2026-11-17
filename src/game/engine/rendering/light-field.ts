@@ -9,9 +9,17 @@ import type { PlayerMovement } from "../world/player-movement";
 import {
   CARRIED_LIGHT_LOOKS,
   resolveCarriedLight,
+  resolveCarriedLightFromKnowledge,
   sampleFlicker,
   type CarriedLight,
+  type CarriedLightKind,
 } from "./carried-light";
+import {
+  KnowledgeTerrain,
+  isRoomFloorTerrain,
+  type KnowledgeLight,
+} from "../../../runtime/knowledge";
+import type { PlayerKnowledge } from "../world/player-knowledge";
 import { LAVA_GLOW, resolveGlowingMonsterLight, type GlowLight } from "./glowing-monsters";
 import type { Lighting } from "./lighting";
 import type { TerminalRendering } from "./terminal-rendering";
@@ -23,6 +31,11 @@ export interface LightFieldDependencies {
   readonly engineState: Pick<EngineState, "clientOptions">;
   readonly lighting: Pick<Lighting, "vignetteUniforms" | "lightingVignetteMaxDarkAlpha">;
   readonly movementInput: Pick<MovementInput, "isFpsMode">;
+  /** Optional so older fixtures keep working; without it lighting is estimated. */
+  readonly playerKnowledge?: Pick<
+    PlayerKnowledge,
+    "available" | "revision" | "lights" | "canSee" | "isLitLocation" | "terrain"
+  >;
   readonly playerMovement: Pick<PlayerMovement, "playerPos" | "hasSeenPlayerPosition">;
   readonly promptDialogs: Pick<PromptDialogs, "currentInventory">;
   readonly terminalRendering: Pick<TerminalRendering, "isTerminalDisplayMode">;
@@ -103,6 +116,38 @@ interface MagicLightZone {
   readonly radius: number;
 }
 const CORNER_LIGHT_HEIGHT = 0.8;
+
+/** Object light kinds as they look when not carried by the hero. */
+const OBJECT_LIGHT_LOOKS: Readonly<Record<KnowledgeLight["kind"], CarriedLightKind>> = {
+  candle: "candle",
+  lamp: "lamp",
+  potion: "lamp",
+  other: "lamp",
+  monster: "lamp",
+  lantern: "lantern",
+  "magic-lamp": "magic",
+  sunsword: "sunlight",
+};
+
+/**
+ * The glow of a light the game reports that the hero does not carry: a
+ * glowing monster in its species' colour, or a lamp or candle someone else
+ * holds or that lies on the floor. The reach adds the same soft edge as the
+ * estimated glows.
+ */
+export function glowFromKnowledgeLight(light: KnowledgeLight): GlowLight | null {
+  if (light.carriedByHero || light.range <= 0) return null;
+  const radius = light.range + 1.5;
+  if (light.source === "monster") {
+    const species = light.glyph !== null ? resolveGlowingMonsterLight(light.glyph) : null;
+    return { color: species?.color ?? [0.9, 0.85, 0.6], radius };
+  }
+  const look = CARRIED_LIGHT_LOOKS[OBJECT_LIGHT_LOOKS[light.kind]];
+  return {
+    color: [look.color[0] * look.intensity, look.color[1] * look.intensity, look.color[2] * look.intensity],
+    radius,
+  };
+}
 
 export interface LitRoom {
   readonly minX: number;
@@ -237,6 +282,9 @@ export class LightField {
 
   private readonly reach = new Uint8Array(this.columns * this.rows);
 
+  /** Locations the hero sees, when the game reports them. */
+  private readonly seen = new Uint8Array(this.columns * this.rows);
+
   private readonly texelCount = this.columns * this.subcells * this.rows * this.subcells;
 
   private readonly target = new Float32Array(this.texelCount * 4);
@@ -255,6 +303,8 @@ export class LightField {
 
   private inventoryRef: unknown = null;
 
+  private knowledgeLightsRef: unknown = null;
+
   carriedLight: CarriedLight | null = null;
 
   rooms: LitRoom[] = [];
@@ -263,6 +313,12 @@ export class LightField {
 
   /** Areas lit by a light scroll or spell on this level. */
   magicLightZones: MagicLightZone[] = [];
+
+  /** The game's report of what the hero knows, once it has sent one. */
+  private knowledge(): NonNullable<LightFieldDependencies["playerKnowledge"]> | null {
+    const knowledge = this.dependencies.playerKnowledge;
+    return knowledge?.available ? knowledge : null;
+  }
 
   isActive(): boolean {
     const options = this.dependencies.engineState.clientOptions;
@@ -321,10 +377,20 @@ export class LightField {
       return;
     }
 
-    const inventory = this.dependencies.promptDialogs.currentInventory;
-    if (inventory !== this.inventoryRef) {
-      this.inventoryRef = inventory;
-      this.carriedLight = resolveCarriedLight(inventory);
+    const knowledge = this.knowledge();
+    if (knowledge) {
+      if (knowledge.lights !== this.knowledgeLightsRef) {
+        this.knowledgeLightsRef = knowledge.lights;
+        this.inventoryRef = null;
+        this.carriedLight = resolveCarriedLightFromKnowledge(knowledge.lights);
+      }
+    } else {
+      this.knowledgeLightsRef = null;
+      const inventory = this.dependencies.promptDialogs.currentInventory;
+      if (inventory !== this.inventoryRef) {
+        this.inventoryRef = inventory;
+        this.carriedLight = resolveCarriedLight(inventory);
+      }
     }
 
     const player = this.dependencies.playerMovement.hasSeenPlayerPosition
@@ -349,7 +415,8 @@ export class LightField {
     uniforms.uMaxDarkAlpha.value = this.tuning.vignette;
     const ambient = this.tuning.ambient;
     uniforms.uAmbientLight.value.set(ambient * AMBIENT_TINT[0], ambient * AMBIENT_TINT[1], ambient * AMBIENT_TINT[2]);
-    uniforms.uLightParams.value.set(this.tuning.maxLight, this.tuning.playerLightInRoom, LIGHT_FIELD_RANGE, 0);
+    // w = 1: alpha holds what the hero sees (reported by the game), and only that counts as seen.
+    uniforms.uLightParams.value.set(this.tuning.maxLight, this.tuning.playerLightInRoom, LIGHT_FIELD_RANGE, knowledge ? 1 : 0);
     uniforms.uMemoryLook.value.set(this.tuning.memorySaturation, MEMORY_TINT[0], MEMORY_TINT[1], MEMORY_TINT[2]);
     this.updatePlayerLightUniforms(timeMs / 1000, lightRadius);
   }
@@ -373,7 +440,9 @@ export class LightField {
     this.litRoom.fill(0);
     this.litCorridor.fill(0);
     this.opaque.fill(1);
+    this.seen.fill(0);
     this.glows = [];
+    const knowledge = this.knowledge();
     for (const [key, mesh] of this.dependencies.tileRendering.tileMap) {
       let x = mesh.userData?.tileX;
       let y = mesh.userData?.tileY;
@@ -388,12 +457,30 @@ export class LightField {
       this.opaque[index] = mesh.userData?.isWall === true ? 1 : 0;
       const glyph = mesh.userData?.sourceGlyph;
       if (typeof glyph === "number") {
-        const lit = isLitFloorCmapGlyph(glyph);
-        if (lit === "room") this.litRoom[index] = 1;
-        else if (lit === "corridor") this.litCorridor[index] = 1;
-        const glow = isLavaCmapGlyph(glyph) ? LAVA_GLOW : resolveGlowingMonsterLight(glyph);
+        if (!knowledge) {
+          const lit = isLitFloorCmapGlyph(glyph);
+          if (lit === "room") this.litRoom[index] = 1;
+          else if (lit === "corridor") this.litCorridor[index] = 1;
+        }
+        const glow = isLavaCmapGlyph(glyph) ? LAVA_GLOW : knowledge ? null : resolveGlowingMonsterLight(glyph);
         if (glow) this.glows.push({ x, y, light: glow });
       }
+    }
+    if (!knowledge) return;
+    // The game says which locations are lit and which ones the hero sees.
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.columns; x++) {
+        const index = y * this.columns + x;
+        if (knowledge.canSee(x, y)) this.seen[index] = 1;
+        if (!knowledge.isLitLocation(x, y)) continue;
+        const terrain = knowledge.terrain(x, y);
+        if (terrain === KnowledgeTerrain.corridor) this.litCorridor[index] = 1;
+        else if (isRoomFloorTerrain(terrain)) this.litRoom[index] = 1;
+      }
+    }
+    for (const light of knowledge.lights) {
+      const glow = glowFromKnowledgeLight(light);
+      if (glow) this.glows.push({ x: light.x, y: light.y, light: glow });
     }
   }
 
@@ -401,11 +488,12 @@ export class LightField {
     // Cheap change detection: the lit and opaque grids plus where the light is.
     let hash = 2166136261;
     for (let i = 0; i < this.litRoom.length; i++) {
-      hash ^= this.litRoom[i] | (this.litCorridor[i] << 1) | (this.opaque[i] << 2);
+      hash ^= this.litRoom[i] | (this.litCorridor[i] << 1) | (this.opaque[i] << 2) | (this.seen[i] << 3);
       hash = Math.imul(hash, 16777619);
     }
     const glows = this.glows.map((glow) => `${glow.x},${glow.y},${glow.light.color.join(",")}`).join(";");
-    return `${hash >>> 0}|${player ? `${player.x},${player.y}` : "-"}|${lightRadius}|${glows}`;
+    const source = this.knowledge() ? "k" : "e";
+    return `${source}|${hash >>> 0}|${player ? `${player.x},${player.y}` : "-"}|${lightRadius}|${glows}`;
   }
 
   private rebuildTarget(player: { x: number; y: number } | null, lightRadius: number): void {
@@ -419,12 +507,17 @@ export class LightField {
       target[i + 2] = tuning.ambient * AMBIENT_TINT[2];
       target[i + 3] = 0;
     }
-    // The hero always sees the squares next to them, even without a light.
-    const lightCenters: LightReachCenter[] = player
-      ? [{ x: player.x, y: player.y, radius: Math.max(1, this.carriedLight?.radius ?? 1) }]
-      : [];
-    for (const glow of this.glows) {
-      if (glow.light !== LAVA_GLOW) lightCenters.push({ x: glow.x, y: glow.y, radius: 1 });
+    const knowledge = this.knowledge();
+    // Estimating from glyphs, floor lit by a carried light or a glowing
+    // monster also looks lit, so a group inside such light is not a room.
+    // The game's own report marks only locations that are lit themselves.
+    const lightCenters: LightReachCenter[] = [];
+    if (!knowledge) {
+      // The hero always sees the squares next to them, even without a light.
+      if (player) lightCenters.push({ x: player.x, y: player.y, radius: Math.max(1, this.carriedLight?.radius ?? 1) });
+      for (const glow of this.glows) {
+        if (glow.light !== LAVA_GLOW) lightCenters.push({ x: glow.x, y: glow.y, radius: 1 });
+      }
     }
     this.rooms = findLitRooms(this.litRoom, columns, rows, lightCenters);
 
@@ -499,8 +592,15 @@ export class LightField {
       }
     }
 
-    if (player) {
+    if (knowledge) {
+      // Alpha: what the hero sees. The hero's light reaches exactly that far
+      // (within its radius, which the shader applies), and nothing else
+      // counts as seen for the remembered look.
+      this.reach.set(this.seen);
+    } else if (player) {
       computeLightReach(this.opaque, columns, rows, player.x, player.y, lightRadius + 0.5, this.reach);
+    }
+    if (knowledge || player) {
       for (let index = 0; index < this.reach.length; index++) {
         if (!this.reach[index]) continue;
         const cx = index % columns, cy = (index - cx) / columns;

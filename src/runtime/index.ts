@@ -9,3 +9,4 @@ export type {
   RuntimeWorkerEnvelope,
   NethackRuntimeVersion,
 } from "./types";
+export * from "./knowledge";

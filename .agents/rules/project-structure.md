@@ -55,6 +55,7 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 - `src/runtime/save-storage.ts`: save-path and database-name helpers.
 - `src/runtime/displayFileCatalog.ts`: bundled help and display-file text catalog.
 - `src/runtime/types.ts`: runtime commands, envelopes, and shared bridge types.
+- `src/runtime/knowledge.ts`: player knowledge frames from the core (`core/NetHack/win/shim/nh3d_knowledge.c`): format, decoding and shared types. `src/game/engine/world/player-knowledge.ts` holds the engine-side state; renderers read it and fall back to their own estimates until a frame arrives. See [player knowledge](../../docs/player-knowledge-interface.md).
 - `src/storage/client-options-storage.ts`: IndexedDB persistence plus localStorage migration for client options and startup preferences.
 - `src/plus/wiki-links/`: Ctrl-held NetHackWiki links and original-name tooltips for names in the message log, inventory and menus. See [localization](../../docs/game-message-localization.md#nethackwiki-links).
 - `src/update/github-version-checker.ts`: GitHub release/version checks used by the UI.

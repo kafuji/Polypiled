@@ -136,9 +136,10 @@ const EXPLORED_MASK_GLSL = `
  * on its room side and stays dark on the side facing rock. The hero's light
  * falls off with distance and, on terrain, with the angle to each face.
  * uLightParams holds (maximum light, how much the hero's light dims inside a
- * lit room, texture range, unused). On terrain, anything neither lit above
- * the ambient level nor reached by the hero's light is only remembered: it
- * loses colour toward uMemoryLook (saturation, then an RGB tint).
+ * lit room, texture range, 1 when alpha holds what the game says the hero sees). On terrain, anything neither lit above
+ * the ambient level nor reached by the hero's light is only remembered (with
+ * the game's report: anything the hero does not see): it loses colour toward
+ * uMemoryLook (saturation, then an RGB tint).
  */
 const LIGHT_FIELD_PREFIX_GLSL = `
         uniform sampler2D uLightField;
@@ -164,7 +165,8 @@ function lightFieldGlsl(useSurfaceNormal: boolean): string {
   // Only terrain is remembered; monsters and items are drawn as last seen.
   const memory = useSurfaceNormal
     ? `
-          float seen = max(litAboveAmbient, lightSample.a);
+          // uLightParams.w = 1: alpha is what the hero sees, as the game reports it.
+          float seen = mix(max(litAboveAmbient, lightSample.a), lightSample.a, uLightParams.w);
           float memorySaturation = mix(uMemoryLook.x, 1.0, seen);
           float memoryLuma = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
           gl_FragColor.rgb = mix(vec3(memoryLuma), gl_FragColor.rgb, memorySaturation) *
