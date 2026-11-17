@@ -195,6 +195,12 @@ export function isLitFloorCmapGlyph(glyph: number): "room" | "corridor" | null {
   return null;
 }
 
+/** Corridor floor: dark, lit, or with an engraving (S_corr, S_litcorr, S_engrcorr). */
+export function isCorridorFloorCmapGlyph(glyph: number): boolean {
+  const cmapIndex = getCmapIndex(glyph, null);
+  return cmapIndex === 22 || cmapIndex === 23 || cmapIndex === 24;
+}
+
 /** Stone and the wall pieces (S_stone..S_trwall). */
 export function isWallBlockCmapGlyph(glyph: number): boolean {
   const cmapIndex = getCmapIndex(glyph, null);

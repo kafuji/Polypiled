@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { TileNeighborBatch } from "./tile-neighbor-batch";
 import { TILE_SIZE } from "../../constants";
-import { getOpenDoorGlyphFrom, isDoorwayCmapGlyph } from "../../glyphs/behavior";
+import { getOpenDoorGlyphFrom, isCorridorFloorCmapGlyph, isDoorwayCmapGlyph } from "../../glyphs/behavior";
 import type { TileMaterialKind } from "../../glyphs";
 import type { EngineState } from "../runtime/engine-state";
 import type { Lighting } from "./lighting";
@@ -219,6 +219,18 @@ export class FloorOcclusion {
       transform,
       edgeDirectionFromCenter,
     );
+  }
+
+  /**
+   * Corridor floor gets no contact shadow. A corridor is one tile wide with
+   * rock on both sides, so the shadow from each side covered most of it and
+   * corridors looked darker than they are lit.
+   */
+  isCorridorFloorAt(tileX: number, tileY: number): boolean {
+    const mesh = this.dependencies.tileRendering.tileMap.get(`${tileX},${tileY}`);
+    if (!mesh || mesh.userData?.isWall) return false;
+    const glyphs = [mesh.userData?.sourceGlyph, mesh.userData?.tileTextureSourceGlyph];
+    return glyphs.some((glyph) => typeof glyph === "number" && isCorridorFloorCmapGlyph(glyph));
   }
 
   getWallChamferMaskAt(tileX: number, tileY: number): number {
@@ -1118,7 +1130,7 @@ export class FloorOcclusion {
       Boolean(mesh.userData?.transparentWallGroundPlaneOverlay) &&
       doorTransform !== null &&
       (doorTransform.scaleX < 0.9999 || doorTransform.scaleY < 0.9999);
-    if (mesh.userData?.isWall && !hasTrimmedDoorFloorUnderlay) {
+    if ((mesh.userData?.isWall && !hasTrimmedDoorFloorUnderlay) || this.isCorridorFloorAt(tileX, tileY)) {
       this.removeFloorBlockAmbientOcclusionOverlay(key);
       this.removeTrimmedDoorInsetAmbientOcclusionOverlay(key);
       return;
@@ -1222,8 +1234,13 @@ export class FloorOcclusion {
   private updateFpsWallChamferFloorAmbientOcclusionAt(tileX: number, tileY: number): void {
     const key = `${tileX},${tileY}`;
     const chamferFloor = this.dependencies.wallGeometry.fpsWallChamferFloorMeshes.get(key);
+    // A rounded rock corner at a corridor bend continues the corridor floor.
+    const besideCorridor =
+      this.isCorridorFloorAt(tileX - 1, tileY) || this.isCorridorFloorAt(tileX + 1, tileY) ||
+      this.isCorridorFloorAt(tileX, tileY - 1) || this.isCorridorFloorAt(tileX, tileY + 1);
     if (
       !chamferFloor ||
+      besideCorridor ||
       this.dependencies.engineState.clientOptions.blockAmbientOcclusion !== true ||
       !this.dependencies.movementInput.isFpsMode()
     ) {

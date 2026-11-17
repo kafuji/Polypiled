@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { isLavaCmapGlyph, isLitFloorCmapGlyph } from "../../glyphs/behavior";
+import { isCorridorFloorCmapGlyph, isLavaCmapGlyph, isLitFloorCmapGlyph } from "../../glyphs/behavior";
 import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
 import { NH5_TILE_KEYS } from "../../hires-tiles/tile-keys.5.generated";
 import { resolveGlowingMonsterLight } from "./glowing-monsters";
@@ -22,6 +22,11 @@ describe("light-related glyphs", () => {
     expect(isLitFloorCmapGlyph(cmapGlyph(23))).toBe("corridor");
     expect(isLavaCmapGlyph(cmapGlyph(40))).toBe(true);
     expect(isLavaCmapGlyph(cmapGlyph(34))).toBe(false); // a grave
+  });
+
+  it("finds corridor floor of every kind", () => {
+    expect([22, 23, 24].map((symidx) => isCorridorFloorCmapGlyph(cmapGlyph(symidx)))).toEqual([true, true, true]);
+    expect([19, 20, 21, 0].map((symidx) => isCorridorFloorCmapGlyph(cmapGlyph(symidx)))).toEqual([false, false, false, false]);
   });
 
   it("recognises glowing monsters", () => {
