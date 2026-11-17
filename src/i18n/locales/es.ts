@@ -535,6 +535,21 @@ export const esOverrides = {
         slotCount: (count: number) => `${count}ranura${count === 1 ? "" : "s"}`,
     },
     app: {
+      floorPanel: {
+        label: "Aquí",
+        nothing: "Aquí no hay nada.",
+        hidden: "No ves lo que hay aquí.",
+        more: (count: number) => `y ${count} más`,
+        engravingKinds: {
+          dust: "Escrito en el polvo",
+          engraved: "Grabado",
+          burned: "Quemado",
+          marker: "Garabateado",
+          blood: "Escrito con sangre",
+          headstone: "Epitafio",
+          other: "Escrito",
+        },
+      },
         asciiTerrain: {
           asciiTilesForWalls: {
             label: "Usar mosaicos para las paredes",

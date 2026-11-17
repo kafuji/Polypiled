@@ -569,6 +569,21 @@ export const ptBrOverrides = {
     slotCount: (count: number) => `${count} slot${count === 1 ? "" : "s"}`,
   },
   app: {
+    floorPanel: {
+      label: "Aqui",
+      nothing: "Não há nada aqui.",
+      hidden: "Você não vê o que há aqui.",
+      more: (count: number) => `e mais ${count}`,
+      engravingKinds: {
+        dust: "Escrito na poeira",
+        engraved: "Gravado",
+        burned: "Queimado",
+        marker: "Rabiscado",
+        blood: "Escrito com sangue",
+        headstone: "Epitáfio",
+        other: "Escrito",
+      },
+    },
     asciiTerrain: {
       asciiTilesForWalls: {
         label: "Usar blocos nas paredes",
