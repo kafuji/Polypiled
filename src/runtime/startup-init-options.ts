@@ -171,7 +171,9 @@ export const startupInitOptionDefinitions: ReadonlyArray<StartupInitOptionDefini
       label: startupStrings.options.pile_limit.label,
       description: startupStrings.options.pile_limit.description,
       control: "number",
-      defaultValue: 5,
+      // 2: one object is named in a message, more say "There are several
+      // objects here." without a popup; the floor panel lists them.
+      defaultValue: 2,
       min: 0,
       max: 50,
       step: 1,
@@ -601,6 +603,27 @@ export function createDefaultStartupInitOptionValues(): StartupInitOptionValues 
   const values: StartupInitOptionValues = {};
   for (const definition of startupInitOptionDefinitions) {
     values[definition.key] = definition.defaultValue;
+  }
+  return values;
+}
+
+/**
+ * Revision of stored startup options. 2: the floor panel shows what lies
+ * under the hero, so the pile popup default went from 5 to 2.
+ */
+export const STARTUP_INIT_OPTIONS_REVISION = 2;
+
+/**
+ * Brings stored options up to the current revision. Records before revision 2
+ * always held pile_limit, default or not; 5 (the old default) becomes 2, any
+ * other value was chosen and stays.
+ */
+export function migrateStartupInitOptionValues(
+  values: StartupInitOptionValues,
+  revision: number | undefined,
+): StartupInitOptionValues {
+  if ((revision ?? 1) < 2 && values.pile_limit === 5) {
+    return { ...values, pile_limit: 2 };
   }
   return values;
 }

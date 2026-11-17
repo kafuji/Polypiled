@@ -10,6 +10,7 @@ import type {
   TextInputRequestState,
 } from "../game/ui-types";
 import { useGameStore } from "./gameStore";
+import type { FloorHere } from "../runtime/floor-here";
 
 export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
   return {
@@ -57,6 +58,9 @@ export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
     },
     setPositionRequest(text: string | null): void {
       useGameStore.getState().setPositionRequest(text);
+    },
+    setFloorHere(state: FloorHere | null): void {
+      useGameStore.getState().setFloorHere(state);
     },
     setPositionInputActive(active: boolean, origin?: string | null): void {
       useGameStore.getState().setPositionInputActive(active, origin);

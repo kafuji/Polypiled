@@ -1,7 +1,9 @@
 import type { Nh3dClientOptions } from "../game/ui-types";
 import type { NethackRuntimeVersion } from "../runtime/types";
 import {
+  migrateStartupInitOptionValues,
   normalizeStartupInitOptionValues,
+  STARTUP_INIT_OPTIONS_REVISION,
   type StartupInitOptionValues,
 } from "../runtime/startup-init-options";
 
@@ -22,6 +24,8 @@ type StartupInitOptionsStoredRecord = {
   id: string;
   value: StartupInitOptionValues;
   updatedAt: number;
+  /** STARTUP_INIT_OPTIONS_REVISION when written; absent before revision 2. */
+  revision?: number;
 };
 
 export type StartupCharacterPreferences = {
@@ -153,8 +157,10 @@ async function readStartupInitOptionsFromIndexedDb(): Promise<StartupInitOptionV
     if (!isPlainObject(rawRecord)) {
       return null;
     }
-    return normalizeStartupInitOptionValues(
-      (rawRecord as Partial<StartupInitOptionsStoredRecord>).value,
+    const record = rawRecord as Partial<StartupInitOptionsStoredRecord>;
+    return migrateStartupInitOptionValues(
+      normalizeStartupInitOptionValues(record.value),
+      typeof record.revision === "number" ? record.revision : undefined,
     );
   } finally {
     db.close();
@@ -172,6 +178,7 @@ async function writeStartupInitOptionsToIndexedDb(
       id: startupInitOptionsRecordId,
       value: normalizeStartupInitOptionValues(options),
       updatedAt: Date.now(),
+      revision: STARTUP_INIT_OPTIONS_REVISION,
     };
     await idbRequestToPromise(store.put(record));
     await idbTransactionDone(transaction);

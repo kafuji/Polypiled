@@ -962,6 +962,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
         if (data.frame) this.systems.playerKnowledge.apply(data.frame);
         break;
 
+      case "floor_here":
+        if (data.floorHere) this.systems.engineState.uiAdapter.setFloorHere(data.floorHere);
+        break;
+
       case "monster_attack": {
         const targetEntityId = this.systems.runtimeEntityTracking.normalizeRuntimeTargetEntityId(
           data.targetId,
@@ -1576,6 +1580,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
       case "runtime_terminated":
         this.systems.playerKnowledge.reset();
+        this.systems.engineState.uiAdapter.setFloorHere(null);
         this.systems.promptDialogs.handleRuntimeTermination(
           typeof data.reason === "string" ? data.reason : "",
         );

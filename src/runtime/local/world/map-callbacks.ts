@@ -4,6 +4,7 @@
 import type { RuntimeCoordinator } from "../runtime-coordinator";
 import { isLoggingEnabled } from "../../../logging";
 import { decodeKnowledgeFrame } from "../../knowledge";
+import { parseFloorHere } from "../../floor-here";
 import type { RuntimePointerContract } from "../abi/pointer-contract";
 import type { RuntimeGlyphs } from "./glyphs";
 import type { RuntimeMemory } from "../abi/memory";
@@ -380,6 +381,19 @@ export class RuntimeMapCallbacks {
   }
 
   private reportedUnreadableKnowledgeFrame = false;
+
+  /** What lies under the hero (see src/runtime/floor-here.ts), sent whenever it changes. */
+  handleShimFloorHere(args) {
+    const floorHere = parseFloorHere(args[0]);
+    if (!floorHere) {
+      console.warn("Ignoring floor information this client cannot read.");
+      return 0;
+    }
+    if (this.deps.coordinator.eventHandler) {
+      this.deps.coordinator.emit({ type: "floor_here", floorHere });
+    }
+    return 0;
+  }
 
   handleShimMonsterAttack(args) {
     {

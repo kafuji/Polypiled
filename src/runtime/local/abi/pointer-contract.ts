@@ -89,6 +89,7 @@ export class RuntimePointerContract {
         shim_monster_attack: [4],
         shim_monster_killed: [4],
         shim_knowledge_frame: [1],
+        shim_floor_here: [1],
         shim_status_update: [6],
       },
       callbackPointers: {

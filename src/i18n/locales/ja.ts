@@ -540,6 +540,21 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
     slotCount: (count: number) => `${count} スロット`,
   },
   app: {
+    floorPanel: {
+      label: "足元",
+      nothing: "何も落ちていない。",
+      hidden: "足元に何があるか見えない。",
+      more: (count: number) => `ほか ${count} 個`,
+      engravingKinds: {
+        dust: "埃に書かれた文字",
+        engraved: "彫られた文字",
+        burned: "焼き付けられた文字",
+        marker: "マーカーの落書き",
+        blood: "血で書かれた文字",
+        headstone: "墓碑銘",
+        other: "文字",
+      },
+    },
     asciiTerrain: {
       asciiTilesForWalls: {
         label: "壁にタイルを使用",

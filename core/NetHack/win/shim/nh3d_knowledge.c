@@ -544,6 +544,178 @@ nh3d_fill_level(int *out)
     out[4] = out[5] = out[6] = out[7] = 0;
 }
 
+/*
+ * What is under the hero, for the shell's floor panel: the terrain feature
+ * as ':' would describe it, an engraving the hero has read (or felt), and
+ * the objects lying here with the names look_here() would print (shop
+ * prices included).  Objects are listed only when the hero can see them:
+ * not while blind, engulfed, or when they are under lava or water.  Sent as
+ * a JSON string (notification "shim_floor_here") whenever it changes.
+ */
+
+#define NH3D_FLOOR_BUFSZ 16384
+#define NH3D_FLOOR_MAX_OBJECTS 40
+
+static char nh3d_floor_json[NH3D_FLOOR_BUFSZ];
+static char nh3d_floor_prev[NH3D_FLOOR_BUFSZ];
+
+struct nh3d_json {
+    char *buf;
+    size_t len, cap;
+    boolean overflow;
+};
+
+static void
+nh3d_json_raw(struct nh3d_json *js, const char *text)
+{
+    size_t n = strlen(text);
+
+    if (js->overflow || js->len + n + 1 >= js->cap) {
+        js->overflow = TRUE;
+        return;
+    }
+    memcpy(js->buf + js->len, text, n + 1);
+    js->len += n;
+}
+
+static void
+nh3d_json_string(struct nh3d_json *js, const char *text)
+{
+    char esc[8];
+    const unsigned char *p;
+
+    nh3d_json_raw(js, "\"");
+    for (p = (const unsigned char *) text; p && *p; p++) {
+        if (*p == '"' || *p == '\\') {
+            esc[0] = '\\', esc[1] = (char) *p, esc[2] = '\0';
+        } else if (*p < 0x20) {
+            Snprintf(esc, sizeof esc, "\\u%04x", (unsigned) *p);
+        } else {
+            esc[0] = (char) *p, esc[1] = '\0';
+        }
+        nh3d_json_raw(js, esc);
+    }
+    nh3d_json_raw(js, "\"");
+}
+
+static void
+nh3d_json_int(struct nh3d_json *js, long value)
+{
+    char num[32];
+
+    Snprintf(num, sizeof num, "%ld", value);
+    nh3d_json_raw(js, num);
+}
+
+/* the terrain under the hero, as ':' describes it (or the plain floor) */
+static const char *
+nh3d_floor_feature(char *buf)
+{
+    const char *feature = dfeature_at(u.ux, u.uy, buf);
+    int glyph;
+
+    if (feature && !strcmp(feature, "pool of water") && Underwater)
+        feature = 0;
+    if (feature)
+        return feature;
+    if (Underwater)
+        return "water";
+    glyph = back_to_glyph(u.ux, u.uy);
+    return glyph_is_cmap(glyph) ? defsyms[glyph_to_cmap(glyph)].explanation
+                                : "";
+}
+
+static void
+nh3d_build_floor_here(struct nh3d_json *js)
+{
+    char featbuf[BUFSZ];
+    struct engr *ep = engr_at(u.ux, u.uy);
+    struct obj *otmp;
+    boolean hidden;
+    long count = 0;
+    int listed = 0;
+
+    nh3d_json_raw(js, "{\"v\":1,\"x\":");
+    nh3d_json_int(js, u.ux);
+    nh3d_json_raw(js, ",\"y\":");
+    nh3d_json_int(js, u.uy);
+    nh3d_json_raw(js, ",\"feature\":");
+    nh3d_json_string(js, u.uswallow ? "" : nh3d_floor_feature(featbuf));
+
+    nh3d_json_raw(js, ",\"engraving\":");
+    if (!u.uswallow && ep && ep->eread && ep->engr_txt[remembered_text]
+        && *ep->engr_txt[remembered_text]) {
+        nh3d_json_raw(js, "{\"type\":");
+        nh3d_json_int(js, ep->engr_type);
+        nh3d_json_raw(js, ",\"text\":");
+        nh3d_json_string(js, ep->engr_txt[remembered_text]);
+        nh3d_json_raw(js, "}");
+    } else {
+        nh3d_json_raw(js, "null");
+    }
+
+    /* objects are hidden from a blind or engulfed hero, and under lava or
+       water unless the hero is down there too */
+    hidden = Blind || u.uswallow || is_lava(u.ux, u.uy)
+             || (is_pool(u.ux, u.uy) && !Underwater);
+    nh3d_json_raw(js, ",\"hidden\":");
+    nh3d_json_raw(js, hidden ? "true" : "false");
+    nh3d_json_raw(js, ",\"objects\":[");
+    if (!hidden) {
+        for (otmp = svl.level.objects[u.ux][u.uy]; otmp;
+             otmp = otmp->nexthere) {
+            int glyph;
+
+            count++;
+            if (listed >= NH3D_FLOOR_MAX_OBJECTS)
+                continue;
+            glyph = obj_to_glyph(otmp, rn2_on_display_rng);
+            if (listed++)
+                nh3d_json_raw(js, ",");
+            nh3d_json_raw(js, "{\"name\":");
+            nh3d_json_string(js, doname_with_price(otmp));
+            nh3d_json_raw(js, ",\"glyph\":");
+            nh3d_json_int(js, nh3d_public_glyph(glyph));
+            nh3d_json_raw(js, ",\"tile\":");
+            nh3d_json_int(js, nh3d_appearance_tile(glyph));
+            nh3d_json_raw(js, ",\"quan\":");
+            nh3d_json_int(js, otmp->quan);
+            nh3d_json_raw(js, "}");
+        }
+    }
+    nh3d_json_raw(js, "],\"count\":");
+    nh3d_json_int(js, count);
+    nh3d_json_raw(js, "}");
+}
+
+static void
+nh3d_publish_floor_here(boolean force)
+{
+    struct nh3d_json js;
+
+    js.buf = nh3d_floor_json;
+    js.len = 0;
+    js.cap = sizeof nh3d_floor_json;
+    js.overflow = FALSE;
+    nh3d_floor_json[0] = '\0';
+    nh3d_build_floor_here(&js);
+    if (js.overflow)
+        return;
+    if (!force && !strcmp(nh3d_floor_json, nh3d_floor_prev))
+        return;
+    Strcpy(nh3d_floor_prev, nh3d_floor_json);
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_floor_here",
+            UTF8ToString($0),
+        ]);
+    }, nh3d_floor_json);
+}
+
 static boolean
 nh3d_full_frame_requested(void)
 {
@@ -575,6 +747,7 @@ nh3d_knowledge_publish(void)
 
     complete = !nh3d_have_prev || !on_level(&u.uz, &nh3d_prev_level)
                || nh3d_full_frame_requested();
+    nh3d_publish_floor_here(complete);
 
     nh3d_fill_hero(hero);
     nh3d_fill_level(level);

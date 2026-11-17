@@ -10,3 +10,4 @@ export type {
   NethackRuntimeVersion,
 } from "./types";
 export * from "./knowledge";
+export * from "./floor-here";
