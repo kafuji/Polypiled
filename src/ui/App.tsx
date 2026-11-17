@@ -10,7 +10,6 @@ import { StartupMenuDialog } from "./app/startup/StartupMenuDialog";
 import { ResumeGameDialog } from "./app/startup/ResumeGameDialog";
 import { TopScoresDialog } from "./app/scores/TopScoresDialog";
 import { TopScoreDetailDialog } from "./app/scores/TopScoreDetailDialog";
-import { RandomCharacterDialog } from "./app/startup/RandomCharacterDialog";
 import { CreateCharacterDialog } from "./app/startup/CreateCharacterDialog";
 import { LoadingOverlay } from "./app/layout/LoadingOverlay";
 import { DesktopMessageLog } from "./app/messages/DesktopMessageLog";
@@ -66,7 +65,6 @@ export default function App(): JSX.Element {
       <ResumeGameDialog {...model.resumeGameDialog} />
       <TopScoresDialog {...model.topScoresDialog} />
       <TopScoreDetailDialog {...model.topScoreDetailDialog} />
-      <RandomCharacterDialog {...model.randomCharacterDialog} />
       <CreateCharacterDialog {...model.createCharacterDialog} />
       <LoadingOverlay {...model.loadingOverlay} />
       <DesktopMessageLog {...model.desktopMessageLog} />

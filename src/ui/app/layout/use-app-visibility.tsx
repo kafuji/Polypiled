@@ -24,9 +24,6 @@ import {
   t
 } from "../shared/translations";
 import {
-  resolveRuntimeVersionDisplayLabel
-} from "../startup/RuntimeVersionBadge";
-import {
   nh3dAppVersion
 } from "../shared/build-info";
 
@@ -271,10 +268,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     t.update.runtimeStoppedBeforeStartup
     : "";
 
-  const startupSelectedRuntimeVersionLabel = startupMenuVisible
-    ? resolveRuntimeVersionDisplayLabel()
-    : null;
-
   useEffect(() => {
     if (startupMenuVisible) {
       return;
@@ -295,8 +288,6 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
   const startupResumeDialogVisible =
     startupMenuVisible && startupFlowStep === "resume";
 
-  const startupRandomDialogVisible =
-    startupMenuVisible && startupFlowStep === "random";
 
   const startupCreateDialogVisible =
     startupMenuVisible && startupFlowStep === "create";
@@ -399,10 +390,8 @@ export function useAppVisibility(dependencies: UseAppVisibilityDependencies) {
     hideAllUiForDeferredGameOver,
     runtimeInitializationErrorVisible,
     runtimeInitializationErrorMessage,
-    startupSelectedRuntimeVersionLabel,
     startupChooseDialogVisible,
     startupResumeDialogVisible,
-    startupRandomDialogVisible,
     startupCreateDialogVisible,
     startupPendingUpdateCount,
     startupPendingUpdateTags,

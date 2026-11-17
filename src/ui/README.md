@@ -36,7 +36,7 @@ On WebXR hosts, `use-engine-lifecycle` creates a startup-only engine before char
 
 | UI behavior | State and interaction owner | View |
 | --- | --- | --- |
-| Startup character selection and launch | [startup state](app/startup/use-startup-state.tsx), [character creation](app/startup/use-character-creation.tsx) | [CreateCharacterDialog](app/startup/CreateCharacterDialog.tsx), [RandomCharacterDialog](app/startup/RandomCharacterDialog.tsx) |
+| Startup character selection and launch | [startup state](app/startup/use-startup-state.tsx), [character creation](app/startup/use-character-creation.tsx) | [CreateCharacterDialog](app/startup/CreateCharacterDialog.tsx) |
 | Save selection and recovery | [saved-game sections](app/startup/use-saved-game-sections.tsx), [saved-games helpers](app/startup/saved-games.ts) | [ResumeGameDialog](app/startup/ResumeGameDialog.tsx) |
 | New game, tombstone and deferred prompt | [new-game actions](app/startup/use-new-game-prompt.tsx), [deferred prompt listeners](app/layout/use-keyboard-overlays.tsx) | [NewGameDialog](app/startup/NewGameDialog.tsx) |
 | Apply or discard client options | [client-options actions](app/settings/use-client-options-actions.tsx), [applied-option effects](app/settings/use-applied-client-options-effects.tsx) | [ClientOptionsDialog](app/settings/ClientOptionsDialog.tsx) |

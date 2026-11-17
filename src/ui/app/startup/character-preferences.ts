@@ -16,7 +16,7 @@ import {
 } from "../../../game/helpers/startup-character-constraints";
 
 /** Runtime-specific startup character defaults, equality and canonical names. */
-export type StartupFlowStep = "choose" | "create" | "random" | "resume";
+export type StartupFlowStep = "choose" | "create" | "resume";
 
 export const startupDefaultCharacterName = "Web_user";
 
@@ -28,7 +28,6 @@ export function createDefaultStartupCharacterPreferences(
     runtimeVersion,
   );
   return {
-    randomName: startupDefaultCharacterName,
     createName: startupDefaultCharacterName,
     createRole: defaultCreateSelection.role,
     createRace: defaultCreateSelection.race,
@@ -60,7 +59,6 @@ export function areStartupCharacterPreferencesEqual(
   right: StartupCharacterPreferences,
 ): boolean {
   return (
-    left?.randomName === right.randomName &&
     left?.createName === right.createName &&
     left?.createRole === right.createRole &&
     left?.createRace === right.createRace &&
