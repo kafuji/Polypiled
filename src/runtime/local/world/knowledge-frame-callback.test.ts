@@ -31,3 +31,20 @@ describe("knowledge frame notifications", () => {
     warn.mockRestore();
   });
 });
+
+describe("floor information notifications", () => {
+  it("emits what lies under the hero", () => {
+    const { mapCallbacks, emit } = callbacks();
+    const raw = JSON.stringify({ v: 1, x: 2, y: 3, feature: "sink", engraving: null, hidden: false, objects: [], count: 0 });
+    expect(mapCallbacks.handleShimFloorHere([raw])).toBe(0);
+    expect(emit).toHaveBeenCalledWith({ type: "floor_here", floorHere: expect.objectContaining({ feature: "sink", x: 2, y: 3 }) });
+  });
+
+  it("drops what it cannot read", () => {
+    const { mapCallbacks, emit } = callbacks();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mapCallbacks.handleShimFloorHere(["not json"]);
+    expect(emit).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});

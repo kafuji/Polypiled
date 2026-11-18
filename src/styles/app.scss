@@ -677,6 +677,7 @@ canvas {
   .nh3d-wizard-commands-button,
   .nh3d-wizard-commands-sheet,
   .nh3d-desktop-bottom-actions,
+  .nh3d-floor-panel,
   #position-dialog,
   .nh3d-dialog {
     display: none !important;
@@ -9581,6 +9582,110 @@ button.nh3d-technique-row {
   @media (pointer: coarse) {
     display: none;
   }
+}
+
+/* What lies under the hero (FloorPanel): bottom right, above the local MCP chip. */
+.nh3d-floor-panel {
+  position: fixed;
+  right: calc(10px + env(safe-area-inset-right));
+  bottom: calc(44px + var(--nh3d-safe-area-bottom));
+  z-index: 1900;
+  width: min(320px, 36vw);
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #4b6a9b;
+  border-radius: 7px;
+  background: var(--nh3d-ui-panel-bg);
+  color: #d5e7ff;
+  font-family: var(--nh3d-ui-font-family, "Courier New", monospace);
+  font-size: nh3d-scale-font(13px);
+  line-height: 1.35;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+  pointer-events: none;
+
+  @media (pointer: coarse) {
+    display: none;
+  }
+}
+
+.nh3d-floor-panel-feature {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.nh3d-floor-panel-label {
+  color: #8fb3e6;
+  font-size: 0.85em;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+.nh3d-floor-panel-terrain {
+  font-weight: bold;
+}
+
+.nh3d-floor-panel-trap {
+  color: #ff9b7a;
+  font-weight: bold;
+}
+
+.nh3d-floor-panel-engraving {
+  margin-top: 4px;
+  color: #e8d9b0;
+  overflow-wrap: anywhere;
+}
+
+.nh3d-floor-panel-engraving-kind {
+  margin-right: 6px;
+  color: #b8a77a;
+  font-size: 0.9em;
+}
+
+.nh3d-floor-panel-note {
+  margin-top: 4px;
+  color: #9fb2cc;
+}
+
+.nh3d-floor-panel-objects {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nh3d-floor-panel-object {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.nh3d-floor-panel-object-tile {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+
+  img {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+  }
+}
+
+.nh3d-floor-panel-object-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nh3d-floor-panel-more {
+  margin-top: 2px;
+  padding-left: 30px;
+  color: #9fb2cc;
+}
+
+:root.nh3d-webxr-active .nh3d-floor-panel {
+  display: none !important;
 }
 
 .nh3d-desktop-bottom-button {

@@ -551,6 +551,20 @@ export const ru = {
     slotCount: (count: number) => `Слотов: ${count}`,
   },
   app: {
+    floorPanel: {
+      label: "Здесь",
+      hidden: "Вы не видите, что здесь лежит.",
+      more: (count: number) => `и ещё ${count}`,
+      engravingKinds: {
+        dust: "Написано в пыли",
+        engraved: "Выгравировано",
+        burned: "Выжжено",
+        marker: "Нацарапано маркером",
+        blood: "Написано кровью",
+        headstone: "Эпитафия",
+        other: "Надпись",
+      },
+    },
     asciiTerrain: {
       asciiTilesForWalls: {
         label: "Тайлы для стен",

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { shallow } from "zustand/shallow";
+import type { FloorHere } from "../runtime/floor-here";
 import type {
   GameOverState,
   InfoMenuState,
@@ -70,6 +71,8 @@ type GameStore = {
   repeatActionVisible: boolean;
   extendedCommands: string[];
   positionRequest: string | null;
+  /** What lies under the hero (game report); null before one arrives. */
+  floorHere: FloorHere | null;
   positionInputActive: boolean;
   positionInputOrigin: string | null;
   newGamePrompt: NewGamePromptState;
@@ -95,6 +98,7 @@ type GameStore = {
   setRepeatActionVisible: (visible: boolean) => void;
   setExtendedCommands: (commands: string[]) => void;
   setPositionRequest: (text: string | null) => void;
+  setFloorHere: (state: FloorHere | null) => void;
   setPositionInputActive: (active: boolean, origin?: string | null) => void;
   setNewGamePrompt: (prompt: NewGamePromptState) => void;
   setGameOver: (state: GameOverState) => void;
@@ -131,6 +135,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   repeatActionVisible: false,
   extendedCommands: [],
   positionRequest: null,
+  floorHere: null,
   positionInputActive: false,
   positionInputOrigin: null,
   newGamePrompt: { visible: false, reason: null },
@@ -249,6 +254,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setPositionRequest: (text) => {
     if (get().positionRequest === text) return;
     set({ positionRequest: text });
+  },
+  setFloorHere: (state) => {
+    if (get().floorHere === state) return;
+    set({ floorHere: state });
   },
   setPositionInputActive: (active, origin = null) => {
     const normalized = Boolean(active);

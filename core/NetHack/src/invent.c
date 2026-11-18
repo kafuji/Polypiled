@@ -4166,6 +4166,12 @@ look_here(
     /* default pile_limit is 5; a value of 0 means "never skip"
        (and 1 effectively forces "always skip") */
     skip_objects = (flags.pile_limit > 0 && obj_cnt >= flags.pile_limit);
+    /* Polypiled: the shell's floor panel always lists what lies here, so
+       stepping onto a pile never opens a list; one object is still named.
+       ':' (obj_cnt 0) lists as before.  Not left to pile_limit, which a
+       restored game takes from its save file. */
+    if (obj_cnt >= 2)
+        skip_objects = TRUE;
     if (u.uswallow) {
         struct monst *mtmp = u.ustuck;
 
@@ -4205,6 +4211,13 @@ look_here(
             You("%s no objects here.", verb);
         }
         return (!!Blind ? ECMD_TIME : ECMD_OK);
+    }
+    /* Polypiled: stepping onto objects the hero can see says nothing; the
+       shell's floor panel shows the terrain, trap, engraving and objects.
+       ':' (obj_cnt 0) and a blind hero feeling around are unchanged. */
+    if (obj_cnt > 0 && !Blind) {
+        quietly_read_engr_at(u.ux, u.uy);
+        return ECMD_OK;
     }
     if (!skip_objects) {
         NhRegion *reg;

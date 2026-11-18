@@ -1,4 +1,5 @@
 import type { NethackRuntimeVersion } from "../runtime/types";
+import type { FloorHere } from "../runtime/floor-here";
 import { normalizeUiFontFamily } from "./ui-font";
 import {
   defaultNh3dTilesetPath,
@@ -1460,6 +1461,8 @@ export interface Nethack3DEngineUIAdapter {
   setTextInput(state: TextInputRequestState | null): void;
   setExtendedCommands(commands: string[]): void;
   setPositionRequest(text: string | null): void;
+  /** What lies under the hero, as the game reports it; null before a report or after the game. */
+  setFloorHere(state: FloorHere | null): void;
   setPositionInputActive(active: boolean, origin?: string | null): void;
   setFpsCrosshairContext(state: FpsCrosshairContextState | null): void;
   setRepeatActionVisible(visible: boolean): void;

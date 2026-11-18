@@ -553,6 +553,20 @@ export const ko = {
     slotCount: (count: number) => `슬롯 ${count}개`,
   },
   app: {
+    floorPanel: {
+      label: "발밑",
+      hidden: "발밑에 무엇이 있는지 보이지 않는다.",
+      more: (count: number) => `외 ${count}개`,
+      engravingKinds: {
+        dust: "먼지에 쓴 글씨",
+        engraved: "새긴 글씨",
+        burned: "불로 새긴 글씨",
+        marker: "마커 낙서",
+        blood: "피로 쓴 글씨",
+        headstone: "묘비명",
+        other: "글씨",
+      },
+    },
     asciiTerrain: {
       asciiTilesForWalls: {
         label: "벽에 타일 사용",

@@ -555,6 +555,20 @@ export const en = {
     slotCount: (count: number) => `${count} slot${count === 1 ? "" : "s"}`,
   },
   app: {
+    floorPanel: {
+      label: "Here",
+      hidden: "You can't see what lies here.",
+      more: (count: number) => `and ${count} more`,
+      engravingKinds: {
+        dust: "Written in the dust",
+        engraved: "Engraved",
+        burned: "Burned",
+        marker: "Scribbled",
+        blood: "Written in blood",
+        headstone: "Epitaph",
+        other: "Written",
+      },
+    },
     asciiTerrain: {
       asciiTilesForWalls: {
         label: "Use tiles for walls",

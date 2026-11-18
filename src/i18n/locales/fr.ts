@@ -578,6 +578,20 @@ export const fr = {
       `${count} emplacement${count === 1 ? "" : "s"}`,
   },
   app: {
+    floorPanel: {
+      label: "Ici",
+      hidden: "Vous ne voyez pas ce qu'il y a ici.",
+      more: (count: number) => `et ${count} de plus`,
+      engravingKinds: {
+        dust: "Écrit dans la poussière",
+        engraved: "Gravé",
+        burned: "Brûlé",
+        marker: "Griffonné",
+        blood: "Écrit avec du sang",
+        headstone: "Épitaphe",
+        other: "Écrit",
+      },
+    },
     asciiTerrain: {
       asciiTilesForWalls: {
         label: "Utiliser des tuiles pour les murs",

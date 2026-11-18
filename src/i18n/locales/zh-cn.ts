@@ -335,6 +335,20 @@ export const zhCnOverrides = {
     slotCount: (count: number) => `${count} 个槽位`,
   },
   app: {
+    floorPanel: {
+      label: "脚下",
+      hidden: "看不见这里有什么。",
+      more: (count: number) => `另有 ${count} 件`,
+      engravingKinds: {
+        dust: "写在灰尘里的字",
+        engraved: "刻下的字",
+        burned: "烧出的字",
+        marker: "记号笔涂鸦",
+        blood: "用血写的字",
+        headstone: "墓志铭",
+        other: "字迹",
+      },
+    },
     asciiTerrain: {
       asciiTilesForWalls: {
         label: "墙壁使用图块",

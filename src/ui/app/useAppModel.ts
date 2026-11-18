@@ -1869,6 +1869,10 @@ export function useAppModel() {
   });
 
   return {
+    floorPanel: {
+      visible: isDesktopGameRunning,
+      renderTilePreview: (tileIndex: number | null) => renderMenuItemTilePreview(null, tileIndex),
+    },
     localMcpControl: {
       characterCreationConfig,
       startupFlowStep,

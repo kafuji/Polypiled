@@ -43,6 +43,7 @@ import { RepeatActionButton } from "./app/actions/RepeatActionButton";
 import { SafeZonePreview } from "./app/settings/SafeZonePreview";
 import { DesktopActions } from "./app/actions/DesktopActions";
 import { MobileBottomBar } from "./app/actions/MobileBottomBar";
+import { FloorPanel } from "./app/floor/FloorPanel";
 import { PositionDialog } from "./app/prompts/PositionDialog";
 import { ControllerSupportDialog } from "./app/controller/ControllerSupportDialog";
 import { GlobalConfirmationDialog } from "./app/layout/GlobalConfirmationDialog";
@@ -97,6 +98,7 @@ export default function App(): JSX.Element {
       <RepeatActionButton {...model.repeatActionButton} />
       <SafeZonePreview {...model.safeZonePreview} />
       <DesktopActions {...model.desktopActions} />
+      <FloorPanel {...model.floorPanel} />
       <MobileBottomBar {...model.mobileBottomBar} />
       <PositionDialog {...model.positionDialog} />
       <ControllerSupportDialog {...model.controllerSupportDialog} />
