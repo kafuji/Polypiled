@@ -553,7 +553,6 @@ export const ru = {
   app: {
     floorPanel: {
       label: "Здесь",
-      nothing: "Здесь ничего нет.",
       hidden: "Вы не видите, что здесь лежит.",
       more: (count: number) => `и ещё ${count}`,
       engravingKinds: {

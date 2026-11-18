@@ -542,7 +542,6 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
   app: {
     floorPanel: {
       label: "足元",
-      nothing: "何も落ちていない。",
       hidden: "足元に何があるか見えない。",
       more: (count: number) => `ほか ${count} 個`,
       engravingKinds: {

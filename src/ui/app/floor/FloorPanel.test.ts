@@ -41,11 +41,12 @@ describe("FloorPanel", () => {
     expect(render("ja", false)).toBe("");
   });
 
-  it("names the terrain and says when nothing lies here", () => {
+  it("shows only the terrain when nothing lies here", () => {
     useGameStore.getState().setFloorHere(floor());
     const html = render();
     expect(html).toContain("下り階段");
-    expect(html).toContain(t.floorPanel.nothing);
+    expect(html).not.toContain("nh3d-floor-panel-objects");
+    expect(html).not.toContain("nh3d-floor-panel-note");
   });
 
   it("names a trap the hero has seen here", () => {

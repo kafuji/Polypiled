@@ -337,7 +337,6 @@ export const zhCnOverrides = {
   app: {
     floorPanel: {
       label: "脚下",
-      nothing: "这里什么也没有。",
       hidden: "看不见这里有什么。",
       more: (count: number) => `另有 ${count} 件`,
       engravingKinds: {

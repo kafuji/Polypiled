@@ -571,7 +571,6 @@ export const ptBrOverrides = {
   app: {
     floorPanel: {
       label: "Aqui",
-      nothing: "Não há nada aqui.",
       hidden: "Você não vê o que há aqui.",
       more: (count: number) => `e mais ${count}`,
       engravingKinds: {

@@ -580,7 +580,6 @@ export const fr = {
   app: {
     floorPanel: {
       label: "Ici",
-      nothing: "Il n'y a rien ici.",
       hidden: "Vous ne voyez pas ce qu'il y a ici.",
       more: (count: number) => `et ${count} de plus`,
       engravingKinds: {

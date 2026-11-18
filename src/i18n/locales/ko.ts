@@ -555,7 +555,6 @@ export const ko = {
   app: {
     floorPanel: {
       label: "발밑",
-      nothing: "아무것도 없다.",
       hidden: "발밑에 무엇이 있는지 보이지 않는다.",
       more: (count: number) => `외 ${count}개`,
       engravingKinds: {

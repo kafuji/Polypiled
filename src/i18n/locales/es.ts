@@ -537,7 +537,6 @@ export const esOverrides = {
     app: {
       floorPanel: {
         label: "Aquí",
-        nothing: "Aquí no hay nada.",
         hidden: "No ves lo que hay aquí.",
         more: (count: number) => `y ${count} más`,
         engravingKinds: {

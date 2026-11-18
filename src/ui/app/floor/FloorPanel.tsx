@@ -59,9 +59,7 @@ export function FloorPanelView({ visible, renderTilePreview, floorHere }: FloorP
       ) : null}
       {floorHere.hidden ? (
         <div className="nh3d-floor-panel-note">{t.floorPanel.hidden}</div>
-      ) : floorHere.count === 0 ? (
-        <div className="nh3d-floor-panel-note">{t.floorPanel.nothing}</div>
-      ) : (
+      ) : floorHere.count === 0 ? null : (
         <ul className="nh3d-floor-panel-objects">
           {shown.map((object, index) => (
             <li key={`${index}:${object.name}`} className="nh3d-floor-panel-object">
