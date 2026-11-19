@@ -5,6 +5,7 @@ import type { RuntimeCoordinator } from "../runtime-coordinator";
 import { isLoggingEnabled } from "../../../logging";
 import { decodeKnowledgeFrame } from "../../knowledge";
 import { parseFloorHere } from "../../floor-here";
+import { parseInventoryState } from "../../inventory-state";
 import type { RuntimePointerContract } from "../abi/pointer-contract";
 import type { RuntimeGlyphs } from "./glyphs";
 import type { RuntimeMemory } from "../abi/memory";
@@ -391,6 +392,24 @@ export class RuntimeMapCallbacks {
     }
     if (this.deps.coordinator.eventHandler) {
       this.deps.coordinator.emit({ type: "floor_here", floorHere });
+    }
+    return 0;
+  }
+
+  private reportedUnreadableInventory = false;
+
+  /** The hero's inventory (see src/runtime/inventory-state.ts), sent whenever it changes. */
+  handleShimInventory(args) {
+    const inventory = parseInventoryState(args[0]);
+    if (!inventory) {
+      if (!this.reportedUnreadableInventory) {
+        this.reportedUnreadableInventory = true;
+        console.warn("Ignoring inventory information this client cannot read.");
+      }
+      return 0;
+    }
+    if (this.deps.coordinator.eventHandler) {
+      this.deps.coordinator.emit({ type: "inventory_state", inventory });
     }
     return 0;
   }

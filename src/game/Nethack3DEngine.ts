@@ -966,6 +966,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
         if (data.floorHere) this.systems.engineState.uiAdapter.setFloorHere(data.floorHere);
         break;
 
+      case "inventory_state":
+        if (data.inventory) this.systems.engineState.uiAdapter.setInventoryState(data.inventory);
+        break;
+
       case "monster_attack": {
         const targetEntityId = this.systems.runtimeEntityTracking.normalizeRuntimeTargetEntityId(
           data.targetId,
@@ -1581,6 +1585,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
       case "runtime_terminated":
         this.systems.playerKnowledge.reset();
         this.systems.engineState.uiAdapter.setFloorHere(null);
+        this.systems.engineState.uiAdapter.setInventoryState(null);
         this.systems.promptDialogs.handleRuntimeTermination(
           typeof data.reason === "string" ? data.reason : "",
         );

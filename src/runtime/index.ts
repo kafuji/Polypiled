@@ -11,3 +11,4 @@ export type {
 } from "./types";
 export * from "./knowledge";
 export * from "./floor-here";
+export * from "./inventory-state";

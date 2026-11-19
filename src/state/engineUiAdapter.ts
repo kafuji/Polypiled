@@ -11,6 +11,7 @@ import type {
 } from "../game/ui-types";
 import { useGameStore } from "./gameStore";
 import type { FloorHere } from "../runtime/floor-here";
+import type { InventoryState } from "../runtime/inventory-state";
 
 export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
   return {
@@ -61,6 +62,9 @@ export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
     },
     setFloorHere(state: FloorHere | null): void {
       useGameStore.getState().setFloorHere(state);
+    },
+    setInventoryState(state: InventoryState | null): void {
+      useGameStore.getState().setInventoryState(state);
     },
     setPositionInputActive(active: boolean, origin?: string | null): void {
       useGameStore.getState().setPositionInputActive(active, origin);

@@ -1,5 +1,6 @@
 import type { NethackRuntimeVersion } from "../runtime/types";
 import type { FloorHere } from "../runtime/floor-here";
+import type { InventoryState } from "../runtime/inventory-state";
 import { normalizeUiFontFamily } from "./ui-font";
 import {
   defaultNh3dTilesetPath,
@@ -1463,6 +1464,8 @@ export interface Nethack3DEngineUIAdapter {
   setPositionRequest(text: string | null): void;
   /** What lies under the hero, as the game reports it; null before a report or after the game. */
   setFloorHere(state: FloorHere | null): void;
+  /** The hero's inventory, as the game reports it; null before a report or after the game. */
+  setInventoryState(state: InventoryState | null): void;
   setPositionInputActive(active: boolean, origin?: string | null): void;
   setFpsCrosshairContext(state: FpsCrosshairContextState | null): void;
   setRepeatActionVisible(visible: boolean): void;

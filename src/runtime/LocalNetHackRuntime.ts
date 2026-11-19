@@ -282,6 +282,9 @@ class LocalNetHackRuntime {
       case "shim_floor_here":
         return this.systems.mapCallbacks.handleShimFloorHere(args);
 
+      case "shim_inventory":
+        return this.systems.mapCallbacks.handleShimInventory(args);
+
       case "shim_player_selection":
         console.log("NetHack player selection started");
         // TO-DO: Is it OK we ignore this?
