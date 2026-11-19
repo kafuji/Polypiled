@@ -1002,6 +1002,119 @@ nh3d_publish_inventory(boolean force)
     }, nh3d_inventory_json);
 }
 
+/*
+ * #nh3dinventory: an internal command for the shell's inventory screen,
+ * bound to M-^I.  The shell sends that key only at an ordinary command
+ * prompt, after putting a request in globalThis.nethackGlobal
+ * .nh3dInventoryRequest: an operation and its arguments separated by ':'.
+ *
+ *   adjust:<from>:<to>    #adjust, move or swap <from> into slot <to>
+ *   wear:<x>              W            puton:<x>[:r|l]   P (ring hand)
+ *   takeoff:<x>           T            remove:<x>        R
+ *   wield:<x|->           w            quiver:<x|->      Q
+ *   swap                  x            twoweapon         X / #twoweapon
+ *
+ * The command answers the real command's prompts through the command
+ * queue (getobj() and yn_function() read it) and runs it, so whether the
+ * action is possible, what it costs and what it says stay the game's.
+ * Anything the real command did not ask for is dropped afterwards, so no
+ * queued answer can ever run as a command of its own.
+ */
+
+#define NH3D_INVOP_MAX 64
+
+static boolean
+nh3d_invop_letter_ok(char c, boolean allow_hands)
+{
+    struct obj *otmp;
+
+    if (allow_hands && c == HANDS_SYM)
+        return TRUE;
+    for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (otmp->invlet == c)
+            return TRUE;
+    return FALSE;
+}
+
+static boolean
+nh3d_invop_slot_ok(char c)
+{
+    return (boolean) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                      || c == GOLD_SYM);
+}
+
+int
+nh3d_inventory_command(void)
+{
+    char req[NH3D_INVOP_MAX], *args[4], *p;
+    char keys[3];
+    int nargs = 0, nkeys = 0, i, res;
+    int (*fn)(void) = 0;
+
+    req[0] = '\0';
+    EM_ASM({
+        const g = globalThis.nethackGlobal || {};
+        const request = typeof g.nh3dInventoryRequest === "string"
+            ? g.nh3dInventoryRequest : "";
+        g.nh3dInventoryRequest = null;
+        stringToUTF8(request, $0, $1);
+    }, req, (int) sizeof req);
+
+    for (p = req; nargs < 4;) {
+        args[nargs++] = p;
+        if ((p = strchr(p, ':')) == 0)
+            break;
+        *p++ = '\0';
+    }
+    for (i = 1; i < nargs; i++)
+        if (strlen(args[i]) != 1)
+            return ECMD_OK;
+
+    if (!strcmp(args[0], "adjust") && nargs == 3
+        && nh3d_invop_letter_ok(args[1][0], FALSE)
+        && nh3d_invop_slot_ok(args[2][0])) {
+        fn = doorganize;
+        keys[nkeys++] = args[1][0];
+        keys[nkeys++] = args[2][0];
+    } else if (!strcmp(args[0], "swap") && nargs == 1) {
+        fn = doswapweapon;
+    } else if (!strcmp(args[0], "twoweapon") && nargs == 1) {
+        fn = dotwoweapon;
+    } else if (nargs >= 2) {
+        boolean hands = FALSE;
+
+        if (!strcmp(args[0], "wear") && nargs == 2) {
+            fn = dowear;
+        } else if (!strcmp(args[0], "puton") && nargs <= 3) {
+            fn = doputon;
+            if (nargs == 3 && args[2][0] != 'r' && args[2][0] != 'l')
+                return ECMD_OK;
+        } else if (!strcmp(args[0], "takeoff") && nargs == 2) {
+            fn = dotakeoff;
+        } else if (!strcmp(args[0], "remove") && nargs == 2) {
+            fn = doremring;
+        } else if (!strcmp(args[0], "wield") && nargs == 2) {
+            fn = dowield, hands = TRUE;
+        } else if (!strcmp(args[0], "quiver") && nargs == 2) {
+            fn = dowieldquiver, hands = TRUE;
+        }
+        if (!fn || !nh3d_invop_letter_ok(args[1][0], hands))
+            return ECMD_OK;
+        keys[nkeys++] = args[1][0];
+        if (fn == doputon && nargs == 3)
+            keys[nkeys++] = args[2][0];
+    }
+    if (!fn)
+        return ECMD_OK;
+
+    cmdq_clear(CQ_CANNED);
+    for (i = 0; i < nkeys; i++)
+        cmdq_add_key(CQ_CANNED, keys[i]);
+    res = (*fn)();
+    cmdq_clear(CQ_CANNED);
+    return res;
+}
+
 static boolean
 nh3d_full_frame_requested(void)
 {
