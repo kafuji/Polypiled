@@ -570,8 +570,6 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
         overloaded: "超過",
       },
       weightLabel: "重量",
-      nextLevel: (n: number, level: string) => `${level}まであと ${n}`,
-      overloaded: "これ以上持てない",
       itemWeight: (n: number) => `重さ ${n}`,
       letter: (letter: string) => `文字 ${letter}`,
       buc: {

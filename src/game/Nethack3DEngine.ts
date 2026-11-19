@@ -973,7 +973,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
       case "inventory_state":
         if (data.inventory) {
-          this.systems.engineState.uiAdapter.setInventoryState(data.inventory);
+          this.systems.menuPreviews.publishInventoryState(data.inventory);
           this.systems.promptDialogs.setInventoryStateAvailable(true);
         }
         break;
@@ -1593,7 +1593,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
       case "runtime_terminated":
         this.systems.playerKnowledge.reset();
         this.systems.engineState.uiAdapter.setFloorHere(null);
-        this.systems.engineState.uiAdapter.setInventoryState(null);
+        this.systems.menuPreviews.publishInventoryState(null);
         this.systems.promptDialogs.setInventoryStateAvailable(false);
         this.systems.promptDialogs.handleRuntimeTermination(
           typeof data.reason === "string" ? data.reason : "",

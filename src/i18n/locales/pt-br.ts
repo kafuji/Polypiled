@@ -599,8 +599,6 @@ export const ptBrOverrides = {
         overloaded: "Sobrecarga total",
       },
       weightLabel: "Peso",
-      nextLevel: (n: number, level: string) => `${n} até ${level}`,
-      overloaded: "Não consegue carregar mais",
       itemWeight: (n: number) => `Peso ${n}`,
       letter: (letter: string) => `Letra ${letter}`,
       buc: {

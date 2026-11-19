@@ -104,12 +104,22 @@ describe("InventoryScreen", () => {
     expect(html).toMatch(/class="nh3d-invs-item" title="object q"/);
   });
 
-  it("shows the weight against the next encumbrance level", () => {
+  it("shows the weight, the limit of this level and the level", () => {
     const html = render();
     expect(html).toContain("412");
     expect(html).toContain("/ 450");
-    expect(html).toContain("39 until Burdened");
+    expect(html).toContain("Unencumbered");
+    expect(html).not.toContain("until");
     expect(html).toContain('data-level="0"');
+  });
+
+  it("draws the high-resolution picture when the engine attached one", () => {
+    const html = render({
+      ...inventory,
+      objects: [object("q", { tilePreviewDataUrl: "data:image/png;base64,HIRES" })],
+    });
+    expect(html).toContain('src="data:image/png;base64,HIRES"');
+    expect(html).not.toContain('data-tile="113"');
   });
 
   it("names the alternate slot the off hand while two-weaponing", () => {
@@ -121,6 +131,6 @@ describe("InventoryScreen", () => {
     // the app takes its strings at page load; check the Japanese data itself
     const strings = ja.app.inventoryScreen;
     expect(strings.title).toBe("持ち物");
-    expect(strings.nextLevel(39, strings.encumbrance.burdened)).toBe("重荷まであと 39");
+    expect(strings.encumbrance.burdened).toBe("重荷");
   });
 });

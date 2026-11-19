@@ -583,8 +583,6 @@ export const ko = {
         overloaded: "초과",
       },
       weightLabel: "무게",
-      nextLevel: (n: number, level: string) => `${level}까지 ${n}`,
-      overloaded: "더 들 수 없음",
       itemWeight: (n: number) => `무게 ${n}`,
       letter: (letter: string) => `글자 ${letter}`,
       buc: {

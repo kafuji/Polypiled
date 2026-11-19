@@ -565,8 +565,6 @@ export const esOverrides = {
           overloaded: "Abrumado",
         },
         weightLabel: "Peso",
-        nextLevel: (n: number, level: string) => `${n} hasta ${level}`,
-        overloaded: "No puedes llevar más",
         itemWeight: (n: number) => `Peso ${n}`,
         letter: (letter: string) => `Letra ${letter}`,
         buc: {

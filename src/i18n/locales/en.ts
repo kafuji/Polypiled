@@ -585,8 +585,6 @@ export const en = {
         overloaded: "Overloaded",
       },
       weightLabel: "Weight",
-      nextLevel: (n: number, level: string) => `${n} until ${level}`,
-      overloaded: "Cannot carry more",
       itemWeight: (n: number) => `Weight ${n}`,
       letter: (letter: string) => `Letter ${letter}`,
       buc: {

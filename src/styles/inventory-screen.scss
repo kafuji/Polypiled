@@ -12,8 +12,13 @@
     min(calc((100vw - 170px) / 16), calc((100vh - 330px) / 5)),
     128px
   );
+  /* as large as its contents, centred: the cell size makes it big */
   position: fixed;
-  inset: 8px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
   z-index: 1990;
   display: flex;
   flex-direction: column;
@@ -116,10 +121,8 @@
 
 .nh3d-invs-body {
   display: flex;
-  flex: 1 1 auto;
   gap: 16px;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
 }
 
 .nh3d-invs-equipment {
@@ -298,13 +301,13 @@
     background: radial-gradient(circle at 50% 60%, #4a3a1e 0 40%, transparent 75%);
   }
 
-  /* blessed: a soft golden halo; cursed: a dark violet haze that breathes */
+  /* blessed: a soft golden halo; cursed: a dark red haze that breathes */
   &.is-blessed {
     box-shadow: 0 0 6px 1px rgba(255, 214, 110, 0.75), inset 0 0 6px rgba(255, 214, 110, 0.35);
   }
 
   &.is-cursed {
-    box-shadow: 0 0 7px 2px rgba(150, 70, 210, 0.7), inset 0 0 8px rgba(90, 30, 140, 0.55);
+    box-shadow: 0 0 7px 2px rgba(150, 20, 20, 0.75), inset 0 0 8px rgba(90, 8, 8, 0.6);
     animation: nh3d-invs-cursed 2.4s ease-in-out infinite;
   }
 
@@ -334,11 +337,11 @@
 @keyframes nh3d-invs-cursed {
   0%,
   100% {
-    box-shadow: 0 0 5px 1px rgba(150, 70, 210, 0.55), inset 0 0 6px rgba(90, 30, 140, 0.45);
+    box-shadow: 0 0 5px 1px rgba(150, 20, 20, 0.6), inset 0 0 6px rgba(90, 8, 8, 0.5);
   }
 
   50% {
-    box-shadow: 0 0 10px 3px rgba(150, 70, 210, 0.85), inset 0 0 10px rgba(90, 30, 140, 0.65);
+    box-shadow: 0 0 10px 3px rgba(165, 25, 25, 0.9), inset 0 0 10px rgba(100, 10, 10, 0.7);
   }
 }
 
@@ -397,7 +400,7 @@
 }
 
 .nh3d-invs-mark-cursed {
-  color: #c48cff;
+  color: #b3262b;
 }
 
 .nh3d-invs-item-proof {
@@ -482,7 +485,8 @@
   .nh3d-inventory-screen {
     --invs-gap: 3px;
     --invs-cell: clamp(22px, calc((100vw - 60px) / 13), 64px);
-    inset: 4px;
+    max-width: calc(100vw - 8px);
+    max-height: calc(100vh - 8px);
     padding: 10px;
   }
 

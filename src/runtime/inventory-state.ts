@@ -98,6 +98,11 @@ export interface InventoryObject {
   readonly named: boolean;
   /** Present for anything that looks like a container. */
   readonly container: InventoryContainer | null;
+  /**
+   * Added by the engine, not the core: the high-resolution pack's picture of
+   * this tile when that pack is in use and has it.
+   */
+  readonly tilePreviewDataUrl?: string | null;
 }
 
 export interface InventoryState {

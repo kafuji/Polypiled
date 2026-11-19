@@ -309,7 +309,9 @@ export function InventoryScreenView({
     const badge = badgeText(object);
     const name = translateInventoryItem(object.name, locale);
     const erosionLevel = Math.max(object.eroded?.level ?? 0, object.eroded2?.level ?? 0);
-    const tile = renderTilePreview(object.tileIndex);
+    const tile = object.tilePreviewDataUrl
+      ? <img alt="" aria-hidden="true" draggable={false} src={object.tilePreviewDataUrl} />
+      : renderTilePreview(object.tileIndex);
     return (
       <span
         className={`${itemClasses(object)}${extraClass}`}
@@ -384,11 +386,6 @@ export function InventoryScreenView({
             <span className="nh3d-invs-weight-fill" style={{ width: `${Math.round(weight.fill * 100)}%` }} />
           </span>
           <span className="nh3d-invs-weight-level">{levelName(weight.level)}</span>
-          <span className="nh3d-invs-weight-next">
-            {weight.remaining !== null
-              ? strings.nextLevel(weight.remaining, levelName(weight.level + 1))
-              : strings.overloaded}
-          </span>
         </div>
         <button type="button" className="nh3d-invs-close" onClick={() => controller?.closeInventoryScreen()}>
           {strings.close}

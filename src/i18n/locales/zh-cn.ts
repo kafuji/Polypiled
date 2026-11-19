@@ -365,8 +365,6 @@ export const zhCnOverrides = {
         overloaded: "超载",
       },
       weightLabel: "重量",
-      nextLevel: (n: number, level: string) => `距${level}还有 ${n}`,
-      overloaded: "无法再携带",
       itemWeight: (n: number) => `重量 ${n}`,
       letter: (letter: string) => `字母 ${letter}`,
       buc: {

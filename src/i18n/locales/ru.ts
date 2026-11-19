@@ -581,8 +581,6 @@ export const ru = {
         overloaded: "Перегружен",
       },
       weightLabel: "Вес",
-      nextLevel: (n: number, level: string) => `${n} до «${level}»`,
-      overloaded: "Больше не унести",
       itemWeight: (n: number) => `Вес ${n}`,
       letter: (letter: string) => `Буква ${letter}`,
       buc: {
