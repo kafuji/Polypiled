@@ -799,6 +799,14 @@ nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth)
     nh3d_json_int(js, nh3d_appearance_tile(glyph));
     nh3d_json_raw(js, ",\"quan\":");
     nh3d_json_int(js, obj->quan);
+    /* look-alike armor always shares its category, so it is public */
+    if (obj->oclass == ARMOR_CLASS) {
+        nh3d_json_raw(js, ",\"armor\":");
+        nh3d_json_int(js, objects[obj->otyp].oc_armcat);
+    } else if (obj->otyp == BLINDFOLD || obj->otyp == TOWEL
+               || obj->otyp == LENSES) {
+        nh3d_json_raw(js, ",\"eyewear\":true");
+    }
 
     if (depth == 0) {
         long wt = obj->oclass == COIN_CLASS ? (obj->quan + 50L) / 100L
