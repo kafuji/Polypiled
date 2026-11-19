@@ -380,7 +380,6 @@
   color: #bfe3ff;
 }
 
-.nh3d-invs-item-mark,
 .nh3d-invs-item-proof,
 .nh3d-invs-item-price {
   position: absolute;
@@ -389,18 +388,6 @@
   font-size: 0.9em;
   line-height: 1;
   pointer-events: none;
-}
-
-.nh3d-invs-item-mark {
-  right: -2px;
-}
-
-.nh3d-invs-mark-blessed {
-  color: #ffd66e;
-}
-
-.nh3d-invs-mark-cursed {
-  color: #b3262b;
 }
 
 .nh3d-invs-item-proof {

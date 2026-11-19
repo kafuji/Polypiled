@@ -329,8 +329,6 @@ export function InventoryScreenView({
         </span>
         {object.quantity > 1 ? <span className="nh3d-invs-item-quantity">{object.quantity}</span> : null}
         {badge ? <span className="nh3d-invs-item-badge">{badge}</span> : null}
-        {object.buc === "blessed" ? <span className="nh3d-invs-item-mark nh3d-invs-mark-blessed" aria-hidden="true">✦</span> : null}
-        {object.buc === "cursed" ? <span className="nh3d-invs-item-mark nh3d-invs-mark-cursed" aria-hidden="true">✖</span> : null}
         {object.erodeproof ? <span className="nh3d-invs-item-proof" aria-hidden="true">⛨</span> : null}
         {object.unpaid ? <span className="nh3d-invs-item-price" aria-hidden="true">¤</span> : null}
       </span>
