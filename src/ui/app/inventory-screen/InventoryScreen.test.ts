@@ -4,7 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { TranslationProvider } from "../../../i18n";
 import { ja } from "../../../i18n/locales/ja";
 import { InventoryWornMask, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
-import { InventoryScreenView } from "./InventoryScreen";
+import { InventoryScreenView, menuActionsThatKeepScreenOpen } from "./InventoryScreen";
+import { inventoryContextActions } from "../inventory/actions";
 import { ObjectClass } from "./model";
 
 vi.hoisted(() => vi.stubGlobal("window", {
@@ -120,6 +121,16 @@ describe("InventoryScreen", () => {
     });
     expect(html).toContain('src="data:image/png;base64,HIRES"');
     expect(html).not.toContain('data-tile="113"');
+  });
+
+  it("closes for item actions that take time, not for naming or info", () => {
+    for (const id of ["apply", "invoke", "read", "eat", "quaff", "zap", "throw", "drop", "rub", "dip"]) {
+      expect(menuActionsThatKeepScreenOpen.has(id), id).toBe(false);
+    }
+    for (const id of ["info", "name", "call", "adjust"]) {
+      expect(inventoryContextActions.some((action) => action.id === id), id).toBe(true);
+      expect(menuActionsThatKeepScreenOpen.has(id), id).toBe(true);
+    }
   });
 
   it("names the alternate slot the off hand while two-weaponing", () => {

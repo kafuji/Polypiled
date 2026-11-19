@@ -46,6 +46,13 @@ const classSymbols: Record<number, string> = {
 
 const DRAG_START_DISTANCE_PX = 6;
 
+/**
+ * Item-menu actions that take no game time keep the screen open; every
+ * other one (apply, invoke, read, eat, quaff, zap, throw, drop, ...) closes
+ * it. Equipping and rearranging by drag keep it open too.
+ */
+export const menuActionsThatKeepScreenOpen: ReadonlySet<string> = new Set(["info", "name", "call", "adjust"]);
+
 function parseDropTarget(element: Element | null): DropTarget | null {
   const host = element?.closest<HTMLElement>("[data-invs-drop]");
   const value = host?.dataset.invsDrop;
@@ -290,6 +297,9 @@ export function InventoryScreenView({
     if (!object?.letter || !controller) return;
     const action = inventoryContextActions.find((entry) => entry.id === actionId);
     if (!action) return;
+    // using an item (apply, invoke, read, eat, zap, ...) takes time and
+    // usually needs the map: the screen gets out of the way at once
+    if (!menuActionsThatKeepScreenOpen.has(action.id)) controller.closeInventoryScreen();
     if (action.kind === "extended" && action.value) {
       if (action.armInventorySelection !== false) {
         controller.sendInput(`__INVCTX_SELECT__:${object.letter}:${action.id}`);
