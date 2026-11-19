@@ -11,7 +11,7 @@ function mouseFixture() {
   const dependencies = {
     engineState: { session: {} },
     audioHapticsPlatform: { resumeFmodFromUserGesture: vi.fn() },
-    promptDialogs: { isUiInputBlocked: () => false, isAnyModalVisible: () => false },
+    promptDialogs: { isMapInputBlocked: () => false, isAnyModalVisible: () => false },
     questionMenus: { isInQuestion: false }, directionPrompts: { isInDirectionQuestion: false },
     extendedCommands: { metaCommandModeActive: false },
     tileRendering: { tileMap: new Map([["12,8", tile]]) },
@@ -87,7 +87,7 @@ describe("native Quest map ray input", () => {
   it("rechecks engine modal and prompt gates even if browser state is stale", () => {
     for (const gate of ["loading", "modal", "question", "direction", "extended"]) {
       const f = mouseFixture();
-      if (gate === "loading") f.dependencies.promptDialogs.isUiInputBlocked = () => true;
+      if (gate === "loading") f.dependencies.promptDialogs.isMapInputBlocked = () => true;
       if (gate === "modal") f.dependencies.promptDialogs.isAnyModalVisible = () => true;
       if (gate === "question") f.dependencies.questionMenus.isInQuestion = true;
       if (gate === "direction") f.dependencies.directionPrompts.isInDirectionQuestion = true;
