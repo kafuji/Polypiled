@@ -1,6 +1,7 @@
 import type { NethackRuntimeVersion } from "../runtime/types";
 import type { FloorHere } from "../runtime/floor-here";
 import type { InventoryState } from "../runtime/inventory-state";
+import type { InventoryOperation } from "../runtime/input/inventory-operation";
 import { normalizeUiFontFamily } from "./ui-font";
 import {
   defaultNh3dTilesetPath,
@@ -330,6 +331,8 @@ export type Nh3dClientOptions = {
   minimapScale: number;
   reduceInventoryMotion: boolean;
   inventoryTileOnlyMotion: boolean;
+  /** Use the inventory screen (equipment and a slot grid) when the core reports the inventory. */
+  inventoryScreen: boolean;
   inventoryFixedTileSize: Nh3dInventoryFixedTileSizeMode;
   damageNumbers: boolean;
   displayStatChangesAbovePlayer: boolean;
@@ -502,6 +505,7 @@ export const defaultNh3dClientOptions: Nh3dClientOptions = {
   minimapScale: 1,
   reduceInventoryMotion: true,
   inventoryTileOnlyMotion: true,
+  inventoryScreen: true,
   inventoryFixedTileSize: "medium",
   damageNumbers: true,
   displayStatChangesAbovePlayer: true,
@@ -1300,6 +1304,10 @@ export function normalizeNh3dClientOptions(
       typeof overrides?.inventoryTileOnlyMotion === "boolean"
         ? overrides.inventoryTileOnlyMotion
         : defaultNh3dClientOptions.inventoryTileOnlyMotion,
+    inventoryScreen:
+      typeof overrides?.inventoryScreen === "boolean"
+        ? overrides.inventoryScreen
+        : defaultNh3dClientOptions.inventoryScreen,
     inventoryFixedTileSize,
     damageNumbers:
       typeof overrides?.damageNumbers === "boolean"
@@ -1466,6 +1474,7 @@ export interface Nethack3DEngineUIAdapter {
   setFloorHere(state: FloorHere | null): void;
   /** The hero's inventory, as the game reports it; null before a report or after the game. */
   setInventoryState(state: InventoryState | null): void;
+  setInventoryScreenOpen(open: boolean): void;
   setPositionInputActive(active: boolean, origin?: string | null): void;
   setFpsCrosshairContext(state: FpsCrosshairContextState | null): void;
   setRepeatActionVisible(visible: boolean): void;
@@ -1519,6 +1528,9 @@ export interface Nethack3DEngineController {
   repeatLastAction(): void;
   setClientOptions(options: Nh3dClientOptions): void;
   closeInventoryDialog(): void;
+  closeInventoryScreen(): void;
+  /** Runs an inventory-screen operation through the core at the next command prompt. */
+  runInventoryOperation(operation: InventoryOperation): void;
   closeInfoMenuDialog(): void;
 }
 

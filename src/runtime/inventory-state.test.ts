@@ -68,6 +68,24 @@ describe("inventory from the core", () => {
     });
   });
 
+  it("reads the armor category and eyewear", () => {
+    const state = parseInventoryState(
+      JSON.stringify({
+        ...sample,
+        objects: [
+          { ...sword, letter: "c", armor: 5 },
+          { ...sword, letter: "g", eyewear: true },
+          { ...sword, letter: "h", armor: 9 },
+        ],
+      }),
+    );
+    expect(state?.objects.map((object) => [object.armorCategory, object.eyewear])).toEqual([
+      ["cloak", false],
+      [null, true],
+      [null, false],
+    ]);
+  });
+
   it("leaves unknown BUC and enchantment as null", () => {
     const state = parseInventoryState(
       JSON.stringify({ ...sample, objects: [{ ...sword, buc: undefined, enchantment: undefined }] }),

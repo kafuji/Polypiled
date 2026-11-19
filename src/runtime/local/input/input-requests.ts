@@ -1,6 +1,7 @@
 // @ts-nocheck
 // Legacy dynamic WASM integration; dependency membership is checked by assembly.
 import RuntimeInputBroker from "../../input/RuntimeInputBroker";
+import { inventoryOperationKeyCode, isInventoryOperationRequest } from "../../input/inventory-operation";
 import { resolveBoundedQuestionAnswer } from "../../input/question-answer";
 import type {
   InputConsumeResult,
@@ -95,6 +96,8 @@ export class RuntimeInputRequests {
   declare activeInputRequest: any;
   declare awaitingQuestionInput: boolean;
   silentInventoryRefreshPending = false;
+  /** Inventory-screen operations waiting for an ordinary command prompt (see input/inventory-operation.ts). */
+  pendingInventoryOperations: string[] = [];
   commandInputContinuation: "none" | "count" | "prefix" = "none";
 
   constructor(private readonly deps: RuntimeInputRequestsDependencies) {
@@ -142,6 +145,27 @@ export class RuntimeInputRequests {
       this.silentInventoryRefreshPending = false;
       this.enqueueInputKeys(["i"], "system", ["position"]);
     }
+  }
+
+  /** Runs an inventory-screen operation at the next ordinary command prompt, never as a prompt answer. */
+  requestInventoryOperation(request: string): void {
+    if (!isInventoryOperationRequest(request)) return;
+    this.pendingInventoryOperations.push(request);
+    if (this.activeInputRequest?.kind === "position" &&
+        this.inputBroker.hasPendingRequests("position") &&
+        this.isNormalCommandPositionRequest() &&
+        this.pendingInventoryOperations.length === 1) {
+      this.deliverInventoryOperation();
+      this.enqueueInputKeys([String.fromCharCode(inventoryOperationKeyCode)], "system", ["position"]);
+    }
+  }
+
+  /** Hands the next operation to the core; the caller then sends M-^I. */
+  private deliverInventoryOperation(): void {
+    const request = this.pendingInventoryOperations.shift();
+    const host = globalThis as { nethackGlobal?: Record<string, unknown> };
+    host.nethackGlobal = host.nethackGlobal || {};
+    host.nethackGlobal.nh3dInventoryRequest = request ?? null;
   }
 
   updateCommandInputContinuation(inputCode: number): void {
@@ -329,6 +353,11 @@ export class RuntimeInputRequests {
         this.isNormalCommandPositionRequest()) {
       this.silentInventoryRefreshPending = false;
       return this.deps.keyboardInput.processKey("i");
+    }
+    if (requestKind === "position" && this.pendingInventoryOperations.length > 0 &&
+        this.isNormalCommandPositionRequest()) {
+      this.deliverInventoryOperation();
+      return inventoryOperationKeyCode;
     }
     const requested = this.requestValidInputResult(requestKind);
     if (requested && typeof requested.then === "function") {

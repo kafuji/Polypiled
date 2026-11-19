@@ -483,6 +483,12 @@ export const clientOptionsConfig: ClientOption[] = [
     type: "section",
   },
   {
+    key: "inventoryScreen",
+    label: t.clientOptions.config.inventoryScreen.label,
+    description: t.clientOptions.config.inventoryScreen.description,
+    type: "boolean",
+  },
+  {
     key: "reduceInventoryMotion",
     label: t.clientOptions.config.reduceInventoryMotion.label,
     description: t.clientOptions.config.reduceInventoryMotion.description,

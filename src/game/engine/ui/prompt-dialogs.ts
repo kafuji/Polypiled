@@ -38,6 +38,7 @@ export interface PromptDialogsDependencies {
     EngineState,
     "session"
     | "uiAdapter"
+    | "clientOptions"
   >;
   readonly extendedCommands: Pick<
     ExtendedCommands,
@@ -125,6 +126,10 @@ export class PromptDialogs {
   lastMessageInfoMenu: { title: string; lines: string[] } | null = null;
 
   isInventoryDialogVisible: boolean = false;
+  /** The inventory screen (src/ui/app/inventory-screen), fed by the core's inventory report. */
+  isInventoryScreenVisible: boolean = false;
+  /** The core reports the inventory (inventory_state); older cores never do. */
+  inventoryStateAvailable: boolean = false;
 
   inventoryContextActionsEnabled: boolean = true;
 
@@ -440,6 +445,15 @@ export class PromptDialogs {
     }
 
     this.hideInfoMenuDialog();
+    if (this.isInventoryScreenVisible) {
+      this.hideInventoryScreen();
+      return;
+    }
+    if (this.shouldUseInventoryScreen()) {
+      if (this.isInventoryDialogVisible) this.hideInventoryDialog();
+      this.showInventoryScreen();
+      return;
+    }
     if (this.isInventoryDialogOpen()) {
       console.log("Closing inventory dialog");
       this.hideInventoryDialog();
@@ -482,6 +496,34 @@ export class PromptDialogs {
 
   closeInventoryDialog(): void {
     this.hideInventoryDialog();
+    this.hideInventoryScreen();
+  }
+
+  shouldUseInventoryScreen(): boolean {
+    return (
+      this.dependencies.engineState.clientOptions.inventoryScreen !== false &&
+      this.inventoryStateAvailable &&
+      !this.dependencies.gameOver.gameOverState.active
+    );
+  }
+
+  showInventoryScreen(): void {
+    if (this.isInventoryScreenVisible) return;
+    this.isInventoryScreenVisible = true;
+    this.dependencies.pointerLock.syncFpsPointerLockForUiState(false);
+    this.dependencies.engineState.uiAdapter.setInventoryScreenOpen(true);
+  }
+
+  hideInventoryScreen(): void {
+    if (!this.isInventoryScreenVisible) return;
+    this.isInventoryScreenVisible = false;
+    this.dependencies.engineState.uiAdapter.setInventoryScreenOpen(false);
+    this.dependencies.pointerLock.syncFpsPointerLockForUiState(true);
+  }
+
+  setInventoryStateAvailable(available: boolean): void {
+    this.inventoryStateAvailable = available;
+    if (!available) this.hideInventoryScreen();
   }
 
   closeInfoMenuDialog(): void {
@@ -489,7 +531,7 @@ export class PromptDialogs {
   }
 
   isInventoryDialogOpen(): boolean {
-    return this.isInventoryDialogVisible;
+    return this.isInventoryDialogVisible || this.isInventoryScreenVisible;
   }
 
   isInfoDialogOpen(): boolean {

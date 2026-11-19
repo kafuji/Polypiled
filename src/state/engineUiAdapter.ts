@@ -66,6 +66,9 @@ export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
     setInventoryState(state: InventoryState | null): void {
       useGameStore.getState().setInventoryState(state);
     },
+    setInventoryScreenOpen(open: boolean): void {
+      useGameStore.getState().setInventoryScreenOpen(open);
+    },
     setPositionInputActive(active: boolean, origin?: string | null): void {
       useGameStore.getState().setPositionInputActive(active, origin);
     },

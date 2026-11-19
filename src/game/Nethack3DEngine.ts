@@ -1,3 +1,8 @@
+import {
+  encodeInventoryOperation,
+  inventoryOperationInputPrefix,
+  type InventoryOperation,
+} from "../runtime/input/inventory-operation";
 import * as THREE from "three";
 import { setNativeInputModeFps } from "../quest/webxr/native-input-mode";
 import { gameFrameTime } from "./engine/rendering/frame-time";
@@ -967,7 +972,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
         break;
 
       case "inventory_state":
-        if (data.inventory) this.systems.engineState.uiAdapter.setInventoryState(data.inventory);
+        if (data.inventory) {
+          this.systems.engineState.uiAdapter.setInventoryState(data.inventory);
+          this.systems.promptDialogs.setInventoryStateAvailable(true);
+        }
         break;
 
       case "monster_attack": {
@@ -1586,6 +1594,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         this.systems.playerKnowledge.reset();
         this.systems.engineState.uiAdapter.setFloorHere(null);
         this.systems.engineState.uiAdapter.setInventoryState(null);
+        this.systems.promptDialogs.setInventoryStateAvailable(false);
         this.systems.promptDialogs.handleRuntimeTermination(
           typeof data.reason === "string" ? data.reason : "",
         );
@@ -2173,6 +2182,17 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
   public closeInventoryDialog(): void {
     return this.systems.promptDialogs.closeInventoryDialog();
+  }
+
+  public closeInventoryScreen(): void {
+    this.systems.promptDialogs.hideInventoryScreen();
+  }
+
+  /** Runs an inventory-screen operation through the core's #nh3dinventory at the next command prompt. */
+  public runInventoryOperation(operation: InventoryOperation): void {
+    const request = encodeInventoryOperation(operation);
+    if (!request || !this.systems.engineState.session) return;
+    this.systems.inputCommands.sendInput(`${inventoryOperationInputPrefix}${request}`);
   }
 
   public closeInfoMenuDialog(): void {

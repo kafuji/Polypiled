@@ -76,6 +76,7 @@ type GameStore = {
   floorHere: FloorHere | null;
   /** The hero's inventory (game report); null before one arrives or with an older core. */
   inventoryState: InventoryState | null;
+  inventoryScreenOpen: boolean;
   positionInputActive: boolean;
   positionInputOrigin: string | null;
   newGamePrompt: NewGamePromptState;
@@ -103,6 +104,7 @@ type GameStore = {
   setPositionRequest: (text: string | null) => void;
   setFloorHere: (state: FloorHere | null) => void;
   setInventoryState: (state: InventoryState | null) => void;
+  setInventoryScreenOpen: (open: boolean) => void;
   setPositionInputActive: (active: boolean, origin?: string | null) => void;
   setNewGamePrompt: (prompt: NewGamePromptState) => void;
   setGameOver: (state: GameOverState) => void;
@@ -141,6 +143,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   positionRequest: null,
   floorHere: null,
   inventoryState: null,
+  inventoryScreenOpen: false,
   positionInputActive: false,
   positionInputOrigin: null,
   newGamePrompt: { visible: false, reason: null },
@@ -267,6 +270,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setInventoryState: (state) => {
     if (get().inventoryState === state) return;
     set({ inventoryState: state });
+  },
+  setInventoryScreenOpen: (open) => {
+    if (get().inventoryScreenOpen === open) return;
+    set({ inventoryScreenOpen: open });
   },
   setPositionInputActive: (active, origin = null) => {
     const normalized = Boolean(active);

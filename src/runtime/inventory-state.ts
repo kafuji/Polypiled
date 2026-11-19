@@ -38,6 +38,10 @@ export type InventoryWornSlot = keyof typeof InventoryWornMask;
 
 export type InventoryBuc = "blessed" | "uncursed" | "cursed";
 
+/** Armor categories in NetHack's order (enum obj_armor_types). */
+export const inventoryArmorCategories = ["bodyArmor", "shield", "helmet", "gloves", "boots", "cloak", "shirt"] as const;
+export type InventoryArmorCategory = (typeof inventoryArmorCategories)[number];
+
 export interface InventoryErosion {
   /** 1 (plain), 2 ("very"), 3 ("thoroughly"). */
   readonly level: number;
@@ -63,11 +67,15 @@ export interface InventoryObject {
   readonly letter: string | null;
   /** As the game names it ("an uncursed +1 long sword (weapon in hand)"). */
   readonly name: string;
-  /** NetHack object class (WEAPON_CLASS = 1 ...). */
+  /** NetHack object class (WEAPON_CLASS = 2, ARMOR_CLASS = 3 ...). */
   readonly objectClass: number;
   readonly glyph: number;
   readonly tileIndex: number | null;
   readonly quantity: number;
+  /** Where this armor is worn (public: look-alike armor shares its category); null for non-armor. */
+  readonly armorCategory: InventoryArmorCategory | null;
+  /** A blindfold, towel or lenses, worn over the eyes. */
+  readonly eyewear: boolean;
   /** Carried weight, contents included; null inside containers. */
   readonly weight: number | null;
   /** owornmask bits; 0 when not worn or wielded. */
@@ -157,6 +165,8 @@ function parseObject(raw: unknown, depth: number): InventoryObject | null {
     glyph: raw.glyph,
     tileIndex: isInt(raw.tile) && raw.tile >= 0 ? raw.tile : null,
     quantity: isInt(raw.quan) && raw.quan > 0 ? raw.quan : 1,
+    armorCategory: isInt(raw.armor) ? inventoryArmorCategories[raw.armor] ?? null : null,
+    eyewear: raw.eyewear === true,
     weight: topLevel && isInt(raw.weight) && raw.weight >= 0 ? raw.weight : null,
     wornMask: topLevel && isInt(raw.worn) ? raw.worn >>> 0 : 0,
     donning: raw.donning === true,

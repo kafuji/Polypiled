@@ -1,0 +1,477 @@
+/* Inventory screen (src/ui/app/inventory-screen): equipment slots, the 52
+   letter slots and the carried weight. Effects show only what the game
+   reports: BUC when known, erosion as the item's name says. */
+.nh3d-inventory-screen {
+  --invs-cell: 46px;
+  --invs-gap: 4px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1990;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+  width: min(1000px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 14px 16px;
+  border: 2px solid var(--nh3d-ui-border-strong);
+  border-radius: 10px;
+  background: var(--nh3d-ui-panel-bg-strong);
+  color: var(--nh3d-ui-text);
+  font-family: var(--nh3d-ui-font-family, "Courier New", monospace);
+  user-select: none;
+  touch-action: none;
+}
+
+.nh3d-invs-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.nh3d-invs-title {
+  margin: 0;
+  font-size: 1.15em;
+  letter-spacing: 0.04em;
+}
+
+.nh3d-invs-weight {
+  --invs-weight-color: #7fd18b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 0.92em;
+
+  &[data-level="1"] { --invs-weight-color: #e6d36a; }
+  &[data-level="2"] { --invs-weight-color: #f0a24f; }
+  &[data-level="3"],
+  &[data-level="4"],
+  &[data-level="5"] { --invs-weight-color: #ff6b5e; }
+}
+
+.nh3d-invs-weight-label,
+.nh3d-invs-weight-next {
+  color: var(--nh3d-ui-text-muted);
+}
+
+.nh3d-invs-weight-value {
+  font-weight: bold;
+}
+
+.nh3d-invs-weight-limit {
+  color: var(--nh3d-ui-text-muted);
+  font-weight: normal;
+}
+
+.nh3d-invs-weight-bar {
+  position: relative;
+  width: 120px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.nh3d-invs-weight-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--invs-weight-color);
+  transition: width 160ms ease-out;
+}
+
+.nh3d-invs-weight-level {
+  color: var(--invs-weight-color);
+  font-weight: bold;
+}
+
+.nh3d-invs-close,
+.nh3d-invs-equipment-actions button,
+.nh3d-invs-menu button {
+  padding: 4px 10px;
+  border: 1px solid var(--nh3d-ui-border-strong);
+  border-radius: 6px;
+  background: rgba(102, 204, 255, 0.08);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(102, 204, 255, 0.22);
+  }
+}
+
+.nh3d-invs-equipment-actions button[aria-pressed="true"] {
+  background: rgba(102, 204, 255, 0.32);
+}
+
+.nh3d-invs-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.nh3d-invs-equipment {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nh3d-invs-figure {
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--invs-cell) + 22px));
+  grid-template-rows: repeat(5, calc(var(--invs-cell) + 18px));
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  /* a faint figure behind the slots */
+  background:
+    radial-gradient(ellipse 18% 11% at 50% 14%, rgba(158, 197, 223, 0.12) 98%, transparent 100%),
+    radial-gradient(ellipse 22% 34% at 50% 50%, rgba(158, 197, 223, 0.1) 98%, transparent 100%),
+    rgba(255, 255, 255, 0.03);
+}
+
+.nh3d-invs-equipment-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.nh3d-invs-slot,
+.nh3d-invs-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid rgba(158, 197, 223, 0.28);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--nh3d-ui-accent);
+    outline-offset: 1px;
+  }
+
+  &.is-valid-target {
+    border-color: rgba(127, 209, 139, 0.75);
+    box-shadow: inset 0 0 0 1px rgba(127, 209, 139, 0.35);
+  }
+
+  &.is-hover-target {
+    border-color: #ffffff;
+    background: rgba(102, 204, 255, 0.18);
+  }
+}
+
+.nh3d-invs-slot {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nh3d-invs-slot-label {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--nh3d-ui-text-muted);
+  font-size: 0.68em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nh3d-invs-pack {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nh3d-invs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--invs-cell));
+  gap: var(--invs-gap);
+}
+
+.nh3d-invs-cell {
+  width: var(--invs-cell);
+  height: var(--invs-cell);
+
+  &.is-equipped .nh3d-invs-item {
+    opacity: 0.45;
+  }
+
+  &.is-held {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+  }
+}
+
+.nh3d-invs-cell-gold {
+  border-style: dashed;
+}
+
+.nh3d-invs-cell-letter {
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  z-index: 2;
+  color: rgba(158, 197, 223, 0.6);
+  font-size: 0.62em;
+  pointer-events: none;
+}
+
+.nh3d-invs-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--invs-cell) - 8px);
+  height: calc(var(--invs-cell) - 8px);
+  border-radius: 5px;
+  touch-action: none;
+
+  img,
+  canvas {
+    max-width: 100%;
+    max-height: 100%;
+    image-rendering: pixelated;
+    pointer-events: none;
+  }
+
+  /* erosion: a tint over the tile, stronger at "very" and "thoroughly" */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+
+  &[data-erosion-level="1"]::after { opacity: 0.35; }
+  &[data-erosion-level="2"]::after { opacity: 0.55; }
+  &[data-erosion-level="3"]::after { opacity: 0.75; }
+
+  &[data-erosion="rust"]::after {
+    background:
+      radial-gradient(circle at 25% 30%, #b5541c 0 12%, transparent 13%),
+      radial-gradient(circle at 70% 65%, #8f3d12 0 16%, transparent 17%),
+      radial-gradient(circle at 60% 20%, #c0661f 0 8%, transparent 9%),
+      radial-gradient(circle at 30% 80%, #a04a17 0 10%, transparent 11%);
+  }
+
+  &[data-erosion="burn"]::after,
+  &[data-erosion="crack"]::after {
+    background: radial-gradient(circle at 50% 50%, transparent 45%, #2a1608 100%);
+  }
+
+  &[data-erosion2="corrode"]::after {
+    background:
+      radial-gradient(circle at 35% 35%, #3f8f5a 0 14%, transparent 15%),
+      radial-gradient(circle at 68% 60%, #2f7a4b 0 12%, transparent 13%),
+      radial-gradient(circle at 40% 78%, #4c9e66 0 9%, transparent 10%);
+  }
+
+  &[data-erosion2="rot"]::after {
+    background: radial-gradient(circle at 50% 60%, #4a3a1e 0 40%, transparent 75%);
+  }
+
+  /* blessed: a soft golden halo; cursed: a dark violet haze that breathes */
+  &.is-blessed {
+    box-shadow: 0 0 6px 1px rgba(255, 214, 110, 0.75), inset 0 0 6px rgba(255, 214, 110, 0.35);
+  }
+
+  &.is-cursed {
+    box-shadow: 0 0 7px 2px rgba(150, 70, 210, 0.7), inset 0 0 8px rgba(90, 30, 140, 0.55);
+    animation: nh3d-invs-cursed 2.4s ease-in-out infinite;
+  }
+
+  &.is-lit {
+    filter: drop-shadow(0 0 4px rgba(255, 200, 100, 0.9));
+  }
+
+  &.is-greased {
+    background: linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.14) 45%, transparent 60%);
+  }
+}
+
+.is-reduced-motion .nh3d-invs-item.is-cursed {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nh3d-invs-item.is-cursed {
+    animation: none;
+  }
+
+  .nh3d-invs-weight-fill {
+    transition: none;
+  }
+}
+
+@keyframes nh3d-invs-cursed {
+  0%,
+  100% {
+    box-shadow: 0 0 5px 1px rgba(150, 70, 210, 0.55), inset 0 0 6px rgba(90, 30, 140, 0.45);
+  }
+
+  50% {
+    box-shadow: 0 0 10px 3px rgba(150, 70, 210, 0.85), inset 0 0 10px rgba(90, 30, 140, 0.65);
+  }
+}
+
+.nh3d-invs-item-symbol {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.nh3d-invs-item-quantity,
+.nh3d-invs-item-badge {
+  position: absolute;
+  bottom: -2px;
+  z-index: 2;
+  padding: 1px 2px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 0.66em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.nh3d-invs-item-quantity {
+  right: -2px;
+}
+
+.nh3d-invs-item-badge {
+  left: -2px;
+  color: #bfe3ff;
+}
+
+.nh3d-invs-item-mark,
+.nh3d-invs-item-proof,
+.nh3d-invs-item-price {
+  position: absolute;
+  top: -3px;
+  z-index: 2;
+  font-size: 0.7em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.nh3d-invs-item-mark {
+  right: -2px;
+}
+
+.nh3d-invs-mark-blessed {
+  color: #ffd66e;
+}
+
+.nh3d-invs-mark-cursed {
+  color: #c48cff;
+}
+
+.nh3d-invs-item-proof {
+  left: 50%;
+  color: #9fd6ff;
+  transform: translateX(-50%);
+}
+
+.nh3d-invs-item-price {
+  left: -2px;
+  color: #ffd66e;
+}
+
+.nh3d-invs-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-height: 2.6em;
+  padding: 6px 8px;
+  border-top: 1px solid rgba(158, 197, 223, 0.25);
+  font-size: 0.92em;
+}
+
+.nh3d-invs-detail-letter {
+  color: var(--nh3d-ui-accent);
+  font-weight: bold;
+}
+
+.nh3d-invs-detail-name {
+  font-weight: bold;
+}
+
+.nh3d-invs-detail-lines,
+.nh3d-invs-detail-hint {
+  color: var(--nh3d-ui-text-muted);
+}
+
+.nh3d-invs-detail-plan {
+  color: #e6d36a;
+}
+
+.nh3d-invs-detail-notice {
+  color: #ff9b7a;
+}
+
+.nh3d-invs-ghost {
+  position: fixed;
+  z-index: 2100;
+  opacity: 0.85;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.nh3d-invs-menu {
+  position: fixed;
+  z-index: 2100;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 160px;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--nh3d-ui-border-strong);
+  border-radius: 8px;
+  background: var(--nh3d-ui-panel-bg-strong);
+
+  button {
+    text-align: left;
+  }
+}
+
+.nh3d-invs-menu-title {
+  padding: 2px 4px 4px;
+  border-bottom: 1px solid rgba(158, 197, 223, 0.25);
+  font-weight: bold;
+}
+
+@media (max-width: 760px) {
+  .nh3d-inventory-screen {
+    --invs-cell: 40px;
+    padding: 10px;
+  }
+
+  .nh3d-invs-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nh3d-invs-equipment {
+    align-self: center;
+  }
+
+  .nh3d-invs-weight {
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+}

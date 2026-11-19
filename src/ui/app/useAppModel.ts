@@ -1873,6 +1873,10 @@ export function useAppModel() {
       visible: isDesktopGameRunning,
       renderTilePreview: (tileIndex: number | null) => renderMenuItemTilePreview(null, tileIndex),
     },
+    inventoryScreen: {
+      renderTilePreview: (tileIndex: number | null) => renderMenuItemTilePreview(null, tileIndex),
+      reducedMotion: inventoryReducedMotionEnabled,
+    },
     localMcpControl: {
       characterCreationConfig,
       startupFlowStep,
