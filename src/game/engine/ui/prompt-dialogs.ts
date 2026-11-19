@@ -235,6 +235,16 @@ export class PromptDialogs {
     return loadingVisible || uiBlockingVisible;
   }
 
+  /**
+   * Mouse, wheel and touch on the map: also blocked while the inventory
+   * screen is open, so no click moves the hero and no wheel zooms behind
+   * it. Keys stay with isUiInputBlocked(): the game's questions still need
+   * their answers then.
+   */
+  isMapInputBlocked(): boolean {
+    return this.isUiInputBlocked() || this.isInventoryScreenVisible;
+  }
+
   syncLoadingVisibility(): void {
     this.dependencies.engineState.uiAdapter.setLoadingVisible(
       this.runtimeLoadingVisible || this.dependencies.tilesetAssets.tilesetCompilationLoadingVisible,
@@ -547,6 +557,9 @@ export class PromptDialogs {
   }
 
   isAnyModalVisible(): boolean {
+    if (this.isInventoryScreenVisible) {
+      return true;
+    }
     if (this.dependencies.extendedCommands.metaCommandModal?.classList.contains("is-visible")) {
       return true;
     }

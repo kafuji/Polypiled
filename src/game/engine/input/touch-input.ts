@@ -116,7 +116,7 @@ export interface TouchInputDependencies {
     | "isInfoDialogOpen"
     | "isInventoryDialogOpen"
     | "isTextInputActive"
-    | "isUiInputBlocked"
+    | "isMapInputBlocked"
   >;
   readonly questionMenus: Pick<
     QuestionMenus,
@@ -614,7 +614,7 @@ export class TouchInput {
   }
 
   handleTouchStart(event: TouchEvent): void {
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();
       return;
     }
@@ -876,7 +876,7 @@ export class TouchInput {
   }
 
   handleTouchMove(event: TouchEvent): void {
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();
       return;
     }
@@ -1174,7 +1174,7 @@ export class TouchInput {
   }
 
   handleTouchEnd(event: TouchEvent): void {
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();
       return;
     }
@@ -1656,7 +1656,7 @@ export class TouchInput {
   }
 
   handleTouchCancel(): void {
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       return;
     }
     if (!this.dependencies.movementInput.isFpsMode() && this.dependencies.directionPrompts.isInDirectionQuestion) {

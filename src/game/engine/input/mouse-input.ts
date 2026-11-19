@@ -133,7 +133,7 @@ export interface MouseInputDependencies {
   readonly promptDialogs: Pick<
     PromptDialogs,
     "isAnyModalVisible"
-    | "isUiInputBlocked"
+    | "isMapInputBlocked"
   >;
   readonly questionMenus: Pick<
     QuestionMenus,
@@ -189,7 +189,7 @@ export class MouseInput {
   lastMouseY: number = 0;
 
   handleMouseWheel(event: WheelEvent): void {
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();
       return;
     }
@@ -338,7 +338,7 @@ export class MouseInput {
     if (!Number.isInteger(dx) || !Number.isInteger(dy) || Math.abs(dx)>1 || Math.abs(dy)>1 || !(dx||dy) ||
         (hand !== "left" && hand !== "right") || !this.dependencies.renderPipeline.renderer.xr.isPresenting ||
         !this.dependencies.movementInput.isFpsMode() || !this.dependencies.engineState.session ||
-        this.dependencies.promptDialogs.isUiInputBlocked() || this.dependencies.promptDialogs.isAnyModalVisible() ||
+        this.dependencies.promptDialogs.isMapInputBlocked() || this.dependencies.promptDialogs.isAnyModalVisible() ||
         this.dependencies.questionMenus.isInQuestion || this.dependencies.directionPrompts.isInDirectionQuestion ||
         this.dependencies.positionSelection.positionInputModeActive || this.dependencies.extendedCommands.metaCommandModeActive ||
         !this.dependencies.heldWeapon.findHeldWeaponInventoryItem(hand)) return false;
@@ -352,7 +352,7 @@ export class MouseInput {
   /** Native rays arrive as tiles; the ordinary UI/prompt gates still apply. */
   activateQuestTile(x: number, y: number, secondary = false): boolean {
     if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || x >= MINIMAP_WIDTH_TILES || y < 0 || y >= MINIMAP_HEIGHT_TILES ||
-        !this.dependencies.engineState.session || this.dependencies.promptDialogs.isUiInputBlocked() ||
+        !this.dependencies.engineState.session || this.dependencies.promptDialogs.isMapInputBlocked() ||
         this.dependencies.promptDialogs.isAnyModalVisible() || this.dependencies.questionMenus.isInQuestion ||
         this.dependencies.directionPrompts.isInDirectionQuestion || this.dependencies.extendedCommands.metaCommandModeActive) {
       return false;
@@ -420,7 +420,7 @@ export class MouseInput {
 
   handleMouseDown(event: MouseEvent): void {
     if (isQuestBrowser() && this.dependencies.movementInput.isFpsMode()) return;
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();
       return;
     }
@@ -585,7 +585,7 @@ export class MouseInput {
 
   handleMouseMove(event: MouseEvent): void {
     if (isQuestBrowser() && this.dependencies.movementInput.isFpsMode()) return;
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();
       return;
     }
@@ -687,7 +687,7 @@ export class MouseInput {
 
   handleMouseUp(event: MouseEvent): void {
     if (isQuestBrowser() && this.dependencies.movementInput.isFpsMode()) return;
-    if (this.dependencies.promptDialogs.isUiInputBlocked()) {
+    if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();
       return;
     }
