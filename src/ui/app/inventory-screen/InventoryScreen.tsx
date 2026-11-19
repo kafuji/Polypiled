@@ -335,6 +335,23 @@ export function InventoryScreenView({
     );
   };
 
+  // With a button of the screen focused the engine leaves keys alone, so the
+  // screen closes itself: Escape drops a held item first, then closes; i
+  // closes like it opened.
+  const onKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (menu) setMenu(null);
+      else if (heldObject) setHeld(null);
+      else controller?.closeInventoryScreen();
+    } else if ((event.key === "i" || event.key === "I") && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      controller?.closeInventoryScreen();
+    }
+  };
+
   const slotLabel = (slot: EquipmentSlotId) =>
     slot === "secondaryWeapon" && inventory.twoWeapon ? strings.slots.offHand : strings.slots[slot];
 
@@ -353,6 +370,7 @@ export function InventoryScreenView({
       role="dialog"
       aria-label={strings.title}
       onClick={() => setMenu(null)}
+      onKeyDown={onKeyDown}
     >
       <header className="nh3d-invs-header">
         <h2 className="nh3d-invs-title">{strings.title}</h2>
