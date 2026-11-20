@@ -772,6 +772,35 @@ nh3d_json_erosion(struct nh3d_json *js, const char *key, int level,
     nh3d_json_raw(js, "}");
 }
 
+/* what a shop asks for the object, as doname() and the floor listing
+   quote it: "unpaid" (carried, not bought), "contents" (unpaid things
+   inside), "forSale" (shop goods lying here) */
+static void
+nh3d_json_inventory_price(struct nh3d_json *js, struct obj *obj)
+{
+    long price = 0L;
+    const char *kind = NULL;
+
+    if (iflags.suppress_price || program_state.restoring)
+        return;
+    if (is_unpaid(obj)) {
+        price = unpaid_cost(obj, COST_CONTENTS);
+        kind = obj->unpaid ? "unpaid" : "contents";
+    } else {
+        /* zero outside shops and for what the hero owns */
+        int nochrg = 0;
+
+        price = get_cost_of_shop_item(obj, &nochrg);
+        kind = nochrg > 0 ? "contents" : "forSale";
+    }
+    if (kind && price > 0L) {
+        nh3d_json_raw(js, ",\"price\":");
+        nh3d_json_int(js, price);
+        nh3d_json_raw(js, ",\"priceKind\":");
+        nh3d_json_string(js, kind);
+    }
+}
+
 static void nh3d_json_inventory_list(struct nh3d_json *, struct obj *, int);
 
 static void
@@ -792,6 +821,11 @@ nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth,
     }
     nh3d_json_raw(js, ",\"name\":");
     nh3d_json_string(js, doname(obj));
+    /* the kind of thing as the hero knows it, without blessing, charges,
+       names or state ("long sword", "pink potion") */
+    nh3d_json_raw(js, ",\"base\":");
+    nh3d_json_string(js, simpleonames(obj));
+    nh3d_json_inventory_price(js, obj);
     nh3d_json_raw(js, ",\"class\":");
     nh3d_json_int(js, obj->oclass);
     nh3d_json_raw(js, ",\"glyph\":");
