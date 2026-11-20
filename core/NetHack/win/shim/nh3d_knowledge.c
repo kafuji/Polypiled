@@ -1226,6 +1226,11 @@ nh3d_inventory_command(void)
         fn = doswapweapon;
     } else if (!strcmp(args[0], "twoweapon") && nargs == 1) {
         fn = dotwoweapon;
+    } else if (!strcmp(args[0], "altunwield") && nargs == 1) {
+        /* empty the alternate weapon: #altunwield, as picking '-' for it
+           from the item actions does */
+        fn = remarm_swapwep;
+        keys[nkeys++] = '-';
     } else if (nargs >= 2) {
         boolean hands = FALSE;
 
