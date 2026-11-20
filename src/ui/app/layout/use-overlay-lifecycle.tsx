@@ -17,6 +17,7 @@ import type {
 import {
   getConnectedGamepadsForCapture
 } from "../controller/binding-capture";
+import { useGameStore } from "../../../state/gameStore";
 
 export interface UseOverlayLifecycleDependencies {
   readonly asciiLogoVisible: boolean;
@@ -167,11 +168,14 @@ export function useOverlayLifecycle(dependencies: UseOverlayLifecycleDependencie
     };
   }, [asciiLogoVisible]);
 
+  // Escape closes the inventory screen, never the pause menu behind it.
+  const inventoryScreenOpen = useGameStore((state) => state.inventoryScreenOpen);
   const hasGameplayOverlayOpen =
     Boolean(question) ||
     Boolean(directionQuestion) ||
     Boolean(infoMenu) ||
     inventory.visible ||
+    inventoryScreenOpen ||
     Boolean(textInputRequest) ||
     Boolean(positionRequest) ||
     Boolean(inventoryContextMenu) ||

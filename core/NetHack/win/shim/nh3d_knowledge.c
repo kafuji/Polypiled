@@ -724,6 +724,558 @@ nh3d_publish_floor_here(boolean force)
     }, nh3d_floor_json);
 }
 
+/*
+ * The hero's inventory, for the shell's inventory screen: every carried
+ * object with what doname() would tell about it, split into fields, and the
+ * contents of containers whose contents the hero knows.  Sent as a JSON
+ * string (notification "shim_inventory") whenever it changes.
+ *
+ * Knowledge follows doname(): BUC only when bknown, enchantment and charges
+ * only where doname() prints them, erosion words only for the classes that
+ * get them.  Objects are named by appearance (public glyph and tile).  A bag
+ * of tricks the hero has not identified is reported as a container, like
+ * the sacks it looks like.
+ *
+ * Weight is given for what the hero carries: each top-level object (its
+ * owt, contents included) and the total, with the carrying capacity.  The
+ * hero learns these by picking things up (docs/inventory-screen-design.md,
+ * section 4).  Objects inside containers carry no weight of their own here.
+ */
+
+#define NH3D_INVENTORY_BUFSZ 262144
+#define NH3D_INVENTORY_MAX_DEPTH 4
+#define NH3D_INVENTORY_MAX_CONTENTS 200
+
+static char nh3d_inventory_json[NH3D_INVENTORY_BUFSZ];
+static unsigned long nh3d_inventory_prev_hash;
+static size_t nh3d_inventory_prev_len;
+static boolean nh3d_inventory_have_prev;
+
+static boolean
+nh3d_looks_like_container(struct obj *obj)
+{
+    return (boolean) (Is_container(obj)
+                      || (obj->otyp == BAG_OF_TRICKS
+                          && !objects[BAG_OF_TRICKS].oc_name_known));
+}
+
+static void
+nh3d_json_erosion(struct nh3d_json *js, const char *key, int level,
+                  const char *kind)
+{
+    nh3d_json_raw(js, ",\"");
+    nh3d_json_raw(js, key);
+    nh3d_json_raw(js, "\":{\"level\":");
+    nh3d_json_int(js, level);
+    nh3d_json_raw(js, ",\"kind\":");
+    nh3d_json_string(js, kind);
+    nh3d_json_raw(js, "}");
+}
+
+/* what a shop asks for the object, as doname() and the floor listing
+   quote it: "unpaid" (carried, not bought), "contents" (unpaid things
+   inside), "forSale" (shop goods lying here) */
+static void
+nh3d_json_inventory_price(struct nh3d_json *js, struct obj *obj)
+{
+    long price = 0L;
+    const char *kind = NULL;
+
+    if (iflags.suppress_price || program_state.restoring)
+        return;
+    if (is_unpaid(obj)) {
+        price = unpaid_cost(obj, COST_CONTENTS);
+        kind = obj->unpaid ? "unpaid" : "contents";
+    } else {
+        /* zero outside shops and for what the hero owns */
+        int nochrg = 0;
+
+        price = get_cost_of_shop_item(obj, &nochrg);
+        kind = nochrg > 0 ? "contents" : "forSale";
+    }
+    if (kind && price > 0L) {
+        nh3d_json_raw(js, ",\"price\":");
+        nh3d_json_int(js, price);
+        nh3d_json_raw(js, ",\"priceKind\":");
+        nh3d_json_string(js, kind);
+    }
+}
+
+static void nh3d_json_inventory_list(struct nh3d_json *, struct obj *, int);
+
+static void
+nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth,
+                           boolean carried)
+{
+    int glyph = obj_to_glyph(obj, rn2_on_display_rng);
+    int oclass = is_weptool(obj) ? WEAPON_CLASS : obj->oclass;
+    boolean known = obj->known;
+    char let[2];
+
+    nh3d_json_raw(js, "{\"id\":");
+    nh3d_json_int(js, (long) obj->o_id);
+    if (depth == 0 && carried) {
+        let[0] = obj->invlet, let[1] = '\0';
+        nh3d_json_raw(js, ",\"letter\":");
+        nh3d_json_string(js, let);
+    }
+    nh3d_json_raw(js, ",\"name\":");
+    nh3d_json_string(js, doname(obj));
+    /* the kind of thing as the hero knows it, without blessing, charges,
+       names or state ("long sword", "pink potion") */
+    nh3d_json_raw(js, ",\"base\":");
+    nh3d_json_string(js, simpleonames(obj));
+    nh3d_json_inventory_price(js, obj);
+    nh3d_json_raw(js, ",\"class\":");
+    nh3d_json_int(js, obj->oclass);
+    nh3d_json_raw(js, ",\"glyph\":");
+    nh3d_json_int(js, nh3d_public_glyph(glyph));
+    nh3d_json_raw(js, ",\"tile\":");
+    nh3d_json_int(js, nh3d_appearance_tile(glyph));
+    nh3d_json_raw(js, ",\"quan\":");
+    nh3d_json_int(js, obj->quan);
+    /* look-alike armor always shares its category, so it is public */
+    if (obj->oclass == ARMOR_CLASS) {
+        nh3d_json_raw(js, ",\"armor\":");
+        nh3d_json_int(js, objects[obj->otyp].oc_armcat);
+        /* turns to put on or take off; look-alikes share it too */
+        nh3d_json_raw(js, ",\"delay\":");
+        nh3d_json_int(js, objects[obj->otyp].oc_delay);
+    } else if (obj->otyp == BLINDFOLD || obj->otyp == TOWEL
+               || obj->otyp == LENSES) {
+        nh3d_json_raw(js, ",\"eyewear\":true");
+    }
+
+    if (depth == 0 && carried) {
+        long wt = obj->oclass == COIN_CLASS ? (obj->quan + 50L) / 100L
+                                            : (long) obj->owt;
+
+        nh3d_json_raw(js, ",\"weight\":");
+        nh3d_json_int(js, wt);
+        if (obj->owornmask) {
+            nh3d_json_raw(js, ",\"worn\":");
+            nh3d_json_int(js, obj->owornmask);
+            if (obj == uskin) {
+                nh3d_json_raw(js, ",\"skin\":true");
+            } else if ((obj->owornmask & W_ARMOR) != 0L) {
+                if (doffing(obj))
+                    nh3d_json_raw(js, ",\"doffing\":true");
+                else if (donning(obj))
+                    nh3d_json_raw(js, ",\"donning\":true");
+            }
+        }
+    }
+
+    if (obj->bknown && obj->oclass != COIN_CLASS) {
+        nh3d_json_raw(js, ",\"buc\":");
+        nh3d_json_string(js, obj->blessed ? "blessed"
+                             : obj->cursed ? "cursed" : "uncursed");
+    }
+
+    /* the same cases as doname_base() */
+    switch (oclass) {
+    case WEAPON_CLASS:
+    case ARMOR_CLASS:
+    case BALL_CLASS:
+    case CHAIN_CLASS:
+        if (is_damageable(obj) && obj->otyp != CRYSKNIFE) {
+            if (obj->oeroded)
+                nh3d_json_erosion(js, "eroded", obj->oeroded,
+                                  is_rustprone(obj) ? "rust"
+                                  : is_crackable(obj) ? "crack" : "burn");
+            if (obj->oeroded2)
+                nh3d_json_erosion(js, "eroded2", obj->oeroded2,
+                                  is_corrodeable(obj) ? "corrode" : "rot");
+        }
+        if (obj->rknown && obj->oerodeproof
+            && (is_damageable(obj) || obj->otyp == CRYSKNIFE))
+            nh3d_json_raw(js, ",\"erodeproof\":true");
+        if (oclass != BALL_CLASS && oclass != CHAIN_CLASS) {
+            if (is_poisonable(obj) && obj->opoisoned)
+                nh3d_json_raw(js, ",\"poisoned\":true");
+            if (known) {
+                nh3d_json_raw(js, ",\"enchantment\":");
+                nh3d_json_int(js, obj->spe);
+            }
+        }
+        break;
+    case RING_CLASS:
+        if (known && objects[obj->otyp].oc_charged) {
+            nh3d_json_raw(js, ",\"enchantment\":");
+            nh3d_json_int(js, obj->spe);
+        }
+        break;
+    case TOOL_CLASS:
+        if ((obj->owornmask & (W_TOOL | W_SADDLE)) || obj->otyp == LEASH
+            || obj->otyp == CANDELABRUM_OF_INVOCATION
+            || obj->otyp == OIL_LAMP || obj->otyp == MAGIC_LAMP
+            || obj->otyp == BRASS_LANTERN || Is_candle(obj)
+            || !objects[obj->otyp].oc_charged)
+            break;
+        FALLTHROUGH;
+        /*FALLTHRU*/
+    case WAND_CLASS:
+        if (known) {
+            nh3d_json_raw(js, ",\"charges\":");
+            nh3d_json_int(js, obj->spe);
+            nh3d_json_raw(js, ",\"recharged\":");
+            nh3d_json_int(js, obj->recharged);
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (obj->greased)
+        nh3d_json_raw(js, ",\"greased\":true");
+    if (obj->lamplit && (!artifact_light(obj) || !Blind))
+        nh3d_json_raw(js, ",\"lit\":true");
+    if (is_unpaid(obj))
+        nh3d_json_raw(js, ",\"unpaid\":true");
+    if (has_oname(obj))
+        nh3d_json_raw(js, ",\"named\":true");
+
+    if (nh3d_looks_like_container(obj)) {
+        nh3d_json_raw(js, ",\"container\":{");
+        if (obj->lknown && Is_box(obj))
+            nh3d_json_raw(js, obj->olocked ? "\"locked\":true,"
+                                           : "\"locked\":false,");
+        if (obj->cknown && Is_container(obj)) {
+            nh3d_json_raw(js, "\"contents\":");
+            if (depth + 1 < NH3D_INVENTORY_MAX_DEPTH)
+                nh3d_json_inventory_list(js, obj->cobj, depth + 1);
+            else
+                nh3d_json_raw(js, "null,\"deep\":true");
+        } else {
+            nh3d_json_raw(js, "\"contents\":null");
+        }
+        nh3d_json_raw(js, "}");
+    }
+    nh3d_json_raw(js, "}");
+}
+
+/* a JSON array of the objects in a chain (nobj); inside a container, the
+   list stops at NH3D_INVENTORY_MAX_CONTENTS and ",\"more\":n" follows */
+static void
+nh3d_json_inventory_list(struct nh3d_json *js, struct obj *chain, int depth)
+{
+    struct obj *otmp;
+    int listed = 0;
+    long more = 0;
+
+    nh3d_json_raw(js, "[");
+    for (otmp = chain; otmp; otmp = otmp->nobj) {
+        if (depth > 0 && listed >= NH3D_INVENTORY_MAX_CONTENTS) {
+            more++;
+            continue;
+        }
+        if (listed++)
+            nh3d_json_raw(js, ",");
+        nh3d_json_inventory_object(js, otmp, depth, TRUE);
+    }
+    nh3d_json_raw(js, "]");
+    if (more) {
+        nh3d_json_raw(js, ",\"more\":");
+        nh3d_json_int(js, more);
+    }
+}
+
+/* what lies here, as the floor panel shows it, with ids and known
+   contents so the screen can pick things up and open floor containers */
+#define NH3D_INVENTORY_MAX_FLOOR 40
+
+static void
+nh3d_json_inventory_floor(struct nh3d_json *js)
+{
+    struct obj *otmp;
+    boolean hidden = Blind || u.uswallow || is_lava(u.ux, u.uy)
+                     || (is_pool(u.ux, u.uy) && !Underwater);
+    int listed = 0;
+    long count = 0;
+
+    nh3d_json_raw(js, ",\"floorHidden\":");
+    nh3d_json_raw(js, hidden ? "true" : "false");
+    nh3d_json_raw(js, ",\"floor\":[");
+    if (!hidden) {
+        for (otmp = svl.level.objects[u.ux][u.uy]; otmp;
+             otmp = otmp->nexthere) {
+            count++;
+            if (listed >= NH3D_INVENTORY_MAX_FLOOR)
+                continue;
+            if (listed++)
+                nh3d_json_raw(js, ",");
+            nh3d_json_inventory_object(js, otmp, 0, FALSE);
+        }
+    }
+    nh3d_json_raw(js, "],\"floorCount\":");
+    nh3d_json_int(js, count);
+}
+
+static void
+nh3d_build_inventory(struct nh3d_json *js)
+{
+    int encumbrance = near_capacity(); /* also sets gw.wc */
+    int capacity = gw.wc;
+    int weight = inv_weight() + gw.wc;
+
+    nh3d_json_raw(js, "{\"v\":1,\"weight\":");
+    nh3d_json_int(js, weight);
+    nh3d_json_raw(js, ",\"capacity\":");
+    nh3d_json_int(js, capacity);
+    nh3d_json_raw(js, ",\"encumbrance\":");
+    nh3d_json_int(js, encumbrance);
+    nh3d_json_raw(js, ",\"twoweapon\":");
+    nh3d_json_raw(js, u.twoweap ? "true" : "false");
+    nh3d_json_raw(js, ",\"punished\":");
+    nh3d_json_raw(js, Punished ? "true" : "false");
+    nh3d_json_raw(js, ",\"game\":");
+    nh3d_json_int(js, (long) ubirthday);
+    nh3d_json_raw(js, ",\"objects\":");
+    nh3d_json_inventory_list(js, gi.invent, 0);
+    nh3d_json_inventory_floor(js);
+    nh3d_json_raw(js, "}");
+}
+
+static unsigned long
+nh3d_hash(const char *text, size_t len)
+{
+    unsigned long h = 2166136261UL;
+    size_t i;
+
+    for (i = 0; i < len; i++) {
+        h ^= (unsigned char) text[i];
+        h = (h * 16777619UL) & 0xffffffffUL;
+    }
+    return h;
+}
+
+static void
+nh3d_publish_inventory(boolean force)
+{
+    struct nh3d_json js;
+    unsigned long hash;
+
+    js.buf = nh3d_inventory_json;
+    js.len = 0;
+    js.cap = sizeof nh3d_inventory_json;
+    js.overflow = FALSE;
+    nh3d_inventory_json[0] = '\0';
+    nh3d_build_inventory(&js);
+    if (js.overflow)
+        return;
+    hash = nh3d_hash(nh3d_inventory_json, js.len);
+    if (!force && nh3d_inventory_have_prev && hash == nh3d_inventory_prev_hash
+        && js.len == nh3d_inventory_prev_len)
+        return;
+    nh3d_inventory_prev_hash = hash;
+    nh3d_inventory_prev_len = js.len;
+    nh3d_inventory_have_prev = TRUE;
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_inventory",
+            UTF8ToString($0),
+        ]);
+    }, nh3d_inventory_json);
+}
+
+/*
+ * #nh3dinventory: an internal command for the shell's inventory screen,
+ * bound to M-^I.  The shell sends that key only at an ordinary command
+ * prompt, after putting a request in globalThis.nethackGlobal
+ * .nh3dInventoryRequest: an operation and its arguments separated by ':'.
+ *
+ *   adjust:<from>:<to>    #adjust, move or swap <from> into slot <to>
+ *   wear:<x>              W            puton:<x>[:r|l]   P (ring hand)
+ *   takeoff:<x>           T            remove:<x>        R
+ *   wield:<x|->           w            quiver:<x|->      Q
+ *   swap                  x            twoweapon         X / #twoweapon
+ *
+ * The command answers the real command's prompts through the command
+ * queue (getobj() and yn_function() read it) and runs it, so whether the
+ * action is possible, what it costs and what it says stay the game's.
+ * Anything the real command did not ask for is dropped afterwards, so no
+ * queued answer can ever run as a command of its own.
+ */
+
+#define NH3D_INVOP_MAX 2048
+#define NH3D_INVOP_MAX_IDS 128
+
+/* "12,40x3,7": o_ids with optional counts; -1 when malformed */
+static int
+nh3d_invop_ids(const char *text, unsigned *ids, long *counts)
+{
+    int n = 0;
+    const char *p = text;
+
+    if (!*p)
+        return 0;
+    while (*p) {
+        unsigned long id = 0;
+        long count = 0;
+        boolean any = FALSE;
+
+        if (n >= NH3D_INVOP_MAX_IDS)
+            return -1;
+        while (*p >= '0' && *p <= '9')
+            id = id * 10 + (unsigned long) (*p++ - '0'), any = TRUE;
+        if (!any)
+            return -1;
+        if (*p == 'x') {
+            p++;
+            any = FALSE;
+            while (*p >= '0' && *p <= '9')
+                count = count * 10 + (*p++ - '0'), any = TRUE;
+            if (!any)
+                return -1;
+        }
+        ids[n] = (unsigned) id;
+        counts[n] = count;
+        n++;
+        if (*p == ',')
+            p++;
+        else if (*p)
+            return -1;
+    }
+    return n;
+}
+
+static boolean
+nh3d_invop_letter_ok(char c, boolean allow_hands)
+{
+    struct obj *otmp;
+
+    if (allow_hands && c == HANDS_SYM)
+        return TRUE;
+    for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (otmp->invlet == c)
+            return TRUE;
+    return FALSE;
+}
+
+static boolean
+nh3d_invop_slot_ok(char c)
+{
+    return (boolean) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                      || c == GOLD_SYM);
+}
+
+int
+nh3d_inventory_command(void)
+{
+    static char req[NH3D_INVOP_MAX];
+    char *args[4], *p;
+    char keys[3];
+    int nargs = 0, nkeys = 0, i, res;
+    int (*fn)(void) = 0;
+
+    req[0] = '\0';
+    EM_ASM({
+        const g = globalThis.nethackGlobal || {};
+        const request = typeof g.nh3dInventoryRequest === "string"
+            ? g.nh3dInventoryRequest : "";
+        g.nh3dInventoryRequest = null;
+        stringToUTF8(request, $0, $1);
+    }, req, (int) sizeof req);
+
+    for (p = req; nargs < 4;) {
+        args[nargs++] = p;
+        if ((p = strchr(p, ':')) == 0)
+            break;
+        *p++ = '\0';
+    }
+    /* pickup:<ids>  drop:<ids>  loot:<container>:<out ids>:<in ids> */
+    if (!strcmp(args[0], "pickup") || !strcmp(args[0], "drop")) {
+        static unsigned ids[NH3D_INVOP_MAX_IDS];
+        static long counts[NH3D_INVOP_MAX_IDS];
+        int n = nargs == 2 ? nh3d_invop_ids(args[1], ids, counts) : -1;
+
+        if (n <= 0)
+            return ECMD_OK;
+        return args[0][0] == 'p' ? nh3d_pickup_objects(ids, counts, n)
+                                 : nh3d_drop_objects(ids, counts, n);
+    }
+    if (!strcmp(args[0], "loot")) {
+        static unsigned outs[NH3D_INVOP_MAX_IDS], ins[NH3D_INVOP_MAX_IDS];
+        static long counts[NH3D_INVOP_MAX_IDS];
+        static unsigned cid[NH3D_INVOP_MAX_IDS];
+        int nout, nin;
+
+        if (nargs != 4 || nh3d_invop_ids(args[1], cid, counts) != 1)
+            return ECMD_OK;
+        nout = nh3d_invop_ids(args[2], outs, counts);
+        nin = nh3d_invop_ids(args[3], ins, counts);
+        if (nout < 0 || nin < 0)
+            return ECMD_OK;
+        return nh3d_container_transfer(cid[0], outs, nout, ins, nin);
+    }
+    for (i = 1; i < nargs; i++)
+        if (strlen(args[i]) != 1)
+            return ECMD_OK;
+
+    if (!strcmp(args[0], "adjust") && nargs == 3
+        && nh3d_invop_letter_ok(args[1][0], FALSE)
+        && nh3d_invop_slot_ok(args[2][0])) {
+        fn = doorganize;
+        keys[nkeys++] = args[1][0];
+        keys[nkeys++] = args[2][0];
+    } else if (!strcmp(args[0], "swap") && nargs == 1) {
+        fn = doswapweapon;
+    } else if (!strcmp(args[0], "twoweapon") && nargs == 1) {
+        fn = dotwoweapon;
+    } else if (!strcmp(args[0], "alternate") && nargs == 2) {
+        struct obj *otmp;
+
+        for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+            if (otmp->invlet == args[1][0])
+                break;
+        if (!otmp)
+            return ECMD_OK;
+        cmdq_clear(CQ_CANNED);
+        return nh3d_ready_alternate(otmp);
+    } else if (!strcmp(args[0], "altunwield") && nargs == 1) {
+        /* empty the alternate weapon: #altunwield, as picking '-' for it
+           from the item actions does */
+        fn = remarm_swapwep;
+        keys[nkeys++] = '-';
+    } else if (nargs >= 2) {
+        boolean hands = FALSE;
+
+        if (!strcmp(args[0], "wear") && nargs == 2) {
+            fn = dowear;
+        } else if (!strcmp(args[0], "puton") && nargs <= 3) {
+            fn = doputon;
+            if (nargs == 3 && args[2][0] != 'r' && args[2][0] != 'l')
+                return ECMD_OK;
+        } else if (!strcmp(args[0], "takeoff") && nargs == 2) {
+            fn = dotakeoff;
+        } else if (!strcmp(args[0], "remove") && nargs == 2) {
+            fn = doremring;
+        } else if (!strcmp(args[0], "wield") && nargs == 2) {
+            fn = dowield, hands = TRUE;
+        } else if (!strcmp(args[0], "quiver") && nargs == 2) {
+            fn = dowieldquiver, hands = TRUE;
+        }
+        if (!fn || !nh3d_invop_letter_ok(args[1][0], hands))
+            return ECMD_OK;
+        keys[nkeys++] = args[1][0];
+        if (fn == doputon && nargs == 3)
+            keys[nkeys++] = args[2][0];
+    }
+    if (!fn)
+        return ECMD_OK;
+
+    cmdq_clear(CQ_CANNED);
+    for (i = 0; i < nkeys; i++)
+        cmdq_add_key(CQ_CANNED, keys[i]);
+    res = (*fn)();
+    cmdq_clear(CQ_CANNED);
+    return res;
+}
+
 static boolean
 nh3d_full_frame_requested(void)
 {
@@ -756,6 +1308,7 @@ nh3d_knowledge_publish(void)
     complete = !nh3d_have_prev || !on_level(&u.uz, &nh3d_prev_level)
                || nh3d_full_frame_requested();
     nh3d_publish_floor_here(complete);
+    nh3d_publish_inventory(complete);
 
     nh3d_fill_hero(hero);
     nh3d_fill_level(level);

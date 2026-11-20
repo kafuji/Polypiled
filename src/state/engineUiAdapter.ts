@@ -11,6 +11,7 @@ import type {
 } from "../game/ui-types";
 import { useGameStore } from "./gameStore";
 import type { FloorHere } from "../runtime/floor-here";
+import type { InventoryState } from "../runtime/inventory-state";
 
 export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
   return {
@@ -26,8 +27,8 @@ export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
     setLoadingVisible(visible: boolean): void {
       useGameStore.getState().setLoadingVisible(visible);
     },
-    setGameMessages(messages: string[]): void {
-      useGameStore.getState().setGameMessages(messages);
+    setGameMessages(messages: string[], turns?: readonly (number | null)[]): void {
+      useGameStore.getState().setGameMessages(messages, turns);
     },
     pushFloatingMessage(message: string): void {
       useGameStore.getState().pushFloatingMessage(message);
@@ -61,6 +62,15 @@ export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
     },
     setFloorHere(state: FloorHere | null): void {
       useGameStore.getState().setFloorHere(state);
+    },
+    setInventoryState(state: InventoryState | null): void {
+      useGameStore.getState().setInventoryState(state);
+    },
+    setInventoryScreenOpen(open: boolean): void {
+      useGameStore.getState().setInventoryScreenOpen(open);
+    },
+    setInventoryProcedure(state): void {
+      useGameStore.getState().setInventoryProcedure(state);
     },
     setPositionInputActive(active: boolean, origin?: string | null): void {
       useGameStore.getState().setPositionInputActive(active, origin);

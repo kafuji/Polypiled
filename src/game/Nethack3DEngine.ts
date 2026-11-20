@@ -1,3 +1,5 @@
+import type { InventoryOperation } from "../runtime/input/inventory-operation";
+import type { InventoryProcedure } from "./engine/ui/inventory-procedures";
 import * as THREE from "three";
 import { setNativeInputModeFps } from "../quest/webxr/native-input-mode";
 import { gameFrameTime } from "./engine/rendering/frame-time";
@@ -180,8 +182,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.playerStatus.resetForNewGame();
     this.systems.playerMovement.playerPos = { x: 0, y: 0 };
     this.systems.playerMovement.hasSeenPlayerPosition = false;
-    this.systems.engineMessages.gameMessages = [];
-    this.systems.engineState.uiAdapter.setGameMessages([]);
+    this.systems.engineMessages.clearGameMessages();
     this.systems.engineState.uiAdapter.setPositionRequest(null);
     this.systems.promptDialogs.updateConnectionStatus("Disconnected", "disconnected");
     this.systems.promptDialogs.setLoadingVisible(false);
@@ -899,7 +900,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
       this.systems.promptDialogs.updateStatus("Local NetHack runtime started");
       // this.addGameMessage("Local NetHack runtime started");
       if (this.systems.movementInput.isFpsMode()) {
-        this.systems.engineMessages.addGameMessage(
+        this.systems.engineMessages.addSystemMessage(
           "FPS mode active: WASD move, F search, left-click fire, right-click look/interact.",
         );
       }
@@ -916,7 +917,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
       console.error("Failed to start local NetHack runtime:", error);
       this.systems.promptDialogs.updateConnectionStatus("Error", "error");
       this.systems.promptDialogs.updateStatus("Failed to start local NetHack runtime");
-      this.systems.engineMessages.addGameMessage(startupFailureMessage);
+      this.systems.engineMessages.addSystemMessage(startupFailureMessage);
       // Drop the startup overlay on failure so the underlying error UI stays
       // readable instead of leaving the app blurred behind the loading state.
       this.systems.promptDialogs.setLoadingVisible(false);
@@ -964,6 +965,17 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
       case "floor_here":
         if (data.floorHere) this.systems.engineState.uiAdapter.setFloorHere(data.floorHere);
+        break;
+
+      case "inventory_operation_settled":
+        this.systems.inventoryProcedures.onSettled();
+        break;
+
+      case "inventory_state":
+        if (data.inventory) {
+          this.systems.menuPreviews.publishInventoryState(data.inventory);
+          this.systems.promptDialogs.setInventoryStateAvailable(true);
+        }
         break;
 
       case "monster_attack": {
@@ -1488,7 +1500,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         console.log(
           `🔄 Area refresh completed: ${data.tilesRefreshed} tiles refreshed around (${data.centerX}, ${data.centerY})`,
         );
-        this.systems.engineMessages.addGameMessage(
+        this.systems.engineMessages.addSystemMessage(
           `Refreshed ${data.tilesRefreshed} tiles around (${data.centerX}, ${data.centerY})`,
         );
         break;
@@ -1507,7 +1519,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         this.clearScene();
         this.systems.tileUpdates.pendingPlayerTileRefreshOnNextPosition = true;
         if (data.message) {
-          this.systems.engineMessages.addGameMessage(data.message);
+          this.systems.engineMessages.addSystemMessage(data.message);
         }
         break;
 
@@ -1581,6 +1593,9 @@ class Nethack3DEngine implements Nethack3DEngineController {
       case "runtime_terminated":
         this.systems.playerKnowledge.reset();
         this.systems.engineState.uiAdapter.setFloorHere(null);
+        this.systems.menuPreviews.publishInventoryState(null);
+        this.systems.inventoryProcedures.reset();
+        this.systems.promptDialogs.setInventoryStateAvailable(false);
         this.systems.promptDialogs.handleRuntimeTermination(
           typeof data.reason === "string" ? data.reason : "",
         );
@@ -2168,6 +2183,26 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
   public closeInventoryDialog(): void {
     return this.systems.promptDialogs.closeInventoryDialog();
+  }
+
+  public closeInventoryScreen(): void {
+    this.systems.promptDialogs.hideInventoryScreen();
+  }
+
+  /** Runs an inventory-screen operation through the core's #nh3dinventory at the next command prompt. */
+  public runInventoryOperation(operation: InventoryOperation): void {
+    if (!this.systems.engineState.session) return;
+    this.systems.inventoryProcedures.send(operation);
+  }
+
+  /** Runs a multi-step plan one command at a time (see inventory-procedures.ts). */
+  public runInventoryProcedure(procedure: InventoryProcedure): void {
+    if (!this.systems.engineState.session) return;
+    this.systems.inventoryProcedures.start(procedure);
+  }
+
+  public cancelInventoryProcedure(): void {
+    this.systems.inventoryProcedures.cancel();
   }
 
   public closeInfoMenuDialog(): void {

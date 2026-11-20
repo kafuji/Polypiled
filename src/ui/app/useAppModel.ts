@@ -1855,6 +1855,7 @@ export function useAppModel() {
   const {
     gameMessageLog,
     desktopGameMessageLog,
+    desktopStatusLine,
   } = useMessageLogView({
     get clientOptions() { return clientOptions; },
     get terminalDesktopGutterVisible() { return terminalDesktopGutterVisible; },
@@ -1872,6 +1873,10 @@ export function useAppModel() {
     floorPanel: {
       visible: isDesktopGameRunning,
       renderTilePreview: (tileIndex: number | null) => renderMenuItemTilePreview(null, tileIndex),
+    },
+    inventoryScreen: {
+      renderTilePreview: (tileIndex: number | null) => renderMenuItemTilePreview(null, tileIndex),
+      reducedMotion: inventoryReducedMotionEnabled,
     },
     localMcpControl: {
       characterCreationConfig,
@@ -2052,6 +2057,7 @@ export function useAppModel() {
     desktopMessageLog: {
       terminalDesktopGutterVisible,
       desktopGameMessageLog,
+      desktopStatusLine,
     },
     mobileMessageLog: {
       mobileTouchUiVisible,
@@ -2075,6 +2081,8 @@ export function useAppModel() {
       resolveCoreStatStyle,
       playerStatusBadges,
       visibleLocationLabel,
+      openCharacterDialog,
+      isCharacterSheetVisible,
     },
     clientOptionsDialog: {
       saveRuntimeVersion: activeRuntimeVersion,

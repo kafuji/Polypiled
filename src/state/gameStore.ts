@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { shallow } from "zustand/shallow";
 import type { FloorHere } from "../runtime/floor-here";
+import type { InventoryState } from "../runtime/inventory-state";
+import type { InventoryProcedureState } from "../game/engine/ui/inventory-procedures";
 import type {
   GameOverState,
   InfoMenuState,
@@ -57,6 +59,8 @@ type GameStore = {
   connectionState: NethackConnectionState;
   connectionText: string;
   gameMessages: string[];
+  /** Game turn of each entry of `gameMessages` (same order); null when unknown. */
+  gameMessageTurns: readonly (number | null)[];
   floatingMessages: FloatingMessage[];
   floatingMessageFadeDelayMs: number;
   floatingMessageFadeDurationMs: number;
@@ -73,6 +77,11 @@ type GameStore = {
   positionRequest: string | null;
   /** What lies under the hero (game report); null before one arrives. */
   floorHere: FloorHere | null;
+  /** The hero's inventory (game report); null before one arrives or with an older core. */
+  inventoryState: InventoryState | null;
+  inventoryScreenOpen: boolean;
+  /** The multi-step inventory plan running or last run (equipment sets, layered armor, nested bags). */
+  inventoryProcedure: InventoryProcedureState | null;
   positionInputActive: boolean;
   positionInputOrigin: string | null;
   newGamePrompt: NewGamePromptState;
@@ -83,7 +92,7 @@ type GameStore = {
   setUiBlockingVisible: (visible: boolean) => void;
   setStatusText: (text: string) => void;
   setConnectionStatus: (text: string, state: NethackConnectionState) => void;
-  setGameMessages: (messages: string[]) => void;
+  setGameMessages: (messages: string[], turns?: readonly (number | null)[]) => void;
   pushFloatingMessage: (message: string) => void;
   removeFloatingMessage: (id: number) => void;
   setFloatingMessageTiming: (delayMs: number, durationMs: number) => void;
@@ -99,6 +108,9 @@ type GameStore = {
   setExtendedCommands: (commands: string[]) => void;
   setPositionRequest: (text: string | null) => void;
   setFloorHere: (state: FloorHere | null) => void;
+  setInventoryState: (state: InventoryState | null) => void;
+  setInventoryScreenOpen: (open: boolean) => void;
+  setInventoryProcedure: (state: InventoryProcedureState | null) => void;
   setPositionInputActive: (active: boolean, origin?: string | null) => void;
   setNewGamePrompt: (prompt: NewGamePromptState) => void;
   setGameOver: (state: GameOverState) => void;
@@ -117,6 +129,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   connectionState: "disconnected",
   connectionText: "Disconnected",
   gameMessages: [],
+  gameMessageTurns: [],
   floatingMessages: [],
   floatingMessageFadeDelayMs: defaultFloatingMessageFadeDelayMs,
   floatingMessageFadeDurationMs: defaultFloatingMessageFadeDurationMs,
@@ -136,6 +149,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   extendedCommands: [],
   positionRequest: null,
   floorHere: null,
+  inventoryState: null,
+  inventoryScreenOpen: false,
+  inventoryProcedure: null,
   positionInputActive: false,
   positionInputOrigin: null,
   newGamePrompt: { visible: false, reason: null },
@@ -168,9 +184,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       connectionState: state,
     });
   },
-  setGameMessages: (messages) => {
-    if (shallow(get().gameMessages, messages)) return;
-    set({ gameMessages: messages });
+  setGameMessages: (messages, turns = []) => {
+    if (shallow(get().gameMessages, messages) && shallow(get().gameMessageTurns, turns)) return;
+    set({ gameMessages: messages, gameMessageTurns: turns });
   },
   pushFloatingMessage: (message) => {
     const trimmed = (message || "").replace(/\s+/g, " ").trim();
@@ -258,6 +274,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setFloorHere: (state) => {
     if (get().floorHere === state) return;
     set({ floorHere: state });
+  },
+  setInventoryState: (state) => {
+    if (get().inventoryState === state) return;
+    set({ inventoryState: state });
+  },
+  setInventoryScreenOpen: (open) => {
+    if (get().inventoryScreenOpen === open) return;
+    set({ inventoryScreenOpen: open });
+  },
+  setInventoryProcedure: (state) => {
+    set({ inventoryProcedure: state });
   },
   setPositionInputActive: (active, origin = null) => {
     const normalized = Boolean(active);

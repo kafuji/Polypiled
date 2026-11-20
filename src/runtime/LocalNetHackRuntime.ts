@@ -153,6 +153,8 @@ class LocalNetHackRuntime {
     console.log(`Shutting down NetHack session: ${reason}`);
     this.systems.inputRequests.inputBroker.drain();
     this.systems.inputRequests.silentInventoryRefreshPending = false;
+    this.systems.inputRequests.pendingInventoryOperations = [];
+    this.systems.inputRequests.inventoryOperationInFlight = false;
     this.systems.inputRequests.commandInputContinuation = "none";
     this.systems.textInput.pendingTextResponses = [];
     this.systems.textInput.pendingStdinByteQueue = [];
@@ -281,6 +283,9 @@ class LocalNetHackRuntime {
 
       case "shim_floor_here":
         return this.systems.mapCallbacks.handleShimFloorHere(args);
+
+      case "shim_inventory":
+        return this.systems.mapCallbacks.handleShimInventory(args);
 
       case "shim_player_selection":
         console.log("NetHack player selection started");

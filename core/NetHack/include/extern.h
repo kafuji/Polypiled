@@ -655,6 +655,7 @@ extern int fn_cmap_to_glyph(int);
 /* ### do.c ### */
 
 extern int dodrop(void);
+extern int nh3d_drop_objects(const unsigned *, const long *, int); /* Polypiled */
 extern boolean boulder_hits_pool(struct obj *, coordxy, coordxy, boolean);
 extern boolean flooreffects(struct obj *, coordxy, coordxy,
                             const char *) NONNULLPTRS;
@@ -2482,6 +2483,10 @@ extern int count_justpicked(struct obj *) NO_NNARGS;
 extern struct obj *find_justpicked(struct obj *) NO_NNARGS;
 extern int pickup(int);
 extern int pickup_object(struct obj *, long, boolean) NONNULLARG1;
+/* Polypiled: the inventory screen */
+extern int nh3d_pickup_objects(const unsigned *, const long *, int);
+extern int nh3d_container_transfer(unsigned, const unsigned *, int,
+                                   const unsigned *, int);
 extern int query_category(const char *, struct obj *, int, menu_item **, int) NONNULLARG14;
 /* dotypeinv() call query_objlist with NULL arg1 */
 extern int query_objlist(const char *, struct obj **, int, menu_item **, int,
@@ -3811,6 +3816,7 @@ extern void setuwep(struct obj *) NO_NNARGS; /* NULL:ball.c, do.c */
 extern const char *empty_handed(void);
 extern void setuqwep(struct obj *) NO_NNARGS;  /* NULL:ball.c, do.c */
 extern void setuswapwep(struct obj *) NO_NNARGS; /* NULL: ball.c, do.c */
+extern int nh3d_ready_alternate(struct obj *) NONNULLARG1; /* Polypiled */
 extern int dowield(void);
 extern int doswapweapon(void);
 extern int dowieldquiver(void);

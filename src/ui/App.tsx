@@ -44,6 +44,7 @@ import { SafeZonePreview } from "./app/settings/SafeZonePreview";
 import { DesktopActions } from "./app/actions/DesktopActions";
 import { MobileBottomBar } from "./app/actions/MobileBottomBar";
 import { FloorPanel } from "./app/floor/FloorPanel";
+import { InventoryScreen } from "./app/inventory-screen/InventoryScreen";
 import { PositionDialog } from "./app/prompts/PositionDialog";
 import { ControllerSupportDialog } from "./app/controller/ControllerSupportDialog";
 import { GlobalConfirmationDialog } from "./app/layout/GlobalConfirmationDialog";
@@ -86,6 +87,7 @@ export default function App(): JSX.Element {
       <DirectionDialog {...model.directionDialog} />
       <CharacterInfoDialog {...model.characterInfoDialog} />
       <InventoryDialog {...model.inventoryDialog} />
+      <InventoryScreen {...model.inventoryScreen} />
       <InventoryContextMenu {...model.inventoryContextMenu} />
       <InventoryDropTypePortal {...model.inventoryDropTypePortal} />
       <InventoryDropCountDialog {...model.inventoryDropCountDialog} />

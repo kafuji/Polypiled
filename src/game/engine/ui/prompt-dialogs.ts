@@ -32,12 +32,13 @@ export interface PromptDialogsDependencies {
   >;
   readonly engineMessages: Pick<
     EngineMessages,
-    "addGameMessage"
+    "addSystemMessage"
   >;
   readonly engineState: Pick<
     EngineState,
     "session"
     | "uiAdapter"
+    | "clientOptions"
   >;
   readonly extendedCommands: Pick<
     ExtendedCommands,
@@ -125,6 +126,10 @@ export class PromptDialogs {
   lastMessageInfoMenu: { title: string; lines: string[] } | null = null;
 
   isInventoryDialogVisible: boolean = false;
+  /** The inventory screen (src/ui/app/inventory-screen), fed by the core's inventory report. */
+  isInventoryScreenVisible: boolean = false;
+  /** The core reports the inventory (inventory_state); older cores never do. */
+  inventoryStateAvailable: boolean = false;
 
   inventoryContextActionsEnabled: boolean = true;
 
@@ -200,7 +205,7 @@ export class PromptDialogs {
     this.updateConnectionStatus("Game ended", "error");
     this.updateStatus("Game ended");
     this.setLoadingVisible(false);
-    this.dependencies.engineMessages.addGameMessage(plusEngineStrings.gameEnded);
+    this.dependencies.engineMessages.addSystemMessage(plusEngineStrings.gameEnded);
     this.setNewGamePrompt(true, reason);
   }
 
@@ -222,12 +227,22 @@ export class PromptDialogs {
     console.error("Runtime error:", normalizedMessage);
     this.updateConnectionStatus("Error", "error");
     this.updateStatus("Runtime error");
-    this.dependencies.engineMessages.addGameMessage(normalizedMessage);
+    this.dependencies.engineMessages.addSystemMessage(normalizedMessage);
   }
 
   isUiInputBlocked(): boolean {
     const { loadingVisible, uiBlockingVisible } = useGameStore.getState();
     return loadingVisible || uiBlockingVisible;
+  }
+
+  /**
+   * Mouse, wheel and touch on the map: also blocked while the inventory
+   * screen is open, so no click moves the hero and no wheel zooms behind
+   * it. Keys stay with isUiInputBlocked(): the game's questions still need
+   * their answers then.
+   */
+  isMapInputBlocked(): boolean {
+    return this.isUiInputBlocked() || this.isInventoryScreenVisible;
   }
 
   syncLoadingVisibility(): void {
@@ -316,7 +331,7 @@ export class PromptDialogs {
         },
       );
     } else {
-      this.dependencies.engineMessages.addGameMessage(plusEngineStrings.noRecentMessage);
+      this.dependencies.engineMessages.addSystemMessage(plusEngineStrings.noRecentMessage);
     }
   }
 
@@ -440,6 +455,15 @@ export class PromptDialogs {
     }
 
     this.hideInfoMenuDialog();
+    if (this.isInventoryScreenVisible) {
+      this.hideInventoryScreen();
+      return;
+    }
+    if (this.shouldUseInventoryScreen()) {
+      if (this.isInventoryDialogVisible) this.hideInventoryDialog();
+      this.showInventoryScreen();
+      return;
+    }
     if (this.isInventoryDialogOpen()) {
       console.log("Closing inventory dialog");
       this.hideInventoryDialog();
@@ -482,6 +506,34 @@ export class PromptDialogs {
 
   closeInventoryDialog(): void {
     this.hideInventoryDialog();
+    this.hideInventoryScreen();
+  }
+
+  shouldUseInventoryScreen(): boolean {
+    return (
+      this.dependencies.engineState.clientOptions.inventoryScreen !== false &&
+      this.inventoryStateAvailable &&
+      !this.dependencies.gameOver.gameOverState.active
+    );
+  }
+
+  showInventoryScreen(): void {
+    if (this.isInventoryScreenVisible) return;
+    this.isInventoryScreenVisible = true;
+    this.dependencies.pointerLock.syncFpsPointerLockForUiState(false);
+    this.dependencies.engineState.uiAdapter.setInventoryScreenOpen(true);
+  }
+
+  hideInventoryScreen(): void {
+    if (!this.isInventoryScreenVisible) return;
+    this.isInventoryScreenVisible = false;
+    this.dependencies.engineState.uiAdapter.setInventoryScreenOpen(false);
+    this.dependencies.pointerLock.syncFpsPointerLockForUiState(true);
+  }
+
+  setInventoryStateAvailable(available: boolean): void {
+    this.inventoryStateAvailable = available;
+    if (!available) this.hideInventoryScreen();
   }
 
   closeInfoMenuDialog(): void {
@@ -489,7 +541,7 @@ export class PromptDialogs {
   }
 
   isInventoryDialogOpen(): boolean {
-    return this.isInventoryDialogVisible;
+    return this.isInventoryDialogVisible || this.isInventoryScreenVisible;
   }
 
   isInfoDialogOpen(): boolean {
@@ -505,6 +557,9 @@ export class PromptDialogs {
   }
 
   isAnyModalVisible(): boolean {
+    if (this.isInventoryScreenVisible) {
+      return true;
+    }
     if (this.dependencies.extendedCommands.metaCommandModal?.classList.contains("is-visible")) {
       return true;
     }

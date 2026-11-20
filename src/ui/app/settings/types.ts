@@ -150,6 +150,7 @@ export type ClientOptionToggleKey =
   | "minimap"
   | "reduceInventoryMotion"
   | "inventoryTileOnlyMotion"
+  | "inventoryScreen"
   | "damageNumbers"
   | "displayStatChangesAbovePlayer"
   | "displayXpGainsAbovePlayer"

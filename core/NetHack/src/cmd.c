@@ -96,6 +96,9 @@ extern int doorganize(void);         /**/
 
 staticfn struct Cmd_bind *cmdbind_get(uchar);
 staticfn void cmdbind_add(uchar, const struct ext_func_tab *, boolean);
+#if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
+extern int nh3d_inventory_command(void); /* win/shim/nh3d_knowledge.c */
+#endif
 staticfn void cmdbind_remove(uchar);
 staticfn void cmdbind_swapkeys(uchar, uchar);
 staticfn int dosuspend_core(void);
@@ -2072,6 +2075,12 @@ struct ext_func_tab extcmdlist[] = {
     { '\0', "altdip", NULL, dip_into, INTERNALCMD, NULL },
     { '\0', "alttakeoff", NULL, ia_dotakeoff, INTERNALCMD, NULL },
     { '\0', "altunwield", NULL, remarm_swapwep, INTERNALCMD, NULL },
+#if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
+    /* Polypiled: the shell's inventory screen (win/shim/nh3d_knowledge.c);
+       the shell sends M-^I only at a command prompt */
+    { M(C('i')), "nh3dinventory", NULL, nh3d_inventory_command,
+              IFBURIED | INTERNALCMD | NOFUZZERCMD, NULL },
+#endif
     { '\0', (char *) 0, (char *) 0, donull, 0, (char *) 0 } /* sentinel */
 };
 

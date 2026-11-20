@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { TranslationProvider } from "./i18n";
 import App from "./ui/App";
 import "./styles/app.scss";
+import "./styles/inventory-screen.scss";
 import "./quest/native/native.css";
 import { initializeQuestNative } from "./quest/native/bootstrap";
 import { initializeQuestFormControls } from "./quest/webxr/form-controls";

@@ -4112,3 +4112,248 @@ tipcontainer_checks(
 }
 
 /*pickup.c*/
+
+/*
+ * Polypiled: the inventory screen (win/shim/nh3d_knowledge.c).
+ *
+ * nh3d_pickup_objects() picks the chosen objects here up in one action,
+ * the way picking several from the "Pick up what?" menu does.
+ *
+ * nh3d_container_transfer() opens one container -- carried, or here on the
+ * floor -- and takes out and puts in the chosen objects in one action, the
+ * way #loot or applying a bag with "both" does.  The checks before opening
+ * follow doloot_core()/do_loot_cont() for a floor container and doapply()
+ * for a carried one; the rest follows use_container() without its prompts.
+ * A locked container stays shut (no autounlock).  With nothing to move it
+ * only opens the container, which tells what is inside.
+ *
+ * Objects are named by o_id; counts of 0 mean the whole stack.
+ */
+
+static struct obj *
+nh3d_find_obj(struct obj *chain, unsigned id, boolean here)
+{
+    struct obj *otmp;
+
+    for (otmp = chain; otmp; otmp = here ? otmp->nexthere : otmp->nobj)
+        if (otmp->o_id == id)
+            return otmp;
+    return (struct obj *) 0;
+}
+
+int
+nh3d_pickup_objects(const unsigned *ids, const long *counts, int n)
+{
+    struct obj *obj;
+    int i, res, n_tried = 0, n_picked = 0;
+
+    if (!u.uswallow) {
+        struct trap *t = t_at(u.ux, u.uy);
+
+        if (!can_reach_floor(t && is_pit(t->ttyp))) {
+            cant_reach_floor(u.ux, u.uy, FALSE, TRUE, FALSE);
+            return ECMD_OK;
+        }
+        if (notake(gy.youmonst.data)) {
+            You("are physically incapable of picking anything up.");
+            return ECMD_OK;
+        }
+    }
+    gp.pickup_encumbrance = 0;
+    for (i = 0; i < n; i++) {
+        obj = u.uswallow ? nh3d_find_obj(u.ustuck->minvent, ids[i], FALSE)
+                         : nh3d_find_obj(svl.level.objects[u.ux][u.uy],
+                                         ids[i], TRUE);
+        if (!obj)
+            continue;
+        if (!n_tried)
+            reset_justpicked(gi.invent);
+        n_tried++;
+        /* a count beyond the stack takes the whole stack */
+        res = pickup_object(obj,
+                            (counts[i] > 0 && counts[i] < obj->quan)
+                                ? counts[i] : obj->quan,
+                            FALSE);
+        if (res < 0)
+            break;
+        n_picked += res;
+    }
+    if (!u.uswallow) {
+        if (hides_under(gy.youmonst.data))
+            (void) hideunder(&gy.youmonst);
+        if (n_picked)
+            newsym_force(u.ux, u.uy);
+    }
+    gp.pickup_encumbrance = 0;
+    add_valid_menu_class(0);
+    return n_tried > 0 ? ECMD_TIME : ECMD_OK;
+}
+
+int
+nh3d_container_transfer(unsigned cid, const unsigned *outs, int nout,
+                        const unsigned *ins, int nin)
+{
+    struct obj *container, *otmp, *nobj;
+    boolean held, quantum_cat, cursed_mbag;
+    int used = ECMD_OK, i, res;
+    long loss;
+
+    container = nh3d_find_obj(gi.invent, cid, FALSE);
+    held = (container != 0);
+    if (!container && !u.uswallow)
+        container = nh3d_find_obj(svl.level.objects[u.ux][u.uy], cid, TRUE);
+    if (!container)
+        return ECMD_OK;
+
+    if (nohands(gy.youmonst.data)) {
+        You("have no hands!");
+        return ECMD_OK;
+    }
+    if (check_capacity((char *) 0))
+        return ECMD_OK;
+
+    if (held) {
+        if (container->otyp == BAG_OF_TRICKS) {
+            (void) bagotricks(container, FALSE, (int *) 0);
+            return ECMD_TIME;
+        }
+    } else {
+        if (Confusion) {
+            if (rn2(6) && reverse_loot())
+                return ECMD_TIME;
+            if (rn2(2)) {
+                pline("Being confused, you find nothing to loot.");
+                return ECMD_TIME;
+            }
+        }
+        if (!able_to_loot(u.ux, u.uy, TRUE))
+            return ECMD_OK;
+        if (Blind && !uarmg) {
+            for (nobj = sobj_at(CORPSE, u.ux, u.uy); nobj;
+                 nobj = nxtobj(nobj, CORPSE, TRUE))
+                if (will_feel_cockatrice(nobj, FALSE)) {
+                    feel_cockatrice(nobj, FALSE);
+                    return ECMD_TIME;
+                }
+        }
+        if (container->olocked) {
+            if (container->lknown)
+                pline("%s is locked.", The(xname(container)));
+            else
+                pline("Hmmm, %s turns out to be locked.",
+                      the(xname(container)));
+            container->lknown = 1;
+            return ECMD_OK;
+        }
+        container->lknown = 1;
+        if (container->otyp == BAG_OF_TRICKS) {
+            int tmp;
+
+            You("carefully open %s...", the(xname(container)));
+            pline("It develops a huge set of teeth and bites you!");
+            tmp = rnd(10);
+            losehp(Maybe_Half_Phys(tmp), "carnivorous bag", KILLED_BY_AN);
+            makeknown(BAG_OF_TRICKS);
+            return ECMD_TIME;
+        }
+    }
+    if (!Is_container(container))
+        return ECMD_OK;
+
+    /* use_container() from here, without its prompts */
+    ga.abort_looting = FALSE;
+    gs.sellobj_first = TRUE;
+    if (!u_handsy())
+        return ECMD_OK;
+    if (!container->lknown) {
+        container->lknown = 1;
+        if (held)
+            update_inventory();
+    }
+    if (container->olocked) {
+        pline("%s locked.", Tobjnam(container, "are"));
+        if (held)
+            You("must put it down to unlock.");
+        return ECMD_OK;
+    } else if (container->otrapped) {
+        if (held)
+            You("open %s...", the(xname(container)));
+        (void) chest_trap(container, HAND, FALSE);
+        if (gm.multi >= 0) {
+            nomul(-1);
+            gm.multi_reason = "opening a container";
+            gn.nomovemsg = "";
+        }
+        return ECMD_TIME;
+    }
+
+    gc.current_container = container;
+    quantum_cat = SchroedingersBox(gc.current_container);
+    if (quantum_cat) {
+        observe_quantum_cat(gc.current_container, TRUE, TRUE);
+        used = ECMD_TIME;
+    }
+    cursed_mbag = Is_mbag(gc.current_container)
+                  && gc.current_container->cursed
+                  && Has_contents(gc.current_container);
+    if (cursed_mbag && (loss = boh_loss(gc.current_container, held)) != 0) {
+        used = ECMD_TIME;
+        You("owe %ld %s for lost merchandise.", loss, currency(loss));
+        gc.current_container->owt = weight(gc.current_container);
+    }
+
+    if (nout > 0) {
+        if (!Has_contents(gc.current_container)) {
+            pline("%s is %sempty.", Ysimple_name2(gc.current_container),
+                  (quantum_cat || cursed_mbag) ? "now " : "");
+            if (!gc.current_container->cknown)
+                used = ECMD_TIME;
+            gc.current_container->cknown = 1;
+        } else {
+            gp.pickup_encumbrance = 0;
+            gc.current_container->cknown = 1;
+            for (i = 0; i < nout && gc.current_container; i++) {
+                otmp = nh3d_find_obj(gc.current_container->cobj, outs[i],
+                                     FALSE);
+                if (!otmp)
+                    continue;
+                res = out_container(otmp);
+                if (res < 0)
+                    break;
+                if (res > 0)
+                    used = ECMD_TIME;
+            }
+        }
+    }
+    for (i = 0; i < nin && gc.current_container; i++) {
+        otmp = nh3d_find_obj(gi.invent, ins[i], FALSE);
+        if (!otmp || otmp == gc.current_container)
+            continue;
+        res = in_container(otmp);
+        if (res < 0)
+            break;
+        if (res > 0)
+            used = ECMD_TIME;
+    }
+    if (nout == 0 && nin == 0 && gc.current_container) {
+        /* only opening it: the hero learns what is inside */
+        if (!gc.current_container->cknown)
+            used = ECMD_TIME;
+        gc.current_container->cknown = 1;
+        if (!Has_contents(gc.current_container))
+            pline("%s is %sempty.", Ysimple_name2(gc.current_container),
+                  (quantum_cat || cursed_mbag) ? "now " : "");
+    }
+
+    if (used) {
+        if (gc.current_container)
+            gc.current_container->cknown = 1;
+        update_inventory();
+    }
+    sellobj_state(SELL_NORMAL);
+    if (gc.current_container)
+        gc.current_container = 0;
+    else
+        ga.abort_looting = TRUE;
+    return used;
+}

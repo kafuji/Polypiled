@@ -159,6 +159,8 @@ export interface KeyboardInputDependencies {
     PromptDialogs,
     "hideInfoMenuDialog"
     | "hideInventoryDialog"
+    | "hideInventoryScreen"
+    | "isInventoryScreenVisible"
     | "isAnyModalVisible"
     | "isClientOptionsDialogOpen"
     | "isInfoDialogOpen"
@@ -459,6 +461,17 @@ export class KeyboardInput {
         return;
       }
 
+      // The inventory screen stays open through the game's questions; Escape
+      // answers those first.
+      if (
+        this.dependencies.promptDialogs.isInventoryScreenVisible &&
+        !this.dependencies.questionMenus.isInQuestion &&
+        !this.dependencies.directionPrompts.isInDirectionQuestion
+      ) {
+        this.dependencies.promptDialogs.hideInventoryScreen();
+        return;
+      }
+
       // If we're in a prompt/position mode, send Escape to NetHack so the
       // runtime can cancel the active flow (question, direction, far-look, etc.).
       if (this.dependencies.questionMenus.isInQuestion || this.dependencies.directionPrompts.isInDirectionQuestion) {
@@ -588,6 +601,20 @@ export class KeyboardInput {
       }
       event.preventDefault();
       this.dependencies.positionSelection.cancelPositionInputMode();
+      return;
+    }
+
+    // The inventory screen leaves the game at its command prompt: keys meant
+    // for the screen must not start commands behind it. The game's own
+    // questions still get their answers.
+    if (
+      this.dependencies.promptDialogs.isInventoryScreenVisible &&
+      !this.dependencies.questionMenus.isInQuestion &&
+      !this.dependencies.directionPrompts.isInDirectionQuestion &&
+      !this.dependencies.promptDialogs.isTextInputActive &&
+      event.key !== "i" &&
+      event.key !== "I"
+    ) {
       return;
     }
 

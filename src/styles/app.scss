@@ -668,6 +668,7 @@ canvas {
 :root.nh3d-hide-runtime-ui-deferred-game-over {
   #stats-bar,
   .top-left-ui,
+  #game-status,
   .nh3d-minimap,
   #floating-log-message-layer,
   .nh3d-mobile-log,
@@ -678,6 +679,7 @@ canvas {
   .nh3d-wizard-commands-sheet,
   .nh3d-desktop-bottom-actions,
   .nh3d-floor-panel,
+  .nh3d-inventory-screen,
   #position-dialog,
   .nh3d-dialog {
     display: none !important;
@@ -746,10 +748,56 @@ canvas {
   }
 }
 
+// Player position / dungeon line, at the bottom center of the screen.
 #game-status {
-  margin-bottom: 10px;
-  font-weight: bold;
+  position: fixed;
+  left: 50%;
+  bottom: calc(10px + var(--nh3d-safe-area-bottom));
+  transform: translateX(-50%);
+  z-index: 1000;
+  max-width: calc(100vw - 2 * 260px);
+  padding: 3px 14px;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: rgba(6, 16, 30, var(--nh3d-desktop-log-bg-opacity, 0.92));
+  border: 1px solid var(--nh3d-ui-border);
+  border-radius: 999px;
+  box-shadow: var(--nh3d-ui-shadow);
   color: var(--nh3d-ui-accent-soft);
+  font-size: nh3d-scale-font(13px);
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+// Message log lines: a right-aligned turn column, then the text with a hanging indent.
+.nh3d-message-log-line {
+  display: grid;
+  grid-template-columns: 5ch minmax(0, 1fr);
+  column-gap: 0.75ch;
+  align-items: baseline;
+}
+
+.nh3d-message-log-turn-start:not(:first-of-type) {
+  margin-top: 0.2em;
+}
+
+.nh3d-message-log-turn {
+  text-align: right;
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+  color: var(--nh3d-ui-accent-soft);
+  opacity: 0.6;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.nh3d-message-log-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .top-left-ui #game-log {
@@ -1014,6 +1062,19 @@ canvas {
   align-items: center;
   gap: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+
+  // Clicking the bar opens the character sheet.
+  &.nh3d-stats-bar-clickable {
+    cursor: pointer;
+    user-select: none;
+    transition: filter 0.15s ease;
+
+    @media (hover: hover) {
+      &:hover {
+        filter: brightness(1.15);
+      }
+    }
+  }
 
   .stat-label {
     color: var(--nh3d-ui-text-muted);

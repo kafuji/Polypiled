@@ -1,5 +1,8 @@
 import type { NethackRuntimeVersion } from "../runtime/types";
 import type { FloorHere } from "../runtime/floor-here";
+import type { InventoryState } from "../runtime/inventory-state";
+import type { InventoryOperation } from "../runtime/input/inventory-operation";
+import type { InventoryProcedure, InventoryProcedureState } from "./engine/ui/inventory-procedures";
 import { normalizeUiFontFamily } from "./ui-font";
 import {
   defaultNh3dTilesetPath,
@@ -329,6 +332,8 @@ export type Nh3dClientOptions = {
   minimapScale: number;
   reduceInventoryMotion: boolean;
   inventoryTileOnlyMotion: boolean;
+  /** Use the inventory screen (equipment and a slot grid) when the core reports the inventory. */
+  inventoryScreen: boolean;
   inventoryFixedTileSize: Nh3dInventoryFixedTileSizeMode;
   damageNumbers: boolean;
   displayStatChangesAbovePlayer: boolean;
@@ -501,6 +506,7 @@ export const defaultNh3dClientOptions: Nh3dClientOptions = {
   minimapScale: 1,
   reduceInventoryMotion: true,
   inventoryTileOnlyMotion: true,
+  inventoryScreen: true,
   inventoryFixedTileSize: "medium",
   damageNumbers: true,
   displayStatChangesAbovePlayer: true,
@@ -1299,6 +1305,10 @@ export function normalizeNh3dClientOptions(
       typeof overrides?.inventoryTileOnlyMotion === "boolean"
         ? overrides.inventoryTileOnlyMotion
         : defaultNh3dClientOptions.inventoryTileOnlyMotion,
+    inventoryScreen:
+      typeof overrides?.inventoryScreen === "boolean"
+        ? overrides.inventoryScreen
+        : defaultNh3dClientOptions.inventoryScreen,
     inventoryFixedTileSize,
     damageNumbers:
       typeof overrides?.damageNumbers === "boolean"
@@ -1450,7 +1460,8 @@ export interface Nethack3DEngineUIAdapter {
   setStatus(status: string): void;
   setConnectionStatus(status: string, state: NethackConnectionState): void;
   setLoadingVisible(visible: boolean): void;
-  setGameMessages(messages: string[]): void;
+  /** Newest first; `turns[i]` is the game turn when `messages[i]` arrived. */
+  setGameMessages(messages: string[], turns?: readonly (number | null)[]): void;
   pushFloatingMessage(message: string): void;
   setPlayerStats(stats: PlayerStatsSnapshot): void;
   setQuestion(state: QuestionDialogState | null): void;
@@ -1463,6 +1474,10 @@ export interface Nethack3DEngineUIAdapter {
   setPositionRequest(text: string | null): void;
   /** What lies under the hero, as the game reports it; null before a report or after the game. */
   setFloorHere(state: FloorHere | null): void;
+  /** The hero's inventory, as the game reports it; null before a report or after the game. */
+  setInventoryState(state: InventoryState | null): void;
+  setInventoryScreenOpen(open: boolean): void;
+  setInventoryProcedure(state: InventoryProcedureState | null): void;
   setPositionInputActive(active: boolean, origin?: string | null): void;
   setFpsCrosshairContext(state: FpsCrosshairContextState | null): void;
   setRepeatActionVisible(visible: boolean): void;
@@ -1516,6 +1531,12 @@ export interface Nethack3DEngineController {
   repeatLastAction(): void;
   setClientOptions(options: Nh3dClientOptions): void;
   closeInventoryDialog(): void;
+  closeInventoryScreen(): void;
+  /** Runs an inventory-screen operation through the core at the next command prompt. */
+  runInventoryOperation(operation: InventoryOperation): void;
+  /** Runs a multi-step plan one command at a time; a new plan replaces a running one. */
+  runInventoryProcedure(procedure: InventoryProcedure): void;
+  cancelInventoryProcedure(): void;
   closeInfoMenuDialog(): void;
 }
 

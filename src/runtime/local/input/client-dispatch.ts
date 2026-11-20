@@ -4,6 +4,7 @@
 import type { RuntimeCoordinator } from "../runtime-coordinator";
 import { isGameInputKey } from "../../input/keyboard-key";
 import { silentInventoryRefreshCommand } from "../../input/inventory-refresh";
+import { inventoryOperationInputPrefix } from "../../input/inventory-operation";
 import type { RuntimeExtendedCommands } from "./extended-commands";
 import type { RuntimeMouseInput } from "./mouse-poskey";
 import type { RuntimeMenuSelection } from "../menus/selection";
@@ -288,6 +289,10 @@ export class RuntimeInputDispatch {
     }
     if (input === silentInventoryRefreshCommand) {
       this.deps.inputRequests.requestSilentInventoryRefresh();
+      return;
+    }
+    if (input.startsWith(inventoryOperationInputPrefix)) {
+      this.deps.inputRequests.requestInventoryOperation(input.slice(inventoryOperationInputPrefix.length));
       return;
     }
     // Only explicit protocol commands can carry text. Never let DOM key names

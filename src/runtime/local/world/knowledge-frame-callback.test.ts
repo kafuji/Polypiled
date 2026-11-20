@@ -48,3 +48,25 @@ describe("floor information notifications", () => {
     warn.mockRestore();
   });
 });
+
+describe("inventory notifications", () => {
+  it("emits the hero's inventory", () => {
+    const { mapCallbacks, emit } = callbacks();
+    const raw = JSON.stringify({ v: 1, weight: 10, capacity: 450, encumbrance: 0, objects: [] });
+    expect(mapCallbacks.handleShimInventory([raw])).toBe(0);
+    expect(emit).toHaveBeenCalledWith({
+      type: "inventory_state",
+      inventory: expect.objectContaining({ weight: 10, capacity: 450, objects: [] }),
+    });
+  });
+
+  it("drops what it cannot read and warns once", () => {
+    const { mapCallbacks, emit } = callbacks();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mapCallbacks.handleShimInventory(["not json"]);
+    mapCallbacks.handleShimInventory(["not json"]);
+    expect(emit).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+});

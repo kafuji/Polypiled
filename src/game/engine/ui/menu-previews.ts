@@ -3,6 +3,7 @@ import type { EngineState } from "../runtime/engine-state";
 import type { PromptDialogs } from "./prompt-dialogs";
 import type { QuestionMenus } from "./question-menus";
 import type { TilesetAssets } from "../rendering/tileset-assets";
+import type { InventoryObject, InventoryState } from "../../../runtime/inventory-state";
 
 export interface MenuPreviewsDependencies {
   readonly engineState: Pick<
@@ -40,6 +41,42 @@ export class MenuPreviews {
 
   readonly menuTilePreviewDataUrlCache = new Map<string, string>();
 
+  /** The core's last inventory report, kept to add previews again when tiles change. */
+  private latestInventoryState: InventoryState | null = null;
+
+  /**
+   * Hands the inventory screen the core's report, with high-resolution
+   * previews attached where the pack has the tile (the screen otherwise
+   * draws the atlas tile).
+   */
+  /** The core's last report as it came (no previews). */
+  currentInventoryState(): InventoryState | null {
+    return this.latestInventoryState;
+  }
+
+  publishInventoryState(state: InventoryState | null): void {
+    this.latestInventoryState = state;
+    this.dependencies.engineState.uiAdapter.setInventoryState(state ? this.withInventoryPreviews(state) : null);
+  }
+
+  private withInventoryPreviews(state: InventoryState): InventoryState {
+    const decorate = (object: InventoryObject): InventoryObject => {
+      const tilePreviewDataUrl =
+        object.tileIndex === null
+          ? null
+          : this.resolveHiResMenuItemTilePreviewDataUrl({ tileIndex: object.tileIndex });
+      const contents = object.container?.contents ?? null;
+      return {
+        ...object,
+        tilePreviewDataUrl,
+        container: object.container && contents
+          ? { ...object.container, contents: contents.map(decorate) }
+          : object.container,
+      };
+    };
+    return { ...state, objects: state.objects.map(decorate), floor: state.floor.map(decorate) };
+  }
+
   menuTilePreviewCanvas: HTMLCanvasElement | null = null;
 
   clearMenuTilePreviewCache(): void {
@@ -48,6 +85,10 @@ export class MenuPreviews {
   }
 
   refreshMenuTilePreviewStateForUi(): void {
+    if (this.latestInventoryState) {
+      this.publishInventoryState(this.latestInventoryState);
+    }
+
     if (this.dependencies.promptDialogs.currentInventory.length > 0) {
       this.dependencies.promptDialogs.currentInventory = this.normalizeMenuItemsForUi(
         this.dependencies.promptDialogs.currentInventory,
