@@ -1103,6 +1103,8 @@ export const assembledMessageTemplates: readonly Template[] = [
   }],
   // Eating (eat.c).
   [/^Blecch!  (Rotten|Awful) (.+?)!$/, (kind, word) => `うえっ！ ${kind === "Rotten" ? "腐った" : "ひどい"}${own(foodWords, word) ?? word}だ！`],
+  // Polypiled: cursed food hides that it has spoiled (food_spoilage_declined()).
+  [/^The (.+?) (?:looks?|smells?) so delicious!$/, (food) => `${thing(food)}はとてもおいしそうだ！`],
   [/^My, this is a (yummy|primo) (.+?)!$/, (_word, fruit) => `まあ、なんておいしい${thing(fruit)}だ！`],
   // Skills (weapon.c).
   [/^You are now (more|most) skilled in (.+?)\.$/, (degree, skill) =>
