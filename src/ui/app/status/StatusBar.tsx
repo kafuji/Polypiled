@@ -26,6 +26,9 @@ export interface StatusBarProps {
   resolveCoreStatStyle: (key: CoreStatKey) => React.CSSProperties | undefined;
   playerStatusBadges: PlayerStatusBadge[];
   visibleLocationLabel: string;
+  /** Clicking the bar opens the character sheet. */
+  openCharacterDialog: () => void;
+  isCharacterSheetVisible: boolean;
 }
 
 export function StatusBar({
@@ -38,11 +41,24 @@ export function StatusBar({
   resolveCoreStatStyle,
   playerStatusBadges,
   visibleLocationLabel,
+  openCharacterDialog,
+  isCharacterSheetVisible,
 }: StatusBarProps) {
   const { locale } = useI18n();
+  const handleClick = (): void => {
+    if (!isCharacterSheetVisible) {
+      openCharacterDialog();
+    }
+  };
   return (
     !startup && !gameOverDialogShowsTombstone && (
-      <div id="stats-bar">
+      <div
+        id="stats-bar"
+        className="nh3d-stats-bar-clickable"
+        onClick={handleClick}
+        role="button"
+        title={locale === "ja" ? "キャラクター" : "Character"}
+      >
         <div className="nh3d-stats-name">
           {translatePlayerTitle(playerStats.name, locale)}
           <span className="nh3d-stats-name-level">

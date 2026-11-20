@@ -2081,6 +2081,8 @@ export function useAppModel() {
       resolveCoreStatStyle,
       playerStatusBadges,
       visibleLocationLabel,
+      openCharacterDialog,
+      isCharacterSheetVisible,
     },
     clientOptionsDialog: {
       saveRuntimeVersion: activeRuntimeVersion,
