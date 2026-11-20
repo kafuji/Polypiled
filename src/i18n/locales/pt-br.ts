@@ -1185,6 +1185,11 @@ export const ptBrOverrides = {
           description: "Escala o tamanho do minimapa a partir do padrão.",
         },
         sectionDisplayInventory: "Apresentação do inventário",
+        inventoryScreen: {
+          label: "Tela de inventário",
+          description:
+            "Abre uma tela de inventário com espaços de equipamento e uma grade de letras, onde você arrasta itens para equipá-los, removê-los e reorganizá-los. Desligado: a lista de inventário do jogo.",
+        },
         reduceInventoryMotion: {
           label: "Reduzir movimento do inventário",
           description:

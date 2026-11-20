@@ -1110,6 +1110,11 @@ export const esOverrides = {
                     description: "Escale el tama\u00F1o del minimapa desde su valor predeterminado.",
                 },
                 sectionDisplayInventory: "presentaci\u00F3n de inventario",
+                inventoryScreen: {
+                  label: "Pantalla de inventario",
+                  description:
+                    "Abre una pantalla de inventario con ranuras de equipo y una cuadrícula de letras, donde arrastras objetos para ponértelos, quitártelos y reordenarlos. Desactivado: la lista de inventario del juego.",
+                },
                 reduceInventoryMotion: {
                     label: "Reducir el movimiento del inventario",
                     description: "Deshabilite la expansi\u00F3n de filas de inventario animadas y utilice interacciones m\u00E1s simples.",

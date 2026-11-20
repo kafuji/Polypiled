@@ -1194,6 +1194,11 @@ export const fr = {
           description: "Met a l'echelle la taille de la mini-carte a partir de sa valeur par defaut.",
         },
         sectionDisplayInventory: "Presentation de l'inventaire",
+        inventoryScreen: {
+          label: "Ecran d'inventaire",
+          description:
+            "Ouvre un ecran d'inventaire avec des emplacements d'equipement et une grille de lettres, ou l'on fait glisser les objets pour les equiper, les retirer et les reorganiser. Desactive : la liste d'inventaire du jeu.",
+        },
         reduceInventoryMotion: {
           label: "Reduire le mouvement de l'inventaire",
           description:

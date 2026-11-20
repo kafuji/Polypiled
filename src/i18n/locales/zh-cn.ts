@@ -923,6 +923,11 @@ export const zhCnOverrides = {
           description: "相对于默认值缩放小地图尺寸。",
         },
         sectionDisplayInventory: "物品栏显示",
+        inventoryScreen: {
+          label: "物品栏界面",
+          description:
+            "打开带有装备栏位和字母格子的物品栏界面，拖动物品即可穿戴、卸下和整理。关闭时使用游戏自带的物品列表。",
+        },
         reduceInventoryMotion: {
           label: "减少物品栏动画",
           description: "禁用物品栏行展开动画，并使用更简单的交互方式。",

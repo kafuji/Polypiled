@@ -1165,6 +1165,11 @@ export const ko = {
           description: "미니맵 크기를 기본값에서 조정합니다.",
         },
         sectionDisplayInventory: "인벤토리 표시",
+        inventoryScreen: {
+          label: "인벤토리 화면",
+          description:
+            "장비 슬롯과 문자 칸이 있는 인벤토리 화면을 열어, 아이템을 드래그해 장착·해제하고 정리합니다. 끄면 게임의 소지품 목록을 사용합니다.",
+        },
         reduceInventoryMotion: {
           label: "인벤토리 움직임 줄이기",
           description:
