@@ -614,6 +614,7 @@ export const fr = {
       procCancelled: (name: string) => `Annulé : ${name}`,
       procCancel: "Arrêter",
       planEquip: "Équiper",
+      unequip: "Retirer",
       planNested: "Sac dans un sac",
       title: "Inventaire",
       close: "Fermer",

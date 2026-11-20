@@ -127,10 +127,10 @@ describe("unequipping and moving", () => {
       .toEqual([{ op: "wield", item: "-" }]);
   });
 
-  it("cannot empty the alternate weapon alone", () => {
+  it("empties the alternate weapon with #altunwield", () => {
     const plan = planUnequip(object("c", { objectClass: ObjectClass.weapon, wornMask: InventoryWornMask.secondaryWeapon }));
-    expect(plan.unsupported).toBe(true);
-    expect(plan.operations).toEqual([]);
+    expect(plan.unsupported).toBeUndefined();
+    expect(plan.operations).toEqual([{ op: "altunwield" }]);
   });
 
   it("moves with #adjust, gold only to $", () => {

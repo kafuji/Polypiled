@@ -1263,8 +1263,21 @@ export function InventoryScreenView({
 
       {menu ? (
         <ItemMenu x={menu.x} y={menu.y} title={name(menu.object)} onDismiss={() => setMenu(null)}>
-          {isContainerLike(menu.object) ? (
+          {/* whatever holds it: armor, accessory, weapon, alternate, quiver
+              (the screen stays open, as when it is dragged off) */}
+          {isEquipped(menu.object) && menu.object.letter ? (
             <button type="button" role="menuitem" autoFocus onClick={() => {
+              const object = menu.object;
+              setMenu(null);
+              const plan = planUnequip(object);
+              if (plan.unsupported) setNotice(strings.unsupported);
+              else runPlan(controller, plan, strings.unequip);
+            }}>
+              {strings.unequip}
+            </button>
+          ) : null}
+          {isContainerLike(menu.object) ? (
+            <button type="button" role="menuitem" autoFocus={!isEquipped(menu.object)} onClick={() => {
               setMenu(null);
               openContainerPanel(menu.object);
             }}>
@@ -1278,7 +1291,7 @@ export function InventoryScreenView({
                 type="button"
                 role="menuitem"
                 key={action.id}
-                autoFocus={index === 0 && !isContainerLike(menu.object)}
+                autoFocus={index === 0 && !isContainerLike(menu.object) && !isEquipped(menu.object)}
                 onClick={() => runMenuAction(action.id)}
               >
                 {action.label}

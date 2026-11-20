@@ -81,6 +81,12 @@ function play(start: InventoryState, set: EquipmentSet, limit = 30): { end: Inve
               : o.wornMask & W.secondaryWeapon ? { ...o, wornMask: W.weapon } : o),
         };
         break;
+      case "altunwield":
+        current = {
+          ...current,
+          objects: current.objects.map((o) => (o.wornMask & W.secondaryWeapon ? { ...o, wornMask: 0 } : o)),
+        };
+        break;
       case "loot": {
         const bag = current.objects.find((o) => o.id === step.container)!;
         const taken = bag.container!.contents!.filter((o) => step.out.includes(o.id));
@@ -102,13 +108,13 @@ function play(start: InventoryState, set: EquipmentSet, limit = 30): { end: Inve
 }
 
 describe("equipment sets", () => {
-  it("records the equipment, leaving an empty alternate and quiver alone", () => {
+  it("records the equipment, an empty alternate as empty, leaving an empty quiver alone", () => {
     const inventory = state([weapon(1, "a", W.weapon), armor(2, "b", "cloak", W.cloak)]);
     const set = recordEquipmentSet(inventory, "melee");
     expect(set.slots.weapon).toBe(1);
     expect(set.slots.cloak).toBe(2);
     expect(set.slots.shield).toBe("empty");
-    expect(set.slots.secondaryWeapon).toBeUndefined();
+    expect(set.slots.secondaryWeapon).toBe("empty");
     expect(set.slots.quiver).toBeUndefined();
   });
 
@@ -142,6 +148,13 @@ describe("equipment sets", () => {
     expect(worn(1)).toBe(W.secondaryWeapon);
     expect(worn(3)).toBe(0);
     expect(worn(4)).toBe(0);
+  });
+
+  it("empties the alternate weapon when the set has none", () => {
+    const start = state([weapon(1, "a", W.weapon), weapon(2, "b", W.secondaryWeapon)]);
+    const { end, steps } = play(start, { name: "x", slots: { weapon: 1, secondaryWeapon: "empty" } });
+    expect(steps).toEqual([{ op: "altunwield" }]);
+    expect(end.objects.find((o) => o.id === 2)?.wornMask).toBe(0);
   });
 
   it("moves a ring to the other hand and leaves untouched slots alone", () => {

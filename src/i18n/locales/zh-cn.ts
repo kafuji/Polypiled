@@ -371,6 +371,7 @@ export const zhCnOverrides = {
       procCancelled: (name: string) => `已取消：${name}`,
       procCancel: "中止",
       planEquip: "更换装备",
+      unequip: "卸下",
       planNested: "袋中袋",
       title: "物品栏",
       close: "关闭",

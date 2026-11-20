@@ -158,7 +158,7 @@ function takeOff(object: InventoryObject, slot: EquipmentSlotId): InventoryOpera
     case "quiver":
       return { op: "quiver", item: "-" };
     case "secondaryWeapon":
-      return null; // the game has no command to empty the alternate weapon alone
+      return { op: "altunwield" };
     case "amulet":
     case "leftRing":
     case "rightRing":

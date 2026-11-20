@@ -605,6 +605,7 @@ export const ptBrOverrides = {
       procCancelled: (name: string) => `Cancelado: ${name}`,
       procCancel: "Parar",
       planEquip: "Equipar",
+      unequip: "Remover",
       planNested: "Bolsa dentro de bolsa",
       title: "Inventário",
       close: "Fechar",

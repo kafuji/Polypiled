@@ -18,7 +18,8 @@ export type InventoryOperation =
   | { readonly op: "puton"; readonly item: string; readonly hand?: "left" | "right" }
   /** item "-" empties the hands or the quiver. */
   | { readonly op: "wield" | "quiver"; readonly item: string }
-  | { readonly op: "swap" | "twoweapon" }
+  /** altunwield empties the alternate weapon (#altunwield). */
+  | { readonly op: "swap" | "twoweapon" | "altunwield" }
   /** count 0 (or none) means the whole stack. */
   | { readonly op: "pickup" | "drop"; readonly items: readonly InventoryOperationItem[] }
   /** Open a carried or floor container, take out `out`, then put in `in`, in one action. */
@@ -60,6 +61,7 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
       return isItemOrHands(operation.item) ? `${operation.op}:${operation.item}` : null;
     case "swap":
     case "twoweapon":
+    case "altunwield":
       return operation.op;
     case "pickup":
     case "drop":
@@ -79,7 +81,7 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
 /** Accepts only what encodeInventoryOperation produces. */
 export function isInventoryOperationRequest(request: string): boolean {
   if (request.length > 2000) return false;
-  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon|(pickup|drop):\d+(x\d+)?(,\d+(x\d+)?)*|loot:\d+:(\d+(,\d+)*)?:(\d+(,\d+)*)?)$/.test(
+  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon|altunwield|(pickup|drop):\d+(x\d+)?(,\d+(x\d+)?)*|loot:\d+:(\d+(,\d+)*)?:(\d+(,\d+)*)?)$/.test(
     request,
   );
 }

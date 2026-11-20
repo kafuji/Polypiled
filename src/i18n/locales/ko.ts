@@ -589,6 +589,7 @@ export const ko = {
       procCancelled: (name: string) => `취소함: ${name}`,
       procCancel: "중지",
       planEquip: "장비 교체",
+      unequip: "벗기",
       planNested: "가방 속 가방",
       title: "소지품",
       close: "닫기",

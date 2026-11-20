@@ -571,6 +571,7 @@ export const esOverrides = {
         procCancelled: (name: string) => `Cancelado: ${name}`,
         procCancel: "Parar",
         planEquip: "Equipar",
+        unequip: "Quitar",
         planNested: "Bolsa dentro de bolsa",
         title: "Inventario",
         close: "Cerrar",

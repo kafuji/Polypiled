@@ -576,6 +576,7 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
       procCancelled: (name: string) => `中止した：${name}`,
       procCancel: "中止",
       planEquip: "装備の付け替え",
+      unequip: "外す",
       planNested: "袋の中の袋",
       title: "持ち物",
       close: "閉じる",

@@ -591,6 +591,7 @@ export const en = {
       procCancelled: (name: string) => `Cancelled: ${name}`,
       procCancel: "Stop",
       planEquip: "Equip",
+      unequip: "Take off",
       planNested: "Bag in a bag",
       title: "Inventory",
       close: "Close",

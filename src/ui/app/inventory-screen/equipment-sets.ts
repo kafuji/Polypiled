@@ -91,15 +91,14 @@ export function saveEquipmentSets(gameId: number | null, sets: readonly (Equipme
 
 /**
  * The equipment as it is now. Empty slots are recorded as "empty", except
- * the alternate weapon (the game cannot empty it alone) and the quiver,
- * which are left alone.
+ * the quiver, which is left alone.
  */
 export function recordEquipmentSet(state: InventoryState, name: string): EquipmentSet {
   const slots: Partial<Record<EquipmentSlotId, EquipmentSetSlot>> = {};
   for (const { id } of equipmentSlotLayout) {
     const object = objectInSlot(state, id);
     if (object) slots[id] = object.id;
-    else if (id !== "secondaryWeapon" && id !== "quiver") slots[id] = "empty";
+    else if (id !== "quiver") slots[id] = "empty";
   }
   return { name, slots };
 }
@@ -183,6 +182,7 @@ export function nextEquipmentSetStep(state: InventoryState, set: EquipmentSet): 
   const primary = objectInSlot(state, "weapon");
   const alternate = objectInSlot(state, "secondaryWeapon");
   const wantAlternate = wanted(set, "secondaryWeapon", state);
+  if (wantAlternate === "empty" && alternate) return { op: "altunwield" };
   if (typeof wantAlternate === "number" && alternate?.id !== wantAlternate) {
     const object = carried(state, wantAlternate);
     if (object?.letter) {

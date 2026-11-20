@@ -587,6 +587,7 @@ export const ru = {
       procCancelled: (name: string) => `Отменено: ${name}`,
       procCancel: "Стоп",
       planEquip: "Смена снаряжения",
+      unequip: "Снять",
       planNested: "Сумка в сумке",
       title: "Инвентарь",
       close: "Закрыть",
