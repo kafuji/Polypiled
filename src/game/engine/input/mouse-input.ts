@@ -134,6 +134,7 @@ export interface MouseInputDependencies {
     PromptDialogs,
     "isAnyModalVisible"
     | "isMapInputBlocked"
+    | "isInventoryScreenVisible"
   >;
   readonly questionMenus: Pick<
     QuestionMenus,
@@ -190,7 +191,9 @@ export class MouseInput {
 
   handleMouseWheel(event: WheelEvent): void {
     if (this.dependencies.promptDialogs.isMapInputBlocked()) {
-      event.preventDefault();
+      // The inventory screen scrolls itself; a passive window listener cannot
+      // cancel the wheel anyway (Chrome logs an error for every tick).
+      if (!this.dependencies.promptDialogs.isInventoryScreenVisible) event.preventDefault();
       return;
     }
     if (this.dependencies.movementInput.isFpsMode()) {
