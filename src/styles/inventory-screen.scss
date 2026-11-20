@@ -854,3 +854,47 @@
     max-width: none;
   }
 }
+
+/* equipment sets, under the figure */
+.nh3d-invs-sets-head {
+  margin-top: 4px;
+  color: #8fb3e6;
+  font-size: 0.85em;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+/* swap and two-weapon, small, between the weapon and the alternate */
+.nh3d-invs-weapon-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.nh3d-invs-icon-button {
+  width: clamp(24px, calc(var(--invs-cell) * 0.36), 36px);
+  height: clamp(24px, calc(var(--invs-cell) * 0.36), 36px);
+  padding: 0;
+  border: 1px solid rgba(158, 197, 223, 0.45);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--nh3d-ui-text);
+  font: inherit;
+  font-size: clamp(13px, calc(var(--invs-cell) * 0.2), 20px);
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--nh3d-ui-border-strong);
+    background: rgba(102, 204, 255, 0.22);
+  }
+
+  &[aria-pressed="true"] {
+    border-color: #e6d36a;
+    background: rgba(230, 211, 106, 0.25);
+    color: #e6d36a;
+  }
+}

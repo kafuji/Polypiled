@@ -187,9 +187,9 @@ describe("equipment set storage", () => {
       getItem: (key: string) => data.get(key) ?? null,
       setItem: (key: string, value: string) => void data.set(key, value),
     });
-    saveEquipmentSets(7, [{ name: "melee", slots: { weapon: 1 } }, null, null, null, null, null]);
+    saveEquipmentSets(7, [{ name: "melee", slots: { weapon: 1 } }, null, null]);
     expect(loadEquipmentSets(7)[0]).toEqual({ name: "melee", slots: { weapon: 1 } });
     expect(loadEquipmentSets(8)[0]).toBeNull();
-    expect(loadEquipmentSets(null)).toHaveLength(6);
+    expect(loadEquipmentSets(null)).toHaveLength(3);
   });
 });

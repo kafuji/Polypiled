@@ -255,11 +255,12 @@ export function InventoryScreen(props: InventoryScreenProps) {
     [gameId],
   );
 
-  // F1-F6 put on a set from anywhere in play
+  // F1-F3 put on a set from anywhere in play
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
-      const match = /^F([1-6])$/.exec(event.key);
+      const match = /^F([1-9])$/.exec(event.key);
+      if (match && Number(match[1]) > EQUIPMENT_SET_COUNT) return;
       if (!match || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
       const store = useGameStore.getState();
       if (!store.inventoryState || store.question || store.directionQuestion) return;
@@ -668,7 +669,7 @@ export function InventoryScreenView({
   const editedSet = editingSet !== null ? sets[editingSet] : null;
 
   // keys while the screen is open (the pad sends the same keys): Escape and
-  // i close, m opens the item menu, e puts on or takes off, 1-6 use a set
+  // i close, m opens the item menu, e puts on or takes off, 1-3 use a set
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const store = useGameStore.getState();
@@ -692,7 +693,7 @@ export function InventoryScreenView({
         openMenuAt(focusedObject, rect ? rect.left + rect.width / 2 : window.innerWidth / 2, rect ? rect.bottom : window.innerHeight / 2);
       } else if (event.key === "e" && focusedObject?.letter) {
         toggle({ kind: "pack", object: focusedObject });
-      } else if (/^[1-6]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      } else if (/^[1-9]$/.test(event.key) && Number(event.key) <= EQUIPMENT_SET_COUNT && !event.ctrlKey && !event.altKey && !event.metaKey) {
         applySet(Number(event.key) - 1);
       } else {
         handled = false;
@@ -807,6 +808,63 @@ export function InventoryScreenView({
 
       <div className="nh3d-invs-body">
         <section className="nh3d-invs-equipment" aria-label={strings.equipped}>
+          <div className="nh3d-invs-figure">
+            {equipmentSlotLayout.map(({ id, column, row }) => {
+              const object = objectInSlot(inventory, id);
+              const target: DropTarget = { kind: "slot", slot: id };
+              const valid = Boolean(validSlots?.has(id));
+              const setValue = editedSet?.slots[id];
+              const setObject = typeof setValue === "number" ? findObject(setValue) : null;
+              return (
+                <button
+                  type="button"
+                  key={id}
+                  className={`nh3d-invs-slot${object ? " is-filled" : ""}${targetClass(target, valid)}${editedSet ? " is-set-editing" : ""}`}
+                  style={{ gridColumn: column, gridRow: row }}
+                  data-invs-drop={`slot:${id}`}
+                  {...turnsAttr(target)}
+                  aria-label={`${slotLabel(id)}: ${object ? name(object) : strings.emptySlot}`}
+                  onClick={(event) => {
+                    if (editedSet && editingSet !== null) {
+                      writeSet(editingSet, cycleSetSlot(editedSet, id, inventory));
+                      return;
+                    }
+                    activate(target, object ? { kind: "pack", object } : null, event.detail > 0);
+                  }}
+                  onFocus={() => object && setFocused(object)}
+                >
+                  {editedSet ? (
+                    setObject ? renderItem({ kind: "pack", object: setObject }, " is-set-preview")
+                      : <span className="nh3d-invs-set-mark">{setValue === "empty" ? strings.setSlotEmpty : strings.setSlotIgnore}</span>
+                  ) : object ? renderItem({ kind: "pack", object }) : null}
+                  <span className="nh3d-invs-slot-label">{slotLabel(id)}</span>
+                </button>
+              );
+            })}
+            {/* between the two weapons: swap them, two-weapon combat */}
+            <div className="nh3d-invs-weapon-actions" style={{ gridColumn: 2, gridRow: 5 }}>
+              <button
+                type="button"
+                className="nh3d-invs-icon-button"
+                title={strings.swap}
+                aria-label={strings.swap}
+                onClick={() => controller?.runInventoryOperation({ op: "swap" })}
+              >
+                ⇄
+              </button>
+              <button
+                type="button"
+                className="nh3d-invs-icon-button"
+                title={strings.twoWeapon}
+                aria-label={strings.twoWeapon}
+                aria-pressed={inventory.twoWeapon}
+                onClick={() => controller?.runInventoryOperation({ op: "twoweapon" })}
+              >
+                ⚔
+              </button>
+            </div>
+          </div>
+          <div className="nh3d-invs-sets-head">{strings.setsLabel}</div>
           <div className="nh3d-invs-sets" role="group" aria-label={strings.setsLabel}>
             {sets.map((set, index) => (
               <button
@@ -846,50 +904,6 @@ export function InventoryScreenView({
               <span className="nh3d-invs-set-hint">{strings.setEditHint}</span>
             </div>
           ) : null}
-          <div className="nh3d-invs-figure">
-            {equipmentSlotLayout.map(({ id, column, row }) => {
-              const object = objectInSlot(inventory, id);
-              const target: DropTarget = { kind: "slot", slot: id };
-              const valid = Boolean(validSlots?.has(id));
-              const setValue = editedSet?.slots[id];
-              const setObject = typeof setValue === "number" ? findObject(setValue) : null;
-              return (
-                <button
-                  type="button"
-                  key={id}
-                  className={`nh3d-invs-slot${object ? " is-filled" : ""}${targetClass(target, valid)}${editedSet ? " is-set-editing" : ""}`}
-                  style={{ gridColumn: column, gridRow: row }}
-                  data-invs-drop={`slot:${id}`}
-                  {...turnsAttr(target)}
-                  aria-label={`${slotLabel(id)}: ${object ? name(object) : strings.emptySlot}`}
-                  onClick={(event) => {
-                    if (editedSet && editingSet !== null) {
-                      writeSet(editingSet, cycleSetSlot(editedSet, id, inventory));
-                      return;
-                    }
-                    activate(target, object ? { kind: "pack", object } : null, event.detail > 0);
-                  }}
-                  onFocus={() => object && setFocused(object)}
-                >
-                  {editedSet ? (
-                    setObject ? renderItem({ kind: "pack", object: setObject }, " is-set-preview")
-                      : <span className="nh3d-invs-set-mark">{setValue === "empty" ? strings.setSlotEmpty : strings.setSlotIgnore}</span>
-                  ) : object ? renderItem({ kind: "pack", object }) : null}
-                  <span className="nh3d-invs-slot-label">{slotLabel(id)}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="nh3d-invs-equipment-actions">
-            <button type="button" onClick={() => controller?.runInventoryOperation({ op: "swap" })}>{strings.swap}</button>
-            <button
-              type="button"
-              aria-pressed={inventory.twoWeapon}
-              onClick={() => controller?.runInventoryOperation({ op: "twoweapon" })}
-            >
-              {strings.twoWeapon}
-            </button>
-          </div>
         </section>
 
         <div className="nh3d-invs-side">

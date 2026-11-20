@@ -148,9 +148,11 @@ describe("InventoryScreen", () => {
     expect(render({ ...inventory, floorHidden: true })).toContain("You can&#x27;t see what lies here.");
   });
 
-  it("shows six equipment set buttons, empty ones offering to save", () => {
+  it("shows three equipment set buttons under a label, empty ones offering to save", () => {
     const html = render();
-    expect(html.match(/class="nh3d-invs-set( |")/g)).toHaveLength(6);
+    expect(html.match(/class="nh3d-invs-set( |")/g)).toHaveLength(3);
+    expect(html).toContain('<div class="nh3d-invs-sets-head">Equipment sets</div>');
+    expect(html).toContain('aria-label="Swap weapons"');
     expect(html).toContain("Empty: click to save what you wear");
   });
 

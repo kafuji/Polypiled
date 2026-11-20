@@ -28,7 +28,7 @@ export interface EquipmentSet {
   readonly slots: Partial<Record<EquipmentSlotId, EquipmentSetSlot>>;
 }
 
-export const EQUIPMENT_SET_COUNT = 6;
+export const EQUIPMENT_SET_COUNT = 3;
 
 const STORAGE_KEY = "nh3d.equipmentSets.v1";
 const MAX_GAMES = 20;
