@@ -229,8 +229,10 @@
   height: calc(var(--invs-cell) + var(--invs-name-h));
   padding-top: 3px;
 
-  &.is-equipped .nh3d-invs-item {
-    opacity: 0.45;
+  /* worn or wielded: a bright frame, the item itself left as it is */
+  &.is-equipped:not(.is-hover-target):not(.is-valid-target):not(.is-held) {
+    border: 2px solid rgba(102, 204, 255, 0.95);
+    box-shadow: 0 0 6px rgba(102, 204, 255, 0.55), inset 0 0 6px rgba(102, 204, 255, 0.3);
   }
 
   &.is-held {
