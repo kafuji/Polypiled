@@ -27,8 +27,8 @@ export function createEngineUiAdapter(): Nethack3DEngineUIAdapter {
     setLoadingVisible(visible: boolean): void {
       useGameStore.getState().setLoadingVisible(visible);
     },
-    setGameMessages(messages: string[]): void {
-      useGameStore.getState().setGameMessages(messages);
+    setGameMessages(messages: string[], turns?: readonly (number | null)[]): void {
+      useGameStore.getState().setGameMessages(messages, turns);
     },
     pushFloatingMessage(message: string): void {
       useGameStore.getState().pushFloatingMessage(message);

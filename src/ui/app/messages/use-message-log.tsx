@@ -1,8 +1,12 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
-  type CSSProperties
+  useRef,
+  type CSSProperties,
+  type ReactNode
 } from "react";
+import { useGameStore } from "../../../state/gameStore";
 import type {
   Nh3dClientOptions
 } from "../../../game/ui-types";
@@ -107,44 +111,126 @@ export function useMessageLogView(dependencies: UseMessageLogViewDependencies) {
     statusText,
   } = dependencies;
 
+  const gameMessageTurns = useGameStore((state) => state.gameMessageTurns);
+
   const gameMessageLog =
     clientOptions.liveMessageLog ? (
-      <div
-        className="nh3d-message-log-scroll"
-        data-nh3d-overflow-glow
-        data-nh3d-overflow-glow-host="parent"
-        id="game-log"
-      >
-        {mobileTouchUiVisible && isMobileLogVisible
-          ? renderMobileDialogCloseButton(
-            () => setIsMobileLogVisible(false),
-            t.dialogs.mobileActions.closeMessageLog,
-          )
-          : null}
-        {gameMessages.map((message, index) => (
-          <div key={`${index}-${message}`}><GameMessageText message={message} /></div>
-        ))}
-      </div>
+      <MessageLogScroll
+        closeButton={
+          mobileTouchUiVisible && isMobileLogVisible
+            ? renderMobileDialogCloseButton(
+              () => setIsMobileLogVisible(false),
+              t.dialogs.mobileActions.closeMessageLog,
+            )
+            : null
+        }
+        messages={gameMessages}
+        turns={gameMessageTurns}
+      />
     ) : null;
 
   const desktopGameMessageLog =
-    !isMobileViewport && isDesktopGameRunning ? (
+    !isMobileViewport && isDesktopGameRunning && gameMessageLog ? (
       // nh3d-plus: drag-resizable boxed log (the terminal gutter stays fixed).
       <ResizableDesktopLogPanel
         className={`top-left-ui with-stats${terminalDesktopGutterVisible
           ? " nh3d-terminal-log-gutter-panel"
           : ""
           }`}
-        resizable={!terminalDesktopGutterVisible && gameMessageLog !== null}
+        resizable={!terminalDesktopGutterVisible}
       >
-        <div id="game-status">{translateRuntimeText(statusText, locale)}</div>
-        {gameMessageLog ? (
-          <div className="nh3d-overflow-glow-frame">{gameMessageLog}</div>
-        ) : null}
+        <div className="nh3d-overflow-glow-frame">{gameMessageLog}</div>
       </ResizableDesktopLogPanel>
+    ) : null;
+
+  // The player-position line sits at the very bottom of the screen, apart from the log.
+  const desktopStatusLine =
+    !isMobileViewport && isDesktopGameRunning && statusText.trim() ? (
+      <div id="game-status">{translateRuntimeText(statusText, locale)}</div>
     ) : null;
   return {
     gameMessageLog,
     desktopGameMessageLog,
+    desktopStatusLine,
   } as const;
+}
+
+// Stay pinned to the newest line unless the reader scrolled up to look back.
+const stickToBottomThresholdPx = 24;
+
+interface MessageLogScrollProps {
+  readonly closeButton: ReactNode;
+  /** Newest first, as the engine keeps them. */
+  readonly messages: readonly string[];
+  /** Turn of each entry of `messages` (same order). */
+  readonly turns: readonly (number | null)[];
+}
+
+/** Message log, oldest at the top and each new line added at the bottom. */
+function MessageLogScroll({ closeButton, messages, turns }: MessageLogScrollProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottomRef = useRef(true);
+
+  const scrollToBottom = (): void => {
+    const element = scrollRef.current;
+    if (element && stickToBottomRef.current) {
+      element.scrollTop = element.scrollHeight;
+    }
+  };
+
+  useLayoutEffect(scrollToBottom, [messages]);
+
+  // Resizing the panel (drag handle, mobile expand/collapse) keeps the newest line in view.
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    const observer = new ResizeObserver(scrollToBottom);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleScroll = (): void => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+    stickToBottomRef.current =
+      element.scrollHeight - element.scrollTop - element.clientHeight <=
+      stickToBottomThresholdPx;
+  };
+
+  const lines: JSX.Element[] = [];
+  let previousTurn: number | null = null;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    const turn = turns[index] ?? null;
+    // Several lines from one turn show the number once, on the first of them.
+    const turnStarts = turn !== null && turn !== previousTurn;
+    previousTurn = turn;
+    lines.push(
+      <div
+        className={`nh3d-message-log-line${turnStarts ? " nh3d-message-log-turn-start" : ""}`}
+        key={`${index}-${message}`}
+      >
+        <span className="nh3d-message-log-turn">{turnStarts ? turn : ""}</span>
+        <span className="nh3d-message-log-text"><GameMessageText message={message} /></span>
+      </div>,
+    );
+  }
+
+  return (
+    <div
+      className="nh3d-message-log-scroll"
+      data-nh3d-overflow-glow
+      data-nh3d-overflow-glow-host="parent"
+      id="game-log"
+      onScroll={handleScroll}
+      ref={scrollRef}
+    >
+      {closeButton}
+      {lines}
+    </div>
+  );
 }

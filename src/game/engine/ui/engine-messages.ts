@@ -6,6 +6,7 @@ import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "../rendering/entity-billboards";
 import type { ExtendedCommands } from "./extended-commands";
 import type { LevelTerrainCache } from "../world/level-terrain-cache";
+import type { PlayerStatus } from "./player-status";
 import type { PositionSelection } from "../input/position-selection";
 import type { PromptDialogs } from "./prompt-dialogs";
 import type { QuestionMenus } from "./question-menus";
@@ -43,6 +44,10 @@ export interface EngineMessagesDependencies {
     LevelTerrainCache,
     "parseTileStateSignature"
   >;
+  readonly playerStatus: Pick<
+    PlayerStatus,
+    "playerStats"
+  >;
   readonly positionSelection: Pick<
     PositionSelection,
     "positionInputModeActive"
@@ -74,6 +79,8 @@ export class EngineMessages {
   constructor(private readonly dependencies: EngineMessagesDependencies) {}
 
   gameMessages: string[] = [];
+  /** Game turn when each entry of `gameMessages` arrived (same order). */
+  gameMessageTurns: (number | null)[] = [];
 
   isLoggingEnabled(): boolean {
     return isLoggingEnabled();
@@ -88,7 +95,17 @@ export class EngineMessages {
     return next;
   }
 
+  /** A message from the game itself; it is stamped with the current turn. */
   addGameMessage(message: string): void {
+    this.addMessage(message, this.currentTurn());
+  }
+
+  /** A client/system notice (mode switches, errors); its turn column stays blank. */
+  addSystemMessage(message: string): void {
+    this.addMessage(message, null);
+  }
+
+  private addMessage(message: string, turn: number | null): void {
     if (!message || message.trim() === "") return;
     const suppressMissedAttackSound =
       this.dependencies.combatAttribution.consumeFpsHeldWeaponMissedAttackMessageSoundSuppression(message);
@@ -97,13 +114,35 @@ export class EngineMessages {
     });
 
     this.gameMessages.unshift(message);
+    this.gameMessageTurns.unshift(turn);
     if (this.gameMessages.length > 100) {
       this.gameMessages.pop();
+      this.gameMessageTurns.pop();
     }
 
-    this.dependencies.engineState.uiAdapter.setGameMessages([...this.gameMessages]);
+    this.publishGameMessages();
 
     this.dependencies.promptDialogs.showFloatingGameMessage(message);
+  }
+
+  clearGameMessages(): void {
+    this.gameMessages = [];
+    this.gameMessageTurns = [];
+    this.publishGameMessages();
+  }
+
+  private publishGameMessages(): void {
+    this.dependencies.engineState.uiAdapter.setGameMessages(
+      [...this.gameMessages],
+      [...this.gameMessageTurns],
+    );
+  }
+
+  private currentTurn(): number | null {
+    const time = this.dependencies.playerStatus.playerStats.time;
+    return typeof time === "number" && Number.isFinite(time) && time > 0
+      ? Math.trunc(time)
+      : null;
   }
 
   isLikelyNameInputForDebug(input: string): boolean {

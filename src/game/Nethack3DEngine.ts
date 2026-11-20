@@ -182,8 +182,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.playerStatus.resetForNewGame();
     this.systems.playerMovement.playerPos = { x: 0, y: 0 };
     this.systems.playerMovement.hasSeenPlayerPosition = false;
-    this.systems.engineMessages.gameMessages = [];
-    this.systems.engineState.uiAdapter.setGameMessages([]);
+    this.systems.engineMessages.clearGameMessages();
     this.systems.engineState.uiAdapter.setPositionRequest(null);
     this.systems.promptDialogs.updateConnectionStatus("Disconnected", "disconnected");
     this.systems.promptDialogs.setLoadingVisible(false);
@@ -901,7 +900,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
       this.systems.promptDialogs.updateStatus("Local NetHack runtime started");
       // this.addGameMessage("Local NetHack runtime started");
       if (this.systems.movementInput.isFpsMode()) {
-        this.systems.engineMessages.addGameMessage(
+        this.systems.engineMessages.addSystemMessage(
           "FPS mode active: WASD move, F search, left-click fire, right-click look/interact.",
         );
       }
@@ -918,7 +917,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
       console.error("Failed to start local NetHack runtime:", error);
       this.systems.promptDialogs.updateConnectionStatus("Error", "error");
       this.systems.promptDialogs.updateStatus("Failed to start local NetHack runtime");
-      this.systems.engineMessages.addGameMessage(startupFailureMessage);
+      this.systems.engineMessages.addSystemMessage(startupFailureMessage);
       // Drop the startup overlay on failure so the underlying error UI stays
       // readable instead of leaving the app blurred behind the loading state.
       this.systems.promptDialogs.setLoadingVisible(false);
@@ -1501,7 +1500,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         console.log(
           `🔄 Area refresh completed: ${data.tilesRefreshed} tiles refreshed around (${data.centerX}, ${data.centerY})`,
         );
-        this.systems.engineMessages.addGameMessage(
+        this.systems.engineMessages.addSystemMessage(
           `Refreshed ${data.tilesRefreshed} tiles around (${data.centerX}, ${data.centerY})`,
         );
         break;
@@ -1520,7 +1519,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         this.clearScene();
         this.systems.tileUpdates.pendingPlayerTileRefreshOnNextPosition = true;
         if (data.message) {
-          this.systems.engineMessages.addGameMessage(data.message);
+          this.systems.engineMessages.addSystemMessage(data.message);
         }
         break;
 

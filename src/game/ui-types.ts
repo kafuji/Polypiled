@@ -1460,7 +1460,8 @@ export interface Nethack3DEngineUIAdapter {
   setStatus(status: string): void;
   setConnectionStatus(status: string, state: NethackConnectionState): void;
   setLoadingVisible(visible: boolean): void;
-  setGameMessages(messages: string[]): void;
+  /** Newest first; `turns[i]` is the game turn when `messages[i]` arrived. */
+  setGameMessages(messages: string[], turns?: readonly (number | null)[]): void;
   pushFloatingMessage(message: string): void;
   setPlayerStats(stats: PlayerStatsSnapshot): void;
   setQuestion(state: QuestionDialogState | null): void;

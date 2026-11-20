@@ -59,6 +59,8 @@ type GameStore = {
   connectionState: NethackConnectionState;
   connectionText: string;
   gameMessages: string[];
+  /** Game turn of each entry of `gameMessages` (same order); null when unknown. */
+  gameMessageTurns: readonly (number | null)[];
   floatingMessages: FloatingMessage[];
   floatingMessageFadeDelayMs: number;
   floatingMessageFadeDurationMs: number;
@@ -90,7 +92,7 @@ type GameStore = {
   setUiBlockingVisible: (visible: boolean) => void;
   setStatusText: (text: string) => void;
   setConnectionStatus: (text: string, state: NethackConnectionState) => void;
-  setGameMessages: (messages: string[]) => void;
+  setGameMessages: (messages: string[], turns?: readonly (number | null)[]) => void;
   pushFloatingMessage: (message: string) => void;
   removeFloatingMessage: (id: number) => void;
   setFloatingMessageTiming: (delayMs: number, durationMs: number) => void;
@@ -127,6 +129,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   connectionState: "disconnected",
   connectionText: "Disconnected",
   gameMessages: [],
+  gameMessageTurns: [],
   floatingMessages: [],
   floatingMessageFadeDelayMs: defaultFloatingMessageFadeDelayMs,
   floatingMessageFadeDurationMs: defaultFloatingMessageFadeDurationMs,
@@ -181,9 +184,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       connectionState: state,
     });
   },
-  setGameMessages: (messages) => {
-    if (shallow(get().gameMessages, messages)) return;
-    set({ gameMessages: messages });
+  setGameMessages: (messages, turns = []) => {
+    if (shallow(get().gameMessages, messages) && shallow(get().gameMessageTurns, turns)) return;
+    set({ gameMessages: messages, gameMessageTurns: turns });
   },
   pushFloatingMessage: (message) => {
     const trimmed = (message || "").replace(/\s+/g, " ").trim();

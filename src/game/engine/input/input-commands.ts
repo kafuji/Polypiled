@@ -60,7 +60,7 @@ export interface InputCommandsDependencies {
   >;
   readonly engineMessages: Pick<
     EngineMessages,
-    "addGameMessage"
+    "addSystemMessage"
     | "logClickLookTileDebug"
     | "logNameInputTrace"
   >;
@@ -762,7 +762,7 @@ export class InputCommands {
     const modeLabel = normalized ? "numpad" : "hjklyubn";
     console.log(`🎮 Number pad mode set to ${modeLabel}`);
     if (options.announce !== false) {
-      this.dependencies.engineMessages.addGameMessage(`Number pad mode: ${modeLabel}`);
+      this.dependencies.engineMessages.addSystemMessage(`Number pad mode: ${modeLabel}`);
     }
     this.dependencies.engineState.uiAdapter.setNumberPadModeEnabled(normalized);
   }

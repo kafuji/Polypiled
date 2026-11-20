@@ -32,7 +32,7 @@ export interface PromptDialogsDependencies {
   >;
   readonly engineMessages: Pick<
     EngineMessages,
-    "addGameMessage"
+    "addSystemMessage"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -205,7 +205,7 @@ export class PromptDialogs {
     this.updateConnectionStatus("Game ended", "error");
     this.updateStatus("Game ended");
     this.setLoadingVisible(false);
-    this.dependencies.engineMessages.addGameMessage(plusEngineStrings.gameEnded);
+    this.dependencies.engineMessages.addSystemMessage(plusEngineStrings.gameEnded);
     this.setNewGamePrompt(true, reason);
   }
 
@@ -227,7 +227,7 @@ export class PromptDialogs {
     console.error("Runtime error:", normalizedMessage);
     this.updateConnectionStatus("Error", "error");
     this.updateStatus("Runtime error");
-    this.dependencies.engineMessages.addGameMessage(normalizedMessage);
+    this.dependencies.engineMessages.addSystemMessage(normalizedMessage);
   }
 
   isUiInputBlocked(): boolean {
@@ -331,7 +331,7 @@ export class PromptDialogs {
         },
       );
     } else {
-      this.dependencies.engineMessages.addGameMessage(plusEngineStrings.noRecentMessage);
+      this.dependencies.engineMessages.addSystemMessage(plusEngineStrings.noRecentMessage);
     }
   }
 

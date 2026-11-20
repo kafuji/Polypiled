@@ -1855,6 +1855,7 @@ export function useAppModel() {
   const {
     gameMessageLog,
     desktopGameMessageLog,
+    desktopStatusLine,
   } = useMessageLogView({
     get clientOptions() { return clientOptions; },
     get terminalDesktopGutterVisible() { return terminalDesktopGutterVisible; },
@@ -2056,6 +2057,7 @@ export function useAppModel() {
     desktopMessageLog: {
       terminalDesktopGutterVisible,
       desktopGameMessageLog,
+      desktopStatusLine,
     },
     mobileMessageLog: {
       mobileTouchUiVisible,

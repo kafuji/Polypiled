@@ -854,6 +854,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get entityBillboards() { return entityBillboards; },
     get extendedCommands() { return extendedCommands; },
     get levelTerrainCache() { return levelTerrainCache; },
+    get playerStatus() { return playerStatus; },
     get positionSelection() { return positionSelection; },
     get promptDialogs() { return promptDialogs; },
     get questionMenus() { return questionMenus; },
