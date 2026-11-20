@@ -138,6 +138,22 @@ describe("InventoryScreen", () => {
     }
   });
 
+  it("lists what lies here as a drop target, or says it cannot be seen", () => {
+    const here = { ...object("x"), letter: null, weight: null, name: "a large box", container: { locked: null, contents: null, more: 0, tooDeep: false } };
+    const html = render({ ...inventory, floor: [here], floorCount: 3 });
+    expect(html).toContain('data-invs-drop="floor"');
+    expect(html).toContain('aria-label="a large box"');
+    expect(html).toContain("2 more");
+    expect(html).toContain("Pick up all");
+    expect(render({ ...inventory, floorHidden: true })).toContain("You can&#x27;t see what lies here.");
+  });
+
+  it("shows six equipment set buttons, empty ones offering to save", () => {
+    const html = render();
+    expect(html.match(/class="nh3d-invs-set( |")/g)).toHaveLength(6);
+    expect(html).toContain("Empty: click to save what you wear");
+  });
+
   it("names the alternate slot the off hand while two-weaponing", () => {
     expect(render({ ...inventory, twoWeapon: true })).toContain("Off hand");
     expect(render()).toContain("Alternate");

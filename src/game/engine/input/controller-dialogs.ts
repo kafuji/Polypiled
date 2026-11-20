@@ -36,6 +36,8 @@ export interface ControllerDialogsDependencies {
   readonly promptDialogs: Pick<
     PromptDialogs,
     "isInventoryDialogOpen"
+    | "isInventoryScreenVisible"
+    | "hideInventoryScreen"
   >;
   readonly questionMenus: Pick<
     QuestionMenus,
@@ -451,7 +453,7 @@ export class ControllerDialogs {
   getTopControllerOverlayElement(): HTMLElement | null {
     const candidates = Array.from(
       document.querySelectorAll<HTMLElement>(
-        ".nh3d-dialog.is-visible, #position-dialog.is-visible, .nh3d-context-menu.is-visible, .nh3d-fps-crosshair-context.is-visible, .nh3d-mobile-actions-sheet",
+        ".nh3d-dialog.is-visible, #position-dialog.is-visible, .nh3d-context-menu.is-visible, .nh3d-fps-crosshair-context.is-visible, .nh3d-mobile-actions-sheet, .nh3d-inventory-screen, .nh3d-invs-menu",
       ),
     );
     if (candidates.length === 0) {
@@ -1031,6 +1033,18 @@ export class ControllerDialogs {
 
     if (snapshot.pressed.pause_menu) {
       this.dependencies.controllerGameplay.dispatchControllerKeyDown("Escape", "Escape");
+    }
+
+    // the inventory screen: the inventory button closes it, search opens
+    // the focused item's menu (the screen reads the same keys as the keyboard)
+    if (this.dependencies.promptDialogs.isInventoryScreenVisible && !this.dependencies.questionMenus.isInQuestion) {
+      if (snapshot.pressed.open_inventory) {
+        this.dependencies.promptDialogs.hideInventoryScreen();
+        return;
+      }
+      if (snapshot.pressed.search) {
+        this.dependencies.controllerGameplay.dispatchControllerKeyDown("m", "KeyM");
+      }
     }
 
     if (this.handleControllerDialogSliderInput(snapshot, deltaSeconds)) {

@@ -9,6 +9,11 @@ import {
   planUnequip,
   slotsFor,
   weightSummary,
+  estimateTurns,
+  planContainer,
+  planDrop,
+  planNested,
+  planPickup,
 } from "./model";
 
 function object(letter: string, overrides: Partial<InventoryObject> = {}): InventoryObject {
@@ -156,5 +161,48 @@ describe("weight summary", () => {
       remaining: null,
       fill: 1,
     });
+  });
+});
+
+describe("floor, containers and turn estimates", () => {
+  it("estimates turns from armor delays, with #adjust free", () => {
+    const cloak = { ...armor("c", "cloak", InventoryWornMask.cloak), armorDelay: 0 };
+    const suit = { ...armor("s", "bodyArmor"), armorDelay: 5 };
+    const inventory = state([cloak, suit]);
+    expect(estimateTurns(inventory, [
+      { op: "takeoff", item: "c" },
+      { op: "wear", item: "s" },
+      { op: "wear", item: "c" },
+      { op: "adjust", from: "s", to: "z" },
+    ])).toBe(1 + 6 + 1);
+  });
+
+  it("drops worn things after taking them off", () => {
+    const helmet = armor("h", "helmet", InventoryWornMask.helmet);
+    expect(planDrop(helmet).operations).toEqual([
+      { op: "takeoff", item: "h" },
+      { op: "drop", items: [{ id: helmet.id, count: 0 }] },
+    ]);
+    expect(planDrop(object("a", { quantity: 5 }), 2).operations).toEqual([{ op: "drop", items: [{ id: 97, count: 2 }] }]);
+  });
+
+  it("picks up with a count only for a single stack", () => {
+    const a = object("a", { letter: null });
+    const b = object("b", { letter: null });
+    expect(planPickup([a], 3).operations).toEqual([{ op: "pickup", items: [{ id: a.id, count: 3 }] }]);
+    expect(planPickup([a, b], 3).operations).toEqual([{ op: "pickup", items: [{ id: a.id, count: 0 }, { id: b.id, count: 0 }] }]);
+  });
+
+  it("reaches into a bag inside a bag in three actions", () => {
+    const outer = object("o");
+    const inner = object("i", { letter: null });
+    expect(planNested(outer, inner, { in: [5] }).operations).toEqual([
+      { op: "loot", container: outer.id, out: [inner.id], in: [] },
+      { op: "loot", container: inner.id, out: [], in: [5] },
+      { op: "loot", container: outer.id, out: [], in: [inner.id] },
+    ]);
+    expect(planContainer({ containerId: 3, out: [1], in: [2] }).operations).toEqual([
+      { op: "loot", container: 3, out: [1], in: [2] },
+    ]);
   });
 });

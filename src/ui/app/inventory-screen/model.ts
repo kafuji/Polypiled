@@ -333,3 +333,104 @@ export function objectsByLetter(state: InventoryState): Map<string, InventoryObj
   for (const object of state.objects) if (object.letter) map.set(object.letter, object);
   return map;
 }
+
+/** Shared with the equipment sets (equipment-sets.ts). */
+export const takeOffOperation = takeOff;
+export function putOnOperations(object: InventoryObject, slot: EquipmentSlotId, state: InventoryState): InventoryOperation[] {
+  return putOn(object, slot, state);
+}
+
+function findCarried(state: InventoryState, letter: string): InventoryObject | null {
+  return state.objects.find((object) => object.letter === letter) ?? null;
+}
+
+/**
+ * Game turns a plan should take, as far as the hero can tell: one per
+ * command, plus the delay of armor being put on or taken off; #adjust takes
+ * none. An estimate (speed, interruptions and the game's choices change it).
+ */
+export function estimateTurns(state: InventoryState, operations: readonly InventoryOperation[]): number {
+  let turns = 0;
+  for (const operation of operations) {
+    switch (operation.op) {
+      case "adjust":
+        break;
+      case "wear":
+      case "takeoff": {
+        const object = findCarried(state, operation.item);
+        turns += 1 + (object?.armorDelay ?? 0);
+        break;
+      }
+      default:
+        turns += 1;
+    }
+  }
+  return turns;
+}
+
+/** Picking up something here; count 0 is the whole stack. */
+export function planPickup(objects: readonly InventoryObject[], count = 0): DropPlan {
+  if (objects.length === 0) return noPlan;
+  return {
+    operations: [{ op: "pickup", items: objects.map((object) => ({ id: object.id, count: objects.length === 1 ? count : 0 })) }],
+    removes: [],
+  };
+}
+
+/** Dropping a carried object here; worn things come off first. */
+export function planDrop(object: InventoryObject, count = 0): DropPlan {
+  const operations: InventoryOperation[] = [];
+  if (isEquipped(object)) {
+    const off = planUnequip(object);
+    if (off.unsupported) return off;
+    operations.push(...off.operations);
+  }
+  operations.push({ op: "drop", items: [{ id: object.id, count }] });
+  return { operations, removes: [] };
+}
+
+/** What waits to move when the open container's changes are made. */
+export interface ContainerStaging {
+  readonly containerId: number;
+  /** Contents to take out. */
+  readonly out: readonly number[];
+  /** Carried objects to put in. */
+  readonly in: readonly number[];
+}
+
+/** The container's one action: take out, then put in (nothing staged opens it). */
+export function planContainer(staging: ContainerStaging): DropPlan {
+  return {
+    operations: [{ op: "loot", container: staging.containerId, out: [...staging.out], in: [...staging.in] }],
+    removes: [],
+  };
+}
+
+/**
+ * A bag inside a bag cannot be opened where it is: take the inner one out,
+ * use it, put it back (three actions).
+ */
+export function planNested(
+  outer: InventoryObject,
+  inner: InventoryObject,
+  change: { readonly out?: readonly number[]; readonly in?: readonly number[] },
+): DropPlan {
+  return {
+    operations: [
+      { op: "loot", container: outer.id, out: [inner.id], in: [] },
+      { op: "loot", container: inner.id, out: [...(change.out ?? [])], in: [...(change.in ?? [])] },
+      { op: "loot", container: outer.id, out: [], in: [inner.id] },
+    ],
+    removes: [],
+  };
+}
+
+/** Anything that looks like a container (an unidentified bag of tricks too). */
+export function isContainerLike(object: InventoryObject): boolean {
+  return object.container !== null;
+}
+
+/** Finds a carried or floor container by id. */
+export function findContainer(state: InventoryState, id: number): InventoryObject | null {
+  return [...state.objects, ...state.floor].find((object) => object.id === id && object.container) ?? null;
+}
