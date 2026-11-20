@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type * as React from "react";
 import { useI18n } from "../../../i18n";
 import { translateInventoryItem } from "../../../i18n/inventory-text";
@@ -315,6 +316,55 @@ interface ConfirmPrompt {
 
 const emptySets: (EquipmentSet | null)[] = Array.from({ length: EQUIPMENT_SET_COUNT }, () => null);
 
+const MENU_MARGIN_PX = 8;
+
+/**
+ * The item menu, drawn on the body: the screen's frame neither clips nor
+ * shifts it. Its actions wrap into columns, and it is moved back inside
+ * the window when it would stick out.
+ */
+function ItemMenu({ x, y, title, onDismiss, children }: {
+  x: number;
+  y: number;
+  title: string;
+  onDismiss: () => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [position, setPosition] = useState({ left: x, top: y });
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const { width, height } = element.getBoundingClientRect();
+    const left = Math.max(MENU_MARGIN_PX, Math.min(x, window.innerWidth - width - MENU_MARGIN_PX));
+    const top = y + height + MENU_MARGIN_PX > window.innerHeight
+      ? Math.max(MENU_MARGIN_PX, Math.min(y - height, window.innerHeight - height - MENU_MARGIN_PX))
+      : y;
+    setPosition({ left, top });
+  }, [x, y]);
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) onDismiss();
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => window.removeEventListener("pointerdown", onPointerDown, true);
+  }, [onDismiss]);
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div
+      ref={ref}
+      className="nh3d-invs-menu"
+      role="menu"
+      style={{ left: position.left, top: position.top }}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="nh3d-invs-menu-title">{title}</div>
+      <div className="nh3d-invs-menu-actions">{children}</div>
+    </div>,
+    document.body,
+  );
+}
+
 export function InventoryScreenView({
   inventory,
   controller,
@@ -335,7 +385,9 @@ export function InventoryScreenView({
   const name = useCallback((object: InventoryObject) => translateInventoryItem(object.name, locale), [locale]);
   const byLetter = useMemo(() => objectsByLetter(inventory), [inventory]);
   const gold = byLetter.get(goldLetter) ?? null;
+  /** Chosen by a click or focus; the detail line follows the pointer over others. */
   const [focused, setFocused] = useState<InventoryObject | null>(null);
+  const [hovered, setHovered] = useState<InventoryObject | null>(null);
   const [held, setHeld] = useState<DragSource | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
@@ -529,13 +581,20 @@ export function InventoryScreenView({
     window.addEventListener("pointercancel", endPress, { once: true });
   };
 
-  // tap / Enter: pick up, then tap / Enter on a slot, letter, the floor or the open container to place
-  const activate = (target: DropTarget, source: DragSource | null) => {
+  // A click or tap only chooses (moving starts with a drag). Enter or the
+  // pad's confirm (a click with no pointer, detail 0) picks up, then places
+  // on a slot, letter, the floor or the open container.
+  const activate = (target: DropTarget, source: DragSource | null, viaPointer: boolean) => {
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
       return;
     }
     setMenu(null);
+    if (viaPointer) {
+      setHeld(null);
+      setFocused(source?.object ?? null);
+      return;
+    }
     if (held && heldObject) {
       if (source && source.object.id === heldObject.id) {
         setHeld(null);
@@ -652,7 +711,8 @@ export function InventoryScreenView({
   const hintPlan = hint?.kind === "plan" ? hint.plan : null;
   const hintTurns = hintPlan && !hintPlan.unsupported ? estimateTurns(inventory, hintPlan.operations) : null;
   const validSlots = activeSource?.kind === "pack" ? new Set(slotsFor(activeSource.object)) : null;
-  const detail = activeSource?.object ?? focusedObject;
+  const hoveredObject = hovered ? findObject(hovered.id) : null;
+  const detail = activeSource?.object ?? hoveredObject ?? focusedObject;
   const weight = weightSummary(inventory);
 
   const renderItem = (source: DragSource, extraClass = "") => {
@@ -665,7 +725,7 @@ export function InventoryScreenView({
       : renderTilePreview(object.tileIndex);
     return (
       <span
-        className={`${itemClasses(object)}${extraClass}`}
+        className={`${itemClasses(object)}${extraClass}${focusedObject?.id === object.id ? " is-selected" : ""}`}
         data-erosion={object.eroded?.kind}
         data-erosion2={object.eroded2?.kind}
         data-erosion-level={erosionLevel || undefined}
@@ -676,7 +736,8 @@ export function InventoryScreenView({
           event.preventDefault();
           openMenuAt(object, event.clientX, event.clientY);
         }}
-        onPointerEnter={() => setFocused(object)}
+        onPointerEnter={() => setHovered(object)}
+        onPointerLeave={() => setHovered(null)}
       >
         <span className="nh3d-invs-item-tile">
           {tile ?? <span className="nh3d-invs-item-symbol">{classSymbols[object.objectClass] ?? "?"}</span>}
@@ -801,12 +862,12 @@ export function InventoryScreenView({
                   data-invs-drop={`slot:${id}`}
                   {...turnsAttr(target)}
                   aria-label={`${slotLabel(id)}: ${object ? name(object) : strings.emptySlot}`}
-                  onClick={() => {
+                  onClick={(event) => {
                     if (editedSet && editingSet !== null) {
                       writeSet(editingSet, cycleSetSlot(editedSet, id, inventory));
                       return;
                     }
-                    activate(target, object ? { kind: "pack", object } : null);
+                    activate(target, object ? { kind: "pack", object } : null, event.detail > 0);
                   }}
                   onFocus={() => object && setFocused(object)}
                 >
@@ -853,7 +914,7 @@ export function InventoryScreenView({
                     data-invs-drop={`letter:${letter}`}
                     {...turnsAttr(target)}
                     aria-label={object ? `${letter} - ${name(object)}` : strings.letter(letter)}
-                    onClick={() => activate(target, object ? { kind: "pack", object } : null)}
+                    onClick={(event) => activate(target, object ? { kind: "pack", object } : null, event.detail > 0)}
                     onFocus={() => object && setFocused(object)}
                   >
                     <span className="nh3d-invs-cell-letter" aria-hidden="true">{letter}</span>
@@ -866,7 +927,7 @@ export function InventoryScreenView({
                 className={`nh3d-invs-cell nh3d-invs-cell-gold${gold ? " is-filled" : ""}`}
                 data-invs-drop={`letter:${goldLetter}`}
                 aria-label={gold ? name(gold) : strings.letter(goldLetter)}
-                onClick={() => activate({ kind: "letter", letter: goldLetter }, gold ? { kind: "pack", object: gold } : null)}
+                onClick={(event) => activate({ kind: "letter", letter: goldLetter }, gold ? { kind: "pack", object: gold } : null, event.detail > 0)}
                 onFocus={() => gold && setFocused(gold)}
               >
                 <span className="nh3d-invs-cell-letter" aria-hidden="true">$</span>
@@ -901,7 +962,7 @@ export function InventoryScreenView({
                     key={object.id}
                     className={`nh3d-invs-cell is-filled${staging?.containerId === object.id ? " is-open-container" : ""}`}
                     aria-label={name(object)}
-                    onClick={() => activate({ kind: "floor" }, { kind: "floor", object })}
+                    onClick={(event) => activate({ kind: "floor" }, { kind: "floor", object }, event.detail > 0)}
                     onFocus={() => setFocused(object)}
                   >
                     {renderItem({ kind: "floor", object })}
@@ -953,13 +1014,13 @@ export function InventoryScreenView({
                         data-invs-drop={object.container ? `inner:${object.id}` : undefined}
                         {...(object.container ? turnsAttr({ kind: "inner", innerId: object.id }) : {})}
                         aria-label={name(object)}
-                        onClick={() => {
+                        onClick={(event) => {
                           // marked to come out: click to leave it in
                           if (!held && staging && stagedOut.has(object.id)) {
                             setStaging({ ...staging, out: staging.out.filter((other) => other !== object.id) });
                             return;
                           }
-                          activate(object.container ? { kind: "inner", innerId: object.id } : { kind: "container" }, { kind: "content", object, containerId: openContainer.id });
+                          activate(object.container ? { kind: "inner", innerId: object.id } : { kind: "container" }, { kind: "content", object, containerId: openContainer.id }, event.detail > 0);
                         }}
                         onFocus={() => setFocused(object)}
                       >
@@ -973,7 +1034,7 @@ export function InventoryScreenView({
                               key={inside.id}
                               className="nh3d-invs-cell is-filled is-inner"
                               aria-label={name(inside)}
-                              onClick={() => activate({ kind: "container" }, { kind: "inner", object: inside, containerId: openContainer.id, innerId: object.id })}
+                              onClick={(event) => activate({ kind: "container" }, { kind: "inner", object: inside, containerId: openContainer.id, innerId: object.id }, event.detail > 0)}
                               onFocus={() => setFocused(inside)}
                             >
                               {renderItem({ kind: "inner", object: inside, containerId: openContainer.id, innerId: object.id })}
@@ -1068,20 +1129,17 @@ export function InventoryScreenView({
         ) : null}
       </footer>
 
-      {ghost && dragSource ? (
-        <div className="nh3d-invs-ghost" style={{ left: ghost.x, top: ghost.y }} aria-hidden="true">
-          {renderItem(dragSource)}
-        </div>
-      ) : null}
+      {ghost && dragSource && typeof document !== "undefined"
+        ? createPortal(
+          <div className="nh3d-invs-ghost" style={{ left: ghost.x, top: ghost.y }} aria-hidden="true">
+            {renderItem(dragSource)}
+          </div>,
+          document.body,
+        )
+        : null}
 
       {menu ? (
-        <div
-          className="nh3d-invs-menu"
-          role="menu"
-          style={{ left: Math.min(menu.x, window.innerWidth - 200), top: Math.min(menu.y, window.innerHeight - 260) }}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="nh3d-invs-menu-title">{name(menu.object)}</div>
+        <ItemMenu x={menu.x} y={menu.y} title={name(menu.object)} onDismiss={() => setMenu(null)}>
           {isContainerLike(menu.object) ? (
             <button type="button" role="menuitem" autoFocus onClick={() => {
               setMenu(null);
@@ -1103,7 +1161,7 @@ export function InventoryScreenView({
                 {action.label}
               </button>
             ))}
-        </div>
+        </ItemMenu>
       ) : null}
     </div>
   );

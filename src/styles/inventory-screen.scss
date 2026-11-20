@@ -1,17 +1,21 @@
 /* Inventory screen (src/ui/app/inventory-screen): equipment slots, the 52
    letter slots and the carried weight. Effects show only what the game
    reports: BUC when known, erosion as the item's name says. */
-.nh3d-inventory-screen {
-  /* One cell size for the slots and the grid, as large as the window allows:
-     across, 3 slot columns and 13 letter columns with gaps and padding;
-     down, 5 rows of slots with their labels, the header, the buttons and the
-     detail line. */
+/* One cell size for the slots and the grid, as large as the window allows:
+   across, 3 slot columns and 13 letter columns with gaps and padding; down,
+   the slots, the grid, the floor and a container with the header and the
+   detail line. The drag icon, drawn outside the screen, uses it too. */
+.nh3d-inventory-screen,
+.nh3d-invs-ghost {
   --invs-gap: 6px;
   --invs-cell: clamp(
     40px,
     min(calc((100vw - 170px) / 16), calc((100vh - 300px) / 6.6)),
     128px
   );
+}
+
+.nh3d-inventory-screen {
   /* as large as its contents, centred: the cell size makes it big */
   position: fixed;
   top: 50%;
@@ -353,6 +357,12 @@
   justify-content: center;
 }
 
+/* the chosen item (a click only chooses; moving needs a drag) */
+.nh3d-invs-item.is-selected {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+}
+
 .nh3d-invs-item-symbol {
   font-size: 2.4em;
   font-weight: bold;
@@ -442,23 +452,34 @@
   pointer-events: none;
 }
 
+/* the item menu, on the body: actions in columns, never taller than the window */
 .nh3d-invs-menu {
   position: fixed;
   z-index: 2100;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 160px;
-  max-height: 60vh;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(34em, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
   overflow: auto;
   padding: 6px;
   border: 1px solid var(--nh3d-ui-border-strong);
   border-radius: 8px;
   background: var(--nh3d-ui-panel-bg-strong);
+  color: var(--nh3d-ui-text);
+  font-family: var(--nh3d-ui-font-family, "Courier New", monospace);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
 
   button {
     text-align: left;
+    white-space: nowrap;
   }
+}
+
+.nh3d-invs-menu-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(7.5em, auto));
+  gap: 3px;
+  margin-top: 4px;
 }
 
 .nh3d-invs-menu-title {
@@ -468,6 +489,14 @@
 }
 
 @media (max-width: 760px) {
+  .nh3d-invs-menu-actions {
+    grid-template-columns: repeat(2, minmax(7em, auto));
+  }
+
+  .nh3d-invs-ghost {
+    --invs-cell: clamp(22px, calc((100vw - 60px) / 13), 64px);
+  }
+
   /* stacked: the slots above the grid, sized by the width alone */
   .nh3d-inventory-screen {
     --invs-gap: 3px;
