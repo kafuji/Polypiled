@@ -775,7 +775,8 @@ nh3d_json_erosion(struct nh3d_json *js, const char *key, int level,
 static void nh3d_json_inventory_list(struct nh3d_json *, struct obj *, int);
 
 static void
-nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth)
+nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth,
+                           boolean carried)
 {
     int glyph = obj_to_glyph(obj, rn2_on_display_rng);
     int oclass = is_weptool(obj) ? WEAPON_CLASS : obj->oclass;
@@ -784,7 +785,7 @@ nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth)
 
     nh3d_json_raw(js, "{\"id\":");
     nh3d_json_int(js, (long) obj->o_id);
-    if (depth == 0) {
+    if (depth == 0 && carried) {
         let[0] = obj->invlet, let[1] = '\0';
         nh3d_json_raw(js, ",\"letter\":");
         nh3d_json_string(js, let);
@@ -803,12 +804,15 @@ nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth)
     if (obj->oclass == ARMOR_CLASS) {
         nh3d_json_raw(js, ",\"armor\":");
         nh3d_json_int(js, objects[obj->otyp].oc_armcat);
+        /* turns to put on or take off; look-alikes share it too */
+        nh3d_json_raw(js, ",\"delay\":");
+        nh3d_json_int(js, objects[obj->otyp].oc_delay);
     } else if (obj->otyp == BLINDFOLD || obj->otyp == TOWEL
                || obj->otyp == LENSES) {
         nh3d_json_raw(js, ",\"eyewear\":true");
     }
 
-    if (depth == 0) {
+    if (depth == 0 && carried) {
         long wt = obj->oclass == COIN_CLASS ? (obj->quan + 50L) / 100L
                                             : (long) obj->owt;
 
@@ -933,13 +937,44 @@ nh3d_json_inventory_list(struct nh3d_json *js, struct obj *chain, int depth)
         }
         if (listed++)
             nh3d_json_raw(js, ",");
-        nh3d_json_inventory_object(js, otmp, depth);
+        nh3d_json_inventory_object(js, otmp, depth, TRUE);
     }
     nh3d_json_raw(js, "]");
     if (more) {
         nh3d_json_raw(js, ",\"more\":");
         nh3d_json_int(js, more);
     }
+}
+
+/* what lies here, as the floor panel shows it, with ids and known
+   contents so the screen can pick things up and open floor containers */
+#define NH3D_INVENTORY_MAX_FLOOR 40
+
+static void
+nh3d_json_inventory_floor(struct nh3d_json *js)
+{
+    struct obj *otmp;
+    boolean hidden = Blind || u.uswallow || is_lava(u.ux, u.uy)
+                     || (is_pool(u.ux, u.uy) && !Underwater);
+    int listed = 0;
+    long count = 0;
+
+    nh3d_json_raw(js, ",\"floorHidden\":");
+    nh3d_json_raw(js, hidden ? "true" : "false");
+    nh3d_json_raw(js, ",\"floor\":[");
+    if (!hidden) {
+        for (otmp = svl.level.objects[u.ux][u.uy]; otmp;
+             otmp = otmp->nexthere) {
+            count++;
+            if (listed >= NH3D_INVENTORY_MAX_FLOOR)
+                continue;
+            if (listed++)
+                nh3d_json_raw(js, ",");
+            nh3d_json_inventory_object(js, otmp, 0, FALSE);
+        }
+    }
+    nh3d_json_raw(js, "],\"floorCount\":");
+    nh3d_json_int(js, count);
 }
 
 static void
@@ -959,8 +994,11 @@ nh3d_build_inventory(struct nh3d_json *js)
     nh3d_json_raw(js, u.twoweap ? "true" : "false");
     nh3d_json_raw(js, ",\"punished\":");
     nh3d_json_raw(js, Punished ? "true" : "false");
+    nh3d_json_raw(js, ",\"game\":");
+    nh3d_json_int(js, (long) ubirthday);
     nh3d_json_raw(js, ",\"objects\":");
     nh3d_json_inventory_list(js, gi.invent, 0);
+    nh3d_json_inventory_floor(js);
     nh3d_json_raw(js, "}");
 }
 
@@ -1029,7 +1067,47 @@ nh3d_publish_inventory(boolean force)
  * queued answer can ever run as a command of its own.
  */
 
-#define NH3D_INVOP_MAX 64
+#define NH3D_INVOP_MAX 2048
+#define NH3D_INVOP_MAX_IDS 128
+
+/* "12,40x3,7": o_ids with optional counts; -1 when malformed */
+static int
+nh3d_invop_ids(const char *text, unsigned *ids, long *counts)
+{
+    int n = 0;
+    const char *p = text;
+
+    if (!*p)
+        return 0;
+    while (*p) {
+        unsigned long id = 0;
+        long count = 0;
+        boolean any = FALSE;
+
+        if (n >= NH3D_INVOP_MAX_IDS)
+            return -1;
+        while (*p >= '0' && *p <= '9')
+            id = id * 10 + (unsigned long) (*p++ - '0'), any = TRUE;
+        if (!any)
+            return -1;
+        if (*p == 'x') {
+            p++;
+            any = FALSE;
+            while (*p >= '0' && *p <= '9')
+                count = count * 10 + (*p++ - '0'), any = TRUE;
+            if (!any)
+                return -1;
+        }
+        ids[n] = (unsigned) id;
+        counts[n] = count;
+        n++;
+        if (*p == ',')
+            p++;
+        else if (*p)
+            return -1;
+    }
+    return n;
+}
 
 static boolean
 nh3d_invop_letter_ok(char c, boolean allow_hands)
@@ -1054,7 +1132,8 @@ nh3d_invop_slot_ok(char c)
 int
 nh3d_inventory_command(void)
 {
-    char req[NH3D_INVOP_MAX], *args[4], *p;
+    static char req[NH3D_INVOP_MAX];
+    char *args[4], *p;
     char keys[3];
     int nargs = 0, nkeys = 0, i, res;
     int (*fn)(void) = 0;
@@ -1073,6 +1152,31 @@ nh3d_inventory_command(void)
         if ((p = strchr(p, ':')) == 0)
             break;
         *p++ = '\0';
+    }
+    /* pickup:<ids>  drop:<ids>  loot:<container>:<out ids>:<in ids> */
+    if (!strcmp(args[0], "pickup") || !strcmp(args[0], "drop")) {
+        static unsigned ids[NH3D_INVOP_MAX_IDS];
+        static long counts[NH3D_INVOP_MAX_IDS];
+        int n = nargs == 2 ? nh3d_invop_ids(args[1], ids, counts) : -1;
+
+        if (n <= 0)
+            return ECMD_OK;
+        return args[0][0] == 'p' ? nh3d_pickup_objects(ids, counts, n)
+                                 : nh3d_drop_objects(ids, counts, n);
+    }
+    if (!strcmp(args[0], "loot")) {
+        static unsigned outs[NH3D_INVOP_MAX_IDS], ins[NH3D_INVOP_MAX_IDS];
+        static long counts[NH3D_INVOP_MAX_IDS];
+        static unsigned cid[NH3D_INVOP_MAX_IDS];
+        int nout, nin;
+
+        if (nargs != 4 || nh3d_invop_ids(args[1], cid, counts) != 1)
+            return ECMD_OK;
+        nout = nh3d_invop_ids(args[2], outs, counts);
+        nin = nh3d_invop_ids(args[3], ins, counts);
+        if (nout < 0 || nin < 0)
+            return ECMD_OK;
+        return nh3d_container_transfer(cid[0], outs, nout, ins, nin);
     }
     for (i = 1; i < nargs; i++)
         if (strlen(args[i]) != 1)

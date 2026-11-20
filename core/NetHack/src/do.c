@@ -2505,3 +2505,38 @@ heal_legs(
 }
 
 /*do.c*/
+
+/*
+ * Polypiled: the inventory screen drops the chosen objects in one action,
+ * the way 'D' with a menu does (win/shim/nh3d_knowledge.c).  Objects are
+ * named by o_id; a count of 0 drops the whole stack.
+ */
+int
+nh3d_drop_objects(const unsigned *ids, const long *counts, int n)
+{
+    int i, n_dropped = 0;
+    struct obj *otmp;
+
+    if (!gi.invent) {
+        You("have nothing to drop.");
+        return ECMD_OK;
+    }
+    if (*u.ushops)
+        sellobj_state(SELL_DELIBERATE);
+    bypass_objlist(gi.invent, TRUE);
+    for (i = 0; i < n; i++) {
+        for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+            if (otmp->o_id == ids[i])
+                break;
+        if (!otmp || !otmp->bypass)
+            continue;
+        n_dropped += ((menudrop_split(otmp, counts[i]) & ECMD_TIME) != 0)
+                         ? 1 : 0;
+    }
+    bypass_objlist(gi.invent, FALSE);
+    if (*u.ushops)
+        sellobj_state(SELL_NORMAL);
+    if (n_dropped)
+        reset_occupations();
+    return n_dropped ? ECMD_TIME : ECMD_OK;
+}
