@@ -12,8 +12,8 @@ hero notices it before the first bite.
   turns, a pace fixed for that corpse (vanilla re-rolls 10 to 29 on every
   bite). A corpse is rotten from stage 4 and tainted from stage 6, so no
   corpse is rotten before 100 turns or tainted before 150 (vanilla: 40 and
-  60). Blessed, cursed and soon-to-rise corpses still count 2 stages younger,
-  2 older and 5 older. (`ROT_PACE_MIN`, `ROT_PACE_SPREAD` in `hack.h`;
+  60). Blessed and soon-to-rise corpses still count 2 stages younger and 5
+  older. (`ROT_PACE_MIN`, `ROT_PACE_SPREAD` in `hack.h`;
   `corpse_rot_stage()` in `eat.c`)
 - **A fresh kill is never rotten.** Vanilla gave every corpse a 1 in 7 chance
   of a "rotten" first bite whatever its age.
@@ -28,3 +28,8 @@ hero notices it before the first bite.
   that it smells rotten, putrid (tainted) or a bit off, and is asked whether
   to eat it anyway. Stale eggs are included; tins are not, since their
   contents are seen when opened. (`food_spoilage_declined()` in `eat.c`)
+- **Cursed food deceives.** A cursed corpse rots twice as fast (12 to 22
+  turns a stage; vanilla counts it 2 stages older), and cursed food gives no
+  warning when it has spoiled: it "looks so delicious" instead, until the
+  hero has once found it rotten. Blessed food detection still sees through
+  it.

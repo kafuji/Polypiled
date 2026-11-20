@@ -78,6 +78,8 @@ describe("assembled NetHack 5 messages", () => {
     expect(ja("Some magenta liquid flows from the faucet.")).toBe("蛇口から赤紫色の液体が流れ出た。");
     expect(ja("A newt suddenly appears!")).toBe("イモリが突然現れた！");
     expect(ja("Blecch! Rotten food!")).toBe("うえっ！ 腐った食べ物だ！");
+    expect(ja("The food ration looks so delicious!")).toBe("食料はとてもおいしそうだ！");
+    expect(ja("The newt corpses smell so delicious!")).toBe("イモリの死体はとてもおいしそうだ！");
     expect(ja("You hear the shrill sound of guards' whistles.")).toBe("警備兵の甲高い笛の音が聞こえた。");
     expect(ja("Gems/Stones")).toBe("宝石・石");
     expect(ja("Auto-select every relevant item")).toBe("該当する物をすべて自動選択");

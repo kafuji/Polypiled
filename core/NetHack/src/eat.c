@@ -65,8 +65,8 @@ staticfn int tin_ok(struct obj *);
 /* Polypiled: how far a corpse has rotted.  Each corpse decays at its own
    fixed pace (see ROT_PACE_MIN in hack.h) instead of re-rolling on every
    bite, so a fresh kill is never rotten and the smell noticed before eating
-   (food_spoilage_declined()) always tells the truth.  Stage 4 and 5 are
-   rotten, stage 6 and over is tainted. */
+   (food_spoilage_declined()) is not a gamble.  Stage 4 and 5 are rotten,
+   stage 6 and over is tainted.  A cursed corpse rots twice as fast. */
 staticfn long
 corpse_rot_stage(struct obj *otmp)
 {
@@ -77,10 +77,10 @@ corpse_rot_stage(struct obj *otmp)
         || nonrotting_corpse(mnum))
         return 0L;
     pace = ROT_PACE_MIN + (long) (otmp->o_id % (unsigned) ROT_PACE_SPREAD);
-    rotted = (svm.moves - peek_at_iced_corpse_age(otmp)) / pace;
     if (otmp->cursed)
-        rotted += 2L;
-    else if (otmp->blessed)
+        pace /= 2L;
+    rotted = (svm.moves - peek_at_iced_corpse_age(otmp)) / pace;
+    if (otmp->blessed)
         rotted -= 2L;
     if (obj_has_timer(otmp, ZOMBIFY_MON))
         rotted += 5L;
@@ -2745,7 +2745,9 @@ edibility_prompts(struct obj *otmp)
 /* Polypiled: the hero notices that food has gone bad before taking a bite
    and may change their mind.  This covers exactly the cases that will turn
    out badly because of spoilage (eatcorpse(), start_eating(), fprefx()),
-   which no longer leave it to chance.  Returns TRUE if the hero declines. */
+   which no longer leave it to chance.  Cursed food is the exception: it
+   spoils readily, yet hides it and looks all the more appetizing, until the
+   hero has once found it rotten.  Returns TRUE if the hero declines. */
 staticfn boolean
 food_spoilage_declined(struct obj *otmp)
 {
@@ -2769,6 +2771,10 @@ food_spoilage_declined(struct obj *otmp)
     }
     if (!how)
         return FALSE;
+    if (otmp->cursed && !otmp->orotten) {
+        pline("%s so delicious!", Tobjnam(otmp, Blind ? "smell" : "look"));
+        return FALSE;
+    }
 
     Snprintf(buf, sizeof buf, "%s %s.  Eat %s anyway?",
              Tobjnam(otmp, "smell"), how,
