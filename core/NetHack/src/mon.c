@@ -626,7 +626,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         num = undead_to_corpse(mndx);
         corpstatflags |= CORPSTAT_INIT;
         obj = mkcorpstat(CORPSE, mtmp, &mons[num], x, y, corpstatflags);
-        obj->age -= (TAINT_AGE + 1); /* this is an *OLD* corpse */
+        obj->age -= ROTTEN_CORPSE_AGE; /* this is an *OLD* corpse */
         break;
     case PM_KOBOLD_MUMMY:
     case PM_DWARF_MUMMY:
@@ -636,6 +636,13 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_HUMAN_MUMMY:
     case PM_GIANT_MUMMY:
     case PM_ETTIN_MUMMY:
+        /* Polypiled: mummified flesh is dried, so it keeps longer than a
+           fresh kill instead of being an old, rotten corpse */
+        num = undead_to_corpse(mndx);
+        corpstatflags |= CORPSTAT_INIT;
+        obj = mkcorpstat(CORPSE, mtmp, &mons[num], x, y, corpstatflags);
+        obj->age += MUMMY_CURE_AGE;
+        break;
     case PM_KOBOLD_ZOMBIE:
     case PM_DWARF_ZOMBIE:
     case PM_GNOME_ZOMBIE:
@@ -647,7 +654,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         num = undead_to_corpse(mndx);
         corpstatflags |= CORPSTAT_INIT;
         obj = mkcorpstat(CORPSE, mtmp, &mons[num], x, y, corpstatflags);
-        obj->age -= (TAINT_AGE + 1); /* this is an *OLD* corpse */
+        obj->age -= ROTTEN_CORPSE_AGE; /* this is an *OLD* corpse */
         break;
     case PM_IRON_GOLEM:
         num = d(2, 6);

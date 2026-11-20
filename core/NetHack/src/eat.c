@@ -36,6 +36,8 @@ staticfn int edibility_prompts(struct obj *);
 staticfn int doeat_nonfood(struct obj *);
 staticfn int tinopen_ok(struct obj *);
 staticfn int rottenfood(struct obj *);
+staticfn long corpse_rot_stage(struct obj *);
+staticfn boolean food_spoilage_declined(struct obj *);
 staticfn void eatspecial(void);
 staticfn int bounded_increase(int, int, int);
 staticfn void accessory_has_effect(struct obj *);
@@ -60,10 +62,30 @@ staticfn int tin_ok(struct obj *);
      || is_rider(&mons[mnum])                   \
      || (mnum) == PM_ACID_BLOB)
 
-/* non-rotting non-corpses; unlike lizard corpses, these items will behave
-   as if rotten if they are cursed (fortune cookies handled elsewhere) */
-#define nonrotting_food(otyp) \
-    ((otyp) == LEMBAS_WAFER || (otyp) == CRAM_RATION)
+/* Polypiled: how far a corpse has rotted.  Each corpse decays at its own
+   fixed pace (see ROT_PACE_MIN in hack.h) instead of re-rolling on every
+   bite, so a fresh kill is never rotten and the smell noticed before eating
+   (food_spoilage_declined()) always tells the truth.  Stage 4 and 5 are
+   rotten, stage 6 and over is tainted. */
+staticfn long
+corpse_rot_stage(struct obj *otmp)
+{
+    long rotted, pace;
+    int mnum = otmp->corpsenm;
+
+    if ((otmp->otyp != CORPSE && !otmp->globby) || !ismnum(mnum)
+        || nonrotting_corpse(mnum))
+        return 0L;
+    pace = ROT_PACE_MIN + (long) (otmp->o_id % (unsigned) ROT_PACE_SPREAD);
+    rotted = (svm.moves - peek_at_iced_corpse_age(otmp)) / pace;
+    if (otmp->cursed)
+        rotted += 2L;
+    else if (otmp->blessed)
+        rotted -= 2L;
+    if (obj_has_timer(otmp, ZOMBIFY_MON))
+        rotted += 5L;
+    return rotted;
+}
 
 /* see hunger states in hack.h - texts used on bottom line
    Also used in botl.c and insight.c  */
@@ -1863,7 +1885,6 @@ eatcorpse(struct obj *otmp)
     long rotted = 0L;
     int ll_conduct = 0;
     boolean stoneable,
-            zombifying = obj_has_timer(otmp, ZOMBIFY_MON),
             slimeable = (mnum == PM_GREEN_SLIME && !Slimed && !Unchanging
                          && !slimeproof(gy.youmonst.data)),
             glob = otmp->globby ? TRUE : FALSE;
@@ -1887,17 +1908,7 @@ eatcorpse(struct obj *otmp)
                            an(food_xname(otmp, FALSE)));
         violated_vegetarian();
     }
-    if (!nonrotting_corpse(mnum)) {
-        long age = peek_at_iced_corpse_age(otmp);
-
-        rotted = (svm.moves - age) / (10L + rn2(20));
-        if (otmp->cursed)
-            rotted += 2L;
-        else if (otmp->blessed)
-            rotted -= 2L;
-        if (zombifying)
-            rotted += 5L;
-    }
+    rotted = corpse_rot_stage(otmp);
 
     /* 5.0: globs don't become tainted, they shrink away */
     if (!glob && !stoneable && !slimeable && rotted > 5L) {
@@ -1944,7 +1955,7 @@ eatcorpse(struct obj *otmp)
             You("seem unaffected by the poison.");
 
     /* now any corpse left too long will make you mildly ill */
-    } else if ((rotted > 5L || (rotted > 3L && rn2(5))) && !Sick_resistance) {
+    } else if (rotted > 3L && !Sick_resistance) {
         tp++;
         You_feel("%ssick.", (Sick) ? "very " : "");
         losehp(rnd(8), !glob ? "cadaver" : "rotted glob", KILLED_BY_AN);
@@ -1954,7 +1965,9 @@ eatcorpse(struct obj *otmp)
     svc.context.victual.reqtime
         = 3 + ((!glob ? mons[mnum].cwt : otmp->owt) >> 6);
 
-    if (!tp && !nonrotting_corpse(mnum) && (otmp->orotten || !rn2(7))) {
+    /* Polypiled: only a corpse that has actually rotted tastes rotten;
+       vanilla also gave any corpse a 1 in 7 chance on the first bite */
+    if (!tp && !nonrotting_corpse(mnum) && (otmp->orotten || rotted > 3L)) {
         if (rottenfood(otmp)) {
             otmp->orotten = TRUE;
             otmp = touchfood(otmp);
@@ -2659,17 +2672,8 @@ edibility_prompts(struct obj *otmp)
         if (mnum == PM_GREEN_SLIME || otmp->otyp == GLOB_OF_GREEN_SLIME)
             stoneorslime = (!Unchanging && !slimeproof(gy.youmonst.data));
 
-        if (cadaver && !nonrotting_corpse(mnum)) {
-            long age = peek_at_iced_corpse_age(otmp);
-
-            /* worst case rather than random
-               in this calculation to force prompt */
-            rotted = (svm.moves - age) / (10L + 0 /* was rn2(20) */);
-            if (otmp->cursed)
-                rotted += 2L;
-            else if (otmp->blessed)
-                rotted -= 2L;
-        }
+        if (cadaver)
+            rotted = corpse_rot_stage(otmp);
     }
 
     /*
@@ -2736,6 +2740,40 @@ edibility_prompts(struct obj *otmp)
         return (yn_function(buf, ynchars, 'n', TRUE) == 'n') ? 1 : 2;
     }
     return 0;
+}
+
+/* Polypiled: the hero notices that food has gone bad before taking a bite
+   and may change their mind.  This covers exactly the cases that will turn
+   out badly because of spoilage (eatcorpse(), start_eating(), fprefx()),
+   which no longer leave it to chance.  Returns TRUE if the hero declines. */
+staticfn boolean
+food_spoilage_declined(struct obj *otmp)
+{
+    char buf[BUFSZ];
+    const char *how = 0;
+    long rotted;
+
+    if (otmp->oclass != FOOD_CLASS || otmp->otyp == TIN)
+        return FALSE;
+    if (otmp->otyp == CORPSE || otmp->globby) {
+        rotted = corpse_rot_stage(otmp);
+        if (rotted > 5L && !otmp->globby && !Sick_resistance)
+            how = "putrid";
+        else if (rotted > 3L || otmp->orotten)
+            how = "rotten";
+    } else if (otmp->otyp == EGG && stale_egg(otmp)) {
+        how = "rotten";
+    } else if (otmp->otyp != FORTUNE_COOKIE
+               && (otmp->cursed || otmp->orotten)) {
+        how = "a bit off";
+    }
+    if (!how)
+        return FALSE;
+
+    Snprintf(buf, sizeof buf, "%s %s.  Eat %s anyway?",
+             Tobjnam(otmp, "smell"), how,
+             (otmp->quan == 1L) ? "it" : "one");
+    return (yn_function(buf, ynchars, 'n', TRUE) != 'y');
 }
 
 staticfn int
@@ -2826,7 +2864,7 @@ doeat(void)
 {
     struct obj *otmp;
     int basenutrit; /* nutrition of full item */
-    boolean dont_start = FALSE,
+    boolean dont_start = FALSE, spoilage_checked = FALSE,
             already_partly_eaten;
     int ll_conduct = 0;
 
@@ -2849,6 +2887,7 @@ doeat(void)
             u.uedibility = 0;
             if (res == 1)
                 return ECMD_OK;
+            spoilage_checked = TRUE; /* already chose to eat it anyway */
         }
     }
 
@@ -2958,6 +2997,10 @@ doeat(void)
         return ECMD_TIME;
     }
 
+    /* Polypiled: notice spoiled food before the first bite */
+    if (!spoilage_checked && food_spoilage_declined(otmp))
+        return ECMD_OK;
+
     /* nothing in progress - so try to find something. */
     /* tins are a special case */
     /* tins must also check conduct separately in case they're discarded */
@@ -3032,11 +3075,11 @@ doeat(void)
         }
 
         svc.context.victual.reqtime = objects[otmp->otyp].oc_delay;
+        /* Polypiled: food keeps; only cursed food (or food already found
+           rotten) is spoiled.  Vanilla gave any non-corpse food older than
+           30 turns a 1 in 7 chance to be rotten. */
         if (otmp->otyp != FORTUNE_COOKIE
-            && (otmp->cursed || (!nonrotting_food(otmp->otyp)
-                                 && (svm.moves - otmp->age)
-                                        > (otmp->blessed ? 50L : 30L)
-                                 && (otmp->orotten || !rn2(7))))) {
+            && (otmp->cursed || otmp->orotten)) {
             if (rottenfood(otmp)) {
                 otmp->orotten = TRUE;
                 dont_start = TRUE;

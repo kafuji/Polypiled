@@ -2,7 +2,7 @@
 
 > Polypiled grew out of [NetHack 3D](https://github.com/JamesIV4/nethack-3d) by James Pound and is maintained by [kafuji](https://github.com/kafuji). It was developed until now as the fork "NetHack 3D Plus". The game core is NetHack 5.0, built from the source in [core/](core/README.md). Upstream features are documented below; fork-specific changes are listed in [Fork Changes](#fork-changes).
 
-Classic NetHack, presented as an interactive 3D dungeon. Play from above, step inside in first person, use an authentic terminal view, or explore in virtual reality on Meta Quest. Polypiled is becoming a variant: the game itself will change, not only how it is presented. So far the rules are still those of NetHack 5.0.
+Classic NetHack, presented as an interactive 3D dungeon. Play from above, step inside in first person, use an authentic terminal view, or explore in virtual reality on Meta Quest. Polypiled is becoming a variant: the game itself will change, not only how it is presented. The rules are those of NetHack 5.0 except for the changes listed in [Rule Changes](docs/rule-changes.md).
 
 **[Play in your browser](https://kafuji.github.io/nethack-3d-plus/) · [Download the app](https://github.com/kafuji/nethack-3d-plus/releases/latest)**
 
@@ -13,6 +13,7 @@ Classic NetHack, presented as an interactive 3D dungeon. Play from above, step i
 ## Fork Changes
 
 - Update checks, web build paths, and project links point to this fork.
+- Gameplay: food no longer spoils at random. Fresh kills are never rotten, corpses take longer to rot, and the hero smells spoiled food before eating it. See [Rule Changes](docs/rule-changes.md).
 - Japanese: fuller interface translation, and in-game messages, prompts, item names and quest texts translated at display time. The project's own translations come first, then unreviewed Nehww references marked 参考訳.
 - Desktop message log: drag its bottom-right corner to make it wider or show more lines (double-click the corner to reset), and lower its background opacity in Options to see more of the dungeon.
 - Upstream: [JamesIV4/nethack-3d](https://github.com/JamesIV4/nethack-3d), synced at 1.6.2 (`3b6fd23`). See [Fork Maintenance](docs/fork-maintenance.md) for the sync workflow.
