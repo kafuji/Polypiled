@@ -18,6 +18,8 @@ export type InventoryOperation =
   | { readonly op: "puton"; readonly item: string; readonly hand?: "left" | "right" }
   /** item "-" empties the hands or the quiver. */
   | { readonly op: "wield" | "quiver"; readonly item: string }
+  /** Ready the item as the alternate (off-hand) weapon, leaving the hand alone. */
+  | { readonly op: "alternate"; readonly item: string }
   /** altunwield empties the alternate weapon (#altunwield). */
   | { readonly op: "swap" | "twoweapon" | "altunwield" }
   /** count 0 (or none) means the whole stack. */
@@ -50,6 +52,7 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
     case "wear":
     case "takeoff":
     case "remove":
+    case "alternate":
       return isInventoryLetter(operation.item) ? `${operation.op}:${operation.item}` : null;
     case "puton":
       if (!isInventoryLetter(operation.item)) return null;
@@ -81,7 +84,7 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
 /** Accepts only what encodeInventoryOperation produces. */
 export function isInventoryOperationRequest(request: string): boolean {
   if (request.length > 2000) return false;
-  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon|altunwield|(pickup|drop):\d+(x\d+)?(,\d+(x\d+)?)*|loot:\d+:(\d+(,\d+)*)?:(\d+(,\d+)*)?)$/.test(
+  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove|alternate):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon|altunwield|(pickup|drop):\d+(x\d+)?(,\d+(x\d+)?)*|loot:\d+:(\d+(,\d+)*)?:(\d+(,\d+)*)?)$/.test(
     request,
   );
 }

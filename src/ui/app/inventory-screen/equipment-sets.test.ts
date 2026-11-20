@@ -81,6 +81,13 @@ function play(start: InventoryState, set: EquipmentSet, limit = 30): { end: Inve
               : o.wornMask & W.secondaryWeapon ? { ...o, wornMask: W.weapon } : o),
         };
         break;
+      case "alternate":
+        current = {
+          ...current,
+          objects: current.objects.map((o) =>
+            o.letter === step.item ? { ...o, wornMask: W.secondaryWeapon } : o.wornMask & W.secondaryWeapon ? { ...o, wornMask: 0 } : o),
+        };
+        break;
       case "altunwield":
         current = {
           ...current,

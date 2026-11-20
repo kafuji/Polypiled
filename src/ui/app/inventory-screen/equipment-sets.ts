@@ -178,7 +178,8 @@ export function nextEquipmentSetStep(state: InventoryState, set: EquipmentSet): 
     return putOnOperations(object, slot, state)[0] ?? null;
   }
 
-  // weapons: the alternate weapon first (wield it, then swap), then the hand
+  // weapons: the alternate weapon first (readied directly, or swapped from
+  // the hand), then the hand
   const primary = objectInSlot(state, "weapon");
   const alternate = objectInSlot(state, "secondaryWeapon");
   const wantAlternate = wanted(set, "secondaryWeapon", state);
@@ -186,7 +187,7 @@ export function nextEquipmentSetStep(state: InventoryState, set: EquipmentSet): 
   if (typeof wantAlternate === "number" && alternate?.id !== wantAlternate) {
     const object = carried(state, wantAlternate);
     if (object?.letter) {
-      return primary?.id === wantAlternate ? { op: "swap" } : { op: "wield", item: object.letter };
+      return primary?.id === wantAlternate ? { op: "swap" } : { op: "alternate", item: object.letter };
     }
   }
   const wantPrimary = wanted(set, "weapon", state);

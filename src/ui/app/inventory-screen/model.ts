@@ -174,12 +174,10 @@ function putOn(object: InventoryObject, slot: EquipmentSlotId, state: InventoryS
   switch (slot) {
     case "weapon":
       return [{ op: "wield", item: letter }];
-    case "secondaryWeapon": {
-      // wield it, then swap: it becomes the alternate weapon and the old
-      // weapon comes back to hand
+    case "secondaryWeapon":
+      // the weapon in hand trades places; anything else is readied directly
       if ((object.wornMask & InventoryWornMask.weapon) !== 0) return [{ op: "swap" }];
-      return [{ op: "wield", item: letter }, { op: "swap" }];
-    }
+      return [{ op: "alternate", item: letter }];
     case "quiver":
       return [{ op: "quiver", item: letter }];
     case "leftRing":

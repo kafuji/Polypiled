@@ -101,12 +101,11 @@ describe("equipping by drag", () => {
     ]);
   });
 
-  it("makes an alternate weapon by wielding and swapping", () => {
+  it("readies an alternate weapon directly, or swaps the one in hand", () => {
     const sword = object("a", { objectClass: ObjectClass.weapon, wornMask: InventoryWornMask.weapon });
     const dagger = object("b", { objectClass: ObjectClass.weapon });
     expect(planEquip(state([sword, dagger]), dagger, "secondaryWeapon").operations).toEqual([
-      { op: "wield", item: "b" },
-      { op: "swap" },
+      { op: "alternate", item: "b" },
     ]);
     expect(planEquip(state([sword, dagger]), sword, "secondaryWeapon").operations).toEqual([{ op: "swap" }]);
   });
