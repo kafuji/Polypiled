@@ -14,8 +14,9 @@
     min(calc((100vw - 170px) / 16), calc((100vh - 300px) / 7.6)),
     128px
   );
-  /* the item's short name under its icon, one line */
-  --invs-name-size: clamp(10px, calc(var(--invs-cell) * 0.14), 15px);
+  /* the item's short name under its icon, one line: ten full-width
+     characters ("フォーチュンクッキー") fit the cell */
+  --invs-name-size: clamp(8px, calc((var(--invs-cell) - 6px) / 10), 13px);
   --invs-name-h: calc(var(--invs-name-size) * 1.35);
 }
 
@@ -241,7 +242,7 @@
 .nh3d-invs-cell-name {
   box-sizing: border-box;
   width: 100%;
-  padding: 0 3px;
+  padding: 0 2px;
   overflow: hidden;
   color: var(--nh3d-ui-text-muted);
   font-size: var(--invs-name-size);
