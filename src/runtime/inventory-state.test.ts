@@ -86,6 +86,24 @@ describe("inventory from the core", () => {
     ]);
   });
 
+  it("reads the base name and a shop's price, ignoring a broken one", () => {
+    const state = parseInventoryState(
+      JSON.stringify({
+        ...sample,
+        objects: [
+          { ...sword, base: "long sword", price: 20, priceKind: "unpaid" },
+          { ...sword, letter: "b", price: 20, priceKind: "free" },
+          sword,
+        ],
+      }),
+    );
+    expect(state?.objects.map((o) => [o.baseName, o.price, o.priceKind])).toEqual([
+      ["long sword", 20, "unpaid"],
+      [null, null, null],
+      [null, null, null],
+    ]);
+  });
+
   it("leaves unknown BUC and enchantment as null", () => {
     const state = parseInventoryState(
       JSON.stringify({ ...sample, objects: [{ ...sword, buc: undefined, enchantment: undefined }] }),

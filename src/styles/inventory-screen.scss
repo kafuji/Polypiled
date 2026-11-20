@@ -4,15 +4,19 @@
 /* One cell size for the slots and the grid, as large as the window allows:
    across, 3 slot columns and 13 letter columns with gaps and padding; down,
    the slots, the grid, the floor and a container with the header and the
-   detail line. The drag icon, drawn outside the screen, uses it too. */
+   detail line, each pack row a name line taller than the cell. The drag
+   icon, drawn outside the screen, uses it too. */
 .nh3d-inventory-screen,
 .nh3d-invs-ghost {
   --invs-gap: 6px;
   --invs-cell: clamp(
     40px,
-    min(calc((100vw - 170px) / 16), calc((100vh - 300px) / 6.6)),
+    min(calc((100vw - 170px) / 16), calc((100vh - 300px) / 7.6)),
     128px
   );
+  /* the item's short name under its icon, one line */
+  --invs-name-size: clamp(10px, calc(var(--invs-cell) * 0.14), 15px);
+  --invs-name-h: calc(var(--invs-name-size) * 1.35);
 }
 
 .nh3d-inventory-screen {
@@ -218,8 +222,11 @@
 }
 
 .nh3d-invs-cell {
+  flex-direction: column;
+  justify-content: flex-start;
   width: var(--invs-cell);
-  height: var(--invs-cell);
+  height: calc(var(--invs-cell) + var(--invs-name-h));
+  padding-top: 3px;
 
   &.is-equipped .nh3d-invs-item {
     opacity: 0.45;
@@ -229,6 +236,20 @@
     border-color: #ffffff;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
   }
+}
+
+.nh3d-invs-cell-name {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 3px;
+  overflow: hidden;
+  color: var(--nh3d-ui-text-muted);
+  font-size: var(--invs-name-size);
+  line-height: var(--invs-name-h);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .nh3d-invs-cell-gold {
@@ -452,6 +473,35 @@
   pointer-events: none;
 }
 
+/* by the cursor over an item: the full name, its weight and price */
+.nh3d-invs-hover {
+  position: fixed;
+  z-index: 2150;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(28em, calc(100vw - 16px));
+  padding: 5px 8px;
+  border: 1px solid var(--nh3d-ui-border-strong);
+  border-radius: 6px;
+  background: var(--nh3d-ui-panel-bg-strong);
+  color: var(--nh3d-ui-text);
+  font-family: var(--nh3d-ui-font-family, "Courier New", monospace);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.nh3d-invs-hover-name {
+  font-weight: bold;
+}
+
+.nh3d-invs-hover-facts {
+  color: var(--nh3d-ui-text-muted);
+  font-size: 0.9em;
+}
+
 /* the item menu, on the body: actions in columns, never taller than the window */
 .nh3d-invs-menu {
   position: fixed;
@@ -619,8 +669,10 @@
   border-left: 2px solid rgba(230, 211, 106, 0.45);
 
   .nh3d-invs-cell {
+    justify-content: center;
     width: var(--invs-cell-inner);
     height: var(--invs-cell-inner);
+    padding-top: 0;
   }
 
   .nh3d-invs-item {

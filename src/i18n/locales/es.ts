@@ -602,6 +602,11 @@ export const esOverrides = {
         },
         weightLabel: "Peso",
         itemWeight: (n: number) => `Peso ${n}`,
+        price: {
+            unpaid: (n: number) => `Sin pagar: ${n} zm`,
+            contents: (n: number) => `Contenido: ${n} zm`,
+            forSale: (n: number) => `En venta: ${n} zm`,
+        },
         letter: (letter: string) => `Letra ${letter}`,
         buc: {
           blessed: "Bendito",

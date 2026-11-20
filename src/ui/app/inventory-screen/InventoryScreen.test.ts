@@ -41,7 +41,7 @@ function object(letter: string, overrides: Partial<InventoryObject> = {}): Inven
     greased: false,
     lit: false,
     unpaid: false,
-    named: false,
+    named: false, baseName: null, price: null, priceKind: null,
     container: null,
     ...overrides,
   };
@@ -107,7 +107,19 @@ describe("InventoryScreen", () => {
     expect(html).toContain("nh3d-invs-item is-cursed");
     expect(html).toContain('<span class="nh3d-invs-item-quantity">6</span>');
     // q has no known BUC: no effect class, no mark
-    expect(html).toMatch(/class="nh3d-invs-item" title="object q"/);
+    expect(html).toMatch(/class="nh3d-invs-item"><span class="nh3d-invs-item-tile"><img data-tile="113"/);
+  });
+
+  it("names each item under its icon, by its base name when the core sends one", () => {
+    const html = render({
+      ...inventory,
+      objects: [object("q", { name: "6 uncursed +1 darts", baseName: "darts" }), object("r")],
+    });
+    expect(html).toContain('<span class="nh3d-invs-cell-name" aria-hidden="true">darts</span>');
+    // an older core: the full name
+    expect(html).toContain('<span class="nh3d-invs-cell-name" aria-hidden="true">object r</span>');
+    // the panel by the cursor replaces the browser's tooltip
+    expect(html).not.toMatch(/class="nh3d-invs-item[^"]*" title=/);
   });
 
   it("shows the weight, the limit of this level and the level", () => {

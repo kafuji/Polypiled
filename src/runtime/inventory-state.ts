@@ -60,6 +60,9 @@ export interface InventoryContainer {
   readonly tooDeep: boolean;
 }
 
+export type InventoryPriceKind = "unpaid" | "contents" | "forSale";
+const priceKinds: ReadonlySet<string> = new Set(["unpaid", "contents", "forSale"]);
+
 export interface InventoryObject {
   /** The game's object id (o_id): stable while the object exists, says nothing about its type. */
   readonly id: number;
@@ -67,6 +70,12 @@ export interface InventoryObject {
   readonly letter: string | null;
   /** As the game names it ("an uncursed +1 long sword (weapon in hand)"). */
   readonly name: string;
+  /** The kind of thing as the hero knows it ("long sword", "pink potion"); null from older cores. */
+  readonly baseName: string | null;
+  /** What a shop asks, as the name quotes it; null outside shops and from older cores. */
+  readonly price: number | null;
+  /** unpaid: carried, not bought; contents: unpaid things inside; forSale: shop goods lying here. */
+  readonly priceKind: InventoryPriceKind | null;
   /** NetHack object class (WEAPON_CLASS = 2, ARMOR_CLASS = 3 ...). */
   readonly objectClass: number;
   readonly glyph: number;
@@ -165,6 +174,12 @@ function parseContainer(raw: unknown, depth: number): InventoryContainer | null 
   };
 }
 
+function parsePrice(raw: Record<string, unknown>): Pick<InventoryObject, "price" | "priceKind"> {
+  return isInt(raw.price) && raw.price > 0 && typeof raw.priceKind === "string" && priceKinds.has(raw.priceKind)
+    ? { price: raw.price, priceKind: raw.priceKind as InventoryPriceKind }
+    : { price: null, priceKind: null };
+}
+
 function parseObject(raw: unknown, depth: number, carried = true): InventoryObject | null {
   if (!isRecord(raw) || !isInt(raw.id) || typeof raw.name !== "string" || !isInt(raw.glyph)) return null;
   const container = parseContainer(raw.container, depth);
@@ -176,6 +191,8 @@ function parseObject(raw: unknown, depth: number, carried = true): InventoryObje
     id: raw.id,
     letter,
     name: raw.name,
+    baseName: typeof raw.base === "string" && raw.base.length > 0 ? raw.base : null,
+    ...parsePrice(raw),
     objectClass: isInt(raw.class) ? raw.class : 0,
     glyph: raw.glyph,
     tileIndex: isInt(raw.tile) && raw.tile >= 0 ? raw.tile : null,

@@ -620,6 +620,11 @@ export const ko = {
       },
       weightLabel: "무게",
       itemWeight: (n: number) => `무게 ${n}`,
+      price: {
+        unpaid: (n: number) => `미지불 ${n} zm`,
+        contents: (n: number) => `내용물 ${n} zm`,
+        forSale: (n: number) => `판매가 ${n} zm`,
+      },
       letter: (letter: string) => `글자 ${letter}`,
       buc: {
         blessed: "축복받음",

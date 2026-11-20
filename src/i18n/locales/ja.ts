@@ -607,6 +607,11 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
       },
       weightLabel: "重量",
       itemWeight: (n: number) => `重さ ${n}`,
+      price: {
+        unpaid: (n: number) => `未払い ${n} zm`,
+        contents: (n: number) => `中身 ${n} zm`,
+        forSale: (n: number) => `売値 ${n} zm`,
+      },
       letter: (letter: string) => `文字 ${letter}`,
       buc: {
         blessed: "祝福されている",

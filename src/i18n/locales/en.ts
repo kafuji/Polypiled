@@ -622,6 +622,11 @@ export const en = {
       },
       weightLabel: "Weight",
       itemWeight: (n: number) => `Weight ${n}`,
+      price: {
+        unpaid: (n: number) => `Unpaid: ${n} zm`,
+        contents: (n: number) => `Contents: ${n} zm`,
+        forSale: (n: number) => `For sale: ${n} zm`,
+      },
       letter: (letter: string) => `Letter ${letter}`,
       buc: {
         blessed: "Blessed",

@@ -365,6 +365,43 @@ function ItemMenu({ x, y, title, onDismiss, children }: {
   );
 }
 
+const HOVER_OFFSET_PX = 16;
+
+/**
+ * Follows the pointer over an item with its full name, weight and price, so
+ * the eye need not leave the item for the detail line.
+ */
+function HoverPanel({ x, y, children }: { x: number; y: number; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const point = useRef({ x, y });
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const place = () => {
+      const { width, height } = element.getBoundingClientRect();
+      const { x: px, y: py } = point.current;
+      const left = px + HOVER_OFFSET_PX + width + MENU_MARGIN_PX > window.innerWidth
+        ? px - HOVER_OFFSET_PX - width : px + HOVER_OFFSET_PX;
+      const top = py + HOVER_OFFSET_PX + height + MENU_MARGIN_PX > window.innerHeight
+        ? py - HOVER_OFFSET_PX - height : py + HOVER_OFFSET_PX;
+      element.style.left = `${Math.max(MENU_MARGIN_PX, left)}px`;
+      element.style.top = `${Math.max(MENU_MARGIN_PX, top)}px`;
+    };
+    place();
+    const onMove = (event: PointerEvent) => {
+      point.current = { x: event.clientX, y: event.clientY };
+      place();
+    };
+    window.addEventListener("pointermove", onMove);
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [children]);
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div ref={ref} className="nh3d-invs-hover" role="tooltip">{children}</div>,
+    document.body,
+  );
+}
+
 export function InventoryScreenView({
   inventory,
   controller,
@@ -383,11 +420,19 @@ export function InventoryScreenView({
   const { locale } = useI18n();
   const strings = t.inventoryScreen;
   const name = useCallback((object: InventoryObject) => translateInventoryItem(object.name, locale), [locale]);
+  /** The short name under each item; older cores send none, so the full one. */
+  const baseName = useCallback(
+    (object: InventoryObject) =>
+      // "a pair of boots" reads "ブーツ 1組": the count says nothing under one item
+      (object.baseName ? translateInventoryItem(object.baseName, locale).replace(/ 1組$/, "") : name(object)),
+    [locale, name],
+  );
   const byLetter = useMemo(() => objectsByLetter(inventory), [inventory]);
   const gold = byLetter.get(goldLetter) ?? null;
   /** Chosen by a click or focus; the detail line follows the pointer over others. */
   const [focused, setFocused] = useState<InventoryObject | null>(null);
-  const [hovered, setHovered] = useState<InventoryObject | null>(null);
+  /** Under the pointer; a mouse or pen also gets the panel by the cursor. */
+  const [hovered, setHovered] = useState<{ object: InventoryObject; x: number; y: number; panel: boolean } | null>(null);
   const [held, setHeld] = useState<DragSource | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
@@ -751,14 +796,13 @@ export function InventoryScreenView({
   const hintPlan = hint?.kind === "plan" ? hint.plan : null;
   const hintTurns = hintPlan && !hintPlan.unsupported ? estimateTurns(inventory, hintPlan.operations) : null;
   const validSlots = activeSource?.kind === "pack" ? new Set(slotsFor(activeSource.object)) : null;
-  const hoveredObject = hovered ? findObject(hovered.id) : null;
+  const hoveredObject = hovered ? findObject(hovered.object.id) : null;
   const detail = activeSource?.object ?? hoveredObject ?? focusedObject;
   const weight = weightSummary(inventory);
 
   const renderItem = (source: DragSource, extraClass = "") => {
     const object = source.object;
     const badge = badgeText(object);
-    const label = name(object);
     const erosionLevel = Math.max(object.eroded?.level ?? 0, object.eroded2?.level ?? 0);
     const tile = object.tilePreviewDataUrl
       ? <img alt="" aria-hidden="true" draggable={false} src={object.tilePreviewDataUrl} />
@@ -769,14 +813,15 @@ export function InventoryScreenView({
         data-erosion={object.eroded?.kind}
         data-erosion2={object.eroded2?.kind}
         data-erosion-level={erosionLevel || undefined}
-        title={label}
         onPointerDown={(event) => beginPress(event, source)}
         onDoubleClick={() => toggle(source)}
         onContextMenu={(event) => {
           event.preventDefault();
           openMenuAt(object, event.clientX, event.clientY);
         }}
-        onPointerEnter={() => setHovered(object)}
+        onPointerEnter={(event) => setHovered({
+          object, x: event.clientX, y: event.clientY, panel: event.pointerType !== "touch",
+        })}
         onPointerLeave={() => setHovered(null)}
       >
         <span className="nh3d-invs-item-tile">
@@ -790,6 +835,10 @@ export function InventoryScreenView({
       </span>
     );
   };
+
+  const cellName = (object: InventoryObject) => (
+    <span className="nh3d-invs-cell-name" aria-hidden="true">{baseName(object)}</span>
+  );
 
   const slotLabel = (slot: EquipmentSlotId) =>
     slot === "secondaryWeapon" && inventory.twoWeapon ? strings.slots.offHand : strings.slots[slot];
@@ -945,6 +994,7 @@ export function InventoryScreenView({
                   >
                     <span className="nh3d-invs-cell-letter" aria-hidden="true">{letter}</span>
                     {object ? renderItem({ kind: "pack", object }) : null}
+                    {object ? cellName(object) : null}
                   </button>
                 );
               })}
@@ -958,6 +1008,7 @@ export function InventoryScreenView({
               >
                 <span className="nh3d-invs-cell-letter" aria-hidden="true">$</span>
                 {gold ? renderItem({ kind: "pack", object: gold }) : null}
+                {gold ? cellName(gold) : null}
               </button>
             </div>
           </section>
@@ -992,6 +1043,7 @@ export function InventoryScreenView({
                     onFocus={() => setFocused(object)}
                   >
                     {renderItem({ kind: "floor", object })}
+                    {cellName(object)}
                   </button>
                 ))}
                 {inventory.floorCount > inventory.floor.length ? (
@@ -1051,6 +1103,7 @@ export function InventoryScreenView({
                         onFocus={() => setFocused(object)}
                       >
                         {renderItem({ kind: "content", object, containerId: openContainer.id })}
+                        {cellName(object)}
                       </button>
                       {object.container?.contents && object.container.contents.length > 0 ? (
                         <div className="nh3d-invs-inner">
@@ -1083,6 +1136,7 @@ export function InventoryScreenView({
                         onClick={() => staging && setStaging({ ...staging, in: staging.in.filter((other) => other !== id) })}
                       >
                         {renderItem({ kind: "pack", object })}
+                        {cellName(object)}
                       </button>
                     ) : null;
                   })}
@@ -1154,6 +1208,21 @@ export function InventoryScreenView({
           <span className="nh3d-invs-detail-notice">{notice ?? strings.unsupported}</span>
         ) : null}
       </footer>
+
+      {/* gone from the screen (used, dropped): no panel left behind */}
+      {hovered?.panel && hoveredObject && !activeSource && !menu && !setsMenu ? (() => {
+        const object = hoveredObject;
+        const facts = [
+          object.weight !== null ? strings.itemWeight(object.weight) : null,
+          object.price !== null && object.priceKind ? strings.price[object.priceKind](object.price) : null,
+        ].filter(Boolean);
+        return (
+          <HoverPanel x={hovered.x} y={hovered.y}>
+            <span className="nh3d-invs-hover-name">{name(object)}</span>
+            {facts.length > 0 ? <span className="nh3d-invs-hover-facts">{facts.join(" · ")}</span> : null}
+          </HoverPanel>
+        );
+      })() : null}
 
       {ghost && dragSource && typeof document !== "undefined"
         ? createPortal(

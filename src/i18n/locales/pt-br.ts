@@ -636,6 +636,11 @@ export const ptBrOverrides = {
       },
       weightLabel: "Peso",
       itemWeight: (n: number) => `Peso ${n}`,
+      price: {
+        unpaid: (n: number) => `Não pago: ${n} zm`,
+        contents: (n: number) => `Conteúdo: ${n} zm`,
+        forSale: (n: number) => `À venda: ${n} zm`,
+      },
       letter: (letter: string) => `Letra ${letter}`,
       buc: {
         blessed: "Abençoado",

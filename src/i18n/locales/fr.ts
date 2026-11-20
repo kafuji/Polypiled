@@ -645,6 +645,11 @@ export const fr = {
       },
       weightLabel: "Poids",
       itemWeight: (n: number) => `Poids ${n}`,
+      price: {
+        unpaid: (n: number) => `Impayé : ${n} zm`,
+        contents: (n: number) => `Contenu : ${n} zm`,
+        forSale: (n: number) => `À vendre : ${n} zm`,
+      },
       letter: (letter: string) => `Lettre ${letter}`,
       buc: {
         blessed: "Béni",

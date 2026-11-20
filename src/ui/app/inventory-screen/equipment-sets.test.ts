@@ -16,7 +16,7 @@ function object(id: number, letter: string, overrides: Partial<InventoryObject> 
     id, letter, name: `#${id}`, objectClass: ObjectClass.tool, glyph: 0, tileIndex: null, quantity: 1,
     armorCategory: null, eyewear: false, armorDelay: null, weight: 1, wornMask: 0, donning: false,
     doffing: false, skin: false, buc: null, enchantment: null, charges: null, recharged: null, eroded: null,
-    eroded2: null, erodeproof: false, poisoned: false, greased: false, lit: false, unpaid: false, named: false,
+    eroded2: null, erodeproof: false, poisoned: false, greased: false, lit: false, unpaid: false, named: false, baseName: null, price: null, priceKind: null,
     container: null, ...overrides,
   };
 }

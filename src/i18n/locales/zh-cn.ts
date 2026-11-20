@@ -402,6 +402,11 @@ export const zhCnOverrides = {
       },
       weightLabel: "重量",
       itemWeight: (n: number) => `重量 ${n}`,
+      price: {
+        unpaid: (n: number) => `未付款 ${n} zm`,
+        contents: (n: number) => `内容物 ${n} zm`,
+        forSale: (n: number) => `售价 ${n} zm`,
+      },
       letter: (letter: string) => `字母 ${letter}`,
       buc: {
         blessed: "受祝福",

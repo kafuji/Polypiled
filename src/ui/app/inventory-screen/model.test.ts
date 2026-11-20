@@ -44,7 +44,7 @@ function object(letter: string, overrides: Partial<InventoryObject> = {}): Inven
     greased: false,
     lit: false,
     unpaid: false,
-    named: false,
+    named: false, baseName: null, price: null, priceKind: null,
     container: null,
     ...overrides,
   };

@@ -618,6 +618,11 @@ export const ru = {
       },
       weightLabel: "Вес",
       itemWeight: (n: number) => `Вес ${n}`,
+      price: {
+        unpaid: (n: number) => `Не оплачено: ${n} zm`,
+        contents: (n: number) => `Содержимое: ${n} zm`,
+        forSale: (n: number) => `Продаётся: ${n} zm`,
+      },
       letter: (letter: string) => `Буква ${letter}`,
       buc: {
         blessed: "Благословлён",
