@@ -104,18 +104,6 @@ export function recordEquipmentSet(state: InventoryState, name: string): Equipme
   return { name, slots };
 }
 
-/** Editing a set: a slot goes object -> empty -> left alone -> object. */
-export function cycleSetSlot(set: EquipmentSet, slot: EquipmentSlotId, state: InventoryState): EquipmentSet {
-  const value = set.slots[slot];
-  const current = objectInSlot(state, slot);
-  const slots = { ...set.slots };
-  if (typeof value === "number") slots[slot] = "empty";
-  else if (value === "empty") delete slots[slot];
-  else if (current) slots[slot] = current.id;
-  else slots[slot] = "empty";
-  return { ...set, slots };
-}
-
 /** Outer layers first when taking off, inner first when putting on. */
 const removalOrder: readonly EquipmentSlotId[] = [
   "cloak", "bodyArmor", "shirt", "gloves", "leftRing", "rightRing", "helmet", "boots", "shield", "amulet", "eyewear",

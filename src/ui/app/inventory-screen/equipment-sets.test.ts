@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InventoryOperation } from "../../../runtime/input/inventory-operation";
 import { InventoryWornMask as W, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
 import {
-  cycleSetSlot,
   loadEquipmentSets,
   missingFromSet,
   nextEquipmentSetStep,
@@ -164,17 +163,6 @@ describe("equipment sets", () => {
     const set: EquipmentSet = { name: "x", slots: { weapon: 99 } };
     expect(nextEquipmentSetStep(inventory, set)).toBeNull();
     expect(missingFromSet(inventory, set)).toEqual([99]);
-  });
-
-  it("cycles a slot while editing: object, empty, left alone", () => {
-    const inventory = state([armor(1, "a", "helmet", W.helmet)]);
-    let set: EquipmentSet = { name: "x", slots: {} };
-    set = cycleSetSlot(set, "helmet", inventory);
-    expect(set.slots.helmet).toBe(1);
-    set = cycleSetSlot(set, "helmet", inventory);
-    expect(set.slots.helmet).toBe("empty");
-    set = cycleSetSlot(set, "helmet", inventory);
-    expect(set.slots.helmet).toBeUndefined();
   });
 });
 

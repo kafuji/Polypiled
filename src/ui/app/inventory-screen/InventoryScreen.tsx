@@ -38,7 +38,6 @@ import {
 import {
   EQUIPMENT_SET_COUNT,
   type EquipmentSet,
-  cycleSetSlot,
   equipmentSetProcedure,
   loadEquipmentSets,
   missingFromSet,
@@ -399,7 +398,8 @@ export function InventoryScreenView({
   const [countPrompt, setCountPrompt] = useState<CountPrompt | null>(null);
   const [countValue, setCountValue] = useState("1");
   const [confirm, setConfirm] = useState<ConfirmPrompt | null>(null);
-  const [editingSet, setEditingSet] = useState<number | null>(null);
+  /** The equipment set menu (right click, long press, the pad's search). */
+  const [setsMenu, setSetsMenu] = useState<{ index: number; x: number; y: number } | null>(null);
   const [procedureNotice, setProcedureNotice] = useState<InventoryProcedureState | null>(null);
   const pressRef = useRef<PressState | null>(null);
   const suppressClickRef = useRef(false);
@@ -652,21 +652,56 @@ export function InventoryScreenView({
     setNotice(missing.length > 0 ? strings.setMissing(missing.length) : null);
     controller.runInventoryProcedure(equipmentSetProcedure(set, setLabel(index)));
   };
-  const writeSet = (index: number, set: EquipmentSet | null) => {
+  const recordSet = (index: number) => {
     const next = [...sets];
-    next[index] = set;
+    next[index] = recordEquipmentSet(inventory, "");
     onSetsChange(next);
+    setNotice(strings.setRecorded(index + 1));
   };
+  /** A click changes into the set; an empty one saves what is worn. */
   const onSetButton = (index: number) => {
-    if (editingSet !== null) {
-      setEditingSet(index);
-      if (!sets[index]) writeSet(index, recordEquipmentSet(inventory, ""));
+    if (setPressRef.current?.opened) {
+      setPressRef.current = null;
       return;
     }
     if (sets[index]) applySet(index);
-    else writeSet(index, recordEquipmentSet(inventory, ""));
+    else recordSet(index);
   };
-  const editedSet = editingSet !== null ? sets[editingSet] : null;
+  const openSetMenu = (index: number, x: number, y: number) => {
+    setMenu(null);
+    setSetsMenu({ index, x, y });
+  };
+  /** What a saved set puts on, for its tooltip. */
+  const setSummary = (set: EquipmentSet) =>
+    equipmentSlotLayout
+      .map(({ id }) => {
+        const value = set.slots[id];
+        if (typeof value !== "number") return null;
+        const object = findObject(value);
+        return object ? `${slotLabel(id)}: ${name(object)}` : null;
+      })
+      .filter(Boolean)
+      .join("\n");
+  // long press on a set button opens its menu (touch)
+  const setPressRef = useRef<{ timer: number; opened: boolean } | null>(null);
+  const beginSetPress = (event: React.PointerEvent, index: number) => {
+    if (event.pointerType === "mouse") return;
+    const { clientX, clientY } = event;
+    const press = {
+      opened: false,
+      timer: window.setTimeout(() => {
+        press.opened = true;
+        openSetMenu(index, clientX, clientY);
+      }, LONG_PRESS_MS),
+    };
+    setPressRef.current = press;
+  };
+  const endSetPress = () => {
+    if (setPressRef.current && !setPressRef.current.opened) {
+      window.clearTimeout(setPressRef.current.timer);
+      setPressRef.current = null;
+    }
+  };
 
   // keys while the screen is open (the pad sends the same keys): Escape and
   // i close, m opens the item menu, e puts on or takes off, 1-3 use a set
@@ -679,15 +714,19 @@ export function InventoryScreenView({
       let handled = true;
       if (event.key === "Escape") {
         if (menu) setMenu(null);
+        else if (setsMenu) setSetsMenu(null);
         else if (countPrompt) setCountPrompt(null);
         else if (confirm) setConfirm(null);
         else if (held) setHeld(null);
-        else if (editingSet !== null) setEditingSet(null);
         else if (staging) closeContainerPanel();
         else controller?.closeInventoryScreen();
       } else if ((event.key === "i" || event.key === "I") && !event.ctrlKey && !event.altKey && !event.metaKey) {
         closeContainerPanel();
         controller?.closeInventoryScreen();
+      } else if (event.key === "m" && (document.activeElement as HTMLElement | null)?.dataset.setIndex !== undefined) {
+        const element = document.activeElement as HTMLElement;
+        const rect = element.getBoundingClientRect();
+        openSetMenu(Number(element.dataset.setIndex), rect.left, rect.bottom);
       } else if (event.key === "m" && focusedObject) {
         const rect = (document.activeElement as HTMLElement | null)?.getBoundingClientRect();
         openMenuAt(focusedObject, rect ? rect.left + rect.width / 2 : window.innerWidth / 2, rect ? rect.bottom : window.innerHeight / 2);
@@ -813,30 +852,19 @@ export function InventoryScreenView({
               const object = objectInSlot(inventory, id);
               const target: DropTarget = { kind: "slot", slot: id };
               const valid = Boolean(validSlots?.has(id));
-              const setValue = editedSet?.slots[id];
-              const setObject = typeof setValue === "number" ? findObject(setValue) : null;
               return (
                 <button
                   type="button"
                   key={id}
-                  className={`nh3d-invs-slot${object ? " is-filled" : ""}${targetClass(target, valid)}${editedSet ? " is-set-editing" : ""}`}
+                  className={`nh3d-invs-slot${object ? " is-filled" : ""}${targetClass(target, valid)}`}
                   style={{ gridColumn: column, gridRow: row }}
                   data-invs-drop={`slot:${id}`}
                   {...turnsAttr(target)}
                   aria-label={`${slotLabel(id)}: ${object ? name(object) : strings.emptySlot}`}
-                  onClick={(event) => {
-                    if (editedSet && editingSet !== null) {
-                      writeSet(editingSet, cycleSetSlot(editedSet, id, inventory));
-                      return;
-                    }
-                    activate(target, object ? { kind: "pack", object } : null, event.detail > 0);
-                  }}
+                  onClick={(event) => activate(target, object ? { kind: "pack", object } : null, event.detail > 0)}
                   onFocus={() => object && setFocused(object)}
                 >
-                  {editedSet ? (
-                    setObject ? renderItem({ kind: "pack", object: setObject }, " is-set-preview")
-                      : <span className="nh3d-invs-set-mark">{setValue === "empty" ? strings.setSlotEmpty : strings.setSlotIgnore}</span>
-                  ) : object ? renderItem({ kind: "pack", object }) : null}
+                  {object ? renderItem({ kind: "pack", object }) : null}
                   <span className="nh3d-invs-slot-label">{slotLabel(id)}</span>
                 </button>
               );
@@ -870,40 +898,24 @@ export function InventoryScreenView({
               <button
                 type="button"
                 key={index}
-                className={`nh3d-invs-set${set ? " is-saved" : ""}${editingSet === index ? " is-editing" : ""}`}
-                title={set ? `${setLabel(index)} (F${index + 1})` : strings.setEmpty}
+                data-set-index={index}
+                className={`nh3d-invs-set${set ? " is-saved" : ""}${setsMenu?.index === index ? " is-menu-open" : ""}`}
+                title={set ? `${setLabel(index)} (F${index + 1})\n${setSummary(set)}` : strings.setEmpty}
                 onClick={() => onSetButton(index)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  openSetMenu(index, event.clientX, event.clientY);
+                }}
+                onPointerDown={(event) => beginSetPress(event, index)}
+                onPointerUp={endSetPress}
+                onPointerCancel={endSetPress}
+                onPointerLeave={endSetPress}
               >
                 <span className="nh3d-invs-set-key">{index + 1}</span>
                 <span className="nh3d-invs-set-name">{set ? setLabel(index) : "+"}</span>
               </button>
             ))}
-            <button
-              type="button"
-              className={`nh3d-invs-set-edit${editingSet !== null ? " is-active" : ""}`}
-              aria-pressed={editingSet !== null}
-              onClick={() => setEditingSet(editingSet === null ? sets.findIndex((set) => set) : null)}
-            >
-              {editingSet !== null ? strings.setDone : strings.setEdit}
-            </button>
           </div>
-          {editingSet !== null && editingSet >= 0 ? (
-            <div className="nh3d-invs-set-editor">
-              <input
-                type="text"
-                maxLength={24}
-                aria-label={strings.setName}
-                placeholder={strings.setDefaultName(editingSet + 1)}
-                value={editedSet?.name ?? ""}
-                onChange={(event) => writeSet(editingSet, { ...(editedSet ?? { slots: {} }), name: event.target.value })}
-              />
-              <button type="button" onClick={() => writeSet(editingSet, recordEquipmentSet(inventory, editedSet?.name ?? ""))}>
-                {strings.setRecord}
-              </button>
-              <button type="button" onClick={() => writeSet(editingSet, null)}>{strings.setDelete}</button>
-              <span className="nh3d-invs-set-hint">{strings.setEditHint}</span>
-            </div>
-          ) : null}
         </section>
 
         <div className="nh3d-invs-side">
@@ -1151,6 +1163,34 @@ export function InventoryScreenView({
           document.body,
         )
         : null}
+
+      {setsMenu ? (
+        <ItemMenu x={setsMenu.x} y={setsMenu.y} title={setLabel(setsMenu.index)} onDismiss={() => setSetsMenu(null)}>
+          <button
+            type="button"
+            role="menuitem"
+            autoFocus
+            disabled={!sets[setsMenu.index]}
+            onClick={() => {
+              applySet(setsMenu.index);
+              setSetsMenu(null);
+            }}
+          >
+            {strings.setApply}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            autoFocus={!sets[setsMenu.index]}
+            onClick={() => {
+              recordSet(setsMenu.index);
+              setSetsMenu(null);
+            }}
+          >
+            {strings.setRecordShort}
+          </button>
+        </ItemMenu>
+      ) : null}
 
       {menu ? (
         <ItemMenu x={menu.x} y={menu.y} title={name(menu.object)} onDismiss={() => setMenu(null)}>
