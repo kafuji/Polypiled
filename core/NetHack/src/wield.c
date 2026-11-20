@@ -1088,4 +1088,36 @@ mwelded(struct obj *obj)
     return FALSE;
 }
 
+/* Polypiled: the inventory screen readies an object as the alternate
+   weapon directly, as 'x' would leave it after wielding it, in one action.
+   The weapon in hand stays where it is; one already in hand trades places
+   with the alternate ('x'). Two-weapon combat ends first, since the off
+   hand would be changing what it holds. */
+int
+nh3d_ready_alternate(struct obj *obj)
+{
+    gm.multi = 0;
+    if (cantwield(gy.youmonst.data)) {
+        pline("Don't be ridiculous!");
+        return ECMD_FAIL;
+    }
+    if (obj == uswapwep) {
+        prinv((char *) 0, obj, 0L);
+        return ECMD_OK;
+    }
+    if (obj == uwep)
+        return doswapweapon();
+    if (obj->owornmask & (W_ARMOR | W_ACCESSORY | W_SADDLE)) {
+        You("cannot ready that!");
+        return ECMD_FAIL;
+    }
+    if (u.twoweap)
+        untwoweapon();
+    if (obj == uquiver)
+        setuqwep((struct obj *) 0);
+    setuswapwep(obj);
+    prinv((char *) 0, uswapwep, 0L);
+    return ECMD_TIME;
+}
+
 /*wield.c*/

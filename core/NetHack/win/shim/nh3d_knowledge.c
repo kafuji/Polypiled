@@ -1226,6 +1226,16 @@ nh3d_inventory_command(void)
         fn = doswapweapon;
     } else if (!strcmp(args[0], "twoweapon") && nargs == 1) {
         fn = dotwoweapon;
+    } else if (!strcmp(args[0], "alternate") && nargs == 2) {
+        struct obj *otmp;
+
+        for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+            if (otmp->invlet == args[1][0])
+                break;
+        if (!otmp)
+            return ECMD_OK;
+        cmdq_clear(CQ_CANNED);
+        return nh3d_ready_alternate(otmp);
     } else if (!strcmp(args[0], "altunwield") && nargs == 1) {
         /* empty the alternate weapon: #altunwield, as picking '-' for it
            from the item actions does */

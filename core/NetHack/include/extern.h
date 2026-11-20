@@ -3816,6 +3816,7 @@ extern void setuwep(struct obj *) NO_NNARGS; /* NULL:ball.c, do.c */
 extern const char *empty_handed(void);
 extern void setuqwep(struct obj *) NO_NNARGS;  /* NULL:ball.c, do.c */
 extern void setuswapwep(struct obj *) NO_NNARGS; /* NULL: ball.c, do.c */
+extern int nh3d_ready_alternate(struct obj *) NONNULLARG1; /* Polypiled */
 extern int dowield(void);
 extern int doswapweapon(void);
 extern int dowieldquiver(void);
