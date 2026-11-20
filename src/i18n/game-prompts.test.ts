@@ -32,6 +32,10 @@ describe("game prompt presentation", () => {
     expect(translateGamePrompt("What do you want to name this dagger?", "ja"))
       .toBe("このダガーに何と名前を付けますか？");
     expect(translateGamePrompt("Pick 3 of what?", "ja")).toBe("何を3個拾いますか？");
+    expect(translateGamePrompt("The newt corpse smells rotten.  Eat it anyway? [yn] (n)", "ja"))
+      .toBe("イモリの死体は腐ったにおいがします。それでも食べますか？ [yn] (n)");
+    expect(translateGamePrompt("The food rations smell a bit off.  Eat one anyway? [yn] (n)", "ja"))
+      .toBe("食料はなんだか変なにおいがします。それでも食べますか？ [yn] (n)");
     expect(translateGamePrompt("This spellbook is very difficult to comprehend.  Continue? [yn] (n)", "ja"))
       .toBe("この魔法書を理解するのはとても難しいです。続けますか？ [yn] (n)");
     expect(translateGamePrompt("You are wielding a long sword.  Ready a dagger instead?", "ja"))

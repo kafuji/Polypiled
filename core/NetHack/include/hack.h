@@ -1424,6 +1424,18 @@ typedef uint32_t mmflags_nht;     /* makemon MM_ flags */
 #define INEDIBLE_AGE  (50L)    /* age when corpse becomes unsafe to eat */
 #define TAINT_AGE    (100L)    /* age when corpse becomes tainted */
 #define ROT_AGE      (250L)    /* age when corpse rots away */
+/* Polypiled: each corpse rots at its own fixed pace of ROT_PACE_MIN to
+   ROT_PACE_MIN + ROT_PACE_SPREAD - 1 turns per stage, chosen from its o_id
+   rather than re-rolled on every bite (vanilla: 10..29, random each time).
+   A corpse turns rotten past stage 3 and tainted past stage 5, so no corpse
+   is rotten before 100 turns or tainted before 150 (vanilla: 40 and 60). */
+#define ROT_PACE_MIN    (25L)
+#define ROT_PACE_SPREAD (20L)
+/* how much older than its kill a zombie's, vampire's or grave's corpse is:
+   enough to be rotten (stage 4) at any pace */
+#define ROTTEN_CORPSE_AGE (4L * (ROT_PACE_MIN + ROT_PACE_SPREAD))
+/* a mummy's corpse is dried meat; it starts this much fresher than a kill */
+#define MUMMY_CURE_AGE (100L)
 #define TROLL_REVIVE_CHANCE 37 /* 1/37 chance for 50 turns ~ 75% chance */
 
 /* Some misc definitions */

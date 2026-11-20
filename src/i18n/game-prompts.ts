@@ -168,6 +168,11 @@ const japanesePromptTemplates: readonly [RegExp, (...values: string[]) => string
     const terms: Readonly<Record<string, string>> = { lover: "愛しい人", dear: "あなた", sweetheart: "かわいい人" };
     return `「${terms[term]}、${translateInventoryItem(armor, "ja")}を脱がせてあげましょうか？」`;
   }],
+  // eat.c food_spoilage_declined(): the hero notices spoiled food before the first bite.
+  [/^The (.+?) smells? (rotten|putrid|a bit off)\.  Eat (?:it|one) anyway\?$/, (item, how) => {
+    const smells: Readonly<Record<string, string>> = { rotten: "腐ったにおいがします", putrid: "ひどい腐臭がします。とうに傷んでいるようです", "a bit off": "なんだか変なにおいがします" };
+    return `${translateInventoryItem(item, "ja")}は${smells[how]}。それでも食べますか？`;
+  }],
   [/^Eat ([^?\n]+) anyway\?$/, (value) => `それでも${translateInventoryItem(value, "ja")}を食べますか？`],
   [/^Pick up ([^?\n]+)\?$/, (value) => `${translateInventoryItem(value, "ja")}を拾いますか？`],
   [/^There is ([^?\n]+) here; eat it\?$/, (value) => `ここに${translateInventoryItem(value, "ja")}があります。食べますか？`],
