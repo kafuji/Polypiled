@@ -18,7 +18,23 @@ export type InventoryOperation =
   | { readonly op: "puton"; readonly item: string; readonly hand?: "left" | "right" }
   /** item "-" empties the hands or the quiver. */
   | { readonly op: "wield" | "quiver"; readonly item: string }
-  | { readonly op: "swap" | "twoweapon" };
+  | { readonly op: "swap" | "twoweapon" }
+  /** count 0 (or none) means the whole stack. */
+  | { readonly op: "pickup" | "drop"; readonly items: readonly InventoryOperationItem[] }
+  /** Open a carried or floor container, take out `out`, then put in `in`, in one action. */
+  | { readonly op: "loot"; readonly container: number; readonly out: readonly number[]; readonly in: readonly number[] };
+
+export interface InventoryOperationItem {
+  /** The game's object id. */
+  readonly id: number;
+  readonly count?: number;
+}
+
+const isId = (value: number) => Number.isInteger(value) && value > 0 && value < 2 ** 32;
+const encodeItems = (items: readonly InventoryOperationItem[]) =>
+  items
+    .map((item) => (item.count && item.count > 0 ? `${item.id}x${Math.trunc(item.count)}` : `${item.id}`))
+    .join(",");
 
 const isInventoryLetter = (value: string) => /^[a-zA-Z$]$/.test(value);
 const isItemOrHands = (value: string) => isInventoryLetter(value) || value === "-";
@@ -45,6 +61,16 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
     case "swap":
     case "twoweapon":
       return operation.op;
+    case "pickup":
+    case "drop":
+      if (operation.items.length === 0 || operation.items.length > 128) return null;
+      if (!operation.items.every((item) => isId(item.id))) return null;
+      return `${operation.op}:${encodeItems(operation.items)}`;
+    case "loot":
+      if (!isId(operation.container)) return null;
+      if (operation.out.length + operation.in.length > 128) return null;
+      if (![...operation.out, ...operation.in].every(isId)) return null;
+      return `loot:${operation.container}:${operation.out.join(",")}:${operation.in.join(",")}`;
     default:
       return null;
   }
@@ -52,7 +78,8 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
 
 /** Accepts only what encodeInventoryOperation produces. */
 export function isInventoryOperationRequest(request: string): boolean {
-  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon)$/.test(
+  if (request.length > 2000) return false;
+  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon|(pickup|drop):\d+(x\d+)?(,\d+(x\d+)?)*|loot:\d+:(\d+(,\d+)*)?:(\d+(,\d+)*)?)$/.test(
     request,
   );
 }

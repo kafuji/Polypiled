@@ -154,6 +154,7 @@ class LocalNetHackRuntime {
     this.systems.inputRequests.inputBroker.drain();
     this.systems.inputRequests.silentInventoryRefreshPending = false;
     this.systems.inputRequests.pendingInventoryOperations = [];
+    this.systems.inputRequests.inventoryOperationInFlight = false;
     this.systems.inputRequests.commandInputContinuation = "none";
     this.systems.textInput.pendingTextResponses = [];
     this.systems.textInput.pendingStdinByteQueue = [];

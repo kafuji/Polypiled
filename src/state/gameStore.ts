@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { shallow } from "zustand/shallow";
 import type { FloorHere } from "../runtime/floor-here";
 import type { InventoryState } from "../runtime/inventory-state";
+import type { InventoryProcedureState } from "../game/engine/ui/inventory-procedures";
 import type {
   GameOverState,
   InfoMenuState,
@@ -77,6 +78,8 @@ type GameStore = {
   /** The hero's inventory (game report); null before one arrives or with an older core. */
   inventoryState: InventoryState | null;
   inventoryScreenOpen: boolean;
+  /** The multi-step inventory plan running or last run (equipment sets, layered armor, nested bags). */
+  inventoryProcedure: InventoryProcedureState | null;
   positionInputActive: boolean;
   positionInputOrigin: string | null;
   newGamePrompt: NewGamePromptState;
@@ -105,6 +108,7 @@ type GameStore = {
   setFloorHere: (state: FloorHere | null) => void;
   setInventoryState: (state: InventoryState | null) => void;
   setInventoryScreenOpen: (open: boolean) => void;
+  setInventoryProcedure: (state: InventoryProcedureState | null) => void;
   setPositionInputActive: (active: boolean, origin?: string | null) => void;
   setNewGamePrompt: (prompt: NewGamePromptState) => void;
   setGameOver: (state: GameOverState) => void;
@@ -144,6 +148,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   floorHere: null,
   inventoryState: null,
   inventoryScreenOpen: false,
+  inventoryProcedure: null,
   positionInputActive: false,
   positionInputOrigin: null,
   newGamePrompt: { visible: false, reason: null },
@@ -274,6 +279,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setInventoryScreenOpen: (open) => {
     if (get().inventoryScreenOpen === open) return;
     set({ inventoryScreenOpen: open });
+  },
+  setInventoryProcedure: (state) => {
+    set({ inventoryProcedure: state });
   },
   setPositionInputActive: (active, origin = null) => {
     const normalized = Boolean(active);

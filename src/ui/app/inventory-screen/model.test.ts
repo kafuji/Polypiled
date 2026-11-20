@@ -22,6 +22,7 @@ function object(letter: string, overrides: Partial<InventoryObject> = {}): Inven
     quantity: 1,
     armorCategory: null,
     eyewear: false,
+    armorDelay: null,
     weight: 10,
     wornMask: 0,
     donning: false,
@@ -45,7 +46,7 @@ function object(letter: string, overrides: Partial<InventoryObject> = {}): Inven
 }
 
 function state(objects: InventoryObject[]): InventoryState {
-  return { weight: 100, capacity: 450, encumbrance: 0, twoWeapon: false, punished: false, objects };
+  return { weight: 100, capacity: 450, encumbrance: 0, twoWeapon: false, punished: false, objects, floor: [], floorHidden: false, floorCount: 0, gameId: 1 };
 }
 
 const armor = (letter: string, category: InventoryObject["armorCategory"], wornMask = 0) =>

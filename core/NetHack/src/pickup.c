@@ -4169,7 +4169,10 @@ nh3d_pickup_objects(const unsigned *ids, const long *counts, int n)
         if (!n_tried)
             reset_justpicked(gi.invent);
         n_tried++;
-        res = pickup_object(obj, counts[i] > 0 ? counts[i] : obj->quan,
+        /* a count beyond the stack takes the whole stack */
+        res = pickup_object(obj,
+                            (counts[i] > 0 && counts[i] < obj->quan)
+                                ? counts[i] : obj->quan,
                             FALSE);
         if (res < 0)
             break;

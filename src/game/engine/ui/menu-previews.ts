@@ -49,6 +49,11 @@ export class MenuPreviews {
    * previews attached where the pack has the tile (the screen otherwise
    * draws the atlas tile).
    */
+  /** The core's last report as it came (no previews). */
+  currentInventoryState(): InventoryState | null {
+    return this.latestInventoryState;
+  }
+
   publishInventoryState(state: InventoryState | null): void {
     this.latestInventoryState = state;
     this.dependencies.engineState.uiAdapter.setInventoryState(state ? this.withInventoryPreviews(state) : null);
@@ -69,7 +74,7 @@ export class MenuPreviews {
           : object.container,
       };
     };
-    return { ...state, objects: state.objects.map(decorate) };
+    return { ...state, objects: state.objects.map(decorate), floor: state.floor.map(decorate) };
   }
 
   menuTilePreviewCanvas: HTMLCanvasElement | null = null;

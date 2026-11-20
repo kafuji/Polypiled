@@ -2,6 +2,7 @@ import type { NethackRuntimeVersion } from "../runtime/types";
 import type { FloorHere } from "../runtime/floor-here";
 import type { InventoryState } from "../runtime/inventory-state";
 import type { InventoryOperation } from "../runtime/input/inventory-operation";
+import type { InventoryProcedure, InventoryProcedureState } from "./engine/ui/inventory-procedures";
 import { normalizeUiFontFamily } from "./ui-font";
 import {
   defaultNh3dTilesetPath,
@@ -1475,6 +1476,7 @@ export interface Nethack3DEngineUIAdapter {
   /** The hero's inventory, as the game reports it; null before a report or after the game. */
   setInventoryState(state: InventoryState | null): void;
   setInventoryScreenOpen(open: boolean): void;
+  setInventoryProcedure(state: InventoryProcedureState | null): void;
   setPositionInputActive(active: boolean, origin?: string | null): void;
   setFpsCrosshairContext(state: FpsCrosshairContextState | null): void;
   setRepeatActionVisible(visible: boolean): void;
@@ -1531,6 +1533,9 @@ export interface Nethack3DEngineController {
   closeInventoryScreen(): void;
   /** Runs an inventory-screen operation through the core at the next command prompt. */
   runInventoryOperation(operation: InventoryOperation): void;
+  /** Runs a multi-step plan one command at a time; a new plan replaces a running one. */
+  runInventoryProcedure(procedure: InventoryProcedure): void;
+  cancelInventoryProcedure(): void;
   closeInfoMenuDialog(): void;
 }
 

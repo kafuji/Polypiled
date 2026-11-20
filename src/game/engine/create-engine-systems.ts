@@ -48,6 +48,7 @@ import { ExtendedCommands } from "./ui/extended-commands";
 import { QuestionMenus } from "./ui/question-menus";
 import { PromptDialogs } from "./ui/prompt-dialogs";
 import { MenuPreviews } from "./ui/menu-previews";
+import { InventoryProcedures } from "./ui/inventory-procedures";
 import { DirectionPrompts } from "./ui/direction-prompts";
 import { MovementInput } from "./input/movement-input";
 import { KeyboardInput } from "./input/keyboard-input";
@@ -86,6 +87,7 @@ export interface EngineSystems {
   readonly exploredMask: ExploredMask;
   readonly lightField: LightField;
   readonly playerKnowledge: PlayerKnowledge;
+  readonly inventoryProcedures: InventoryProcedures;
   readonly wallTops: WallTops;
   readonly renderPipeline: RenderPipeline;
   readonly questSceneExport: QuestSceneExport;
@@ -883,6 +885,12 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get wallGeometry() { return wallGeometry; },
   });
   const playerKnowledge = new PlayerKnowledge();
+  const inventoryProcedures = new InventoryProcedures({
+    sendInput: (input) => inputCommands.sendInput(input),
+    latestInventoryState: () => menuPreviews.currentInventoryState(),
+    visibleMonsters: () => playerKnowledge.monsters,
+    publish: (state) => engineState.uiAdapter.setInventoryProcedure(state),
+  });
   const lightField = new LightField({
     get camera() { return camera; },
     get engineState() { return engineState; },
@@ -950,6 +958,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     exploredMask,
     lightField,
     playerKnowledge,
+    inventoryProcedures,
     wallTops,
     renderPipeline,
     bloodGround,

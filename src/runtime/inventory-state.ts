@@ -63,7 +63,7 @@ export interface InventoryContainer {
 export interface InventoryObject {
   /** The game's object id (o_id): stable while the object exists, says nothing about its type. */
   readonly id: number;
-  /** Inventory letter; null inside containers. */
+  /** Inventory letter; null inside containers and on the floor. */
   readonly letter: string | null;
   /** As the game names it ("an uncursed +1 long sword (weapon in hand)"). */
   readonly name: string;
@@ -76,7 +76,9 @@ export interface InventoryObject {
   readonly armorCategory: InventoryArmorCategory | null;
   /** A blindfold, towel or lenses, worn over the eyes. */
   readonly eyewear: boolean;
-  /** Carried weight, contents included; null inside containers. */
+  /** Extra turns to put this armor on or take it off (oc_delay); null for non-armor. */
+  readonly armorDelay: number | null;
+  /** Carried weight, contents included; null inside containers and on the floor. */
   readonly weight: number | null;
   /** owornmask bits; 0 when not worn or wielded. */
   readonly wornMask: number;
@@ -115,6 +117,14 @@ export interface InventoryState {
   readonly twoWeapon: boolean;
   readonly punished: boolean;
   readonly objects: readonly InventoryObject[];
+  /** What lies here (at most 40), as the floor panel shows it; empty while hidden. */
+  readonly floor: readonly InventoryObject[];
+  /** The hero cannot see what lies here (blind, engulfed, under water or lava). */
+  readonly floorHidden: boolean;
+  /** How many objects lie here, listed or not. */
+  readonly floorCount: number;
+  /** When this game began (the core's ubirthday): tells games apart. */
+  readonly gameId: number | null;
 }
 
 const isInt = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value);
@@ -128,11 +138,11 @@ function parseErosion(raw: unknown): InventoryErosion | null {
   return { level: Math.min(raw.level, 3), kind: raw.kind };
 }
 
-function parseObjectList(raw: unknown, depth: number): InventoryObject[] | null {
+function parseObjectList(raw: unknown, depth: number, carried = true): InventoryObject[] | null {
   if (!Array.isArray(raw)) return null;
   const objects: InventoryObject[] = [];
   for (const entry of raw) {
-    const object = parseObject(entry, depth);
+    const object = parseObject(entry, depth, carried);
     if (!object) return null;
     objects.push(object);
   }
@@ -155,11 +165,11 @@ function parseContainer(raw: unknown, depth: number): InventoryContainer | null 
   };
 }
 
-function parseObject(raw: unknown, depth: number): InventoryObject | null {
+function parseObject(raw: unknown, depth: number, carried = true): InventoryObject | null {
   if (!isRecord(raw) || !isInt(raw.id) || typeof raw.name !== "string" || !isInt(raw.glyph)) return null;
   const container = parseContainer(raw.container, depth);
   if (container === undefined) return null;
-  const topLevel = depth === 0;
+  const topLevel = depth === 0 && carried;
   const letter = topLevel && typeof raw.letter === "string" && raw.letter.length === 1 ? raw.letter : null;
   if (topLevel && letter === null) return null;
   return {
@@ -172,6 +182,7 @@ function parseObject(raw: unknown, depth: number): InventoryObject | null {
     quantity: isInt(raw.quan) && raw.quan > 0 ? raw.quan : 1,
     armorCategory: isInt(raw.armor) ? inventoryArmorCategories[raw.armor] ?? null : null,
     eyewear: raw.eyewear === true,
+    armorDelay: isInt(raw.delay) && raw.delay >= 0 ? raw.delay : null,
     weight: topLevel && isInt(raw.weight) && raw.weight >= 0 ? raw.weight : null,
     wornMask: topLevel && isInt(raw.worn) ? raw.worn >>> 0 : 0,
     donning: raw.donning === true,
@@ -206,6 +217,8 @@ export function parseInventoryState(raw: unknown): InventoryState | null {
   if (!isInt(data.weight) || !isInt(data.capacity) || !isInt(data.encumbrance)) return null;
   const objects = parseObjectList(data.objects, 0);
   if (!objects) return null;
+  const floor = data.floor === undefined ? [] : parseObjectList(data.floor, 0, false);
+  if (!floor) return null;
   return {
     weight: data.weight,
     capacity: Math.max(1, data.capacity),
@@ -213,6 +226,10 @@ export function parseInventoryState(raw: unknown): InventoryState | null {
     twoWeapon: data.twoweapon === true,
     punished: data.punished === true,
     objects,
+    floor,
+    floorHidden: data.floorHidden === true,
+    floorCount: isInt(data.floorCount) ? Math.max(data.floorCount, floor.length) : floor.length,
+    gameId: isInt(data.game) ? data.game : null,
   };
 }
 

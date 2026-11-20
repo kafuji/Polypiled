@@ -1,8 +1,5 @@
-import {
-  encodeInventoryOperation,
-  inventoryOperationInputPrefix,
-  type InventoryOperation,
-} from "../runtime/input/inventory-operation";
+import type { InventoryOperation } from "../runtime/input/inventory-operation";
+import type { InventoryProcedure } from "./engine/ui/inventory-procedures";
 import * as THREE from "three";
 import { setNativeInputModeFps } from "../quest/webxr/native-input-mode";
 import { gameFrameTime } from "./engine/rendering/frame-time";
@@ -971,6 +968,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
         if (data.floorHere) this.systems.engineState.uiAdapter.setFloorHere(data.floorHere);
         break;
 
+      case "inventory_operation_settled":
+        this.systems.inventoryProcedures.onSettled();
+        break;
+
       case "inventory_state":
         if (data.inventory) {
           this.systems.menuPreviews.publishInventoryState(data.inventory);
@@ -1594,6 +1595,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         this.systems.playerKnowledge.reset();
         this.systems.engineState.uiAdapter.setFloorHere(null);
         this.systems.menuPreviews.publishInventoryState(null);
+        this.systems.inventoryProcedures.reset();
         this.systems.promptDialogs.setInventoryStateAvailable(false);
         this.systems.promptDialogs.handleRuntimeTermination(
           typeof data.reason === "string" ? data.reason : "",
@@ -2190,9 +2192,18 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
   /** Runs an inventory-screen operation through the core's #nh3dinventory at the next command prompt. */
   public runInventoryOperation(operation: InventoryOperation): void {
-    const request = encodeInventoryOperation(operation);
-    if (!request || !this.systems.engineState.session) return;
-    this.systems.inputCommands.sendInput(`${inventoryOperationInputPrefix}${request}`);
+    if (!this.systems.engineState.session) return;
+    this.systems.inventoryProcedures.send(operation);
+  }
+
+  /** Runs a multi-step plan one command at a time (see inventory-procedures.ts). */
+  public runInventoryProcedure(procedure: InventoryProcedure): void {
+    if (!this.systems.engineState.session) return;
+    this.systems.inventoryProcedures.start(procedure);
+  }
+
+  public cancelInventoryProcedure(): void {
+    this.systems.inventoryProcedures.cancel();
   }
 
   public closeInfoMenuDialog(): void {

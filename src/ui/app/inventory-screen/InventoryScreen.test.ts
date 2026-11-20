@@ -24,6 +24,7 @@ function object(letter: string, overrides: Partial<InventoryObject> = {}): Inven
     quantity: 1,
     armorCategory: null,
     eyewear: false,
+    armorDelay: null,
     weight: 10,
     wornMask: 0,
     donning: false,
@@ -52,6 +53,10 @@ const inventory: InventoryState = {
   encumbrance: 0,
   twoWeapon: false,
   punished: false,
+  floor: [],
+  floorHidden: false,
+  floorCount: 0,
+  gameId: 1,
   objects: [
     object("a", {
       objectClass: ObjectClass.weapon,

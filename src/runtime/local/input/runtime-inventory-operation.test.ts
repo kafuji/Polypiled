@@ -76,6 +76,33 @@ describe("inventory operations at command boundaries", () => {
     expect(await command).toBe(46);
   });
 
+  it("reports when the game asks for a command after an operation", async () => {
+    const events: unknown[] = [];
+    (runtime as unknown as { eventHandler: (event: unknown) => void }).eventHandler = (event) => events.push(event);
+    send("wear:c");
+    send("wear:d");
+    expect(await nextCommand()).toBe(inventoryOperationKeyCode);
+    expect(events.filter((event) => (event as { type: string }).type === "inventory_operation_settled")).toEqual([]);
+    expect(await nextCommand()).toBe(inventoryOperationKeyCode);
+    expect(events).toContainEqual(expect.objectContaining({ type: "inventory_operation_settled", pending: 1 }));
+    const command = nextCommand();
+    runtime.sendInput(".");
+    expect(await command).toBe(46);
+    const settled = events.filter((event) => (event as { type: string }).type === "inventory_operation_settled");
+    expect(settled).toHaveLength(2);
+    expect(settled[1]).toMatchObject({ pending: 0 });
+  });
+
+  it("encodes pickups, drops and container moves by object id", () => {
+    expect(encodeInventoryOperation({ op: "pickup", items: [{ id: 12 }, { id: 40, count: 3 }] })).toBe("pickup:12,40x3");
+    expect(encodeInventoryOperation({ op: "drop", items: [] })).toBeNull();
+    expect(encodeInventoryOperation({ op: "loot", container: 5, out: [7, 8], in: [] })).toBe("loot:5:7,8:");
+    expect(encodeInventoryOperation({ op: "loot", container: 5, out: [], in: [] })).toBe("loot:5::");
+    expect(isInventoryOperationRequest("loot:5::")).toBe(true);
+    expect(isInventoryOperationRequest("pickup:12,40x3")).toBe(true);
+    expect(isInventoryOperationRequest("pickup:x")).toBe(false);
+  });
+
   it("ignores requests the core would refuse", async () => {
     send("drop:c");
     expect(systems.inputRequests.pendingInventoryOperations).toEqual([]);
