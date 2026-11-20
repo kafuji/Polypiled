@@ -331,11 +331,19 @@
      hug the picture's own edge (its alpha), not the cell: a tile with its
      background kept glows as a square. */
   &.is-blessed .nh3d-invs-item-tile {
-    filter: drop-shadow(0 0 1px rgba(255, 224, 140, 0.95)) drop-shadow(0 0 4px rgba(255, 204, 90, 0.75));
+    filter:
+      drop-shadow(0 0 1px rgb(255, 236, 160))
+      drop-shadow(0 0 1px rgb(255, 224, 130))
+      drop-shadow(0 0 4px rgba(255, 210, 90, 0.95))
+      drop-shadow(0 0 9px rgba(255, 190, 60, 0.8));
   }
 
   &.is-cursed .nh3d-invs-item-tile {
-    filter: drop-shadow(0 0 1px rgba(190, 30, 30, 0.95)) drop-shadow(0 0 4px rgba(160, 20, 20, 0.7));
+    filter:
+      drop-shadow(0 0 1px rgb(220, 40, 40))
+      drop-shadow(0 0 1px rgb(200, 30, 30))
+      drop-shadow(0 0 5px rgba(190, 25, 25, 0.95))
+      drop-shadow(0 0 10px rgba(160, 15, 15, 0.85));
     animation: nh3d-invs-cursed 2.4s ease-in-out infinite;
   }
 
@@ -365,11 +373,19 @@
 @keyframes nh3d-invs-cursed {
   0%,
   100% {
-    filter: drop-shadow(0 0 1px rgba(170, 25, 25, 0.85)) drop-shadow(0 0 3px rgba(140, 15, 15, 0.55));
+    filter:
+      drop-shadow(0 0 1px rgb(200, 30, 30))
+      drop-shadow(0 0 1px rgb(180, 25, 25))
+      drop-shadow(0 0 4px rgba(170, 20, 20, 0.85))
+      drop-shadow(0 0 7px rgba(140, 15, 15, 0.7));
   }
 
   50% {
-    filter: drop-shadow(0 0 1px rgba(210, 35, 35, 1)) drop-shadow(0 0 7px rgba(175, 25, 25, 0.9));
+    filter:
+      drop-shadow(0 0 1px rgb(240, 50, 50))
+      drop-shadow(0 0 1px rgb(220, 40, 40))
+      drop-shadow(0 0 6px rgba(210, 30, 30, 1))
+      drop-shadow(0 0 13px rgba(180, 20, 20, 0.95));
   }
 }
 
