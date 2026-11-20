@@ -327,13 +327,15 @@
     background: radial-gradient(circle at 50% 60%, #4a3a1e 0 40%, transparent 75%);
   }
 
-  /* blessed: a soft golden halo; cursed: a dark red haze that breathes */
-  &.is-blessed {
-    box-shadow: 0 0 6px 1px rgba(255, 214, 110, 0.75), inset 0 0 6px rgba(255, 214, 110, 0.35);
+  /* blessed: a golden glow, cursed: a dark red one that breathes. Both
+     hug the picture's own edge (its alpha), not the cell: a tile with its
+     background kept glows as a square. */
+  &.is-blessed .nh3d-invs-item-tile {
+    filter: drop-shadow(0 0 1px rgba(255, 224, 140, 0.95)) drop-shadow(0 0 4px rgba(255, 204, 90, 0.75));
   }
 
-  &.is-cursed {
-    box-shadow: 0 0 7px 2px rgba(150, 20, 20, 0.75), inset 0 0 8px rgba(90, 8, 8, 0.6);
+  &.is-cursed .nh3d-invs-item-tile {
+    filter: drop-shadow(0 0 1px rgba(190, 30, 30, 0.95)) drop-shadow(0 0 4px rgba(160, 20, 20, 0.7));
     animation: nh3d-invs-cursed 2.4s ease-in-out infinite;
   }
 
@@ -346,12 +348,12 @@
   }
 }
 
-.is-reduced-motion .nh3d-invs-item.is-cursed {
+.is-reduced-motion .nh3d-invs-item.is-cursed .nh3d-invs-item-tile {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nh3d-invs-item.is-cursed {
+  .nh3d-invs-item.is-cursed .nh3d-invs-item-tile {
     animation: none;
   }
 
@@ -363,11 +365,11 @@
 @keyframes nh3d-invs-cursed {
   0%,
   100% {
-    box-shadow: 0 0 5px 1px rgba(150, 20, 20, 0.6), inset 0 0 6px rgba(90, 8, 8, 0.5);
+    filter: drop-shadow(0 0 1px rgba(170, 25, 25, 0.85)) drop-shadow(0 0 3px rgba(140, 15, 15, 0.55));
   }
 
   50% {
-    box-shadow: 0 0 10px 3px rgba(165, 25, 25, 0.9), inset 0 0 10px rgba(100, 10, 10, 0.7);
+    filter: drop-shadow(0 0 1px rgba(210, 35, 35, 1)) drop-shadow(0 0 7px rgba(175, 25, 25, 0.9));
   }
 }
 
