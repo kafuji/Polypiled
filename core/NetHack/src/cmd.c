@@ -5045,10 +5045,14 @@ domouseaction(void)
                         cmdq_add_ec(CQ_CANNED, doopen);
                     else
                         cmdq_add_ec(CQ_CANNED, dokick);
+                    /* Polypiled: the click already chose the door, so
+                       don't ask "In what direction?" */
+                    cmdq_add_dir(CQ_CANNED, x, y, 0);
                     return ECMD_OK;
                 }
                 if (levl[u.ux + x][u.uy + y].doormask & D_CLOSED) {
                     cmdq_add_ec(CQ_CANNED, doopen);
+                    cmdq_add_dir(CQ_CANNED, x, y, 0);
                     return ECMD_OK;
                 }
             }
