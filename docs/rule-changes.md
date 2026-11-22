@@ -42,3 +42,12 @@ one nutrition a turn Hungry lasts about 300 turns and Weak about 100 before
 fainting begins (vanilla: 100 and 50). Fainting and starvation, the nutrition
 limits for satiation and choking, and the nutrition of food are unchanged.
 (`HUNGRY_NUTRITION`, `WEAK_NUTRITION` in `hack.h`)
+
+## Sokoban
+
+Nothing that stays put is generated in Sokoban, since one could settle on the
+only square a boulder can pass and leave the puzzle unsolvable: no monsters
+of speed 0 (molds, jellies and the like), no mimics, and no hiders such as
+piercers and trappers (`stays_put()` in `makemon.c`). The two giant mimics
+posing as boulders that vanilla places at random on the top level are gone
+too (`soko1-*.lua`).

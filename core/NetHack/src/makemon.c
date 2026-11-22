@@ -1589,6 +1589,10 @@ create_critters(
     return known;
 }
 
+/* Polypiled: monsters that never move, or lie in wait where they are
+   (mimics, and hiders such as piercers and trappers) */
+#define stays_put(ptr) (!(ptr)->mmove || (ptr)->mlet == S_MIMIC || is_hider(ptr))
+
 staticfn boolean
 uncommon(int mndx)
 {
@@ -1688,6 +1692,11 @@ rndmonst_adj(int minadj, int maxadj)
         if (uncommon(mndx))
             continue;
         if (Inhell && (ptr->geno & G_NOHELL))
+            continue;
+        /* Polypiled: nothing that stays put is generated in Sokoban, where
+           it could settle on the only square a boulder can pass and make
+           the puzzle unsolvable */
+        if (In_sokoban(&u.uz) && stays_put(ptr))
             continue;
 
         /*
