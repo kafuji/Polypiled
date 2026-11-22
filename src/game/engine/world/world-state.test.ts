@@ -157,7 +157,7 @@ function createEntityFixture() {
   const world = createWorldFixture();
   const dependencies: RuntimeEntityTrackingDependencies = {
     entityBillboards: { shouldAnimateGlyphMoveTransitions: () => true, shouldAnimatePlayerBillboardsInFps: () => false, shouldShowPetHighlightHeart: () => false },
-    entityMovement: { restoreTileVisualFromRememberedTerrain: vi.fn(), startRuntimeMonsterMoveTransition: vi.fn() },
+    entityMovement: { finishEntityMoveTransition: vi.fn(), restoreTileVisualFromRememberedTerrain: vi.fn(), startRuntimeMonsterMoveTransition: vi.fn() },
     levelTerrainCache: world.levelTerrainCache,
     minimap: { minimapTrackedPlayerTileKey: null, queueRuntimeTrackedPlayerMinimapTile: vi.fn(), restoreMinimapTileFromRememberedTerrain: vi.fn() },
     movementInput: { isFpsMode: () => false },
@@ -199,5 +199,21 @@ describe("runtime entity batches", () => {
     expect(dependencies.minimap.minimapTrackedPlayerTileKey).toBe("5,5");
     expect(dependencies.minimap.restoreMinimapTileFromRememberedTerrain).toHaveBeenCalledWith("4,5");
     expect(dependencies.minimap.queueRuntimeTrackedPlayerMinimapTile).toHaveBeenLastCalledWith(moved);
+  });
+
+  it("treats the steed as the hero's visual while riding and drops the stale hero sprite", () => {
+    const { tracking, dependencies } = createEntityFixture();
+    tracking.updateRuntimeMonsterTrackingFromTile({ x: 4, y: 5, glyph: 0, char: "@", monsterId: 0 });
+    expect(tracking.isPlayerRiding()).toBe(false);
+    // GLYPH_RIDDEN_OFF: the core draws the mounted hero's square as the steed.
+    tracking.updateRuntimeMonsterTrackingFromTile({ x: 5, y: 5, glyph: 2682, char: "u", monsterId: 9 });
+    expect(tracking.isPlayerRiding()).toBe(true);
+    expect(dependencies.entityMovement.finishEntityMoveTransition).toHaveBeenCalledWith("player", false);
+    expect(tracking.runtimeMonsterTileKeyById.has(0)).toBe(false);
+    const ridden = { x: 6, y: 5, glyph: 2682, char: "u", monsterId: 9 };
+    tracking.updateRuntimeMonsterTrackingFromTile(ridden);
+    expect(dependencies.entityMovement.startRuntimeMonsterMoveTransition).toHaveBeenLastCalledWith(9, "5,5", "6,5", ridden);
+    tracking.updateRuntimeMonsterTrackingFromTile({ x: 6, y: 5, glyph: 0, char: "@", monsterId: 0 });
+    expect(tracking.isPlayerRiding()).toBe(false);
   });
 });

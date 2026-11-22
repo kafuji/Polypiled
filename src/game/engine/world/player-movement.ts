@@ -74,6 +74,7 @@ export interface PlayerMovementDependencies {
   readonly runtimeEntityTracking: Pick<
     RuntimeEntityTracking,
     "hasRuntimeTrackedPlayerEntitySupport"
+    | "isPlayerRiding"
   >;
   readonly tileRendering: Pick<
     TileRendering,
@@ -507,6 +508,12 @@ export class PlayerMovement {
           moveDy,
           autoMoveLikely,
         );
+      } else if (this.dependencies.runtimeEntityTracking.isPlayerRiding()) {
+        // The steed is the hero's visual and animates through its own tracked
+        // move; a hero sprite here would be the dismounted look left behind.
+        this.dependencies.camera.normalModePlayerMoveCameraFollowActive = true;
+        this.fpsLastPlayerMoveFromTile = null;
+        this.dependencies.camera.recenterCameraOnPlayerIfNeeded();
       } else {
         const startedProvisionalSwapTransition =
           this.dependencies.entityMovement.tryStartProvisionalPlayerSwapTransitions(

@@ -20,7 +20,8 @@ export interface RuntimeEntityTrackingDependencies {
   >;
   readonly entityMovement: Pick<
     EntityMovement,
-    "restoreTileVisualFromRememberedTerrain"
+    "finishEntityMoveTransition"
+    | "restoreTileVisualFromRememberedTerrain"
     | "startRuntimeMonsterMoveTransition"
   >;
   readonly levelTerrainCache: Pick<
@@ -70,6 +71,18 @@ export class RuntimeEntityTracking {
   > = new Map();
 
   runtimeTrackedPlayerEntitySeen: boolean = false;
+
+  /**
+   * While mounted the core draws the hero's square as the steed and tags it
+   * with the steed's id, so the steed's own move transition is the hero's
+   * visual. The hero's last seen appearance is stale until the hero is drawn
+   * again (dismounting), so nothing may animate it in the meantime.
+   */
+  ridingSteedId: number | null = null;
+
+  isPlayerRiding(): boolean {
+    return this.ridingSteedId !== null;
+  }
 
   normalizeRuntimeMonsterId(rawValue: unknown): number | null {
     if (typeof rawValue !== "number" || !Number.isFinite(rawValue)) {
@@ -227,6 +240,16 @@ export class RuntimeEntityTracking {
     const eventMonsterId = this.normalizeRuntimeTrackedEntityId(tile.monsterId);
     if (eventMonsterId === 0) {
       this.runtimeTrackedPlayerEntitySeen = true;
+      this.ridingSteedId = null;
+    } else if (
+      eventMonsterId !== null &&
+      !tile.isRuntimeUndiscoveredClear &&
+      this.dependencies.worldClassification.classifyTilePayload(tile)?.effective.kind === "ridden"
+    ) {
+      if (this.ridingSteedId === null) {
+        this.beginRiding();
+      }
+      this.ridingSteedId = eventMonsterId;
     }
     const shouldAnimateTrackedEntity =
       this.dependencies.entityBillboards.shouldAnimateGlyphMoveTransitions() &&
@@ -297,6 +320,16 @@ export class RuntimeEntityTracking {
       this.dependencies.minimap.minimapTrackedPlayerTileKey = key;
       this.dependencies.minimap.queueRuntimeTrackedPlayerMinimapTile(tile);
     }
+  }
+
+  private beginRiding(): void {
+    // Drop any hero sprite still gliding toward the mount square, and the
+    // hero's tracked square, so no later move starts from the dismounted look.
+    this.dependencies.entityMovement.finishEntityMoveTransition(
+      this.getTrackedEntityMoveTransitionId(0),
+      false,
+    );
+    this.removeRuntimeMonsterTrackingById(0);
   }
 
   resolveRuntimeMonsterLastSeenTileById(
