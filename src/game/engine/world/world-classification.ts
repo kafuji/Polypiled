@@ -4,9 +4,11 @@ import {
   getDefaultDarkFloorGlyph,
   getDefaultFloorGlyph,
   getOpenDoorGlyphFrom,
+  isDoorlessDoorwayCmapGlyph,
   isDoorwayCmapGlyph,
   isIronBarsCmapGlyph,
-  isSinkCmapGlyph
+  isSinkCmapGlyph,
+  isThroneCmapGlyph
 } from "../../glyphs/behavior";
 import { getGlyphCatalogEntry, getGlyphCatalogRanges } from "../../glyphs/registry";
 import type { GlyphKind, TileBehaviorResult, TileMaterialKind } from "../../glyphs";
@@ -52,6 +54,7 @@ export interface WorldClassificationDependencies {
   readonly tilesetAssets: Pick<
     TilesetAssets,
     "loadedTilesetTileLayoutVersion"
+    | "isHiResTilesActive"
     | "resolveHiResTile"
     | "resolveRuntimeVersion"
     | "resolveTilesetBackgroundReferenceTileIndex"
@@ -226,9 +229,23 @@ export class WorldClassification {
     }
     if (
       behavior.materialKind === "stairs_up" ||
+      // Down stairs lie flat in plain tiles, but Vulture draws them upright
+      // and high-resolution tiles build them as a 3D model.
       (behavior.materialKind === "stairs_down" &&
-        this.dependencies.tilesetAssets.shouldUseVultureTiles()) ||
+        (this.dependencies.tilesetAssets.shouldUseVultureTiles() ||
+          this.dependencies.tilesetAssets.isHiResTilesActive())) ||
       behavior.materialKind === "fountain"
+    ) {
+      return true;
+    }
+    // Plain tiles leave the throne flat and doors as wall blocks or flat
+    // pictures; high-resolution tiles build both as 3D models. An empty
+    // doorway has no door and stays flat.
+    if (
+      (isThroneCmapGlyph(behavior.effective.glyph) ||
+        (isDoorwayCmapGlyph(behavior.effective.glyph) &&
+          !isDoorlessDoorwayCmapGlyph(behavior.effective.glyph))) &&
+      this.dependencies.tilesetAssets.isHiResTilesActive()
     ) {
       return true;
     }

@@ -7,8 +7,10 @@ import {
   getDefaultFloorGlyph,
   getOpenDoorGlyphFrom,
   isDarkRoomFloorCmapGlyph,
+  isDoorlessDoorwayCmapGlyph,
   isDoorwayCmapGlyph,
-  isSinkCmapGlyph
+  isSinkCmapGlyph,
+  isThroneCmapGlyph
 } from "../../glyphs/behavior";
 import { resolveAsciiGlyphPresentation } from "../../ascii-color-mode";
 import { getTerminalColorHex } from "../../terminal/terminal-display";
@@ -129,6 +131,7 @@ export interface TileRenderingDependencies {
   readonly tilesetAssets: Pick<
     TilesetAssets,
     "isNh5DarkCorridorWallVariantForLegacyTileset"
+    | "isHiResTilesActive"
     | "resolveHiResTile"
     | "resolveRuntimeVersion"
     | "shouldUseVultureTiles"
@@ -308,6 +311,16 @@ export class TileRendering {
     const isStairsDown = behavior.materialKind === "stairs_down";
     const isAltarOrTombstone = this.dependencies.worldClassification.isAltarOrTombstoneLikeBehavior(behavior);
     const isStatue = behavior.effective.kind === "statue";
+    // Thrones and doors stand up only as high-resolution 3D models. An
+    // empty doorway has no door to build and stays a floor tile.
+    const isHiResThrone =
+      isThroneCmapGlyph(behavior.effective.glyph) &&
+      this.dependencies.tilesetAssets.isHiResTilesActive();
+    const isHiResDoor =
+      !behavior.isPlayerGlyph &&
+      isDoorwayCmapGlyph(behavior.effective.glyph) &&
+      !isDoorlessDoorwayCmapGlyph(behavior.effective.glyph) &&
+      this.dependencies.tilesetAssets.isHiResTilesActive();
     const useTiles = this.dependencies.engineState.clientOptions.tilesetMode === "tiles";
     const isOverheadAsciiMode = !useTiles && !this.dependencies.movementInput.isFpsMode();
     const nowMs = Date.now();
@@ -389,8 +402,10 @@ export class TileRendering {
       (this.dependencies.movementInput.isFpsMode() && isAltarOrTombstone) ||
       (useTiles &&
         (isSink || isFountain || isStairsUp ||
-          (isStairsDown && this.dependencies.tilesetAssets.shouldUseVultureTiles()) ||
-          isAltarOrTombstone || isStatue));
+          (isStairsDown &&
+            (this.dependencies.tilesetAssets.shouldUseVultureTiles() ||
+              this.dependencies.tilesetAssets.isHiResTilesActive())) ||
+          isAltarOrTombstone || isStatue || isHiResThrone || isHiResDoor));
     const shouldUseElevatedBillboard =
       shouldElevateEntity &&
       (useTiles || this.dependencies.movementInput.isFpsMode() || isOverheadAsciiMode);
@@ -598,7 +613,9 @@ export class TileRendering {
         isStairsDown ||
         isSink ||
         isFountain ||
-        isAltarOrTombstone
+        isAltarOrTombstone ||
+        isHiResThrone ||
+        isHiResDoor
       ) {
         renderBehavior = this.dependencies.worldClassification.resolveRaisedSpecialTileFloorBehavior();
       } else {
@@ -908,6 +925,10 @@ export class TileRendering {
       this.dependencies.worldClassification.isDamageFlashableBehavior(behavior);
     mesh.userData.glyphChar = behavior.glyphChar;
     mesh.userData.sourceGlyph = glyph;
+    // A high-resolution closed door is a 3D leaf standing on a floor tile,
+    // but its cell still blocks like the wall block it replaces: it stops
+    // light, and wall tops beside it draw no rim toward it.
+    mesh.userData.closedDoorBlock = isHiResDoor && behavior.isWall;
     mesh.userData.tileTextureSourceGlyph = renderBehavior.effective.glyph;
     const shouldCompositeTransparentFloorOnFlatTile =
       useTerrainTiles &&

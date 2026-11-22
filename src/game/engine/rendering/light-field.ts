@@ -483,7 +483,9 @@ export class LightField {
       if (!Number.isInteger(x) || !Number.isInteger(y)) continue;
       if (x < 0 || y < 0 || x >= this.columns || y >= this.rows) continue;
       const index = y * this.columns + x;
-      this.opaque[index] = mesh.userData?.isWall === true ? 1 : 0;
+      // A closed door drawn as a 3D leaf lies on a floor tile but still
+      // stops light (see TileRendering).
+      this.opaque[index] = mesh.userData?.isWall === true || mesh.userData?.closedDoorBlock === true ? 1 : 0;
       const glyph = mesh.userData?.sourceGlyph;
       if (typeof glyph === "number") {
         if (!knowledge) {

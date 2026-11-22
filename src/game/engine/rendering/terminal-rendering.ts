@@ -61,6 +61,7 @@ export interface TerminalRenderingDependencies {
     "entityBlobShadows"
     | "monsterBillboards"
     | "removeEntityBlobShadow"
+    | "removeAllTerrainProps"
     | "removeMonsterBillboard"
   >;
   readonly floorOcclusion: Pick<
@@ -204,6 +205,7 @@ export class TerminalRendering {
     for (const key of Array.from(this.dependencies.entityBillboards.monsterBillboards.keys())) {
       this.dependencies.entityBillboards.removeMonsterBillboard(key);
     }
+    this.dependencies.entityBillboards.removeAllTerrainProps();
     for (const key of Array.from(this.dependencies.entityBillboards.entityBlobShadows.keys())) {
       this.dependencies.entityBillboards.removeEntityBlobShadow(key);
     }

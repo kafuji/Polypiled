@@ -51,6 +51,8 @@ export const DEFAULT_WALL_TOPS_TUNING: Readonly<WallTopsTuning> = {
  */
 export function classifyWallTopCell(userData: Record<string, unknown> | null | undefined): number {
   if (!userData) return WALL_TOP_BLOCKED;
+  // A high-resolution closed door counts as the door block it replaces.
+  if (userData.closedDoorBlock === true) return WALL_TOP_BLOCKED;
   if (userData.isWall !== true) return WALL_TOP_OPEN;
   if (userData.materialKind === "door") return WALL_TOP_BLOCKED;
   const glyph = typeof userData.tileTextureSourceGlyph === "number"
