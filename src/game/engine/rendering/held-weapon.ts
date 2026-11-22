@@ -113,7 +113,8 @@ export interface HeldWeaponDependencies {
   >;
   readonly tilesetAssets: Pick<
     TilesetAssets,
-    "resolveRuntimeVersion"
+    "resolveHiResTile"
+    | "resolveRuntimeVersion"
     | "resolveSourceTileIndexForRuntime"
     | "resolveTilesetAtlasImageSource"
     | "shouldUseVultureTiles"
@@ -517,11 +518,15 @@ export class HeldWeapon {
     const effectiveFlipState = this.resolveFpsHeldWeaponTileFlipState(
       tileIndex ?? null,
     );
+    // The high-resolution pack loads after the game starts: rebuild once this
+    // weapon's picture arrives (or the pack is switched off).
+    const hiResKey =
+      tileIndex !== null ? this.dependencies.tilesetAssets.resolveHiResTile(tileIndex)?.key ?? "-" : "-";
     return {
       tileIndex: tileIndex ?? -1,
       sourceGlyph,
       tilesetPath: this.dependencies.engineState.clientOptions.tilesetPath,
-      signature: `${this.dependencies.engineState.clientOptions.tilesetPath}|rv:${this.dependencies.tilesetAssets.resolveRuntimeVersion()}|ts:${this.dependencies.tilesetAssets.tileSourceSize}|g:${sourceGlyph ?? -1}|ti:${tileIndex ?? -1}|bg:${backgroundRemovalKey}|preview:${previewTileId ?? -1}|fx:${effectiveFlipState.flipX ? 1 : 0}|fy:${effectiveFlipState.flipY ? 1 : 0}|fd:${effectiveFlipState.flipDiagonal ? 1 : 0}`,
+      signature: `${this.dependencies.engineState.clientOptions.tilesetPath}|rv:${this.dependencies.tilesetAssets.resolveRuntimeVersion()}|ts:${this.dependencies.tilesetAssets.tileSourceSize}|g:${sourceGlyph ?? -1}|ti:${tileIndex ?? -1}|bg:${backgroundRemovalKey}|preview:${previewTileId ?? -1}|fx:${effectiveFlipState.flipX ? 1 : 0}|fy:${effectiveFlipState.flipY ? 1 : 0}|fd:${effectiveFlipState.flipDiagonal ? 1 : 0}|hr:${hiResKey}`,
     };
   }
 
