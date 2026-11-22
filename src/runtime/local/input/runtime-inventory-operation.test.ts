@@ -38,6 +38,8 @@ describe("inventory operation encoding", () => {
     expect(encodeInventoryOperation({ op: "puton", item: "d", hand: "left" })).toBe("puton:d:l");
     expect(encodeInventoryOperation({ op: "wield", item: "-" })).toBe("wield:-");
     expect(encodeInventoryOperation({ op: "swap" })).toBe("swap");
+    expect(encodeInventoryOperation({ op: "sort" })).toBe("sort");
+    expect(isInventoryOperationRequest("sort")).toBe(true);
     expect(encodeInventoryOperation({ op: "adjust", from: "a", to: "a" })).toBeNull();
     expect(encodeInventoryOperation({ op: "wear", item: "-" })).toBeNull();
     expect(isInventoryOperationRequest("wear:c")).toBe(true);

@@ -1024,6 +1024,18 @@ nh3d_build_inventory(struct nh3d_json *js)
     nh3d_json_int(js, capacity);
     nh3d_json_raw(js, ",\"encumbrance\":");
     nh3d_json_int(js, encumbrance);
+    /* the order the inventory lists its classes in (inv_order option) */
+    nh3d_json_raw(js, ",\"order\":[");
+    {
+        const char *c;
+
+        for (c = flags.inv_order; *c; c++) {
+            if (c != flags.inv_order)
+                nh3d_json_raw(js, ",");
+            nh3d_json_int(js, (long) *c);
+        }
+    }
+    nh3d_json_raw(js, "]");
     nh3d_json_raw(js, ",\"twoweapon\":");
     nh3d_json_raw(js, u.twoweap ? "true" : "false");
     nh3d_json_raw(js, ",\"punished\":");
@@ -1244,6 +1256,9 @@ nh3d_inventory_command(void)
             return ECMD_OK;
         cmdq_clear(CQ_CANNED);
         return nh3d_ready_alternate(otmp);
+    } else if (!strcmp(args[0], "sort") && nargs == 1) {
+        cmdq_clear(CQ_CANNED);
+        return nh3d_sort_inventory();
     } else if (!strcmp(args[0], "altunwield") && nargs == 1) {
         /* empty the alternate weapon: #altunwield, as picking '-' for it
            from the item actions does */

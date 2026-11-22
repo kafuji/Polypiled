@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InventoryWornMask, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
+import { defaultClassOrder, InventoryWornMask, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
 import {
   ObjectClass,
   objectInSlot,
@@ -14,6 +14,7 @@ import {
   planDrop,
   planNested,
   planPickup,
+  groupByClass,
 } from "./model";
 
 function object(letter: string, overrides: Partial<InventoryObject> = {}): InventoryObject {
@@ -51,7 +52,7 @@ function object(letter: string, overrides: Partial<InventoryObject> = {}): Inven
 }
 
 function state(objects: InventoryObject[]): InventoryState {
-  return { weight: 100, capacity: 450, encumbrance: 0, twoWeapon: false, punished: false, objects, floor: [], floorHidden: false, floorCount: 0, gameId: 1 };
+  return { weight: 100, capacity: 450, encumbrance: 0, twoWeapon: false, punished: false, objects, floor: [], floorHidden: false, floorCount: 0, gameId: 1, classOrder: defaultClassOrder };
 }
 
 const armor = (letter: string, category: InventoryObject["armorCategory"], wornMask = 0) =>
@@ -145,6 +146,29 @@ describe("unequipping and moving", () => {
     expect(planToggle(inventory, ring).operations).toEqual([{ op: "puton", item: "s", hand: "right" }]);
     expect(planToggle(inventory, ringLeft).operations).toEqual([{ op: "remove", item: "r" }]);
     expect(objectInSlot(inventory, "leftRing")).toBe(ringLeft);
+  });
+});
+
+describe("the pack by kind", () => {
+  it("groups by the game's class order, letters in order within a kind", () => {
+    const pack = state([
+      object("c", { objectClass: ObjectClass.potion }),
+      object("a", { objectClass: ObjectClass.weapon }),
+      object("$", { objectClass: ObjectClass.coin }),
+      object("B", { objectClass: ObjectClass.potion }),
+      object("b", { objectClass: ObjectClass.armor }),
+    ]);
+    expect(groupByClass(pack).map((g) => [g.objectClass, g.objects.map((o) => o.letter)])).toEqual([
+      [ObjectClass.coin, ["$"]],
+      [ObjectClass.weapon, ["a"]],
+      [ObjectClass.armor, ["b"]],
+      [ObjectClass.potion, ["c", "B"]],
+    ]);
+  });
+
+  it("follows a changed order, and lists kinds it leaves out last", () => {
+    const pack = { ...state([object("a", { objectClass: ObjectClass.weapon }), object("b", { objectClass: ObjectClass.potion })]), classOrder: [ObjectClass.potion] };
+    expect(groupByClass(pack).map((g) => g.objectClass)).toEqual([ObjectClass.potion, ObjectClass.weapon]);
   });
 });
 

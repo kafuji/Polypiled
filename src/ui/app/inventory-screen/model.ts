@@ -325,6 +325,31 @@ export function categoryOf(object: InventoryObject): InventoryCategoryId {
   }
 }
 
+/** One kind of thing in the "by kind" view: its class and what is carried of it, by letter. */
+export interface ClassGroup {
+  readonly objectClass: number;
+  readonly objects: readonly InventoryObject[];
+}
+
+/** The pack by kind, in the game's class order (inv_order); kinds it does not list come last. */
+export function groupByClass(state: InventoryState): ClassGroup[] {
+  const rank = (letter: string | null) => (letter ? inventoryGridLetters.indexOf(letter) : -1);
+  const byClass = new Map<number, InventoryObject[]>();
+  for (const object of state.objects) {
+    if (!object.letter) continue;
+    const list = byClass.get(object.objectClass) ?? [];
+    list.push(object);
+    byClass.set(object.objectClass, list);
+  }
+  const unlisted = [...byClass.keys()].filter((c) => !state.classOrder.includes(c)).sort((a, b) => a - b);
+  return [...state.classOrder, ...unlisted]
+    .filter((objectClass) => byClass.has(objectClass))
+    .map((objectClass) => ({
+      objectClass,
+      objects: byClass.get(objectClass)!.sort((a, b) => rank(a.letter) - rank(b.letter)),
+    }));
+}
+
 /** The objects by letter, for the grid. */
 export function objectsByLetter(state: InventoryState): Map<string, InventoryObject> {
   const map = new Map<string, InventoryObject>();

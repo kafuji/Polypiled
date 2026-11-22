@@ -5740,4 +5740,53 @@ perm_invent_toggled(boolean negated)
     in_perm_invent_toggled = FALSE;
 }
 
+/* Polypiled: the inventory screen's sort. Gives the letters out again
+   in the order the inventory lists its classes (inv_order), keeping the
+   order of the letters within a class. Gold keeps '$'; anything past the
+   52 letters gets the overflow letter. Takes no time, like #adjust. */
+staticfn int
+nh3d_sort_rank(struct obj *obj)
+{
+    const char *p = obj->oclass ? strchr(flags.inv_order, obj->oclass) : 0;
+    int class_rank = p ? (int) (p - flags.inv_order) : MAXOCLASSES;
+
+    return class_rank * 256 + (obj->invlet == NOINVSYM ? 255
+                                                       : (obj->invlet ^ 040));
+}
+
+int
+nh3d_sort_inventory(void)
+{
+    static const char letters[] =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    struct obj *otmp, **list;
+    int n = 0, i, j;
+
+    for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (otmp->oclass != COIN_CLASS)
+            n++;
+    if (n == 0)
+        return ECMD_OK;
+    list = (struct obj **) alloc((unsigned) n * sizeof *list);
+    for (i = 0, otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (otmp->oclass != COIN_CLASS)
+            list[i++] = otmp;
+    /* insertion sort: small, and stable */
+    for (i = 1; i < n; i++) {
+        struct obj *key = list[i];
+        int rank = nh3d_sort_rank(key);
+
+        for (j = i - 1; j >= 0 && nh3d_sort_rank(list[j]) > rank; j--)
+            list[j + 1] = list[j];
+        list[j + 1] = key;
+    }
+    for (i = 0; i < n; i++)
+        list[i]->invlet = i < (int) (sizeof letters - 1) ? letters[i]
+                                                          : NOINVSYM;
+    free((genericptr_t) list);
+    reorder_invent();
+    update_inventory();
+    return ECMD_OK;
+}
+
 /*invent.c*/

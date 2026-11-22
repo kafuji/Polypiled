@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { InventoryObject, InventoryState } from "../../../runtime/inventory-state";
+import { defaultClassOrder, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
 import type { KnowledgeMonster } from "../../../runtime/knowledge";
 import { InventoryProcedures, fixedProcedure, type InventoryProcedureState } from "./inventory-procedures";
 
@@ -13,7 +13,7 @@ const state = (wornMask: number): InventoryState => ({
   floor: [],
   floorHidden: false,
   floorCount: 0,
-  gameId: 1,
+  gameId: 1, classOrder: defaultClassOrder,
 });
 
 function harness() {
