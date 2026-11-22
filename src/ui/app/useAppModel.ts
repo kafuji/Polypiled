@@ -1828,9 +1828,6 @@ export function useAppModel() {
   // nh3d-plus: trial-and-error mode save slots.
   const trialSlots = useTrialSlots({
     get controller() { return controller; },
-    get question() { return question; },
-    get newGamePrompt() { return newGamePrompt; },
-    get setNewGamePrompt() { return setNewGamePrompt; },
     get characterCreationConfig() { return characterCreationConfig; },
     get setCharacterCreationConfig() { return setCharacterCreationConfig; },
     get runtimeVersion() { return activeRuntimeVersion; },

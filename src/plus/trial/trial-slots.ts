@@ -5,7 +5,8 @@ import { exportSavedGame, importSavedGame, parseSaveArchive } from "../../ui/app
 /**
  * Trial-and-error slots: copies of real NetHack save archives kept outside the
  * runtime save databases, so restoring a game (which deletes its save file)
- * never consumes the slot. Slots belong to one character, keyed by the same
+ * never consumes the slot. Saving copies a checkpoint the core writes on
+ * request (the shell's "checkpoint" operation) while the game keeps running. Slots belong to one character, keyed by the same
  * logical save name the runtime uses.
  */
 const TRIAL_SLOT_DB_NAME = "nh3d-trial-slots";
@@ -125,29 +126,38 @@ export async function clearTrialSlots(
   await withSlotStore("readwrite", store => store.delete(IDBKeyRange.bound(prefix, `${prefix}\uffff`)));
 }
 
-async function findNewestManualSave(runtimeVersion: NethackRuntimeVersion, characterName: string) {
-  if (!characterName) throw new Error("Character name is required to find its save");
-  const saves = (await fetchSavedGames(runtimeVersion))
-    .filter(save => save.name === characterName && save.category === "manual" && save.isResumable)
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  if (!saves[0]) throw new Error(`No manual save found for ${characterName} after saving`);
-  return saves[0];
+/** The character's checkpoint shards ("autosave"), if the runtime has synced any. */
+async function findCheckpointSave(runtimeVersion: NethackRuntimeVersion, characterName: string) {
+  return (await fetchSavedGames(runtimeVersion)).find(
+    candidate => candidate.category === "autosave" && candidate.name === characterName && candidate.isResumable,
+  ) ?? null;
 }
 
-/** Copy the save file NetHack just wrote into a slot; returns how to resume it. */
-export async function captureTrialSlot(
+/**
+ * Copy the checkpoint NetHack wrote for a save into a slot, once one newer
+ * than `newerThan` has reached storage; the game itself keeps running.
+ * Returns the captured state, or null if that checkpoint is not there yet.
+ */
+export async function captureCheckpointSlot(
   runtimeVersion: NethackRuntimeVersion,
   characterName: string,
   slot: number,
   summary: TrialSlotSummary,
-): Promise<TrialSlotResume> {
-  const save = await findNewestManualSave(runtimeVersion, characterName);
+  newerThan: number,
+): Promise<TrialCheckpointState | null> {
+  if (!characterName || !Number.isInteger(slot) || slot < 1 || slot > TRIAL_SLOT_COUNT) {
+    throw new Error("Invalid character or trial slot");
+  }
+  const save = await findCheckpointSave(runtimeVersion, characterName);
+  if (!save || save.timestamp.getTime() <= newerThan) return null;
   const archive = await exportSavedGame(save, runtimeVersion);
+  const state = readCheckpointState(archive);
+  if (!state || state.checkpointTime <= newerThan) return null;
   const record: TrialSlotRecord = {
     archive, displayName: save.displayName, savedAt: new Date().toISOString(), ...summary,
   };
-  await withSlotStore("readwrite", store => store.put(record, slotKey(runtimeVersion, save.name, slot)));
-  return { name: save.name, initOptions: save.initOptions ?? [], category: "manual" };
+  await withSlotStore("readwrite", store => store.put(record, slotKey(runtimeVersion, characterName, slot)));
+  return state;
 }
 
 /** Copy an explicitly selected, already saved character from the title screen. */
@@ -180,13 +190,16 @@ export async function captureExistingTrialSlot(
   return { name: save.name, initOptions: save.initOptions ?? [], category: "manual" };
 }
 
-/** The just-saved game, for resuming after a save without touching the slot. */
-export async function resolveLatestManualSave(
+/** How to resume the character's own game as storage holds it now. */
+export async function resolveCurrentGame(
   runtimeVersion: NethackRuntimeVersion,
   characterName: string,
 ): Promise<TrialSlotResume> {
-  const save = await findNewestManualSave(runtimeVersion, characterName);
-  return { name: save.name, initOptions: save.initOptions ?? [], category: "manual" };
+  const saves = (await fetchSavedGames(runtimeVersion))
+    .filter(save => save.name === characterName && save.isResumable)
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  if (!saves[0]) throw new Error(`No resumable save found for ${characterName}`);
+  return { name: saves[0].name, initOptions: saves[0].initOptions ?? [], category: saves[0].category };
 }
 
 /**
@@ -204,10 +217,19 @@ async function restoreRecord(
   }
   // A manual save and checkpoint shards of the same character would make
   // NetHack ask about the "game in progress" instead of restoring this copy.
-  for (const save of await fetchSavedGames(runtimeVersion)) {
-    if (save.name === archive.name) await deleteSavedGame(save);
+  const current = (await fetchSavedGames(runtimeVersion)).filter(save => save.name === archive.name);
+  // Keep the game being replaced, so a failed import does not lose it.
+  const backups = await Promise.all(current.map(save => exportSavedGame(save, runtimeVersion)));
+  for (const save of current) await deleteSavedGame(save);
+  try {
+    await importSavedGame(record.archive, runtimeVersion);
+  } catch (error) {
+    for (const save of await fetchSavedGames(runtimeVersion)) {
+      if (save.name === archive.name) await deleteSavedGame(save);
+    }
+    for (const backup of backups) await importSavedGame(backup, runtimeVersion);
+    throw error;
   }
-  await importSavedGame(record.archive, runtimeVersion);
   return { name: archive.name, initOptions: archive.initOptions, category: archive.category };
 }
 
@@ -354,9 +376,7 @@ export async function captureAutoSnapshot(
   describeLevel: (ledger: number) => TrialSlotSummary | null,
   newerThan: number,
 ): Promise<TrialCheckpointState | null> {
-  const save = (await fetchSavedGames(runtimeVersion)).find(
-    candidate => candidate.category === "autosave" && candidate.name === characterName && candidate.isResumable,
-  );
+  const save = await findCheckpointSave(runtimeVersion, characterName);
   if (!save || save.timestamp.getTime() <= newerThan) return null;
   const archive = await exportSavedGame(save, runtimeVersion);
   const state = readCheckpointState(archive);

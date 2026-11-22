@@ -22,6 +22,8 @@ export type InventoryOperation =
   | { readonly op: "alternate"; readonly item: string }
   /** altunwield empties the alternate weapon (#altunwield). */
   | { readonly op: "swap" | "twoweapon" | "altunwield" }
+  /** Write NetHack's checkpoint files now, without taking a turn (trial save slots). */
+  | { readonly op: "checkpoint" }
   /** count 0 (or none) means the whole stack. */
   | { readonly op: "pickup" | "drop"; readonly items: readonly InventoryOperationItem[] }
   /** Open a carried or floor container, take out `out`, then put in `in`, in one action. */
@@ -65,6 +67,7 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
     case "swap":
     case "twoweapon":
     case "altunwield":
+    case "checkpoint":
       return operation.op;
     case "pickup":
     case "drop":
@@ -84,7 +87,7 @@ export function encodeInventoryOperation(operation: InventoryOperation): string 
 /** Accepts only what encodeInventoryOperation produces. */
 export function isInventoryOperationRequest(request: string): boolean {
   if (request.length > 2000) return false;
-  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove|alternate):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon|altunwield|(pickup|drop):\d+(x\d+)?(,\d+(x\d+)?)*|loot:\d+:(\d+(,\d+)*)?:(\d+(,\d+)*)?)$/.test(
+  return /^(adjust:[a-zA-Z$]:[a-zA-Z$]|(wear|takeoff|remove|alternate):[a-zA-Z$]|puton:[a-zA-Z$](:[lr])?|(wield|quiver):[a-zA-Z$-]|swap|twoweapon|altunwield|checkpoint|(pickup|drop):\d+(x\d+)?(,\d+(x\d+)?)*|loot:\d+:(\d+(,\d+)*)?:(\d+(,\d+)*)?)$/.test(
     request,
   );
 }
