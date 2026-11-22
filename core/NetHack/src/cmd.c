@@ -5035,7 +5035,16 @@ domouseaction(void)
             if (IS_DOOR(levl[u.ux + x][u.uy + y].typ)) {
                 /* slight assistance to player: choose kick/open for them */
                 if (levl[u.ux + x][u.uy + y].doormask & D_LOCKED) {
-                    cmdq_add_ec(CQ_CANNED, dokick);
+                    /* Polypiled: with an unlocking tool, unlock rather than
+                       kick; when mounted, kicking asks to kick the steed
+                       instead of the door.  #open handles both through
+                       autounlock (and never offers a kick while riding) */
+                    if (u.usteed
+                        || ((flags.autounlock & AUTOUNLOCK_APPLY_KEY) != 0
+                            && autokey(TRUE)))
+                        cmdq_add_ec(CQ_CANNED, doopen);
+                    else
+                        cmdq_add_ec(CQ_CANNED, dokick);
                     return ECMD_OK;
                 }
                 if (levl[u.ux + x][u.uy + y].doormask & D_CLOSED) {
