@@ -523,8 +523,8 @@ exerper(void)
     if (!(svm.moves % 10)) {
         /* Hunger Checks */
         int hs = (u.uhunger > 1000) ? SATIATED
-                 : (u.uhunger > 150) ? NOT_HUNGRY
-                   : (u.uhunger > 50) ? HUNGRY
+                 : (u.uhunger > HUNGRY_NUTRITION) ? NOT_HUNGRY
+                   : (u.uhunger > WEAK_NUTRITION) ? HUNGRY
                      : (u.uhunger > 0) ? WEAK
                        : FAINTING;
 

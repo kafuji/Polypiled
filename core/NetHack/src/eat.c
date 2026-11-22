@@ -3425,8 +3425,9 @@ newuhs(boolean incr)
 
     newhs = (h > 1000)
                 ? SATIATED
-                : (h > 150) ? NOT_HUNGRY
-                            : (h > 50) ? HUNGRY : (h > 0) ? WEAK : FAINTING;
+                : (h > HUNGRY_NUTRITION) ? NOT_HUNGRY
+                  : (h > WEAK_NUTRITION) ? HUNGRY
+                    : (h > 0) ? WEAK : FAINTING;
 
     /* While you're eating, you may pass from WEAK to HUNGRY to NOT_HUNGRY.
      * This should not produce the message "you only feel hungry now";
@@ -3529,7 +3530,7 @@ newuhs(boolean incr)
                     : "are getting the munchies.");
             } else
                 You("%s.", !incr ? "only feel hungry now"
-                           : (u.uhunger < 145) ? "feel hungry"
+                           : (u.uhunger < HUNGRY_NUTRITION - 5) ? "feel hungry"
                              : "are beginning to feel hungry");
             if (incr && go.occupation
                 && (go.occupation != eatfood && go.occupation != opentin))
@@ -3548,7 +3549,7 @@ newuhs(boolean incr)
                           : "Elf");
             else
                 You("%s weak.", !incr ? "are still"
-                                : (u.uhunger < 45) ? "feel"
+                                : (u.uhunger < WEAK_NUTRITION - 5) ? "feel"
                                   : "are beginning to feel");
             if (incr && go.occupation
                 && (go.occupation != eatfood && go.occupation != opentin))

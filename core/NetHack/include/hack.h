@@ -1423,6 +1423,12 @@ typedef uint32_t mmflags_nht;     /* makemon MM_ flags */
 /* Corpse aging */
 #define INEDIBLE_AGE  (50L)    /* age when corpse becomes unsafe to eat */
 #define TAINT_AGE    (100L)    /* age when corpse becomes tainted */
+
+/* Polypiled: nutrition at or below which the hero is Hungry, and Weak.
+   Vanilla's 150 and 50 left 100 turns from Hungry to Weak and 50 more to
+   fainting; these leave 300 and 100. */
+#define HUNGRY_NUTRITION 400
+#define WEAK_NUTRITION   100
 #define ROT_AGE      (250L)    /* age when corpse rots away */
 /* Polypiled: each corpse rots at its own fixed pace of ROT_PACE_MIN to
    ROT_PACE_MIN + ROT_PACE_SPREAD - 1 turns per stage, chosen from its o_id
