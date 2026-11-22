@@ -300,6 +300,27 @@ export function isSinkCmapGlyph(glyph: number): boolean {
   );
 }
 
+/** The glyph's NetHack 5 map symbol index, or null for non-map glyphs. */
+export function getTerrainCmapIndex(glyph: number): number | null {
+  return getCmapIndex(glyph, null);
+}
+
+export function isThroneCmapGlyph(glyph: number): boolean {
+  return getCmapIndex(glyph, null) === 35;
+}
+
+/** Up or down ladders, plain or branch (cmap 27, 28, 31, 32). */
+export function isLadderCmapGlyph(glyph: number): boolean {
+  const cmapIndex = getCmapIndex(glyph, null);
+  return cmapIndex === 27 || cmapIndex === 28 || cmapIndex === 31 || cmapIndex === 32;
+}
+
+/** Stairs or ladders that lead to another dungeon branch (cmap 29-32). */
+export function isBranchStairsCmapGlyph(glyph: number): boolean {
+  const cmapIndex = getCmapIndex(glyph, null);
+  return cmapIndex !== null && cmapIndex >= 29 && cmapIndex <= 32;
+}
+
 export function isIronBarsCmapGlyph(glyph: number): boolean {
   return getCmapIndex(glyph, null) === 17;
 }

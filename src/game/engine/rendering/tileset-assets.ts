@@ -53,6 +53,7 @@ export interface TilesetAssetsDependencies {
     EntityBillboards,
     "monsterBillboardTextures"
     | "monsterBillboards"
+    | "removeAllTerrainProps"
     | "removeMonsterBillboard"
   >;
   readonly glyphTextures: Pick<
@@ -300,6 +301,7 @@ export class TilesetAssets {
     for (const key of Array.from(this.dependencies.entityBillboards.monsterBillboards.keys())) {
       this.dependencies.entityBillboards.removeMonsterBillboard(key);
     }
+    this.dependencies.entityBillboards.removeAllTerrainProps();
     for (const entry of this.dependencies.entityBillboards.monsterBillboardTextures.values()) {
       entry.texture.dispose();
     }
@@ -313,6 +315,7 @@ export class TilesetAssets {
     for (const key of Array.from(this.dependencies.entityBillboards.monsterBillboards.keys())) {
       this.dependencies.entityBillboards.removeMonsterBillboard(key);
     }
+    this.dependencies.entityBillboards.removeAllTerrainProps();
     for (const entry of this.dependencies.entityBillboards.monsterBillboardTextures.values()) {
       entry.texture.dispose();
     }

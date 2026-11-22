@@ -21,6 +21,14 @@ import type { TerminalRendering } from "./terminal-rendering";
 import type { TilesetAssets } from "./tileset-assets";
 import type { VultureProjection } from "./vulture-projection";
 import type { WorldClassification } from "../world/world-classification";
+import {
+  isRaisedTerrainPropKind,
+  resolveTerrainPropSpec,
+  doorRotation,
+  TerrainPropModels,
+  terrainPropSpecName,
+  type TerrainPropSpec,
+} from "./terrain-props";
 
 export interface EntityBillboardsDependencies {
   readonly billboardShatter: Pick<
@@ -78,6 +86,8 @@ export interface EntityBillboardsDependencies {
     | "tileSourceSize"
     | "tileSourceHeight"
     | "getWorldTileScaleX"
+    | "isHiResTilesActive"
+    | "resolveHiResTile"
   >;
   readonly vultureProjection: Pick<
     VultureProjection,
@@ -129,6 +139,11 @@ export class EntityBillboards {
   entityBlobShadowTexture: THREE.CanvasTexture | null = null;
 
   monsterBillboards: Map<string, THREE.Sprite> = new Map();
+
+  /** 3D stairs and ladders, keyed like the billboards they stand in for. */
+  terrainProps: Map<string, THREE.Group> = new Map();
+
+  private terrainPropModels: TerrainPropModels | null = null;
 
   monsterBillboardTextures: Map<
     string,
@@ -799,11 +814,77 @@ export class EntityBillboards {
         this.removeMonsterBillboard(underlayKey);
       }
     }
+    this.removeTerrainProp(key);
     const sprite = this.detachMonsterBillboard(key);
     if (!sprite) {
       return;
     }
     this.disposeDetachedMonsterBillboard(sprite);
+  }
+
+  /** High-resolution tiles show stairs, ladders and features as 3D models. */
+  shouldUseTerrainPropModels(): boolean {
+    return (
+      this.dependencies.engineState.clientOptions.tilesetMode === "tiles" &&
+      this.dependencies.tilesetAssets.isHiResTilesActive()
+    );
+  }
+
+  private ensureTerrainProp(
+    key: string,
+    x: number,
+    y: number,
+    spec: TerrainPropSpec,
+  ): void {
+    const name = terrainPropSpecName(spec);
+    let prop = this.terrainProps.get(key);
+    if (prop && prop.userData.terrainPropName !== name) {
+      this.removeTerrainProp(key);
+      prop = undefined;
+    }
+    if (!prop) {
+      // Built lazily so the textures come from the pack (and the level's
+      // terrain style) as it is now; removeAllTerrainProps starts over.
+      this.terrainPropModels ??= new TerrainPropModels(
+        (material) =>
+          this.dependencies.lighting.patchMaterialForVignette(material, { faceShade: true }),
+        (tileIndex) => this.dependencies.tilesetAssets.resolveHiResTile(tileIndex),
+        this.dependencies.tilesetAssets.resolveTextureAnisotropyLevel(),
+      );
+      prop = this.terrainPropModels.build(spec);
+      prop.userData.terrainPropName = name;
+      this.terrainProps.set(key, prop);
+      this.dependencies.renderPipeline.scene.add(prop);
+    }
+    prop.position.set(x * TILE_SIZE, -y * TILE_SIZE, 0);
+    prop.rotation.z = doorRotation(spec);
+    // A first-person camera standing on rising stairs would sit inside them.
+    const isFpsPlayerTile =
+      this.dependencies.movementInput.isFpsMode() &&
+      this.dependencies.playerMovement.hasSeenPlayerPosition &&
+      this.dependencies.playerMovement.playerPos.x === x &&
+      this.dependencies.playerMovement.playerPos.y === y;
+    prop.visible = !(isFpsPlayerTile && isRaisedTerrainPropKind(spec.kind));
+  }
+
+  removeTerrainProp(key: string): void {
+    const prop = this.terrainProps.get(key);
+    if (!prop) {
+      return;
+    }
+    // Each prop owns its geometry; materials and textures are shared.
+    this.dependencies.renderPipeline.scene.remove(prop);
+    TerrainPropModels.disposeProp(prop);
+    this.terrainProps.delete(key);
+  }
+
+  /** Drops every prop and the shared textures, which follow the pack. */
+  removeAllTerrainProps(): void {
+    for (const key of Array.from(this.terrainProps.keys())) {
+      this.removeTerrainProp(key);
+    }
+    this.terrainPropModels?.dispose();
+    this.terrainPropModels = null;
   }
 
   getLowestPixelOffset(
@@ -937,6 +1018,22 @@ export class EntityBillboards {
         : null;
     const normalizedMaterialKind =
       typeof materialKind === "string" ? materialKind : null;
+    const terrainPropSpec = resolveTerrainPropSpec(
+      normalizedSourceGlyph,
+      normalizedMaterialKind,
+      tileIndex,
+    );
+    if (terrainPropSpec && this.shouldUseTerrainPropModels()) {
+      // Only this key's sprite: a base key's removal would also drop the
+      // feature drawn under an entity.
+      const sprite = this.detachMonsterBillboard(key);
+      if (sprite) {
+        this.disposeDetachedMonsterBillboard(sprite);
+      }
+      this.ensureTerrainProp(key, x, y, terrainPropSpec);
+      return;
+    }
+    this.removeTerrainProp(key);
     const canUseTranslatedTileWithoutAtlas =
       this.dependencies.tilesetAssets.shouldUseVultureTiles() && normalizedSourceGlyph !== null;
     const useTiles =

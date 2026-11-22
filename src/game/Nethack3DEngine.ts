@@ -1664,6 +1664,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     for (const key of Array.from(this.systems.entityBillboards.monsterBillboards.keys())) {
       this.systems.entityBillboards.removeMonsterBillboard(key);
     }
+    this.systems.entityBillboards.removeAllTerrainProps();
     for (const entry of this.systems.entityBillboards.monsterBillboardTextures.values()) {
       entry.texture.dispose();
     }
