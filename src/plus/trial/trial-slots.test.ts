@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   captureAutoSnapshot,
+  captureCheckpointSlot,
   captureExistingTrialSlot,
   readCheckpointState,
-  resolveLatestManualSave,
+  resolveCurrentGame,
   restoreAutoSnapshot,
   restoreTrialSlot,
 } from "./trial-slots";
@@ -58,7 +59,7 @@ describe("trial save capture", () => {
   const bob = { ...alice, key: "manual:Bob", name: "Bob", timestamp: new Date("2027-01-01T00:00:00Z") };
   it("selects only the requested character even when another save is newer", async () => {
     mocked.fetchSavedGames.mockResolvedValue([bob, alice] as never);
-    await expect(resolveLatestManualSave("5.0", "Alice")).resolves.toMatchObject({ name: "Alice" });
+    await expect(resolveCurrentGame("5.0", "Alice")).resolves.toMatchObject({ name: "Alice" });
   });
   it("does not overwrite a slot when a save changes between reads", async () => {
     mocked.fetchSavedGames.mockResolvedValue([alice] as never);
@@ -111,6 +112,21 @@ describe("automatic snapshot labels", () => {
     expect(mocked.puts).toHaveLength(0);
   });
 
+  it("copies a requested checkpoint into a numbered slot", async () => {
+    mocked.fetchSavedGames.mockResolvedValue([autosave] as never);
+    mocked.exportSavedGame.mockResolvedValue(shardArchive(4, stateTime));
+    await expect(captureCheckpointSlot("5.0", "Alice", 2, { turn: 50, dlevel: 3 }, 0))
+      .resolves.toEqual({ ledger: 4, checkpointTime: Date.parse(stateTime) });
+    expect(mocked.puts[0]).toMatchObject({ key: "5.0:Alice:2", value: { turn: 50, dlevel: 3 } });
+  });
+
+  it("does not fill a slot from a checkpoint older than the save request", async () => {
+    mocked.fetchSavedGames.mockResolvedValue([autosave] as never);
+    await expect(captureCheckpointSlot("5.0", "Alice", 1, { turn: 1, dlevel: 1 }, Date.parse(stateTime)))
+      .resolves.toBeNull();
+    expect(mocked.puts).toHaveLength(0);
+  });
+
   it("ignores a checkpoint it has already captured", async () => {
     mocked.fetchSavedGames.mockResolvedValue([autosave] as never);
     await expect(captureAutoSnapshot("5.0", "Alice", () => ({ turn: 1, dlevel: 1 }), Date.parse(stateTime)))
@@ -134,5 +150,16 @@ describe("trial restore character identity", () => {
     mocked.archive.name = "Alice";
     await expect(restoreTrialSlot("5.0", "Alice", 1)).resolves.toMatchObject({ name: "Alice" });
     expect(mocked.importSavedGame).toHaveBeenCalledWith("stored-archive", "5.0");
+  });
+
+  it("puts the replaced game back when the slot cannot be imported", async () => {
+    mocked.archive.name = "Alice";
+    const running = { key: "autosave:Alice", name: "Alice", category: "autosave", isResumable: true,
+      timestamp: new Date(), files: [] };
+    mocked.fetchSavedGames.mockResolvedValue([running] as never);
+    mocked.exportSavedGame.mockResolvedValue("running-game");
+    mocked.importSavedGame.mockRejectedValueOnce(new Error("quota"));
+    await expect(restoreTrialSlot("5.0", "Alice", 1)).rejects.toThrow("quota");
+    expect(mocked.importSavedGame).toHaveBeenLastCalledWith("running-game", "5.0");
   });
 });
