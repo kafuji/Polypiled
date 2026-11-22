@@ -107,12 +107,12 @@ export class DamageNumbers {
 
   readonly playerDamageNumberFpsRiseDistance: number = 0.34;
 
-  readonly playerDamageNumberNormalScaleFactor: number = 3;
+  readonly playerDamageNumberNormalScaleFactor: number = 1.5;
 
-  readonly playerDamageNumberFpsScaleFactor: number = 0.33;
+  readonly playerDamageNumberFpsScaleFactor: number = 0.165;
 
   /** first person, for numbers over a monster rather than the hero */
-  readonly playerDamageNumberFpsWorldScaleFactor: number = 0.75;
+  readonly playerDamageNumberFpsWorldScaleFactor: number = 0.375;
 
   readonly playerDamageNumberForwardLift: number = 0.07;
 
