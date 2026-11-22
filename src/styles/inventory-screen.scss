@@ -2,16 +2,16 @@
    letter slots and the carried weight. Effects show only what the game
    reports: BUC when known, erosion as the item's name says. */
 /* One cell size for the slots and the grid, as large as the window allows:
-   across, 3 slot columns and 13 letter columns with gaps and padding; down,
-   the slots, the grid, the floor and a container with the header and the
-   detail line, each pack row a name line taller than the cell. The drag
+   across, 3 slot columns and 9 pack columns with gaps and padding; down,
+   the 6 pack rows, the floor row and a container's 2 rows, each a name line
+   taller than the cell, with the headers and the detail line. The drag
    icon, drawn outside the screen, uses it too. */
 .nh3d-inventory-screen,
 .nh3d-invs-ghost {
   --invs-gap: 6px;
   --invs-cell: clamp(
     40px,
-    min(calc((100vw - 170px) / 16), calc((100vh - 300px) / 7.6)),
+    min(calc((100vw - 200px) / 12), calc((100vh - 360px) / 10.4)),
     128px
   );
   /* the item's short name under its icon, one line: ten full-width
@@ -218,7 +218,7 @@
 
 .nh3d-invs-grid {
   display: grid;
-  grid-template-columns: repeat(13, var(--invs-cell));
+  grid-template-columns: repeat(9, var(--invs-cell));
   gap: var(--invs-gap);
 }
 
@@ -565,13 +565,13 @@
   }
 
   .nh3d-invs-ghost {
-    --invs-cell: clamp(22px, calc((100vw - 60px) / 13), 64px);
+    --invs-cell: clamp(22px, calc((100vw - 60px) / 9), 64px);
   }
 
   /* stacked: the slots above the grid, sized by the width alone */
   .nh3d-inventory-screen {
     --invs-gap: 3px;
-    --invs-cell: clamp(22px, calc((100vw - 60px) / 13), 64px);
+    --invs-cell: clamp(22px, calc((100vw - 60px) / 9), 64px);
     max-width: calc(100vw - 8px);
     max-height: calc(100vh - 8px);
     padding: 10px;
@@ -608,7 +608,7 @@
 .nh3d-invs-container {
   position: relative;
   box-sizing: border-box;
-  width: calc(13 * var(--invs-cell) + 12 * var(--invs-gap));
+  width: calc(9 * var(--invs-cell) + 8 * var(--invs-gap));
   max-width: 100%;
   padding: 6px 8px 8px;
   border: 1px solid rgba(158, 197, 223, 0.22);
@@ -627,6 +627,56 @@
 
 .nh3d-invs-container {
   border-color: rgba(230, 211, 106, 0.45);
+}
+
+/* the pack's own head: by letter / by kind, and sort */
+.nh3d-invs-pack-head {
+  justify-content: space-between;
+}
+
+.nh3d-invs-view {
+  display: flex;
+  gap: 0;
+
+  button {
+    border-radius: 0;
+
+    &:first-child {
+      border-radius: 6px 0 0 6px;
+    }
+
+    &:last-child {
+      border-radius: 0 6px 6px 0;
+    }
+
+    &.is-active {
+      background: rgba(102, 204, 255, 0.35);
+      color: #ffffff;
+    }
+  }
+}
+
+/* by kind: a heading per class, scrolling within the 6 rows the letters take */
+.nh3d-invs-classes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(6 * (var(--invs-cell) + var(--invs-name-h)) + 5 * var(--invs-gap));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.nh3d-invs-class-head {
+  color: var(--nh3d-ui-text-muted);
+  font-size: 0.85em;
+  border-bottom: 1px solid rgba(158, 197, 223, 0.2);
+}
+
+/* an open container shows at most 2 rows; the rest scrolls */
+.nh3d-invs-container .nh3d-invs-row {
+  max-height: calc(2 * (var(--invs-cell) + var(--invs-name-h)) + var(--invs-gap));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .nh3d-invs-section-head {

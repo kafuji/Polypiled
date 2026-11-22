@@ -63,6 +63,9 @@ export interface InventoryContainer {
 export type InventoryPriceKind = "unpaid" | "contents" | "forSale";
 const priceKinds: ReadonlySet<string> = new Set(["unpaid", "contents", "forSale"]);
 
+/** NetHack's default inv_order: $")[%?+!=/(*`0_ */
+export const defaultClassOrder: readonly number[] = [12, 5, 2, 3, 7, 9, 10, 8, 4, 11, 6, 13, 14, 15, 16, 17];
+
 export interface InventoryObject {
   /** The game's object id (o_id): stable while the object exists, says nothing about its type. */
   readonly id: number;
@@ -134,6 +137,8 @@ export interface InventoryState {
   readonly floorCount: number;
   /** When this game began (the core's ubirthday): tells games apart. */
   readonly gameId: number | null;
+  /** The order the game lists object classes in (its inv_order option); the default from older cores. */
+  readonly classOrder: readonly number[];
 }
 
 const isInt = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value);
@@ -247,6 +252,9 @@ export function parseInventoryState(raw: unknown): InventoryState | null {
     floorHidden: data.floorHidden === true,
     floorCount: isInt(data.floorCount) ? Math.max(data.floorCount, floor.length) : floor.length,
     gameId: isInt(data.game) ? data.game : null,
+    classOrder: Array.isArray(data.order) && data.order.length > 0 && data.order.every(isInt)
+      ? (data.order as number[])
+      : defaultClassOrder,
   };
 }
 

@@ -24,6 +24,7 @@ import {
   isEquipped,
   objectInSlot,
   objectsByLetter,
+  groupByClass,
   planContainer,
   planDrop,
   planEquip,
@@ -318,6 +319,31 @@ const emptySets: (EquipmentSet | null)[] = Array.from({ length: EQUIPMENT_SET_CO
 
 const MENU_MARGIN_PX = 8;
 
+/** The pack shown by letter (a slot per letter) or by kind (the game's classes). */
+type InventoryView = "letters" | "classes";
+const VIEW_STORAGE_KEY = "nh3d.inventoryView.v1";
+
+function loadInventoryView(): InventoryView {
+  try {
+    return globalThis.localStorage?.getItem(VIEW_STORAGE_KEY) === "classes" ? "classes" : "letters";
+  } catch {
+    return "letters";
+  }
+}
+
+function saveInventoryView(view: InventoryView): void {
+  try {
+    globalThis.localStorage?.setItem(VIEW_STORAGE_KEY, view);
+  } catch {
+    // blocked storage: the view lasts until the page closes
+  }
+}
+
+const classNameKeys: Readonly<Record<number, keyof typeof t.inventoryScreen.classNames>> = {
+  12: "coin", 5: "amulet", 2: "weapon", 3: "armor", 7: "food", 9: "scroll", 10: "spellbook", 8: "potion",
+  4: "ring", 11: "wand", 6: "tool", 13: "gem", 14: "rock", 15: "ball", 16: "chain", 17: "venom",
+};
+
 /**
  * The item menu, drawn on the body: the screen's frame neither clips nor
  * shifts it. Its actions wrap into columns, and it is moved back inside
@@ -438,6 +464,11 @@ export function InventoryScreenView({
   const [dragSource, setDragSource] = useState<DragSource | null>(null);
   const [hoverTarget, setHoverTarget] = useState<DropTarget | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [view, setView] = useState<InventoryView>(loadInventoryView);
+  const changeView = (next: InventoryView) => {
+    setView(next);
+    saveInventoryView(next);
+  };
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [staging, setStaging] = useState<ContainerStaging | null>(null);
   const [countPrompt, setCountPrompt] = useState<CountPrompt | null>(null);
@@ -836,6 +867,14 @@ export function InventoryScreenView({
     );
   };
 
+  const packCellClass = (object: InventoryObject) => [
+    "nh3d-invs-cell",
+    "is-filled",
+    isEquipped(object) ? "is-equipped" : "",
+    stagedIn.has(object.id) ? "is-staged" : "",
+    heldObject?.id === object.id ? "is-held" : "",
+  ].filter(Boolean).join(" ");
+
   const cellName = (object: InventoryObject) => (
     <span className="nh3d-invs-cell-name" aria-hidden="true">{baseName(object)}</span>
   );
@@ -969,18 +1008,64 @@ export function InventoryScreenView({
 
         <div className="nh3d-invs-side">
           <section className="nh3d-invs-pack" data-invs-drop="grid" aria-label={strings.title}>
+            <div className="nh3d-invs-section-head nh3d-invs-pack-head">
+              <div className="nh3d-invs-view" role="group">
+                {(["letters", "classes"] as const).map((option) => (
+                  <button
+                    type="button"
+                    key={option}
+                    aria-pressed={view === option}
+                    className={view === option ? "is-active" : undefined}
+                    onClick={() => changeView(option)}
+                  >
+                    {option === "letters" ? strings.viewLetters : strings.viewClasses}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                disabled={!controller}
+                onClick={() => {
+                  controller?.runInventoryOperation({ op: "sort" });
+                  setNotice(strings.sorted);
+                }}
+              >
+                {strings.sort}
+              </button>
+            </div>
+            {view === "classes" ? (
+              <div className="nh3d-invs-classes">
+                {groupByClass(inventory).map((group) => (
+                  <div key={group.objectClass} className="nh3d-invs-class">
+                    <div className="nh3d-invs-class-head">
+                      {classNameKeys[group.objectClass] ? strings.classNames[classNameKeys[group.objectClass]] : "?"}
+                    </div>
+                    <div className="nh3d-invs-grid">
+                      {group.objects.map((object) => (
+                        <button
+                          type="button"
+                          key={object.id}
+                          className={packCellClass(object)}
+                          aria-label={`${object.letter} - ${name(object)}`}
+                          onClick={(event) => activate({ kind: "grid" }, { kind: "pack", object }, event.detail > 0)}
+                          onFocus={() => setFocused(object)}
+                        >
+                          <span className="nh3d-invs-cell-letter" aria-hidden="true">{object.letter}</span>
+                          {renderItem({ kind: "pack", object })}
+                          {cellName(object)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {inventory.objects.length === 0 ? <span className="nh3d-invs-note">{strings.floorEmpty}</span> : null}
+              </div>
+            ) : (
             <div className="nh3d-invs-grid">
               {inventoryGridLetters.map((letter) => {
                 const object = byLetter.get(letter) ?? null;
                 const target: DropTarget = { kind: "letter", letter };
-                const isHeld = heldObject && object && heldObject.id === object.id;
-                const classes = [
-                  "nh3d-invs-cell",
-                  object ? "is-filled" : "",
-                  object && isEquipped(object) ? "is-equipped" : "",
-                  object && stagedIn.has(object.id) ? "is-staged" : "",
-                  isHeld ? "is-held" : "",
-                ].filter(Boolean).join(" ");
+                const classes = object ? packCellClass(object) : "nh3d-invs-cell";
                 return (
                   <button
                     type="button"
@@ -1011,6 +1096,7 @@ export function InventoryScreenView({
                 {gold ? cellName(gold) : null}
               </button>
             </div>
+            )}
           </section>
 
           <section
