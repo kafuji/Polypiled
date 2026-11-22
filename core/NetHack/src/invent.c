@@ -5751,7 +5751,7 @@ nh3d_sort_rank(struct obj *obj)
     int class_rank = p ? (int) (p - flags.inv_order) : MAXOCLASSES;
 
     return class_rank * 256 + (obj->invlet == NOINVSYM ? 255
-                                                       : inv_rank(obj));
+                                                       : (obj->invlet ^ 040));
 }
 
 int
