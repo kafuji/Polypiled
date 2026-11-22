@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SaveReadChangedError, UnreadableCheckpointStateError } from "../../ui/app/startup/save-transfer";
 import {
   captureAutoSnapshot,
   captureCheckpointSlot,
@@ -15,11 +16,22 @@ const mocked = vi.hoisted(() => ({
   deleteSavedGame: vi.fn(async () => {}),
   importSavedGame: vi.fn(async () => {}),
   exportSavedGame: vi.fn(async () => "same-archive"),
+  replaceTrialSaveAtomically: vi.fn(async () => {}),
+  releaseLease: vi.fn(async () => {}),
   puts: [] as Array<{ value: unknown; key: string }>,
   parseSaveArchive: vi.fn(() => mocked.archive),
 }));
 vi.mock("../../ui/app/startup/saved-games", () => ({ fetchSavedGames: mocked.fetchSavedGames, deleteSavedGame: mocked.deleteSavedGame }));
-vi.mock("../../ui/app/startup/save-transfer", () => ({ exportSavedGame: mocked.exportSavedGame, importSavedGame: mocked.importSavedGame, parseSaveArchive: mocked.parseSaveArchive }));
+vi.mock("../../storage/save-storage-lease", () => ({
+  acquireSaveStorageLease: async () => ({ release: mocked.releaseLease }),
+}));
+vi.mock("../../ui/app/startup/save-transfer", async importOriginal => ({
+  ...await importOriginal<typeof import("../../ui/app/startup/save-transfer")>(),
+  exportSavedGame: mocked.exportSavedGame,
+  importSavedGame: mocked.importSavedGame,
+  parseSaveArchive: mocked.parseSaveArchive,
+  replaceTrialSaveAtomically: mocked.replaceTrialSaveAtomically,
+}));
 
 const snapshotId = "5.0:Alice:auto-123";
 const record = { archive: "stored-archive", displayName: "Alice", savedAt: "2026-01-01T00:00:00Z", turn: 1, dlevel: 1, checkpointTime: 1 };
@@ -150,6 +162,29 @@ describe("trial restore character identity", () => {
     mocked.archive.name = "Alice";
     await expect(restoreTrialSlot("5.0", "Alice", 1)).resolves.toMatchObject({ name: "Alice" });
     expect(mocked.importSavedGame).toHaveBeenCalledWith("stored-archive", "5.0");
+  });
+
+  it("retries a stale backup using the new save listing before changing any files", async () => {
+    mocked.archive.name = "Alice";
+    const expired = { name: "Alice", files: [] };
+    mocked.fetchSavedGames.mockResolvedValueOnce([expired] as never);
+    mocked.exportSavedGame.mockRejectedValueOnce(new SaveReadChangedError("0Alice.0"));
+    await expect(restoreTrialSlot("5.0", "Alice", 1)).resolves.toMatchObject({ name: "Alice" });
+    expect(mocked.fetchSavedGames).toHaveBeenCalledTimes(2);
+    expect(mocked.deleteSavedGame).not.toHaveBeenCalled();
+    expect(mocked.importSavedGame).toHaveBeenCalledWith("stored-archive", "5.0");
+  });
+
+  it("restores a slot atomically when the current checkpoint state is unreadable", async () => {
+    mocked.archive.name = "Alice";
+    const current = { name: "Alice", files: [{ filename: "0Alice.0" }] };
+    mocked.fetchSavedGames.mockResolvedValue([current] as never);
+    mocked.exportSavedGame.mockRejectedValue(new UnreadableCheckpointStateError("0Alice.0"));
+    await expect(restoreTrialSlot("5.0", "Alice", 1)).resolves.toMatchObject({ name: "Alice" });
+    expect(mocked.replaceTrialSaveAtomically).toHaveBeenCalledWith("stored-archive", "5.0", "Alice", [current]);
+    expect(mocked.releaseLease).toHaveBeenCalledOnce();
+    expect(mocked.deleteSavedGame).not.toHaveBeenCalled();
+    expect(mocked.importSavedGame).not.toHaveBeenCalled();
   });
 
   it("puts the replaced game back when the slot cannot be imported", async () => {

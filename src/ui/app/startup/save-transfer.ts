@@ -10,6 +10,18 @@ export class SaveTransferError extends Error {
   constructor(public readonly code: SaveTransferErrorCode) { super(code); }
 }
 
+export class SaveReadChangedError extends Error {
+  constructor(filename: string) {
+    super(`Save file changed while reading: ${filename}`);
+  }
+}
+
+export class UnreadableCheckpointStateError extends Error {
+  constructor(filename: string) {
+    super(`Save file contains no readable data: ${filename}`);
+  }
+}
+
 /** File replacement succeeded; retrying blindly could overwrite a newer save. */
 export class TrialRestoreMetadataError extends Error {
   readonly filesCommitted = true;
@@ -100,7 +112,7 @@ function openSaveDatabase(name: string, create: boolean): Promise<IDBDatabase> {
       if (blocked) request.result.close();
       else resolve(request.result);
     };
-    request.onerror = () => reject(request.error);
+    request.onerror = () => reject(request.error ?? new Error("Could not open the save database"));
     request.onblocked = () => { blocked = true; reject(new Error("Save database is busy")); };
   });
 }
@@ -123,14 +135,19 @@ export async function exportSavedGame(
       let failure: Error | null = null;
       transaction.oncomplete = () => resolve(result);
       transaction.onabort = () => reject(failure ?? transaction.error ?? new Error("Save read aborted"));
-      transaction.onerror = () => reject(transaction.error);
       for (const file of save.files.filter(file => file.dbName === newestFile.dbName)) {
         const request = transaction.objectStore("FILE_DATA").get(file.key);
         request.onsuccess = () => {
           const value = request.result;
-          if (!(value?.contents instanceof Uint8Array) || !value.contents.length) { transaction.abort(); return; }
-          if (options?.requireUnchanged && new Date(value.timestamp).getTime() !== file.timestamp.getTime()) {
-            failure = new Error("Save files changed while reading; list saves and retry");
+          if (!value || (options?.requireUnchanged && new Date(value.timestamp).getTime() !== file.timestamp.getTime())) {
+            failure = new SaveReadChangedError(file.filename);
+            transaction.abort();
+            return;
+          }
+          if (!(value.contents instanceof Uint8Array) || !value.contents.length) {
+            failure = save.category === "autosave" && /\.0$/.test(file.filename)
+              ? new UnreadableCheckpointStateError(file.filename)
+              : new Error(`Save file contains no readable data: ${file.filename}`);
             transaction.abort();
             return;
           }
@@ -176,7 +193,6 @@ export async function importSavedGame(
       const transaction = db.transaction("FILE_DATA", "readwrite");
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(transaction.error ?? new Error("Save import aborted"));
-      transaction.onerror = () => reject(transaction.error);
       // add, rather than put, makes collisions abort the whole transaction.
       for (const record of records) transaction.objectStore("FILE_DATA").add(record.value, record.key);
     });

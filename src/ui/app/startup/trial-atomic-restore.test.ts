@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getRuntimeSaveCompatTag, getRuntimeSaveDbName } from "../../../runtime/save-storage";
 import type { SaveGameRecord } from "./saved-games";
-import { replaceTrialSaveAtomically, TrialRestoreMetadataError } from "./save-transfer";
+import { exportSavedGame, replaceTrialSaveAtomically, SaveReadChangedError, TrialRestoreMetadataError, UnreadableCheckpointStateError } from "./save-transfer";
 
 // A transaction-capable fake: requests run asynchronously and writes become
 // visible only on complete. Abort or request failure discards all its writes.
@@ -30,7 +30,10 @@ class FakeDatabase {
     tx.abort = () => {
       if (finished) return;
       finished = true;
-      queueMicrotask(() => tx.onabort?.());
+      queueMicrotask(() => {
+        tx.onerror?.();
+        tx.onabort?.();
+      });
     };
     const request = (operation: () => unknown): Request => {
       const result: Request = {};
@@ -45,6 +48,7 @@ class FakeDatabase {
       return result;
     };
     const store = {
+      get: (key: string) => request(() => working.get(key)),
       getAllKeys: () => request(() => [...working.keys()]),
       getAll: () => request(() => [...working.values()]),
       delete: (key: string) => request(() => { working.delete(key); }),
@@ -85,6 +89,42 @@ function setup(databases: Record<string, FakeDatabase>, metadataFailure = false)
   vi.stubGlobal("window", { localStorage });
 }
 afterEach(() => vi.unstubAllGlobals());
+
+describe("save export backup failures", () => {
+  const [save] = existing([{ dbName, key: "/save/0Test", timestamp: time }]);
+
+  it("reports a vanished file even if an error event arrives before abort", async () => {
+    setup({ [dbName]: new FakeDatabase() });
+    await expect(exportSavedGame(save, runtime)).rejects.toThrow(SaveReadChangedError);
+  });
+
+  it("identifies an unreadable record without changing the database", async () => {
+    const unreadable = { ...row(0), contents: new Uint8Array() };
+    const db = new FakeDatabase({ "/save/0Test": unreadable });
+    setup({ [dbName]: db });
+    await expect(exportSavedGame(save, runtime)).rejects.toThrow("Save file contains no readable data: 0Test");
+    expect(db.rows.get("/save/0Test")).toBe(unreadable);
+  });
+
+  it("can restore a valid slot over an unreadable checkpoint without losing the original on failure", async () => {
+    const broken = { ...row(0), contents: new Uint8Array() };
+    const shard = row(8);
+    const db = new FakeDatabase({ "/save/0Test.0": broken, "/save/0Test.1": shard });
+    setup({ [dbName]: db });
+    const [checkpoint] = existing(["/save/0Test.0", "/save/0Test.1"].map(key => ({ dbName, key, timestamp: time })));
+    checkpoint.category = "autosave";
+    await expect(exportSavedGame(checkpoint, runtime)).rejects.toThrow(UnreadableCheckpointStateError);
+
+    db.failAdd = true;
+    await expect(replaceTrialSaveAtomically(archive(), runtime, "Test", [checkpoint])).rejects.toThrow("simulated write failure");
+    expect(db.rows.get("/save/0Test.0")).toBe(broken);
+    expect(db.rows.get("/save/0Test.1")).toBe(shard);
+
+    db.failAdd = false;
+    await replaceTrialSaveAtomically(archive(), runtime, "Test", [checkpoint]);
+    expect([...db.rows.keys()]).toEqual(["/save/0Test"]);
+  });
+});
 
 describe("atomic trial save replacement", () => {
   it("replaces all matching saves in one transaction while preserving other characters", async () => {

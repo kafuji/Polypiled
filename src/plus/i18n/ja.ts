@@ -446,6 +446,7 @@ const jaPlusTranslations: LocaleOverrides<TranslationDictionary> = {
         `スロット${slots}件 · 自動${snapshots}件`,
       saving: "スロットにセーブ中……",
       loading: "スロットからロード中……",
+      loadFailed: "試行錯誤のセーブをロードできませんでした。",
     },
   },
   app: {

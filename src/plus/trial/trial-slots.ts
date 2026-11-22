@@ -1,6 +1,14 @@
 import type { NethackRuntimeVersion } from "../../runtime/types";
+import { acquireSaveStorageLease } from "../../storage/save-storage-lease";
 import { deleteSavedGame, fetchSavedGames } from "../../ui/app/startup/saved-games";
-import { exportSavedGame, importSavedGame, parseSaveArchive } from "../../ui/app/startup/save-transfer";
+import {
+  exportSavedGame,
+  importSavedGame,
+  parseSaveArchive,
+  replaceTrialSaveAtomically,
+  SaveReadChangedError,
+  UnreadableCheckpointStateError,
+} from "../../ui/app/startup/save-transfer";
 
 /**
  * Trial-and-error slots: copies of real NetHack save archives kept outside the
@@ -59,7 +67,7 @@ function openTrialSlotDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => reject(request.error ?? new Error("Could not open the trial save database"));
   });
 }
 
@@ -76,7 +84,6 @@ async function withSlotStore<T>(
       const request = run(transaction.objectStore(TRIAL_SLOT_STORE));
       transaction.oncomplete = () => resolve(request.result);
       transaction.onabort = () => reject(transaction.error ?? new Error("Trial slot transaction aborted"));
-      transaction.onerror = () => reject(transaction.error);
     });
   } finally { db.close(); }
 }
@@ -215,11 +222,33 @@ async function restoreRecord(
   if (archive.name !== expectedCharacterName) {
     throw new Error("Trial save character does not match its slot; refusing to replace another character's saves");
   }
+  const resume = { name: archive.name, initOptions: archive.initOptions, category: archive.category };
   // A manual save and checkpoint shards of the same character would make
   // NetHack ask about the "game in progress" instead of restoring this copy.
-  const current = (await fetchSavedGames(runtimeVersion)).filter(save => save.name === archive.name);
   // Keep the game being replaced, so a failed import does not lose it.
-  const backups = await Promise.all(current.map(save => exportSavedGame(save, runtimeVersion)));
+  const readCurrentGames = async () => {
+    const current = (await fetchSavedGames(runtimeVersion)).filter(save => save.name === archive.name);
+    const backups = await Promise.all(current.map(save =>
+      exportSavedGame(save, runtimeVersion, { requireUnchanged: true }),
+    )).catch(async error => {
+      if (!(error instanceof UnreadableCheckpointStateError)) throw error;
+      // The unreadable .0 file cannot be exported. Let IndexedDB preserve the
+      // original rows automatically if replacing them with the slot fails.
+      const lease = await acquireSaveStorageLease();
+      try {
+        await replaceTrialSaveAtomically(record.archive, runtimeVersion, archive.name, current);
+        return null;
+      } finally {
+        await lease.release();
+      }
+    });
+    return { current, backups };
+  };
+  const { current, backups } = await readCurrentGames().catch(error => {
+    if (error instanceof SaveReadChangedError) return readCurrentGames();
+    throw error;
+  });
+  if (backups === null) return resume;
   for (const save of current) await deleteSavedGame(save);
   try {
     await importSavedGame(record.archive, runtimeVersion);
@@ -230,7 +259,7 @@ async function restoreRecord(
     for (const backup of backups) await importSavedGame(backup, runtimeVersion);
     throw error;
   }
-  return { name: archive.name, initOptions: archive.initOptions, category: archive.category };
+  return resume;
 }
 
 export async function restoreTrialSlot(
@@ -323,7 +352,6 @@ async function readAutoSnapshotEntries(
           .sort((a, b) => b.key.localeCompare(a.key)),
       );
       transaction.onabort = () => reject(transaction.error ?? new Error("Trial snapshot read aborted"));
-      transaction.onerror = () => reject(transaction.error);
     });
   } finally { db.close(); }
 }
@@ -404,7 +432,6 @@ export async function captureAutoSnapshot(
       for (const staleKey of stale) store.delete(staleKey);
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(transaction.error ?? new Error("Trial snapshot write aborted"));
-      transaction.onerror = () => reject(transaction.error);
     });
   } finally { db.close(); }
   return state;

@@ -74,6 +74,7 @@ export function TrialTitlePicker(props: {
   onResume: (resume: TrialSlotResume) => void;
 }) {
   const { state, onResume } = props;
+  const [restoreError, setRestoreError] = useState<string | null>(null);
   const character = state.selected;
   if (!character) return null;
   if (state.restoring) {
@@ -83,11 +84,13 @@ export function TrialTitlePicker(props: {
   // No runtime is running on the title screen, so the copy can replace the
   // character's saves directly.
   const load = (restore: () => Promise<TrialSlotResume>) => {
+    setRestoreError(null);
     state.setRestoring(true);
     restore().then(
       resume => onResume({ ...resume, initOptions: withTrialPlayMode(resume.initOptions) }),
       error => {
         console.error("Failed to restore trial save:", error);
+        setRestoreError(error instanceof Error ? error.message : String(error ?? ""));
         state.setRestoring(false);
       },
     );
@@ -96,6 +99,11 @@ export function TrialTitlePicker(props: {
   return (
     <>
       <Section label={character.displayName} wide />
+      {restoreError !== null && (
+        <div className="nh3d-question-text" role="alert">
+          {trialStrings.loadFailed} {restoreError}
+        </div>
+      )}
       <TrialLoadEntries
         onLoadSlot={slot => load(() => restoreTrialSlot(state.runtimeVersion, character.name, slot))}
         onLoadSnapshot={id => load(() => restoreAutoSnapshot(state.runtimeVersion, character.name, id))}

@@ -427,5 +427,6 @@ export const plusEn = {
       `${slots} ${slots === 1 ? "slot" : "slots"} · ${snapshots} automatic`,
     saving: "Saving to slot...",
     loading: "Loading slot...",
+    loadFailed: "Unable to load this trial save.",
   },
 } as const;
