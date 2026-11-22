@@ -40,7 +40,10 @@ export interface PlayerWeaponOverlayDependencies {
   readonly playerMovement: Pick<PlayerMovement, "hasSeenPlayerPosition" | "playerPos">;
   readonly promptDialogs: Pick<PromptDialogs, "currentInventory">;
   readonly renderPipeline: Pick<RenderPipeline, "scene">;
-  readonly tilesetAssets: Pick<TilesetAssets, "resolveRuntimeVersion" | "tileSourceSize">;
+  readonly tilesetAssets: Pick<
+    TilesetAssets,
+    "resolveHiResTile" | "resolveRuntimeVersion" | "tileSourceSize"
+  >;
 }
 
 type WeaponSlot = "primary" | "secondary";
@@ -260,6 +263,9 @@ export class PlayerWeaponOverlay {
       options.tilesetBackgroundTileId,
       tile.tileIndex,
       tile.sourceGlyph ?? -1,
+      // The high-resolution pack loads after the game starts: rebuild once
+      // this weapon's picture arrives (or the pack is switched off).
+      this.dependencies.tilesetAssets.resolveHiResTile(tile.tileIndex)?.key ?? "-",
     ].join("|");
     if (visual.textureKey !== textureKey) {
       const tileTexture = this.dependencies.glyphTextures.createTileTexture(tile.tileIndex, 1, true, {
