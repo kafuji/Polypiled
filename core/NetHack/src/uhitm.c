@@ -1843,6 +1843,8 @@ hmon_hitmon(
             && hmd.dmg > 0 && u.uconduct.weaphit <= 1)
             first_weapon_hit(obj);
         mon->mhp -= hmd.dmg;
+        nh3d_hero_hit(mon, hmd.dmg,
+                      thrown == HMON_MELEE || thrown == HMON_APPLIED);
     }
     /* adjustments might have made tmp become less than what
        a level-draining artifact has already done to max HP */
@@ -4858,6 +4860,7 @@ damageum(
 
     mdef->mstrategy &= ~STRAT_WAITFORU; /* in case player is very fast */
     mdef->mhp -= mhm.damage;
+    nh3d_hero_hit(mdef, mhm.damage, TRUE);
     if (DEADMONSTER(mdef)) {
         /* troll killed by Trollsbane won't auto-revive; FIXME? same when
            Trollsbane is wielded as primary and two-weaponing kills with
@@ -5209,6 +5212,7 @@ missum(
         You("miss %s.", mon_nam(mdef));
     else
         You("miss it.");
+    nh3d_hero_missed(mdef, TRUE);
     if (!helpless(mdef))
         wakeup(mdef, TRUE);
 }

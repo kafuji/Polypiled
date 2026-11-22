@@ -153,6 +153,38 @@ nh3d_note_monster_attack(struct monst *attacker, struct monst *target)
                                  target_id, target_x, target_y);
 }
 
+/* Polypiled: combat feedback; see hack.h */
+#define NH3D_COMBAT_HERO_HIT 1
+#define NH3D_COMBAT_HERO_MISSED 2
+#define NH3D_COMBAT_HERO_DODGED 3
+
+void
+nh3d_hero_hit(struct monst *mon, int dmg, boolean contact)
+{
+    if (!mon || (!contact && !canseemon(mon)))
+        return;
+    nh3d_queue_shim_notification("shim_combat_feedback",
+                                 NH3D_COMBAT_HERO_HIT, mon->mx, mon->my,
+                                 max(dmg, 0));
+}
+
+void
+nh3d_hero_missed(struct monst *mon, boolean contact)
+{
+    if (!mon || (!contact && !canseemon(mon)))
+        return;
+    nh3d_queue_shim_notification("shim_combat_feedback",
+                                 NH3D_COMBAT_HERO_MISSED, mon->mx, mon->my,
+                                 0);
+}
+
+void
+nh3d_hero_dodged(void)
+{
+    nh3d_queue_shim_notification("shim_combat_feedback",
+                                 NH3D_COMBAT_HERO_DODGED, u.ux, u.uy, 0);
+}
+
 void
 nh3d_push_monster_killer(struct monst *killer)
 {

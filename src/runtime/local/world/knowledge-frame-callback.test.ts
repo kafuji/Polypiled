@@ -70,3 +70,23 @@ describe("inventory notifications", () => {
     warn.mockRestore();
   });
 });
+
+describe("combat feedback notifications", () => {
+  it("emits what the hero feels of a fight", () => {
+    const { mapCallbacks, emit } = callbacks();
+    expect(mapCallbacks.handleShimCombatFeedback([1, 10, 5, 7])).toBe(0);
+    mapCallbacks.handleShimCombatFeedback([2, 11, 6, 0]);
+    mapCallbacks.handleShimCombatFeedback([3, 4, 4, 0]);
+    expect(emit.mock.calls.map(([event]) => event)).toEqual([
+      { type: "combat_feedback", kind: "hit", x: 10, y: 5, amount: 7 },
+      { type: "combat_feedback", kind: "miss", x: 11, y: 6, amount: 0 },
+      { type: "combat_feedback", kind: "dodge", x: 4, y: 4, amount: 0 },
+    ]);
+  });
+
+  it("ignores kinds it does not know", () => {
+    const { mapCallbacks, emit } = callbacks();
+    mapCallbacks.handleShimCombatFeedback([9, 1, 1, 1]);
+    expect(emit).not.toHaveBeenCalled();
+  });
+});
