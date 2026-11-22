@@ -3,18 +3,16 @@ import type * as React from "react";
 import type {
   CharacterCreationConfig,
   Nethack3DEngineController,
-  NewGamePromptState,
   PlayerStatsSnapshot,
-  QuestionDialogState,
 } from "../../game/ui-types";
 import type { NethackRuntimeVersion } from "../../runtime/types";
 import {
-  captureTrialSlot,
+  captureCheckpointSlot,
   clearTrialSlots,
   captureAutoSnapshot,
   readAutoSnapshots,
   readTrialSlots,
-  resolveLatestManualSave,
+  resolveCurrentGame,
   restoreAutoSnapshot,
   restoreTrialSlot,
   type TrialAutoSnapshotInfo,
@@ -26,6 +24,14 @@ import { isTrialPlayMode } from "./trial-play-mode";
 
 /** Time for the disposed worker's final IDBFS sync to be cut off by terminate(). */
 const WORKER_RETIRE_DELAY_MS = 400;
+
+/**
+ * A slot save waits for the core's checkpoint to reach IndexedDB (~150ms
+ * after it is written). The core runs it at the next command prompt, so a
+ * pending --More-- or question can hold it back; give up after a while.
+ */
+const SLOT_SAVE_POLL_MS = 150;
+const SLOT_SAVE_TIMEOUT_MS = 8000;
 
 /**
  * The checkpoint is synced ~150ms after NetHack writes it, but a new game's
@@ -54,9 +60,6 @@ export type TrialSlotPicker = "save" | "load";
 
 export interface UseTrialSlotsDependencies {
   readonly controller: Nethack3DEngineController | null;
-  readonly question: QuestionDialogState | null;
-  readonly newGamePrompt: NewGamePromptState;
-  readonly setNewGamePrompt: (state: NewGamePromptState) => void;
   readonly characterCreationConfig: CharacterCreationConfig | null;
   readonly setCharacterCreationConfig: React.Dispatch<React.SetStateAction<CharacterCreationConfig | null>>;
   readonly runtimeVersion: NethackRuntimeVersion;
@@ -66,15 +69,13 @@ export interface UseTrialSlotsDependencies {
 }
 
 /**
- * Save/load anywhere by driving NetHack's own save-and-exit, copying the save
- * into a slot, then resuming in a fresh runtime worker.
+ * Save/load anywhere. Saving asks the core for a checkpoint and copies it
+ * into a slot while the game keeps running; loading replaces the
+ * character's saves with the slot and resumes it in a fresh runtime worker.
  */
 export function useTrialSlots(dependencies: UseTrialSlotsDependencies) {
   const {
     controller,
-    question,
-    newGamePrompt,
-    setNewGamePrompt,
     characterCreationConfig,
     setCharacterCreationConfig,
     runtimeVersion,
@@ -92,14 +93,8 @@ export function useTrialSlots(dependencies: UseTrialSlotsDependencies) {
   useEffect(() => { if (!isPauseMenuVisible) setPicker(null); }, [isPauseMenuVisible]);
   const [slots, setSlots] = useState<Array<TrialSlotInfo | null>>([]);
   const [snapshots, setSnapshots] = useState<TrialAutoSnapshotInfo[]>([]);
-  const pending = useRef<{
-    kind: "save" | "load";
-    // A slot number, or an automatic snapshot id (load only).
-    target: number | string;
-    summary: TrialSlotSummary;
-    startedAt: number;
-    answered: boolean;
-  } | null>(null);
+  // A save or load in progress; automatic snapshots wait for it.
+  const pending = useRef<"save" | "load" | null>(null);
   // Level tracking for automatic snapshots, reset for every game session.
   const sessionId = useRef(0);
   const sessionStartTime = useRef(0);
@@ -215,57 +210,61 @@ export function useTrialSlots(dependencies: UseTrialSlotsDependencies) {
     pollForLevelSnapshot();
   }, [ledger, trialModeActive, characterName]);
 
-  const begin = (kind: "save" | "load", target: number | string) => {
-    if (!trialModeActive || !controller || pending.current) return;
-    pending.current = {
-      kind,
-      target,
-      summary: summarizeLocation(playerStats),
-      startedAt: performance.now(),
-      answered: false,
-    };
+  const saveSlot = (slot: number) => {
+    if (!trialModeActive || !controller || !characterName || pending.current) return;
+    pending.current = "save";
     setPicker(null);
-    setPhase(kind === "save" ? "saving" : "loading");
-    // Both paths save first: it is the only way to make the runtime flush a
-    // coherent state to IndexedDB and exit cleanly before the worker goes away.
-    controller.sendInput("S");
+    setPhase("saving");
+    const summary = summarizeLocation(playerStats);
+    const session = sessionId.current;
+    // Checkpoint files carry the worker's wall-clock mtime.
+    const requestedAt = Date.now();
+    controller.runInventoryOperation({ op: "checkpoint" });
+    void (async () => {
+      let saved = false;
+      try {
+        while (session === sessionId.current && Date.now() - requestedAt < SLOT_SAVE_TIMEOUT_MS) {
+          await new Promise(resolve => window.setTimeout(resolve, SLOT_SAVE_POLL_MS));
+          if (session !== sessionId.current) break;
+          const captured = await captureCheckpointSlot(runtimeVersion, characterName, slot, summary, requestedAt);
+          if (!captured) continue;
+          // Automatic snapshots only take checkpoints newer than this one.
+          lastCheckpointTime.current = Math.max(lastCheckpointTime.current, captured.checkpointTime);
+          saved = true;
+          break;
+        }
+        if (!saved) console.warn("Trial slot save timed out: the checkpoint did not reach storage");
+      } catch (error) {
+        console.error("Trial slot save failed:", error);
+      }
+      if (session !== sessionId.current) return;
+      pending.current = null;
+      setPhase("idle");
+      refreshSlotInfo();
+      if (saved) setIsPauseMenuVisible(false);
+    })();
   };
 
-  // Answer NetHack's "Really save?" for the save we asked for.
-  useEffect(() => {
-    const current = pending.current;
-    if (!current || current.answered || !question || !controller) return;
-    if (!question.choices.includes("y")) return;
-    current.answered = true;
-    controller.chooseQuestionChoice("y");
-  }, [question, controller]);
-
-  // The save ended the runtime: swap in the slot and resume in a new worker.
-  useEffect(() => {
-    const current = pending.current;
-    if (!current || !newGamePrompt.visible || !characterCreationConfig) return;
-    setNewGamePrompt({ visible: false, reason: null });
+  const load = (target: number | string) => {
+    if (!trialModeActive || !controller || !characterName || !characterCreationConfig || pending.current) return;
+    pending.current = "load";
+    setPicker(null);
+    setPhase("loading");
     const baseConfig = characterCreationConfig;
-    const savedAt = performance.now();
     void (async () => {
       let resume: TrialSlotResume;
+      // The running game is discarded, so it need not be saved first; its
+      // worker must be gone before its saves are replaced, though.
+      controller.dispose();
+      await new Promise(resolve => window.setTimeout(resolve, WORKER_RETIRE_DELAY_MS));
       try {
-        controller?.dispose();
-        await new Promise(resolve => window.setTimeout(resolve, WORKER_RETIRE_DELAY_MS));
-        const { target } = current;
-        resume = current.kind === "save"
-          ? await captureTrialSlot(runtimeVersion, characterName, Number(target), current.summary)
-          : typeof target === "string"
-            ? await restoreAutoSnapshot(runtimeVersion, characterName, target)
-            : await restoreTrialSlot(runtimeVersion, characterName, target);
+        resume = typeof target === "string"
+          ? await restoreAutoSnapshot(runtimeVersion, characterName, target)
+          : await restoreTrialSlot(runtimeVersion, characterName, target);
       } catch (error) {
-        console.error("Trial slot operation failed; resuming the just-saved game:", error);
-        resume = await resolveLatestManualSave(runtimeVersion, characterName);
+        console.error("Trial slot load failed; resuming the current game:", error);
+        resume = await resolveCurrentGame(runtimeVersion, characterName);
       }
-      console.log(
-        `Trial ${current.kind}: save+exit ${Math.round(savedAt - current.startedAt)}ms, ` +
-        `slot copy ${Math.round(performance.now() - savedAt)}ms`,
-      );
       pending.current = null;
       setPhase("idle");
       setIsPauseMenuVisible(false);
@@ -282,7 +281,7 @@ export function useTrialSlots(dependencies: UseTrialSlotsDependencies) {
         resumeCategory: resume.category,
       });
     })();
-  }, [newGamePrompt.visible]);
+  };
 
   return {
     trialModeActive,
@@ -292,8 +291,8 @@ export function useTrialSlots(dependencies: UseTrialSlotsDependencies) {
     closeTrialSlotPicker: () => setPicker(null),
     trialSlots: slots,
     trialSnapshots: snapshots,
-    saveTrialSlot: (slot: number) => begin("save", slot),
-    loadTrialSlot: (slot: number) => begin("load", slot),
-    loadTrialSnapshot: (id: string) => begin("load", id),
+    saveTrialSlot: saveSlot,
+    loadTrialSlot: (slot: number) => load(slot),
+    loadTrialSnapshot: (id: string) => load(id),
   } as const;
 }

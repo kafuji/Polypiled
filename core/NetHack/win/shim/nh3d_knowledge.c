@@ -1093,6 +1093,7 @@ nh3d_publish_inventory(boolean force)
  *   takeoff:<x>           T            remove:<x>        R
  *   wield:<x|->           w            quiver:<x|->      Q
  *   swap                  x            twoweapon         X / #twoweapon
+ *   checkpoint            write the checkpoint files now (trial saves)
  *
  * The command answers the real command's prompts through the command
  * queue (getobj() and yn_function() read it) and runs it, so whether the
@@ -1186,6 +1187,13 @@ nh3d_inventory_command(void)
         if ((p = strchr(p, ':')) == 0)
             break;
         *p++ = '\0';
+    }
+    /* checkpoint: write the game state and the current level into the
+       lock files now, as a level change does, for the shell's
+       trial-and-error save slots; takes no time and changes nothing */
+    if (!strcmp(args[0], "checkpoint") && nargs == 1) {
+        do_idlecheckpoint();
+        return ECMD_OK;
     }
     /* pickup:<ids>  drop:<ids>  loot:<container>:<out ids>:<in ids> */
     if (!strcmp(args[0], "pickup") || !strcmp(args[0], "drop")) {
