@@ -1020,6 +1020,16 @@ class Nethack3DEngine implements Nethack3DEngineController {
         break;
       }
 
+      case "combat_feedback": {
+        this.systems.combatAttribution.showCombatFeedback(
+          data.kind,
+          data.x,
+          data.y,
+          data.amount,
+        );
+        break;
+      }
+
       case "monster_killed": {
         const defeatedMonsterId = this.systems.runtimeEntityTracking.normalizeRuntimeMonsterId(
           data.monsterId,

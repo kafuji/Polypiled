@@ -15,6 +15,7 @@ Classic NetHack, presented as an interactive 3D dungeon. Play from above, step i
 - Update checks, web build paths, and project links point to this fork.
 - Gameplay: food no longer spoils at random. Fresh kills are never rotten, corpses take longer to rot, and the hero smells spoiled food before eating it. Hunger leaves much longer to find food before the hero grows weak and faints. Sokoban no longer generates monsters that stay put and could block the puzzle. See [Rule Changes](docs/rule-changes.md).
 - Japanese: fuller interface translation, and in-game messages, prompts, item names and quest texts translated at display time. The project's own translations come first, then unreviewed Nehww references marked 参考訳.
+- Combat feedback: with damage numbers on, the damage the hero deals and attacks that miss (the hero's, and those the hero dodges) float up too. A blow the hero strikes always shows; a missile only when the hero sees the target. Remaining hit points still take a stethoscope.
 - Desktop message log: drag its bottom-right corner to make it wider or show more lines (double-click the corner to reset), and lower its background opacity in Options to see more of the dungeon.
 - Upstream: [JamesIV4/nethack-3d](https://github.com/JamesIV4/nethack-3d), synced at 1.6.2 (`3b6fd23`). See [Fork Maintenance](docs/fork-maintenance.md) for the sync workflow.
 

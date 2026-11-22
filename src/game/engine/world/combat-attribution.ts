@@ -25,6 +25,13 @@ import type { RuntimeEntityTracking } from "./runtime-entity-tracking";
 import type { TileRendering } from "../rendering/tile-rendering";
 import type { WorldClassification } from "./world-classification";
 
+/** Colors of the combat feedback labels; damage taken stays red. */
+const COMBAT_FEEDBACK_STYLES = {
+  hit: { fillStyle: "#ffd447", strokeStyle: "rgba(32, 18, 0, 0.95)" },
+  miss: { fillStyle: "#c9ced6", strokeStyle: "rgba(10, 12, 16, 0.95)" },
+  dodge: { fillStyle: "#f2f5f8", strokeStyle: "rgba(10, 12, 16, 0.95)" },
+} as const;
+
 export interface CombatAttributionDependencies {
   readonly audioHapticsPlatform: Pick<
     AudioHapticsPlatform,
@@ -73,6 +80,7 @@ export interface CombatAttributionDependencies {
     | "disposePlayerDamageNumberParticle"
     | "playerDamageNumberParticles"
     | "spawnPlayerDamageNumberParticle"
+    | "spawnCombatFeedbackParticle"
   >;
   readonly engineState: Pick<
     EngineState,
@@ -243,6 +251,38 @@ export class CombatAttribution {
 
   isPlayerMissMonsterMessage(message: string): boolean {
     return /\byou\s+(?:just\s+)?miss\b/i.test(message);
+  }
+
+  /**
+   * What the hero feels of a fight, as the core reports it: damage the
+   * hero deals ("hit"), a blow or missile of the hero's that misses
+   * ("miss"), and an attack the hero dodges ("dodge", at the hero).
+   * Damage taken is shown from the hero's hit points instead.
+   */
+  showCombatFeedback(kind: unknown, x: unknown, y: unknown, amount: unknown): void {
+    if (
+      !this.dependencies.engineState.clientOptions.damageNumbers ||
+      typeof x !== "number" ||
+      typeof y !== "number"
+    ) {
+      return;
+    }
+    const style = COMBAT_FEEDBACK_STYLES[kind as keyof typeof COMBAT_FEEDBACK_STYLES];
+    if (!style) {
+      return;
+    }
+    const label =
+      kind === "hit"
+        ? String(typeof amount === "number" ? Math.max(0, Math.round(amount)) : 0)
+        : "Miss";
+    const atPlayer = kind === "dodge";
+    this.dependencies.damageNumbers.spawnCombatFeedbackParticle(
+      atPlayer ? this.dependencies.playerMovement.playerPos.x : x,
+      atPlayer ? this.dependencies.playerMovement.playerPos.y : y,
+      label,
+      style,
+      atPlayer,
+    );
   }
 
   isPlayerHitMonsterMessage(message: string): boolean {

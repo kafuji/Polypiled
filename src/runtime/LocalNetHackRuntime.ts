@@ -278,6 +278,9 @@ class LocalNetHackRuntime {
       case "shim_monster_killed":
         return this.systems.mapCallbacks.handleShimMonsterKilled(args);
 
+      case "shim_combat_feedback":
+        return this.systems.mapCallbacks.handleShimCombatFeedback(args);
+
       case "shim_knowledge_frame":
         return this.systems.mapCallbacks.handleShimKnowledgeFrame(args);
 

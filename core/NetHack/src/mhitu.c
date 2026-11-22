@@ -85,6 +85,7 @@ hitmsg(struct monst *mtmp, struct attack *mattk)
 staticfn void
 missmu(struct monst *mtmp, boolean nearmiss, struct attack *mattk)
 {
+    nh3d_hero_dodged();
     gh.hitmsg_mid = 0;
     gh.hitmsg_prev = NULL;
 

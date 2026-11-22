@@ -111,6 +111,9 @@ export class DamageNumbers {
 
   readonly playerDamageNumberFpsScaleFactor: number = 0.33;
 
+  /** first person, for numbers over a monster rather than the hero */
+  readonly playerDamageNumberFpsWorldScaleFactor: number = 0.75;
+
   readonly playerDamageNumberForwardLift: number = 0.07;
 
   readonly playerDamageNumberForwardDirection = new THREE.Vector3();
@@ -210,7 +213,33 @@ export class DamageNumbers {
     damage: number,
   ): void {
     const label = `-${Math.max(1, Math.round(Math.abs(damage)))}`;
-    const { texture, aspectRatio } = this.createDamageNumberTexture(label);
+    this.spawnBouncingNumberParticle(tileX, tileY, label, undefined, true);
+  }
+
+  /**
+   * A label that bursts from a tile and bounces like a damage number:
+   * what the hero deals to a monster ("12", "Miss"), or an attack the
+   * hero dodges (at the hero's own tile, where first person floats it in
+   * front of the camera like damage taken).
+   */
+  spawnCombatFeedbackParticle(
+    tileX: number,
+    tileY: number,
+    label: string,
+    colors: { fillStyle: string; strokeStyle: string },
+    atPlayer: boolean,
+  ): void {
+    this.spawnBouncingNumberParticle(tileX, tileY, label, colors, atPlayer);
+  }
+
+  private spawnBouncingNumberParticle(
+    tileX: number,
+    tileY: number,
+    label: string,
+    colors: { fillStyle: string; strokeStyle: string } | undefined,
+    atPlayer: boolean,
+  ): void {
+    const { texture, aspectRatio } = this.createDamageNumberTexture(label, colors);
     const material = new THREE.SpriteMaterial({
       map: texture,
       transparent: true,
@@ -222,10 +251,14 @@ export class DamageNumbers {
 
     const sprite = new THREE.Sprite(material);
     const scaleMultiplier = 1.1;
-    const useFpsFloating = this.dependencies.movementInput.isFpsMode();
+    const fpsMode = this.dependencies.movementInput.isFpsMode();
+    // Numbers over a monster stay in the world, even in first person.
+    const useFpsFloating = fpsMode && atPlayer;
     const modeScaleFactor = useFpsFloating
       ? this.playerDamageNumberFpsScaleFactor
-      : this.playerDamageNumberNormalScaleFactor;
+      : fpsMode
+        ? this.playerDamageNumberFpsWorldScaleFactor
+        : this.playerDamageNumberNormalScaleFactor;
     const scaleY = 0.42 * scaleMultiplier * modeScaleFactor;
     const scaleX = scaleY * aspectRatio;
     const baseScale = new THREE.Vector2(scaleX, scaleY);
@@ -239,11 +272,13 @@ export class DamageNumbers {
       -tileY * TILE_SIZE,
       this.dependencies.bloodParticles.damageParticleFloorZ + fpsBaseHeightOffset,
     );
-    this.applyFpsForwardOffsetToPlayerNumberPosition(
-      sprite.position,
-      useFpsFloating,
-      fpsLateralOffset,
-    );
+    if (atPlayer) {
+      this.applyFpsForwardOffsetToPlayerNumberPosition(
+        sprite.position,
+        useFpsFloating,
+        fpsLateralOffset,
+      );
+    }
     this.alignPlayerDamageNumberToCamera(sprite);
     sprite.renderOrder = 940;
     this.dependencies.renderPipeline.scene.add(sprite);
@@ -258,7 +293,8 @@ export class DamageNumbers {
 
     let velocity = new THREE.Vector3(0, 0, 0);
     if (!useFpsFloating) {
-      const launchSpeed = (1.95 + Math.random() * 0.45) * 5;
+      const launchSpeed =
+        (1.95 + Math.random() * 0.45) * (fpsMode ? 2.2 : 5);
       const launchAngleRad = THREE.MathUtils.degToRad(10);
       const launchAzimuthRad = Math.random() * Math.PI * 2;
       const horizontalSpeed = launchSpeed * Math.sin(launchAngleRad);

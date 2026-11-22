@@ -467,6 +467,31 @@ export class RuntimeMapCallbacks {
     }
   }
 
+  // Polypiled: what the hero feels of a fight (winshim.c nh3d_hero_hit()
+  // and friends): 1 = the hero dealt `amount`, 2 = the hero missed,
+  // 3 = an attack missed the hero.
+  handleShimCombatFeedback(args) {
+    const [rawKind, rawX, rawY, rawAmount] = args as number[];
+    const kinds = { 1: "hit", 2: "miss", 3: "dodge" } as const;
+    const kind = kinds[Math.trunc(Number(rawKind)) as keyof typeof kinds];
+    if (
+      !kind ||
+      !Number.isFinite(rawX) ||
+      !Number.isFinite(rawY) ||
+      !this.deps.coordinator.eventHandler
+    ) {
+      return 0;
+    }
+    this.deps.coordinator.emit({
+      type: "combat_feedback",
+      kind,
+      x: Math.trunc(rawX),
+      y: Math.trunc(rawY),
+      amount: Number.isFinite(rawAmount) ? Math.max(0, Math.trunc(rawAmount)) : 0,
+    });
+    return 0;
+  }
+
   handleShimCliparound(args) {
     const [clipX, clipY] = args;
     this.deps.coordinator.logRoutine(

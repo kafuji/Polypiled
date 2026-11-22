@@ -2051,6 +2051,7 @@ tmiss(struct obj *obj, struct monst *mon, boolean maybe_wakeup)
         pline("%s %s.", The(missile), otense(obj, "miss"));
     else
         miss(missile, mon);
+    nh3d_hero_missed(mon, FALSE);
     if (maybe_wakeup && !rn2(3))
         wakeup(mon, TRUE);
     return;

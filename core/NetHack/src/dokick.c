@@ -93,6 +93,7 @@ kickdmg(struct monst *mon, boolean clumsy)
     dmg += u.udaminc; /* add ring(s) of increase damage */
     if (dmg > 0)
         mon->mhp -= dmg;
+    nh3d_hero_hit(mon, max(dmg, 0), TRUE);
     if (!DEADMONSTER(mon) && martial() && !bigmonst(mon->data) && !rn2(3)
         && mon->mcanmove && mon != u.ustuck && !mon->mtrapped) {
         /* see if the monster has a place to move into */
@@ -154,6 +155,7 @@ kick_monster(struct monst *mon, coordxy x, coordxy y)
     if (Levitation && !rn2(3) && verysmall(mon->data)
         && !is_flyer(mon->data)) {
         pline("Floating in the air, you miss wildly!");
+        nh3d_hero_missed(mon, TRUE);
         exercise(A_DEX, FALSE);
         (void) passive(mon, uarmf, FALSE, 1, AT_KICK, FALSE);
         return;

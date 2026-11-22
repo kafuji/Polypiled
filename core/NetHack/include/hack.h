@@ -560,6 +560,14 @@ enum hmon_atkmode_types {
     HMON_DRAGGED = 4  /* attached iron ball, pulled into mon */
 };
 
+/* Polypiled: what the hero feels of a fight, for the shell to show
+   (win/shim/winshim.c).  A blow the hero strikes is always felt; a missile
+   only when the hero sees where it lands.  The hero also feels an attack
+   miss them. */
+extern void nh3d_hero_hit(struct monst *, int, boolean);
+extern void nh3d_hero_missed(struct monst *, boolean);
+extern void nh3d_hero_dodged(void);
+
 /* hunger states - see hu_stat in eat.c */
 enum hunger_state_types {
     SATIATED   = 0,
