@@ -3,7 +3,7 @@ import { PlayerMovement, type PlayerMovementDependencies } from "./player-moveme
 import { InputCommands } from "../input/input-commands";
 vi.mock("../../ui-types", () => ({ nh3dOpenCharacterSheetEventName: "open-character-sheet" }));
 
-function fixture() {
+function fixture(riding = false) {
   const visible = vi.fn();
   const commands = new InputCommands({
     engineState: { uiAdapter: { setRepeatActionVisible: visible } },
@@ -11,12 +11,12 @@ function fixture() {
   const movement = new PlayerMovement({
     inputCommands: commands,
     camera: { reserveSharedStepMotionDurationMs: () => 100, recenterCameraOnPlayerIfNeeded: vi.fn() },
-    entityMovement: { tryStartProvisionalPlayerSwapTransitions: () => false, startPlayerMoveTransition: vi.fn() },
+    entityMovement: { activeEntityMoveTransitions: new Map(), tryStartProvisionalPlayerSwapTransitions: vi.fn(() => false), startPlayerMoveTransition: vi.fn() },
     movementInput: { isFpsMode: () => false, lastMovementInputAtMs: 0 },
-    runtimeEntityTracking: { hasRuntimeTrackedPlayerEntitySupport: () => false },
+    runtimeEntityTracking: { hasRuntimeTrackedPlayerEntitySupport: () => false, isPlayerRiding: () => riding },
     promptDialogs: { pendingStartupInventoryRefresh: false },
   } as unknown as PlayerMovementDependencies);
-  return { movement, commands, visible };
+  return { movement, commands, visible, deps: (movement as unknown as { dependencies: PlayerMovementDependencies }).dependencies };
 }
 
 describe("repeat action after player movement", () => {
@@ -47,5 +47,19 @@ describe("repeat action after player movement", () => {
     expect(f.commands.repeatActionVisible).toBe(true);
     f.movement.recordPlayerMovement(4, 4, 5, 4);
     expect(f.commands.repeatActionVisible).toBe(false);
+  });
+});
+
+describe("hero move transition while riding", () => {
+  it("animates the hero sprite when on foot", () => {
+    const f = fixture(); f.movement.hasSeenPlayerPosition = true;
+    f.movement.recordPlayerMovement(4, 4, 5, 4);
+    expect(f.deps.entityMovement.startPlayerMoveTransition).toHaveBeenCalled();
+  });
+  it("leaves the move to the steed's own transition when mounted", () => {
+    const f = fixture(true); f.movement.hasSeenPlayerPosition = true;
+    f.movement.recordPlayerMovement(4, 4, 5, 4);
+    expect(f.deps.entityMovement.startPlayerMoveTransition).not.toHaveBeenCalled();
+    expect(f.deps.entityMovement.tryStartProvisionalPlayerSwapTransitions).not.toHaveBeenCalled();
   });
 });
