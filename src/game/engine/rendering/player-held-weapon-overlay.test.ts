@@ -3,6 +3,7 @@ import {
   buildPlayerHeldWeaponsKey,
   classifyHeldWeaponInventoryText,
   resolvePlayerHeldWeapons,
+  resolvePlayerHeldWeaponsFromState,
 } from "./player-held-weapon-overlay";
 
 describe("player held weapon overlay", () => {
@@ -39,5 +40,25 @@ describe("player held weapon overlay", () => {
     ] as never);
     expect(weapons).toEqual({ primary: null, secondary: null });
     expect(buildPlayerHeldWeaponsKey(weapons)).toBe("");
+  });
+  it("reads the hands from the core's inventory state", () => {
+    const object = (id: number, wornMask: number, tileIndex: number | null = id) =>
+      ({ id, wornMask, glyph: 1000 + id, tileIndex }) as never;
+    const objects = [object(1, 0x400), object(2, 0x200), object(3, 0x100)];
+    expect(resolvePlayerHeldWeaponsFromState({ twoWeapon: false, objects } as never)).toEqual({
+      primary: { tileIndex: 3, sourceGlyph: 1003 },
+      secondary: null,
+    });
+    expect(resolvePlayerHeldWeaponsFromState({ twoWeapon: true, objects } as never)).toEqual({
+      primary: { tileIndex: 3, sourceGlyph: 1003 },
+      secondary: { tileIndex: 1, sourceGlyph: 1001 },
+    });
+    expect(
+      resolvePlayerHeldWeaponsFromState({ twoWeapon: true, objects: [object(4, 0x400)] } as never),
+    ).toEqual({ primary: null, secondary: { tileIndex: 4, sourceGlyph: 1004 } });
+    expect(resolvePlayerHeldWeaponsFromState({ twoWeapon: false, objects: [] } as never)).toEqual({
+      primary: null,
+      secondary: null,
+    });
   });
 });

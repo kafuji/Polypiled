@@ -522,6 +522,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get entityBillboards() { return entityBillboards; },
     get glyphTextures() { return glyphTextures; },
     get lighting() { return lighting; },
+    get menuPreviews() { return menuPreviews; },
     get movementInput() { return movementInput; },
     get playerMovement() { return playerMovement; },
     get promptDialogs() { return promptDialogs; },

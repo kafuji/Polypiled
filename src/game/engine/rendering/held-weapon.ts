@@ -3,6 +3,8 @@ import { resolveHeldWeaponTileFlips } from "./held-weapon-flips";
 import * as THREE from "three";
 import { applyCameraAttachedWorldAspect } from "./tile-world-presentation";
 import type { NethackMenuItem } from "../../ui-types";
+import type { InventoryObject, InventoryState } from "../../../runtime/inventory-state";
+import { resolveHeldInventoryObjects } from "./player-held-weapon-overlay";
 import { resolveDefaultNh3dTilesetWeaponSpriteFlipX } from "../../tilesets";
 import {
   FPS_HELD_WEAPON_MELEE_SWIPE_ANIMATION_ID,
@@ -91,7 +93,7 @@ export interface HeldWeaponDependencies {
   >;
   readonly menuPreviews: Pick<
     MenuPreviews,
-    "resolveNonNegativeMenuInteger"
+    "currentInventoryState" | "resolveNonNegativeMenuInteger"
   >;
   readonly movementInput: Pick<
     MovementInput,
@@ -307,7 +309,39 @@ export class HeldWeapon {
     );
   }
 
+  private heldItemsState: InventoryState | null = null;
+
+  private heldItems: { right: NethackMenuItem | null; left: NethackMenuItem | null } = {
+    right: null,
+    left: null,
+  };
+
+  /**
+   * The wielded item(s) as inventory menu items. The core's inventory state,
+   * sent with every map update, is used whenever it is there, so wielding,
+   * swapping and two-weapon combat show at once; the inventory menu text is
+   * only a fallback for cores without it. The main weapon is the right hand,
+   * the off-hand weapon (two-weaponing only) the left.
+   */
   findHeldWeaponInventoryItem(hand?: "left" | "right"): NethackMenuItem | null {
+    const state = this.dependencies.menuPreviews.currentInventoryState?.() ?? null;
+    if (state) {
+      if (this.heldItemsState !== state) {
+        this.heldItemsState = state;
+        const held = resolveHeldInventoryObjects(state);
+        const toItem = (object: InventoryObject | null): NethackMenuItem | null =>
+          object
+            ? ({
+                text: object.name,
+                glyph: object.glyph,
+                tileIndex: object.tileIndex ?? undefined,
+                accelerator: object.letter ?? undefined,
+              } as NethackMenuItem)
+            : null;
+        this.heldItems = { right: toItem(held.primary), left: toItem(held.secondary) };
+      }
+      return hand === "left" ? this.heldItems.left : this.heldItems.right;
+    }
     for (const item of this.dependencies.promptDialogs.currentInventory) {
       const text = String(item.text ?? "").toLowerCase();
       const left = /\((?:weapon in left hand|weapon in other hand|wielded in other hand|off-hand weapon)\)/.test(text);

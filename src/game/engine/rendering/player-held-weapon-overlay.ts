@@ -1,4 +1,9 @@
 import type { NethackMenuItem } from "../../ui-types";
+import {
+  InventoryWornMask,
+  type InventoryObject,
+  type InventoryState,
+} from "../../../runtime/inventory-state";
 
 /** Hand slot of a wielded inventory item, as seen from the player sprite. */
 export type PlayerHeldWeaponSlot = "primary" | "secondary";
@@ -87,6 +92,50 @@ export function resolvePlayerHeldWeapons(
     }
   }
   return { primary, secondary };
+}
+
+export interface HeldInventoryObjects {
+  readonly primary: InventoryObject | null;
+  readonly secondary: InventoryObject | null;
+}
+
+/**
+ * The objects in the hero's hands, straight from the core's inventory state:
+ * uwep, and uswapwep only while two-weaponing (otherwise it is merely the
+ * alternate weapon, not held).
+ */
+export function resolveHeldInventoryObjects(state: InventoryState): HeldInventoryObjects {
+  let primary: InventoryObject | null = null;
+  let secondary: InventoryObject | null = null;
+  for (const object of state.objects) {
+    if (!primary && (object.wornMask & InventoryWornMask.weapon) !== 0) {
+      primary = object;
+    } else if (
+      state.twoWeapon &&
+      !secondary &&
+      (object.wornMask & InventoryWornMask.secondaryWeapon) !== 0
+    ) {
+      secondary = object;
+    }
+  }
+  return { primary, secondary };
+}
+
+/** Wielded weapon tiles from the core's inventory state. */
+export function resolvePlayerHeldWeaponsFromState(state: InventoryState): PlayerHeldWeapons {
+  const held = resolveHeldInventoryObjects(state);
+  const tile = (object: InventoryObject | null): PlayerHeldWeaponTile | null => {
+    if (!object) {
+      return null;
+    }
+    const tileIndex = toNonNegativeInteger(object.tileIndex);
+    const sourceGlyph = toNonNegativeInteger(object.glyph);
+    if (tileIndex === null && sourceGlyph === null) {
+      return null;
+    }
+    return { tileIndex: tileIndex ?? -1, sourceGlyph };
+  };
+  return { primary: tile(held.primary), secondary: tile(held.secondary) };
 }
 
 export function buildPlayerHeldWeaponsKey(weapons: PlayerHeldWeapons): string {
