@@ -5,6 +5,7 @@ import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "./entity-billboards";
 import type { GlyphTextures } from "./glyph-textures";
 import type { Lighting } from "./lighting";
+import type { MenuPreviews } from "../ui/menu-previews";
 import type { MovementInput } from "../input/movement-input";
 import type { PlayerMovement } from "../world/player-movement";
 import type { PromptDialogs } from "../ui/prompt-dialogs";
@@ -13,6 +14,7 @@ import type { TilesetAssets } from "./tileset-assets";
 import {
   createOutlinedWeaponCanvas,
   resolvePlayerHeldWeapons,
+  resolvePlayerHeldWeaponsFromState,
   type PlayerHeldWeaponTile,
   type PlayerHeldWeapons,
 } from "./player-held-weapon-overlay";
@@ -33,6 +35,7 @@ export interface PlayerWeaponOverlayDependencies {
   readonly entityBillboards: Pick<EntityBillboards, "monsterBillboards">;
   readonly glyphTextures: Pick<GlyphTextures, "createTileTexture">;
   readonly lighting: Pick<Lighting, "patchMaterialForVignette">;
+  readonly menuPreviews: Pick<MenuPreviews, "currentInventoryState">;
   readonly movementInput: Pick<MovementInput, "isFpsMode">;
   readonly playerMovement: Pick<PlayerMovement, "hasSeenPlayerPosition" | "playerPos">;
   readonly promptDialogs: Pick<PromptDialogs, "currentInventory">;
@@ -73,7 +76,7 @@ export class PlayerWeaponOverlay {
     secondary: null,
   };
 
-  private inventoryRef: readonly unknown[] | null = null;
+  private inventoryRef: unknown = null;
 
   private weapons: PlayerHeldWeapons = { primary: null, secondary: null };
 
@@ -102,11 +105,19 @@ export class PlayerWeaponOverlay {
     );
   }
 
+  /**
+   * The weapons in the hero's hands. The core's inventory state, sent with
+   * every map update, follows wielding, swapping and two-weapon combat at
+   * once; the inventory menu text is only a fallback for cores without it.
+   */
   resolveHeldWeapons(): PlayerHeldWeapons {
-    const inventory = this.dependencies.promptDialogs.currentInventory;
-    if (this.inventoryRef !== inventory) {
-      this.inventoryRef = inventory;
-      this.weapons = resolvePlayerHeldWeapons(inventory);
+    const state = this.dependencies.menuPreviews.currentInventoryState();
+    const source = state ?? this.dependencies.promptDialogs.currentInventory;
+    if (this.inventoryRef !== source) {
+      this.inventoryRef = source;
+      this.weapons = state
+        ? resolvePlayerHeldWeaponsFromState(state)
+        : resolvePlayerHeldWeapons(this.dependencies.promptDialogs.currentInventory);
     }
     return this.weapons;
   }
