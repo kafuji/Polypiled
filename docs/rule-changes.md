@@ -33,3 +33,12 @@ hero notices it before the first bite.
   warning when it has spoiled: it "looks so delicious" instead, until the
   hero has once found it rotten. Blessed food detection still sees through
   it.
+
+## Hunger
+
+Hunger gives more warning before it turns dangerous. The hero is Hungry at
+400 nutrition or less and Weak at 100 or less (vanilla: 150 and 50), so at
+one nutrition a turn Hungry lasts about 300 turns and Weak about 100 before
+fainting begins (vanilla: 100 and 50). Fainting and starvation, the nutrition
+limits for satiation and choking, and the nutrition of food are unchanged.
+(`HUNGRY_NUTRITION`, `WEAK_NUTRITION` in `hack.h`)
