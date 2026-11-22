@@ -83,8 +83,8 @@ des.trap("hole",21,01)
 des.trap("hole",22,01)
 des.trap("hole",23,01)
 
-des.monster({ id = "giant mimic", appear_as = "obj:boulder" });
-des.monster({ id = "giant mimic", appear_as = "obj:boulder" });
+-- Polypiled: no giant mimics posing as boulders; placed at random, one
+-- could block the puzzle for good
 
 -- Random objects
 des.object({ class = "%" });
