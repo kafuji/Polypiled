@@ -1321,6 +1321,8 @@ extern void ustatusline(void);
 
 /* ### invent.c ### */
 
+extern int nh3d_sort_inventory(void); /* Polypiled */
+
 extern void loot_classify(Loot *, struct obj *) NONNULLPTRS;
 extern Loot *sortloot(struct obj **, unsigned, boolean,
                       boolean(*)(struct obj *)) NONNULLARG1;
