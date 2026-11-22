@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InventoryOperation } from "../../../runtime/input/inventory-operation";
-import { InventoryWornMask as W, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
+import { defaultClassOrder, InventoryWornMask as W, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
 import {
   loadEquipmentSets,
   missingFromSet,
@@ -27,7 +27,7 @@ const ring = (id: number, letter: string, wornMask = 0) => object(id, letter, { 
 
 const state = (objects: InventoryObject[]): InventoryState => ({
   weight: 1, capacity: 450, encumbrance: 0, twoWeapon: false, punished: false, objects,
-  floor: [], floorHidden: false, floorCount: 0, gameId: 7,
+  floor: [], floorHidden: false, floorCount: 0, gameId: 7, classOrder: defaultClassOrder,
 });
 
 const armorMask = { bodyArmor: W.bodyArmor, cloak: W.cloak, helmet: W.helmet, shield: W.shield, gloves: W.gloves, boots: W.boots, shirt: W.shirt } as const;

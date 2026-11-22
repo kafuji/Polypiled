@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { TranslationProvider } from "../../../i18n";
 import { ja } from "../../../i18n/locales/ja";
-import { InventoryWornMask, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
+import { defaultClassOrder, InventoryWornMask, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
 import { InventoryScreenView, menuActionsThatKeepScreenOpen } from "./InventoryScreen";
 import { inventoryContextActions } from "../inventory/actions";
 import { ObjectClass } from "./model";
@@ -56,7 +56,7 @@ const inventory: InventoryState = {
   floor: [],
   floorHidden: false,
   floorCount: 0,
-  gameId: 1,
+  gameId: 1, classOrder: defaultClassOrder,
   objects: [
     object("a", {
       objectClass: ObjectClass.weapon,

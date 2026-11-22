@@ -444,7 +444,8 @@ export class PromptDialogs {
     }
   }
 
-  toggleInventoryDialogState(): void {
+  /** i: the inventory screen (when available). I, or classic: the game's own inventory list. */
+  toggleInventoryDialogState(classic = false): void {
     if (
       this.dependencies.questionMenus.isInQuestion ||
       this.dependencies.directionPrompts.isInDirectionQuestion ||
@@ -457,9 +458,9 @@ export class PromptDialogs {
     this.hideInfoMenuDialog();
     if (this.isInventoryScreenVisible) {
       this.hideInventoryScreen();
-      return;
-    }
-    if (this.shouldUseInventoryScreen()) {
+      // I over the screen: change to the list
+      if (!classic) return;
+    } else if (!classic && this.shouldUseInventoryScreen()) {
       if (this.isInventoryDialogVisible) this.hideInventoryDialog();
       this.showInventoryScreen();
       return;

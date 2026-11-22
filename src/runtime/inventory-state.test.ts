@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  defaultClassOrder,
   encumbranceThresholds,
   inventoryWornSlots,
   parseInventoryState,
@@ -84,6 +85,12 @@ describe("inventory from the core", () => {
       [null, true],
       [null, false],
     ]);
+  });
+
+  it("reads the class order, or falls back to the default", () => {
+    expect(parseInventoryState(JSON.stringify({ ...sample, order: [8, 2] }))?.classOrder).toEqual([8, 2]);
+    expect(parseInventoryState(JSON.stringify(sample))?.classOrder).toEqual(defaultClassOrder);
+    expect(parseInventoryState(JSON.stringify({ ...sample, order: ["x"] }))?.classOrder).toEqual(defaultClassOrder);
   });
 
   it("reads the base name and a shop's price, ignoring a broken one", () => {
