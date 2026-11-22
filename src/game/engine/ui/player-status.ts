@@ -680,6 +680,8 @@ export class PlayerStatus {
             this.dependencies.playerMovement.playerPos.x,
             this.dependencies.playerMovement.playerPos.y,
             playerHealingGained,
+            // half the default size, to match damage numbers
+            { scaleMultiplier: 0.55 },
           );
         }
       }
