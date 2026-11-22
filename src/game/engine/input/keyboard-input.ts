@@ -636,7 +636,8 @@ export class KeyboardInput {
       !this.dependencies.directionPrompts.isInDirectionQuestion
     ) {
       event.preventDefault();
-      this.dependencies.promptDialogs.toggleInventoryDialogState();
+      // Shift+I: the game's own inventory list, even with the screen on
+      this.dependencies.promptDialogs.toggleInventoryDialogState(event.key === "I");
       return;
     }
 

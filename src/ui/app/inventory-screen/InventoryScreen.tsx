@@ -796,9 +796,13 @@ export function InventoryScreenView({
         else if (held) setHeld(null);
         else if (staging) closeContainerPanel();
         else controller?.closeInventoryScreen();
-      } else if ((event.key === "i" || event.key === "I") && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      } else if (event.key === "i" && !event.ctrlKey && !event.altKey && !event.metaKey) {
         closeContainerPanel();
         controller?.closeInventoryScreen();
+      } else if (event.key === "I" && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        // Shift+I: the engine changes to the game's own inventory list
+        closeContainerPanel();
+        handled = false;
       } else if (event.key === "m" && (document.activeElement as HTMLElement | null)?.dataset.setIndex !== undefined) {
         const element = document.activeElement as HTMLElement;
         const rect = element.getBoundingClientRect();

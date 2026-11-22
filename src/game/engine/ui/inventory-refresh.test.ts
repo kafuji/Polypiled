@@ -76,3 +76,51 @@ describe("silent inventory refresh dispatch", () => {
     expect(f.sendInput).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("i and Shift+I", () => {
+  function screenFixture() {
+    const gameplayInput = vi.fn();
+    const uiAdapter = new Proxy({}, { get: () => vi.fn() }) as Record<string, ReturnType<typeof vi.fn>>;
+    // anything else the dialogs touch: a do-nothing stand-in
+    const lenient = (target: object): object =>
+      new Proxy(target, { get: (t, k) => (k in t ? (t as Record<PropertyKey, unknown>)[k] : vi.fn()) });
+    const given: Record<string, object> = {
+      engineState: { session: { sendInput: vi.fn() }, uiAdapter, clientOptions: { inventoryScreen: true } },
+      questionMenus: { isInQuestion: false },
+      directionPrompts: { isInDirectionQuestion: false },
+      positionSelection: { positionInputModeActive: false },
+      extendedCommands: { metaCommandModeActive: false },
+      gameOver: { gameOverState: { active: false }, fulfillDeferredGameOverPromptReadyIfPossible: vi.fn() },
+      inputCommands: { sendInput: gameplayInput },
+      pointerLock: { syncFpsPointerLockForUiState: vi.fn() },
+    };
+    const prompts = new PromptDialogs(new Proxy(given, {
+      get: (t, k: string) => lenient(t[k] ?? {}),
+    }) as unknown as PromptDialogsDependencies);
+    prompts.setInventoryStateAvailable(true);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    return { prompts, gameplayInput };
+  }
+
+  it("i opens the inventory screen; Shift+I over it changes to the game's own list", () => {
+    const f = screenFixture();
+    f.prompts.toggleInventoryDialogState();
+    expect(f.prompts.isInventoryScreenVisible).toBe(true);
+    expect(f.gameplayInput).not.toHaveBeenCalled();
+    f.prompts.toggleInventoryDialogState(true);
+    expect(f.prompts.isInventoryScreenVisible).toBe(false);
+    expect(f.gameplayInput).toHaveBeenCalledExactlyOnceWith("i");
+    expect(f.prompts.pendingInventoryDialog).toBe(true);
+  });
+
+  it("Shift+I opens the list with the screen closed, and i closes the screen", () => {
+    const f = screenFixture();
+    f.prompts.toggleInventoryDialogState(true);
+    expect(f.prompts.isInventoryScreenVisible).toBe(false);
+    expect(f.gameplayInput).toHaveBeenCalledExactlyOnceWith("i");
+    f.prompts.inventoryRefreshInFlight = false;
+    f.prompts.toggleInventoryDialogState();
+    f.prompts.toggleInventoryDialogState();
+    expect(f.prompts.isInventoryScreenVisible).toBe(false);
+  });
+});
