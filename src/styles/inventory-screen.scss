@@ -235,6 +235,11 @@
     box-shadow: 0 0 6px rgba(102, 204, 255, 0.55), inset 0 0 6px rgba(102, 204, 255, 0.3);
   }
 
+  /* in the pack, a little dimmer: it is shown at its slot too */
+  &.is-equipped .nh3d-invs-item {
+    filter: brightness(0.7);
+  }
+
   &.is-held {
     border-color: #ffffff;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
