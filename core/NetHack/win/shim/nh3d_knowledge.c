@@ -1246,17 +1246,18 @@ nh3d_inventory_command(void)
     }
     if (!strcmp(args[0], "loot")) {
         static unsigned outs[NH3D_INVOP_MAX_IDS], ins[NH3D_INVOP_MAX_IDS];
-        static long counts[NH3D_INVOP_MAX_IDS];
+        static long outcounts[NH3D_INVOP_MAX_IDS], incounts[NH3D_INVOP_MAX_IDS];
         static unsigned cid[NH3D_INVOP_MAX_IDS];
         int nout, nin;
 
-        if (nargs != 4 || nh3d_invop_ids(args[1], cid, counts) != 1)
+        if (nargs != 4 || nh3d_invop_ids(args[1], cid, outcounts) != 1)
             return ECMD_OK;
-        nout = nh3d_invop_ids(args[2], outs, counts);
-        nin = nh3d_invop_ids(args[3], ins, counts);
+        nout = nh3d_invop_ids(args[2], outs, outcounts);
+        nin = nh3d_invop_ids(args[3], ins, incounts);
         if (nout < 0 || nin < 0)
             return ECMD_OK;
-        return nh3d_container_transfer(cid[0], outs, nout, ins, nin);
+        return nh3d_container_transfer(cid[0], outs, outcounts, nout, ins,
+                                       incounts, nin);
     }
     for (i = 1; i < nargs; i++)
         if (strlen(args[i]) != 1)

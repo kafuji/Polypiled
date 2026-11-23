@@ -2489,8 +2489,9 @@ extern int pickup(int);
 extern int pickup_object(struct obj *, long, boolean) NONNULLARG1;
 /* Polypiled: the inventory screen */
 extern int nh3d_pickup_objects(const unsigned *, const long *, int);
-extern int nh3d_container_transfer(unsigned, const unsigned *, int,
-                                   const unsigned *, int);
+extern int nh3d_container_transfer(unsigned, const unsigned *,
+                                   const long *, int, const unsigned *,
+                                   const long *, int);
 extern int query_category(const char *, struct obj *, int, menu_item **, int) NONNULLARG14;
 /* dotypeinv() call query_objlist with NULL arg1 */
 extern int query_objlist(const char *, struct obj **, int, menu_item **, int,
