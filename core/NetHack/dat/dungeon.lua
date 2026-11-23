@@ -58,14 +58,6 @@ dungeon = {
             alignment = "neutral"
          },
          {
-            -- Polypiled: the thieves' den, a black market for the
-            -- mid-game hero with gold to spare; always present
-            name = "thieves",
-            bonetag = "R",
-            base = 17,
-            range = 4,
-         },
-         {
             name = "bigrm",
             bonetag = "B",
             base = 10,
@@ -79,6 +71,14 @@ dungeon = {
             range = 4,
             nlevels = 4,
             alignment = "chaotic"
+         },
+         {
+            -- Polypiled: the thieves' den, a black market for the hero
+            -- with gold to spare; always present, just above Medusa
+            name = "thieves",
+            bonetag = "R",
+            chainlevel = "medusa",
+            base = -1,
          },
          {
             name = "castle",
