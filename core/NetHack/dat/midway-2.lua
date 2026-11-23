@@ -42,17 +42,25 @@ des.door("closed", 12, 09)
 des.door("closed", 62, 09)
 des.door("locked", 57, 05)
 
--- the sleepers, around the hearth and along the tables
+-- the sleepers, around the hearth and along the tables, and a few still
+-- up and about: enough that even a strong hero who blunders in can die
 local around = selection.area(28,06,46,12):filter_mapchar('.')
-des.monster({ id = "fire giant", coord = around:rndcoord(1), asleep = 1 })
-des.monster({ id = "frost giant", coord = around:rndcoord(1), asleep = 1 })
-des.monster({ id = "ettin", coord = around:rndcoord(1), asleep = 1 })
 local hall = selection.area(14,02,50,16):filter_mapchar('.') - selection.area(28,06,46,12)
-for i = 1, 3 do
-   des.monster({ id = "hill giant", coord = hall:rndcoord(1), asleep = 1 })
+local by_hearth = { "fire giant", "fire giant", "frost giant", "frost giant",
+                    "ettin", "ettin", "giant" }
+for i = 1, #by_hearth do
+   des.monster({ id = by_hearth[i], coord = around:rndcoord(1), asleep = 1 })
 end
-des.monster({ id = "stone giant", coord = hall:rndcoord(1), asleep = 1 })
-des.monster({ id = "stone giant", coord = hall:rndcoord(1), asleep = 1 })
+local at_table = { "hill giant", "hill giant", "hill giant", "hill giant",
+                   "hill giant", "stone giant", "stone giant", "stone giant",
+                   "stone giant", "giant", "giant" }
+for i = 1, #at_table do
+   des.monster({ id = at_table[i], coord = hall:rndcoord(1), asleep = 1 })
+end
+-- the ones still awake, clearing the tables
+des.monster({ id = "hill giant", coord = hall:rndcoord(1) })
+des.monster({ id = "stone giant", coord = hall:rndcoord(1) })
+des.monster({ id = "frost giant", coord = around:rndcoord(1) })
 
 -- leftovers of the feast
 for i = 1, 8 do
