@@ -3,7 +3,7 @@
 -- Polypiled: the thieves' den.
 --
 -- A trapped maze hides a guard hall and, behind it, a black market:
--- stolen goods of good quality at three times the going rate, plenty of
+-- stolen goods of good quality at twice the going rate, plenty of
 -- artifacts, and a second-hand wand of wishing with a single wish left.
 -- The fence is armed to the teeth and the town watch they bribed is on
 -- duty; robbing the place, or crossing either of them, turns them all.

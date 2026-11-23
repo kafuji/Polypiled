@@ -2999,9 +2999,9 @@ get_cost(
     else if (ACURR(A_CHA) <= 10)
         multiplier *= 4L, divisor *= 3L;
 
-    /* Polypiled: the black market charges three times the going rate */
+    /* Polypiled: the black market charges twice the going rate */
     if (shkp && has_eshk(shkp) && ESHK(shkp)->shoptype == FENCESHOP)
-        multiplier *= 3L;
+        multiplier *= 2L;
 
     /* tmp = (tmp * multiplier) / divisor [with roundoff tweak] */
     tmp *= multiplier;
