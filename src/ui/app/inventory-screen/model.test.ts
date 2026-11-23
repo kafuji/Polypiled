@@ -12,7 +12,7 @@ import {
   estimateTurns,
   planContainer,
   planDrop,
-  planNested,
+  putInRefusal,
   planPickup,
   groupByClass,
   sortByClass,
@@ -228,16 +228,31 @@ describe("floor, containers and turn estimates", () => {
     expect(planPickup([a, b], 3).operations).toEqual([{ op: "pickup", items: [{ id: a.id, count: 0 }, { id: b.id, count: 0 }] }]);
   });
 
-  it("reaches into a bag inside a bag in three actions", () => {
-    const outer = object("o");
-    const inner = object("i", { letter: null });
-    expect(planNested(outer, inner, { in: [5] }).operations).toEqual([
-      { op: "loot", container: outer.id, out: [inner.id], in: [] },
-      { op: "loot", container: inner.id, out: [], in: [5] },
-      { op: "loot", container: outer.id, out: [], in: [inner.id] },
-    ]);
+  it("uses a container in one action", () => {
     expect(planContainer({ containerId: 3, out: [1], in: [2] }).operations).toEqual([
       { op: "loot", container: 3, out: [1], in: [2] },
     ]);
+  });
+
+  it("refuses what the game will not put in a container", () => {
+    const bag = object("p", { container: { locked: null, contents: [], more: 0, tooDeep: false } });
+    expect(putInRefusal(bag, bag)).toBe("self");
+    expect(putInRefusal(bag, armor("h", "helmet", InventoryWornMask.helmet))).toBe("worn");
+    expect(putInRefusal(bag, object("r", { wornMask: InventoryWornMask.leftRing }))).toBe("worn");
+    expect(putInRefusal(bag, object("b", { wornMask: InventoryWornMask.ball }))).toBe("attached");
+    // a wielded weapon or the quiver: the game lets go of it
+    expect(putInRefusal(bag, object("a", { wornMask: InventoryWornMask.weapon }))).toBeNull();
+    expect(putInRefusal(bag, object("q", { wornMask: InventoryWornMask.quiver }))).toBeNull();
+  });
+
+  it("refuses known magic into a known bag of holding, even inside another bag", () => {
+    const holding = object("p", { baseName: "bag of holding", container: { locked: null, contents: [], more: 0, tooDeep: false } });
+    const unknownBag = object("q", { baseName: "bag", container: { locked: null, contents: [], more: 0, tooDeep: false } });
+    const wand = object("w", { baseName: "wand of cancellation" });
+    const sack = object("s", { baseName: "sack", container: { locked: null, contents: [object("x", { letter: null, baseName: "bag of holding" })], more: 0, tooDeep: false } });
+    expect(putInRefusal(holding, wand)).toBe("explodes");
+    expect(putInRefusal(holding, sack)).toBe("explodes");
+    expect(putInRefusal(holding, unknownBag)).toBeNull();
+    expect(putInRefusal(unknownBag, wand)).toBeNull();
   });
 });

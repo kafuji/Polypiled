@@ -772,6 +772,32 @@ nh3d_json_erosion(struct nh3d_json *js, const char *key, int level,
     nh3d_json_raw(js, "}");
 }
 
+/* the short label under an item's icon: the kind of thing as the hero
+   knows it (simpleonames(): "long sword", "pink potion"), except that a
+   thing with a proper name the hero can see goes by it -- an artifact by
+   its name ("Excalibur", "Orb of Detection") and known holy or unholy
+   water as such */
+static const char *
+nh3d_label_name(struct obj *obj)
+{
+    static char buf[BUFSZ];
+
+    if (obj->oartifact && has_oname(obj) && obj->dknown) {
+        const char *name = ONAME(obj);
+
+        return !strncmp(name, "The ", 4) ? name + 4 : name;
+    }
+    if (obj->otyp == POT_WATER && obj->dknown && obj->bknown
+        && (obj->blessed || obj->cursed)
+        && objects[POT_WATER].oc_name_known) {
+        Snprintf(buf, sizeof buf, "%s of %s water",
+                 obj->quan != 1L ? "potions" : "potion",
+                 obj->blessed ? "holy" : "unholy");
+        return buf;
+    }
+    return simpleonames(obj);
+}
+
 /* what a shop asks for the object, as doname() and the floor listing
    quote it: "unpaid" (carried, not bought), "contents" (unpaid things
    inside), "forSale" (shop goods lying here) */
@@ -821,10 +847,9 @@ nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth,
     }
     nh3d_json_raw(js, ",\"name\":");
     nh3d_json_string(js, doname(obj));
-    /* the kind of thing as the hero knows it, without blessing, charges,
-       names or state ("long sword", "pink potion") */
+    /* the label under the icon: the kind of thing, or its proper name */
     nh3d_json_raw(js, ",\"base\":");
-    nh3d_json_string(js, simpleonames(obj));
+    nh3d_json_string(js, nh3d_label_name(obj));
     nh3d_json_inventory_price(js, obj);
     nh3d_json_raw(js, ",\"class\":");
     nh3d_json_int(js, obj->oclass);
