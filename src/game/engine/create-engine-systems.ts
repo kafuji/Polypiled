@@ -751,6 +751,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get promptDialogs() { return promptDialogs; },
     get questionMenus() { return questionMenus; },
     get renderPipeline() { return renderPipeline; },
+    get runtimeEntityTracking() { return runtimeEntityTracking; },
     get terminalRendering() { return terminalRendering; },
     get tileFaceTextureRotationDebug() { return tileFaceTextureRotationDebug; },
     get tileRendering() { return tileRendering; },
