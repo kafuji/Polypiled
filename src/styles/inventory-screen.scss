@@ -2,17 +2,17 @@
    letter slots and the carried weight. Effects show only what the game
    reports: BUC when known, erosion as the item's name says. */
 /* One cell size for the slots and the grid, as large as the window allows:
-   across, 3 slot columns and 9 pack columns with gaps and padding; down,
-   the 6 pack rows and the floor row, each a name line taller than the
-   cell, with the headers and the detail line (an open container takes the
-   equipment's place, not more room). The drag
+   across, 9 pack columns and the 4 of an open container (the equipment's
+   3 when none is open) with gaps and padding; down, the 6 pack rows and
+   the floor row, each a name line taller than the cell, with the headers
+   and the detail line (an open container takes no more height). The drag
    icon, drawn outside the screen, uses it too. */
 .nh3d-inventory-screen,
 .nh3d-invs-ghost {
   --invs-gap: 6px;
   --invs-cell: clamp(
     40px,
-    min(calc((100vw - 200px) / 12), calc((100vh - 360px) / 8.2)),
+    min(calc((100vw - 200px) / 13), calc((100vh - 360px) / 8.2)),
     128px
   );
   /* the item's short name under its icon, one line: ten full-width
@@ -711,8 +711,8 @@
 }
 
 /* container mode: the open container stands right of the pack in the
-   equipment's place, as wide as that column was and as tall as the body,
-   so the screen keeps its size; its contents scroll */
+   equipment's place, four cells wide and as tall as the body was, so the
+   screen keeps its height; its contents scroll */
 .nh3d-invs-body.is-container-mode {
   min-height: var(--invs-mode-height, auto);
 }
@@ -721,7 +721,8 @@
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  width: var(--invs-mode-width, calc(3 * var(--invs-cell) + 2 * var(--invs-gap) + 18px));
+  /* four cells across: the padding, the border and the scrollbar's room besides */
+  width: calc(4 * var(--invs-cell) + 3 * var(--invs-gap) + 16px + 2px + 14px);
   height: var(--invs-mode-height, auto);
 
   .nh3d-invs-row {
@@ -731,6 +732,8 @@
     max-height: calc(6 * (var(--invs-cell) + var(--invs-name-h)) + 5 * var(--invs-gap));
     overflow-y: auto;
     overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
   }
 }
 

@@ -475,10 +475,10 @@ export function InventoryScreenView({
   const [procedureNotice, setProcedureNotice] = useState<InventoryProcedureState | null>(null);
   const pressRef = useRef<PressState | null>(null);
   const suppressClickRef = useRef(false);
-  /** The body and the equipment column as last seen, so a container takes their place without resizing the screen. */
+  /** The body as last seen without a container, so one opening keeps the screen's height. */
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const equipmentRef = useRef<HTMLElement | null>(null);
-  const modeSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const modeSizeRef = useRef<{ height: number } | null>(null);
 
   const findObject = useCallback(
     (id: number): InventoryObject | null => {
@@ -502,7 +502,7 @@ export function InventoryScreenView({
     if (openContainer) return;
     const body = bodyRef.current;
     const equipment = equipmentRef.current;
-    if (body && equipment) modeSizeRef.current = { width: equipment.offsetWidth, height: body.offsetHeight };
+    if (body && equipment) modeSizeRef.current = { height: body.offsetHeight };
   });
 
   // the report replaces objects: forget what no longer exists
@@ -1015,7 +1015,6 @@ export function InventoryScreenView({
         ref={bodyRef}
         className={`nh3d-invs-body${openContainer ? " is-container-mode" : ""}`}
         style={openContainer && modeSizeRef.current ? {
-          "--invs-mode-width": `${modeSizeRef.current.width}px`,
           "--invs-mode-height": `${modeSizeRef.current.height}px`,
         } as React.CSSProperties : undefined}
       >
