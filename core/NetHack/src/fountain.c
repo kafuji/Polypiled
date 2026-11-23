@@ -460,9 +460,9 @@ drinkfountain(void)
     /* the fountain may have dried up or turned to a pool meanwhile */
     if (!IS_FOUNTAIN(levl[u.ux][u.uy].typ))
         return;
-    if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy) && !rn2(6))
+    if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy) && !rn2(3))
         fountain_wonder((struct obj *) 0);
-    dryup_odds(u.ux, u.uy, TRUE, 12);
+    dryup_odds(u.ux, u.uy, TRUE, 6);
 }
 
 /* dip an object into a fountain when standing on its location */
@@ -549,14 +549,14 @@ dipfountain(struct obj *obj)
     }
     /* a magic fountain keeps its wonder for the one who drinks from it */
     if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy) && !levl[u.ux][u.uy].blessedftn
-        && !rn2(6)) {
+        && !rn2(3)) {
         fountain_wonder(obj);
         happened = TRUE;
     }
     if (!happened && er == ER_NOTHING)
         pline1(nothing_seems_to_happen);
     update_inventory();
-    dryup_odds(u.ux, u.uy, TRUE, 12);
+    dryup_odds(u.ux, u.uy, TRUE, 6);
 }
 
 /* dipping '-' in fountain, pool, or sink */
