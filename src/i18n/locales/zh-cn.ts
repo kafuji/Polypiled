@@ -349,6 +349,7 @@ export const zhCnOverrides = {
       contentsUnknownOpen: "不知道里面有什么。打开需要 1 回合。",
       locked: "上锁了。",
       staged: "待移动",
+      movingCount: (n: number) => `移动 ${n} 个`,
       putIn: "放入",
       takeOut: "取出",
       keepOut: "不放入",

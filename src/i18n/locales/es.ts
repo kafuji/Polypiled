@@ -549,6 +549,7 @@ export const esOverrides = {
         contentsUnknownOpen: "No sabes qué hay dentro. Abrirlo lleva un turno.",
         locked: "Cerrado con llave.",
         staged: "Por mover",
+        movingCount: (n: number) => `Mover ${n}`,
         putIn: "Meter",
         takeOut: "Sacar",
         keepOut: "No meter",

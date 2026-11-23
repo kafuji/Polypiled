@@ -583,6 +583,7 @@ export const ptBrOverrides = {
       contentsUnknownOpen: "Você não sabe o que há dentro. Abrir leva um turno.",
       locked: "Trancado.",
       staged: "A mover",
+      movingCount: (n: number) => `Mover ${n}`,
       putIn: "Guardar",
       takeOut: "Tirar",
       keepOut: "Não guardar",

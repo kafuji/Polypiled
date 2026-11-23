@@ -554,6 +554,7 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
       contentsUnknownOpen: "中身は分からない。開けると 1 ターンかかる。",
       locked: "鍵がかかっている。",
       staged: "移す予定",
+      movingCount: (n: number) => `${n} 個を移す`,
       putIn: "入れる",
       takeOut: "取り出す",
       keepOut: "入れない",
