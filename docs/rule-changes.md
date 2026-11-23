@@ -51,3 +51,24 @@ of speed 0 (molds, jellies and the like), no mimics, and no hiders such as
 piercers and trappers (`stays_put()` in `makemon.c`). The two giant mimics
 posing as boulders that vanilla places at random on the top level are gone
 too (`soko1-*.lua`).
+
+## Experience levels
+
+Levels come on one smooth curve. The experience needed grows by x2.00 from
+XL2 to XL3 and the growth falls steadily to about x1.28 by XL30, where
+vanilla doubles every level up to XL20 and then adds 10,000,000 a level. The
+early levels are a little quicker than vanilla (XL10 at 3,210 instead of
+5,120), and the gap widens from there:
+
+| Level | Polypiled | Vanilla |
+|---|---|---|
+| XL10 | 3,210 | 5,120 |
+| XL14 (quest entry) | 27,300 | 80,000 |
+| XL20 | 412,000 | 5,120,000 |
+| XL30 | 10,000,000 | 100,000,000 |
+
+Experience from kills and other sources is unchanged, and so is the quest's
+XL14 entry level. Since the strongest monsters a level can generate depend
+on the hero's level as well as the depth, they also turn up a little sooner.
+(`uexp_table` in `exper.c`, mirrored in
+`src/ui/app/status/character-fields.tsx`)

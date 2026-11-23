@@ -19,6 +19,20 @@ export const armorClassDescription = t.characterStats.armorClassDescription;
 
 export const maxExperienceLevel = 30;
 
+/**
+ * Experience needed to reach level + 1, indexed by level. Mirrors
+ * `uexp_table` in core/NetHack/src/exper.c; keep the two in step.
+ */
+const experienceThresholds: readonly number[] = [
+  0, 20, 40, 80, 150,
+  290, 540, 1000, 1810, 3210,
+  5630, 9690, 16400, 27300, 44800,
+  72200, 114000, 178000, 273000, 412000,
+  610000, 890000, 1280000, 1800000, 2500000,
+  3410000, 4570000, 6040000, 7830000, 10000000,
+  12800000,
+];
+
 export function getExperienceThresholdForLevel(level: number): number {
   if (!Number.isFinite(level)) {
     return 0;
@@ -27,13 +41,7 @@ export function getExperienceThresholdForLevel(level: number): number {
   if (normalizedLevel < 1) {
     return 0;
   }
-  if (normalizedLevel < 10) {
-    return 10 * (1 << normalizedLevel);
-  }
-  if (normalizedLevel < 20) {
-    return 10000 * (1 << (normalizedLevel - 10));
-  }
-  return 10000000 * (normalizedLevel - 19);
+  return experienceThresholds[Math.min(normalizedLevel, experienceThresholds.length - 1)];
 }
 
 export function formatCharacterNumber(value: number): string {

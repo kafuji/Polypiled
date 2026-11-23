@@ -10,16 +10,29 @@
 
 staticfn int enermod(int);
 
+/* Polypiled: one smooth curve instead of vanilla's doubling to XL20 and
+ * 10,000,000 a level after.  The growth from one level to the next starts at
+ * x2.00 (XL2 -> XL3) and falls steadily to about x1.28, so XL14 (quest entry)
+ * takes 27,300 points instead of 80,000 and XL30 takes 10,000,000 instead of
+ * 100,000,000.  uexp_table[lev] is the experience needed to reach lev + 1. */
+static const long uexp_table[] = {
+           0L,        20L,        40L,        80L,       150L, /* lev 0-4 */
+         290L,       540L,      1000L,      1810L,      3210L, /* lev 5-9 */
+        5630L,      9690L,     16400L,     27300L,     44800L, /* lev 10-14 */
+       72200L,    114000L,    178000L,    273000L,    412000L, /* lev 15-19 */
+      610000L,    890000L,   1280000L,   1800000L,   2500000L, /* lev 20-24 */
+     3410000L,   4570000L,   6040000L,   7830000L,  10000000L, /* lev 25-29 */
+    12800000L                                                  /* lev 30 */
+};
+
 long
 newuexp(int lev)
 {
     if (lev < 1) /* for newuexp(u.ulevel - 1) when u.ulevel is 1 */
         return 0L;
-    if (lev < 10)
-        return (10L * (1L << lev));
-    if (lev < 20)
-        return (10000L * (1L << (lev - 10)));
-    return (10000000L * ((long) (lev - 19)));
+    if (lev >= SIZE(uexp_table))
+        lev = SIZE(uexp_table) - 1;
+    return uexp_table[lev];
 }
 
 staticfn int
