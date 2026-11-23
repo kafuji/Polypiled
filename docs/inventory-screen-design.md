@@ -296,7 +296,7 @@ I2〜I6 は 2026-11-20 に作った（11 章）。
   条件は `doname_base()` と同じ分岐にそろえた（強化値は武器・防具・武器の道具、指輪は種類に強化値があるとき、充填数は杖と充填のある道具）。
 - 腐食: `eroded`（`rust` / `crack` / `burn`）, `eroded2`（`corrode` / `rot`）。名前に腐食の語がつく分類だけ。
 - そのほか: `poisoned`, `greased`, `lit`, `unpaid`, `named`。
-- `base`: 種類の名前（`simpleonames()`。祝福・強化値・名付け・状態を除き、知っている範囲で「long sword」「pink potion」）。各マスのアイコンの下に 1 行で出す。
+- `base`: 種類の名前（`simpleonames()`。祝福・強化値・名付け・状態を除き、知っている範囲で「long sword」「pink potion」）。ただし正式な名前が見えている物はそちらを出す: アーティファクトはその名前（「Excalibur」「Orb of Detection」、頭の The は除く）、祝福・呪いと水の正体を知っている水は「potion of holy water」「potion of unholy water」。各マスのアイコンの下に 1 行で出す。
 - `price` と `priceKind`（`unpaid` / `contents` / `forSale`）: 店での値段。`doname()` と足元の一覧が示すのと同じ額で、店の外では出ない。
 - `container`: コンテナに見える物すべて（正体を知らない魔法の小箱 = bag of tricks も袋と同じく含める）。
   中身は `cknown` のときだけ同じ形で入れ子になる（深さ 4 まで。それより深いと `contents: null, deep: true`。1 つのコンテナにつき 200 件まで、残りは `more`）。
