@@ -1098,21 +1098,26 @@ dogfood(struct monst *mon, struct obj *obj)
                      : MANFOOD;
         case TIN:
             return metallivorous(mptr) ? ACCFOOD : MANFOOD;
+        /* Polypiled: plant eaters like any fruit or greens, not just apples
+           and carrots, which were too rare to keep a horse fed */
         case APPLE:
+        case ORANGE:
+        case PEAR:
+        case MELON:
+        case BANANA:
+        case KELP_FROND:
+        case EUCALYPTUS_LEAF:
             return herbi ? DOGFOOD : starving ? ACCFOOD : MANFOOD;
         case CARROT:
             return (herbi || mblind) ? DOGFOOD : starving ? ACCFOOD : MANFOOD;
-        case BANANA:
-            /* monkeys and apes (tamable) plus sasquatch prefer these,
-               yetis will only will only eat them if starving */
-            return (mptr->mlet == S_YETI && herbi) ? DOGFOOD
-                   : (herbi || starving) ? ACCFOOD
-                     : MANFOOD;
         default:
             if (starving)
                 return ACCFOOD;
-            return (obj->otyp > SLIME_MOLD) ? (carni ? ACCFOOD : MANFOOD)
-                                            : (herbi ? ACCFOOD : MANFOOD);
+            /* Polypiled: plant eaters also eat the hero's vegetarian fare
+               (food rations, cram, lembas and the like) once hungry */
+            return (obj->otyp > SLIME_MOLD)
+                       ? ((carni || herbi) ? ACCFOOD : MANFOOD)
+                       : (herbi ? ACCFOOD : MANFOOD);
         }
     default:
         if (obj->otyp == AMULET_OF_STRANGULATION

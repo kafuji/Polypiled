@@ -2066,8 +2066,12 @@ tmiss(struct obj *obj, struct monst *mon, boolean maybe_wakeup)
 boolean
 should_mulch_missile(struct obj *obj)
 {
+    /* Polypiled: 1 in N of the missiles that hit break, by enchantment
+       less erosion; vanilla broke 2 in 3 at +0, so a quiver ran dry by
+       the middle of the game.  Roughly half as many break now. */
+    static const int break_odds[] = { 2, 3, 4, 6, 8 }; /* -1 .. +3 */
     boolean broken;
-    int chance;
+    int quality;
 
     /* only ammo (excluding magic stones) or missiles will break */
     if (!obj || !(is_ammo(obj) || is_missile(obj))
@@ -2075,12 +2079,13 @@ should_mulch_missile(struct obj *obj)
         || objects[obj->otyp].oc_magic)
         return FALSE;
 
-    /* we had been breaking 2/3 of everything unconditionally.  we still don't
-       want anything to survive unconditionally, but we need ammo to stay
-       around longer on average. */
-    chance = 3 + greatest_erosion(obj) - obj->spe;
-    broken = chance > 1 ? rn2(chance) : !rn2(4);
-    if (obj->blessed && (svc.context.mon_moving ? !rn2(3) : !rnl(4)))
+    quality = obj->spe - greatest_erosion(obj);
+    if (quality < -1)
+        broken = rn2(3) != 0; /* -2 or worse: 2 in 3, as before */
+    else
+        broken = !rn2(break_odds[min(quality, 3) + 1]);
+    /* blessed missiles survive 1 in 4 of the breaks, luck aside */
+    if (obj->blessed && !rn2(4))
         broken = FALSE;
 
     /* Flint and hard gems don't break easily */

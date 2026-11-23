@@ -436,9 +436,12 @@ dog_invent(struct monst *mtmp, struct edog *edog, int udist)
             && !(is_mines_prize(obj) || is_soko_prize(obj))) {
             int edible = dogfood(mtmp, obj);
 
+            /* Polypiled: food where the pet stands is eaten on the same
+               terms as food it steps onto (dog_move()): acceptable food
+               once hungry, not only when starving.  A ridden steed eats
+               only what is under it, so this is what keeps it fed. */
             if ((edible <= CADAVER
-                 /* starving pet is more aggressive about eating */
-                 || (edog->mhpmax_penalty && edible == ACCFOOD))
+                 || (edible == ACCFOOD && edog->hungrytime <= svm.moves))
                 && could_reach_item(mtmp, obj->ox, obj->oy))
                 return dog_eat(mtmp, obj, omx, omy, FALSE);
 

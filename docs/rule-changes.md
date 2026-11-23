@@ -72,3 +72,53 @@ XL14 entry level. Since the strongest monsters a level can generate depend
 on the hero's level as well as the depth, they also turn up a little sooner.
 (`uexp_table` in `exper.c`, mirrored in
 `src/ui/app/status/character-fields.tsx`)
+
+## Worn armor weight
+
+Armor the hero has on counts for half its weight (rounded up) in the load:
+body armor, cloak, helmet, gloves, boots and shirt. A shield is held and
+counts in full. Armor being put on counts in full until it is on; armor
+being taken off counts as worn until it is off. The object's own weight is
+unchanged, so throwing, kicking and containers behave as before, and the
+inventory screen shows only the weight that counts now.
+(`carried_obj_weight()` in `hack.c`)
+
+## Pets' food
+
+Plant eaters such as horses no longer starve for want of apples and carrots.
+
+- **Any fruit or greens is a treat** to a plant eater, as apples and carrots
+  were: oranges, pears, melons, bananas, kelp fronds and eucalyptus leaves.
+  Throwing one at a wild horse tames it like an apple. (`dogfood()` in
+  `dog.c`)
+- **Vegetarian fare is eaten when hungry.** Food rations, cram, lembas,
+  pancakes and other non-meat food now count as acceptable food for plant
+  eaters, as they already did for meat eaters; vanilla had plant eaters
+  touch them only when starving. A food ration keeps a horse about 3,200
+  turns.
+- **Food underfoot is eaten when hungry.** A pet standing on acceptable food
+  eats it once hungry, as it already did when stepping onto it; vanilla
+  waited until it was starving. A ridden steed only ever eats what is under
+  it, so dropping food while riding now feeds it in time. (`dog_invent()` in
+  `dogmove.c`)
+
+## Missiles
+
+Arrows and other missiles that hit break about half as often, so a quiver
+lasts into the middle of the game. Of the missiles that hit, these break,
+by enchantment less erosion:
+
+| Enchantment | Polypiled | Vanilla |
+|---|---|---|
+| -2 or worse | 2 in 3 | 4 in 5 or more |
+| -1 | 1 in 2 | 3 in 4 |
+| +0 | 1 in 3 | 2 in 3 |
+| +1 | 1 in 4 | 1 in 2 |
+| +2 | 1 in 6 | 1 in 4 |
+| +3 or better | 1 in 8 | 1 in 4 |
+
+A blessed missile survives 1 in 4 of its breaks whatever the luck (vanilla:
+depending on luck for the hero, 1 in 3 for monsters). Flint and hard gems
+still survive half of theirs, and missiles that miss never break. Monsters'
+missiles follow the same rule, so more of them are left to pick up.
+(`should_mulch_missile()` in `dothrow.c`)
