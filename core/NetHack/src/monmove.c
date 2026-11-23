@@ -24,6 +24,7 @@ staticfn int postmov(struct monst *, struct permonst *, coordxy, coordxy, int,
 staticfn boolean leppie_avoidance(struct monst *);
 staticfn void leppie_stash(struct monst *);
 staticfn int m_balks_at_approaching(int, struct monst *, int *, int *);
+staticfn struct monst *warzone_foe(struct monst *);
 staticfn boolean stuff_prevents_passage(struct monst *);
 staticfn int vamp_shift(struct monst *, struct permonst *, boolean);
 staticfn void maybe_spin_web(struct monst *);
@@ -1177,6 +1178,28 @@ leppie_stash(struct monst *mtmp)
  *             which may actually be further away,
  *             and sets *pdistmin and *pdistmax to describe that range
  */
+/* Polypiled: the nearest enemy soldier on a warzone level, if any */
+staticfn struct monst *
+warzone_foe(struct monst *mtmp)
+{
+    struct monst *m2, *best = (struct monst *) 0;
+    boolean elf = is_elf(mtmp->data);
+    int d, bestd = 20 * 20 + 1;
+
+    for (m2 = fmon; m2; m2 = m2->nmon) {
+        if (DEADMONSTER(m2) || m2 == mtmp)
+            continue;
+        if (elf ? !is_orc(m2->data) : !is_elf(m2->data))
+            continue;
+        d = dist2(mtmp->mx, mtmp->my, m2->mx, m2->my);
+        if (d < bestd) {
+            bestd = d;
+            best = m2;
+        }
+    }
+    return best;
+}
+
 staticfn int
 m_balks_at_approaching(int oldappr, struct monst *mtmp, int *pdistmin,
                        int *pdistmax)
@@ -1721,7 +1744,7 @@ m_move(struct monst *mtmp, int after)
     xint16 chcnt;
     boolean can_tunnel = 0;
     boolean can_open = 0, can_unlock = 0 /*, doorbuster = 0 */;
-    boolean getitems = FALSE;
+    boolean getitems = FALSE, marching = FALSE;
     boolean avoid = FALSE;
     boolean better_with_displacing = FALSE;
     unsigned seenflgs;
@@ -1890,7 +1913,25 @@ m_move(struct monst *mtmp, int after)
         }
     }
 
-    if ((!mtmp->mpeaceful || !rn2(10)) && (!Is_rogue_level(&u.uz))) {
+    /* Polypiled: on a battlefield (level flag "warzone"), elves and orcs
+       seek each other out rather than wander, or go for the hero when an
+       enemy soldier is closer */
+    if (svl.level.flags.warzone && !mtmp->mflee && !mtmp->mconf
+        && (is_elf(ptr) || is_orc(ptr))) {
+        struct monst *foe = warzone_foe(mtmp);
+
+        if (foe && (mtmp->mpeaceful
+                    || dist2(omx, omy, foe->mx, foe->my)
+                       < dist2(omx, omy, mtmp->mux, mtmp->muy))) {
+            ggx = foe->mx;
+            ggy = foe->my;
+            appr = 1;
+            marching = TRUE;
+        }
+    }
+
+    if (!marching && (!mtmp->mpeaceful || !rn2(10))
+        && (!Is_rogue_level(&u.uz))) {
         boolean in_line = (lined_up(mtmp)
              && (distmin(mtmp->mx, mtmp->my, mtmp->mux, mtmp->muy)
                  <= (throws_rocks(gy.youmonst.data) ? 20

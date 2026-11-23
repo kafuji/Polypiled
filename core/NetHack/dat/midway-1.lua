@@ -82,7 +82,7 @@ end
 des.object({ id = "chest", x = 03, y = 05, contents = function()
    des.object({ id = "elven mithril-coat" })
    des.object({ id = "elven cloak" })
-   des.object({ id = "potion of extra healing", quantity = 2 })
+   des.object({ id = "extra healing", class = "!", quantity = 2 })
    des.object({ class = "/" })
    des.object({ id = "gold piece", quantity = d(10, 40) })
 end })

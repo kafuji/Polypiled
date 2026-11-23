@@ -56,14 +56,14 @@ des.monster({ id = "stone giant", coord = hall:rndcoord(1), asleep = 1 })
 
 -- leftovers of the feast
 for i = 1, 8 do
-   des.object({ id = "huge chunk of meat", coord = around:rndcoord(0) })
+   des.object({ id = "enormous meatball", coord = around:rndcoord(0) })
 end
 for i = 1, 6 do
    des.object({ id = "meatball", coord = hall:rndcoord(0) })
    des.object({ id = "apple", coord = hall:rndcoord(0) })
 end
-des.object({ id = "potion of booze", coord = around:rndcoord(0) })
-des.object({ id = "potion of booze", coord = around:rndcoord(0) })
+des.object({ id = "booze", class = "!", coord = around:rndcoord(0) })
+des.object({ id = "booze", class = "!", coord = around:rndcoord(0) })
 
 -- the larder and strongroom
 des.object({ id = "chest", x = 60, y = 02, contents = function()
@@ -71,7 +71,7 @@ des.object({ id = "chest", x = 60, y = 02, contents = function()
    des.object({ id = "gold piece", quantity = d(20, 30) })
 end })
 des.object({ id = "large box", x = 54, y = 03, contents = function()
-   des.object({ id = "huge chunk of meat" })
-   des.object({ id = "potion of gain level" })
+   des.object({ id = "enormous meatball" })
+   des.object({ id = "gain level", class = "!" })
 end })
 des.object({ id = "boulder", x = 56, y = 04 })
