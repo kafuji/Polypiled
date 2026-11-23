@@ -168,6 +168,20 @@ describe("InventoryScreen", () => {
     expect(html).toContain("Empty: click to save what you wear");
   });
 
+  it("shows a set by its number, and its name once it has one", () => {
+    const view = createElement(InventoryScreenView, {
+      inventory,
+      controller: null,
+      reducedMotion: false,
+      renderTilePreview: () => null,
+      sets: [{ name: "", slots: {} }, { name: "Ranged", slots: {} }, null],
+    });
+    const html = renderToStaticMarkup(createElement(TranslationProvider, { initialLocale: "en" }, view));
+    const labels = [...html.matchAll(/<button[^>]*class="nh3d-invs-set[^"]*"[^>]*>(.*?)<\/button>/g)]
+      .map((match) => match[1].replace(/<[^>]+>/g, " ").trim().replace(/\s+/g, " "));
+    expect(labels).toEqual(["1", "2 Ranged", "3"]);
+  });
+
   it("names the alternate slot the off hand while two-weaponing", () => {
     expect(render({ ...inventory, twoWeapon: true })).toContain("Off hand");
     expect(render()).toContain("Alternate");

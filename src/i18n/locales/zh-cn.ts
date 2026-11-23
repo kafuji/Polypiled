@@ -370,6 +370,8 @@ export const zhCnOverrides = {
       setDefaultName: (n: number) => `组合 ${n}`,
       setApply: "切换",
       setRecordShort: "记录",
+      setRename: "命名",
+      setNamePlaceholder: "近战、远程、魔法…",
       setRecorded: (n: number) => `已将当前装备记录到组合 ${n}。`,
       setEmpty: "空：点击记录当前装备",
       setMissing: (n: number) => `组合中有 ${n} 件物品不在身上。`,

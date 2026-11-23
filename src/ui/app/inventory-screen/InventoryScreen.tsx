@@ -39,6 +39,7 @@ import {
 } from "./model";
 import {
   EQUIPMENT_SET_COUNT,
+  EQUIPMENT_SET_NAME_MAX,
   type EquipmentSet,
   equipmentSetProcedure,
   loadEquipmentSets,
@@ -470,14 +471,14 @@ export function InventoryScreenView({
   const [countPrompt, setCountPrompt] = useState<CountPrompt | null>(null);
   const [countValue, setCountValue] = useState("1");
   /** The equipment set menu (right click, long press, the pad's search). */
-  const [setsMenu, setSetsMenu] = useState<{ index: number; x: number; y: number } | null>(null);
+  const [setsMenu, setSetsMenu] = useState<{ index: number; x: number; y: number; naming?: string } | null>(null);
   const [procedureNotice, setProcedureNotice] = useState<InventoryProcedureState | null>(null);
   const pressRef = useRef<PressState | null>(null);
   const suppressClickRef = useRef(false);
-  /** The body and the equipment column as last seen, so a container takes their place without resizing the screen. */
+  /** The body as last seen without a container, so one opening keeps the screen's height. */
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const equipmentRef = useRef<HTMLElement | null>(null);
-  const modeSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const modeSizeRef = useRef<{ height: number } | null>(null);
 
   const findObject = useCallback(
     (id: number): InventoryObject | null => {
@@ -501,7 +502,7 @@ export function InventoryScreenView({
     if (openContainer) return;
     const body = bodyRef.current;
     const equipment = equipmentRef.current;
-    if (body && equipment) modeSizeRef.current = { width: equipment.offsetWidth, height: body.offsetHeight };
+    if (body && equipment) modeSizeRef.current = { height: body.offsetHeight };
   });
 
   // the report replaces objects: forget what no longer exists
@@ -784,9 +785,17 @@ export function InventoryScreenView({
     setNotice(missing.length > 0 ? strings.setMissing(missing.length) : null);
     controller.runInventoryProcedure(equipmentSetProcedure(set, setLabel(index)));
   };
+  const renameSet = (index: number, name: string) => {
+    const set = sets[index];
+    if (!set) return;
+    const next = [...sets];
+    next[index] = { ...set, name: name.trim().slice(0, EQUIPMENT_SET_NAME_MAX) };
+    onSetsChange(next);
+  };
   const recordSet = (index: number) => {
     const next = [...sets];
-    next[index] = recordEquipmentSet(inventory, "");
+    // saving again keeps the name
+    next[index] = recordEquipmentSet(inventory, sets[index]?.name ?? "");
     onSetsChange(next);
     setNotice(strings.setRecorded(index + 1));
   };
@@ -1006,7 +1015,6 @@ export function InventoryScreenView({
         ref={bodyRef}
         className={`nh3d-invs-body${openContainer ? " is-container-mode" : ""}`}
         style={openContainer && modeSizeRef.current ? {
-          "--invs-mode-width": `${modeSizeRef.current.width}px`,
           "--invs-mode-height": `${modeSizeRef.current.height}px`,
         } as React.CSSProperties : undefined}
       >
@@ -1078,7 +1086,7 @@ export function InventoryScreenView({
                 onPointerLeave={endSetPress}
               >
                 <span className="nh3d-invs-set-key">{index + 1}</span>
-                <span className="nh3d-invs-set-name">{set ? setLabel(index) : "+"}</span>
+                {set?.name ? <span className="nh3d-invs-set-name">{set.name}</span> : null}
               </button>
             ))}
           </div>
@@ -1379,7 +1387,31 @@ export function InventoryScreenView({
         )
         : null}
 
-      {setsMenu ? (
+      {setsMenu && setsMenu.naming !== undefined ? (
+        <ItemMenu x={setsMenu.x} y={setsMenu.y} title={setLabel(setsMenu.index)} onDismiss={() => setSetsMenu(null)}>
+          {/* naming the set: Melee, Ranged, Magic, ... (empty goes back to the number) */}
+          <form
+            className="nh3d-invs-set-naming"
+            onSubmit={(event) => {
+              event.preventDefault();
+              renameSet(setsMenu.index, setsMenu.naming ?? "");
+              setSetsMenu(null);
+            }}
+          >
+            <input
+              type="text"
+              value={setsMenu.naming}
+              maxLength={EQUIPMENT_SET_NAME_MAX}
+              placeholder={strings.setNamePlaceholder}
+              aria-label={strings.setRename}
+              autoFocus
+              onChange={(event) => setSetsMenu({ ...setsMenu, naming: event.target.value })}
+            />
+            <button type="submit">{strings.ok}</button>
+            <button type="button" onClick={() => setSetsMenu(null)}>{strings.cancel}</button>
+          </form>
+        </ItemMenu>
+      ) : setsMenu ? (
         <ItemMenu x={setsMenu.x} y={setsMenu.y} title={setLabel(setsMenu.index)} onDismiss={() => setSetsMenu(null)}>
           <button
             type="button"
@@ -1403,6 +1435,14 @@ export function InventoryScreenView({
             }}
           >
             {strings.setRecordShort}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!sets[setsMenu.index]}
+            onClick={() => setSetsMenu({ ...setsMenu, naming: sets[setsMenu.index]?.name ?? "" })}
+          >
+            {strings.setRename}
           </button>
         </ItemMenu>
       ) : null}

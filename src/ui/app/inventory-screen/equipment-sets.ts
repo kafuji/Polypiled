@@ -29,6 +29,8 @@ export interface EquipmentSet {
 }
 
 export const EQUIPMENT_SET_COUNT = 3;
+/** The longest set name kept (a button shows it, cut short if need be). */
+export const EQUIPMENT_SET_NAME_MAX = 24;
 
 const STORAGE_KEY = "nh3d.equipmentSets.v1";
 const MAX_GAMES = 20;
@@ -63,7 +65,7 @@ function normalizeSet(raw: unknown): EquipmentSet | null {
       if (isSlotValue(value)) slots[id] = value;
     }
   }
-  return { name: typeof candidate.name === "string" ? candidate.name.slice(0, 24) : "", slots };
+  return { name: typeof candidate.name === "string" ? candidate.name.slice(0, EQUIPMENT_SET_NAME_MAX) : "", slots };
 }
 
 /** The sets saved for this game (kept on this device, per game). */

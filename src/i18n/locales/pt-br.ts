@@ -604,6 +604,8 @@ export const ptBrOverrides = {
       setDefaultName: (n: number) => `Conjunto ${n}`,
       setApply: "Trocar",
       setRecordShort: "Guardar",
+      setRename: "Nomear",
+      setNamePlaceholder: "Corpo a corpo, à distância, magia…",
       setRecorded: (n: number) => `Equipamento guardado no conjunto ${n}.`,
       setEmpty: "Vazio: clique para guardar o que veste",
       setMissing: (n: number) => `Faltam ${n} item(ns) do conjunto.`,
