@@ -55,8 +55,11 @@ export interface InventoryScreenProps {
 
 /** Where a dragged object comes from. */
 export type DragSource =
-  /** fromSlot: picked up from an equipment slot rather than the pack grid */
-  | { kind: "pack"; object: InventoryObject; fromSlot?: EquipmentSlotId }
+  /**
+   * fromSlot: picked up from an equipment slot rather than the pack grid;
+   * pending: its picture in the open container, marked to go in
+   */
+  | { kind: "pack"; object: InventoryObject; fromSlot?: EquipmentSlotId; pending?: boolean }
   | { kind: "floor"; object: InventoryObject }
   /** contents of the open container */
   | { kind: "content"; object: InventoryObject; containerId: number };
@@ -126,7 +129,9 @@ export function resolveDrop(
     }
     if (target.kind === "letter" || target.kind === "grid") {
       // out of the container, or a thing waiting to go in kept out
-      if (source.kind === "content" || source.kind === "pack") return { kind: "stage", out: object.id };
+      if (source.kind === "content" || (source.kind === "pack" && source.pending)) return { kind: "stage", out: object.id };
+      // within the pack, letters still change (#adjust takes no time)
+      if (source.kind === "pack" && target.kind === "letter") return plan(planMove(object, target.letter));
     }
     return { kind: "none" };
   }
@@ -1161,7 +1166,7 @@ export function InventoryScreenView({
                   <button
                     type="button"
                     key={letter}
-                    className={`${classes}${targetClass(target, !openContainer && Boolean(activeSource) && activeSource?.object.objectClass !== ObjectClass.coin)}`}
+                    className={`${classes}${targetClass(target, (!openContainer || (activeSource?.kind === "pack" && !activeSource.pending)) && Boolean(activeSource) && activeSource?.object.objectClass !== ObjectClass.coin)}`}
                     data-invs-drop={`letter:${letter}`}
                     {...turnsAttr(target)}
                     aria-label={object ? `${letter} - ${name(object)}` : strings.letter(letter)}
@@ -1287,10 +1292,10 @@ export function InventoryScreenView({
                         className="nh3d-invs-cell is-filled is-staged is-pending"
                         title={strings.staged}
                         aria-label={`${strings.staged}: ${name(object)}`}
-                        onClick={(event) => activate({ kind: "container" }, { kind: "pack", object }, event.detail > 0)}
+                        onClick={(event) => activate({ kind: "container" }, { kind: "pack", object, pending: true }, event.detail > 0)}
                         onFocus={() => setFocused(object)}
                       >
-                        {renderItem({ kind: "pack", object })}
+                        {renderItem({ kind: "pack", object, pending: true })}
                         {cellName(object)}
                       </button>
                     ) : null;

@@ -807,9 +807,9 @@
   }
 }
 
+/* marked to go in: drag it back or double-click to keep it out */
 .nh3d-invs-cell.is-pending .nh3d-invs-item {
   opacity: 0.85;
-  pointer-events: none;
 }
 
 .nh3d-invs-item-bag {

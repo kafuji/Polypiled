@@ -225,7 +225,15 @@ describe("with a container open", () => {
       .toEqual({ kind: "stage", out: inside.id });
     expect(resolveDrop(state, { kind: "content", object: inside, containerId: bag.id }, { kind: "grid" }, bag))
       .toEqual({ kind: "stage", out: inside.id });
-    // no rearranging, equipping or dropping meanwhile
+    // letters still change; a thing marked to go in, dragged back, stays out
+    expect(resolveDrop(state, { kind: "pack", object: potions }, { kind: "letter", letter: "b" }, bag)).toMatchObject({
+      kind: "plan",
+      plan: { operations: [{ op: "adjust", from: "q", to: "b" }] },
+    });
+    expect(resolveDrop(state, { kind: "pack", object: potions, pending: true }, { kind: "letter", letter: "b" }, bag))
+      .toEqual({ kind: "stage", out: potions.id });
+    expect(resolveDrop(state, { kind: "pack", object: potions }, { kind: "grid" }, bag)).toEqual({ kind: "none" });
+    // no equipping or dropping meanwhile
     expect(resolveDrop(state, { kind: "pack", object: potions }, { kind: "slot", slot: "weapon" }, bag)).toEqual({ kind: "none" });
     expect(resolveDrop(state, { kind: "pack", object: potions }, { kind: "floor" }, bag)).toEqual({ kind: "none" });
   });
