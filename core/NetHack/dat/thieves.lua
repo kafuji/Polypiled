@@ -76,7 +76,7 @@ end
 local mazefloor = selection.match(".") - den
 local traps = { "arrow", "dart", "falling rock", "bear", "land mine",
                 "sleep gas", "rust", "fire", "pit", "spiked pit",
-                "teleport", "anti magic", "squeaky board" }
+                "teleport", "anti magic", "board" }
 for i = 1, 18 do
    des.trap(traps[math.random(1, #traps)], mazefloor:rndcoord(1))
 end
