@@ -2412,6 +2412,11 @@ mm_2way_aggression(struct monst *magr, struct monst *mdef)
                || In_W_tower(mdef->mx, mdef->my, &u.uz)))
             return 0L;
     }
+    /* Polypiled: on a battlefield (level flag "warzone"), elves and orcs
+       fight each other wherever they meet */
+    if (svl.level.flags.warzone && is_elf(magr->data) && is_orc(mdef->data))
+        return (ALLOW_M | ALLOW_TM);
+
     /* liches/zombies vs things that can be zombified
 
        Note: avoid this on the Castle level, partly for balance reasons

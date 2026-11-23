@@ -3831,6 +3831,8 @@ lspo_level_flags(lua_State *L)
             svl.level.flags.fumaroles = 1;
         else if (!strcmpi(s, "stormy"))
             svl.level.flags.stormy = 1;
+        else if (!strcmpi(s, "warzone"))
+            svl.level.flags.warzone = 1;
         else {
             char buf[BUFSZ];
 

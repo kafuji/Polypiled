@@ -66,6 +66,15 @@ dungeon = {
             nlevels = 13
          },
          {
+            -- Polypiled: one of three mid-dungeon set pieces, always
+            -- present: battlefield, giants' hall or adventurers' mausoleum
+            name = "midway",
+            bonetag = "H",
+            base = 13,
+            range = 4,
+            nlevels = 3
+         },
+         {
             name = "medusa",
             base = -5,
             range = 4,
