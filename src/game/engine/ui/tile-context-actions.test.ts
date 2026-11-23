@@ -49,6 +49,7 @@ function fixture() {
     },
     questionMenus: { isInQuestion: false },
     renderPipeline: { renderer: {} },
+    runtimeEntityTracking: { isPlayerRiding: vi.fn(() => false) },
     terminalRendering: { terminalRenderOptionStates: {} },
     tileFaceTextureRotationDebug: { cycleRotation: vi.fn(), isEnabled: vi.fn(() => false) },
     tileRendering: { tileMap: new Map([["4,6", selfTile], ["7,6", rayTile], ["9,9", crosshairTile]]) },
@@ -100,5 +101,38 @@ describe("immersive FPS context target", () => {
 
     expect(f.dependencies.pointerTargeting.getTileUnderFpsCrosshair).toHaveBeenCalledOnce();
     expect(f.context.activeContextActionTile).toEqual({ x: 9, y: 9 });
+  });
+});
+
+describe("riding context actions", () => {
+  const ids = (actions: { id: string; kind: string; value: string }[]) =>
+    actions.map((action) => `${action.kind}:${action.id}:${action.value}`);
+
+  it("offers Ride on an adjacent saddled monster while on foot", () => {
+    const f = fixture();
+    const actions = f.context.getFpsCrosshairActionsForTile(
+      "5,6", new THREE.Mesh(), "monster", "u  pony (tame saddled pony)",
+    );
+    expect(ids(actions)).toContain("extended:ride:ride");
+  });
+
+  it("omits Ride for unsaddled, distant, or already-mounted cases", () => {
+    const f = fixture();
+    const mesh = new THREE.Mesh();
+    expect(ids(f.context.getFpsCrosshairActionsForTile("5,6", mesh, "monster", "u  pony (tame pony)")))
+      .not.toContain("extended:ride:ride");
+    expect(ids(f.context.getFpsCrosshairActionsForTile("7,6", mesh, "monster", "u  pony (tame saddled pony)")))
+      .not.toContain("extended:ride:ride");
+    vi.mocked(f.dependencies.runtimeEntityTracking.isPlayerRiding).mockReturnValue(true);
+    expect(ids(f.context.getFpsCrosshairActionsForTile("5,6", mesh, "monster", "u  pony (tame saddled pony)")))
+      .not.toContain("extended:ride:ride");
+  });
+
+  it("offers Dismount on the hero's own tile only while riding", () => {
+    const f = fixture();
+    const mesh = new THREE.Mesh();
+    expect(ids(f.context.getFpsCrosshairActionsForTile("4,6", mesh))).not.toContain("extended:dismount:ride");
+    vi.mocked(f.dependencies.runtimeEntityTracking.isPlayerRiding).mockReturnValue(true);
+    expect(ids(f.context.getFpsCrosshairActionsForTile("4,6", mesh))).toContain("extended:dismount:ride");
   });
 });

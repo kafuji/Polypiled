@@ -47,6 +47,8 @@ export const plusEn = {
     fire: "Fire",
     cast: "Cast",
     apply: "Apply",
+    ride: "Ride",
+    dismount: "Dismount",
     info: "Info",
   },
   techniqueMenu: {

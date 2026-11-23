@@ -9,6 +9,7 @@ const actionLabels: Readonly<Record<string, string>> = {
   force: "こじ開ける", apply: "使う", ascend: "上る (<)", descend: "下りる (>)",
   kick: "蹴る", throw: "投げる", fire: "発射", search: "探索", pickup: "拾う",
   loot: "中身を調べる", eat: "食べる", open: "開ける", close: "閉める", quaff: "飲む",
+  ride: "乗る", dismount: "降りる",
 };
 
 const targetNames: Readonly<Record<string, string>> = {

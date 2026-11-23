@@ -15,6 +15,14 @@ staticfn void mkshobj_at(const struct shclass *, int, int, boolean);
 staticfn void nameshk(struct monst *, const char *const *);
 staticfn int good_shopdoor(struct mkroom *, coordxy *, coordxy *);
 staticfn int shkinit(const struct shclass *, struct mkroom *);
+staticfn void fence_mark_owned(struct obj *, boolean *);
+staticfn boolean fence_harmful(int);
+staticfn int fence_weight(int, const boolean *);
+staticfn int fence_pick_otyp(int, const boolean *);
+staticfn void fence_polish(struct obj *);
+staticfn void mkfenceobj_at(const struct shclass *, int, int,
+                            const boolean *);
+staticfn void arm_fence(struct monst *);
 
 #define VEGETARIAN_CLASS (MAXOCLASSES + 1)
 
@@ -157,6 +165,13 @@ static const char *const shklight[] = {
     "Silistra", "Tulovo", "Panagyuritshte", "Smolyan", "Kirklareli", "Pernik",
     "Lom", "Haskovo", "Dobrinishte", "Varvara", "Oryahovo", "Troyan",
     "Lovech", "Sliven", 0
+};
+
+/* Polypiled: the thieves' den fence goes by an alias */
+static const char *const shkfence[] = {
+    "Quickfingers", "Slypurse", "Nimblewick", "Gristle",  "Ratchet",
+    "Pockets",      "Lockjaw",  "-Velvet",    "-Magpie",  "-Whisper",
+    0
 };
 
 static const char *const shkgeneral[] = {
@@ -344,6 +359,19 @@ const struct shclass shtypes[] = {
         { 1, -SCR_LIGHT },
         { 1, -SPE_LIGHT } },
       shklight },
+    /* Polypiled: the thieves' den.  Buys anything (RANDOM_CLASS) and sells
+     * durable goods; stock_room() and get_cost() treat it specially. */
+    { "black market", NULL,
+      RANDOM_CLASS,
+      0,
+      D_SHOP,
+      { { 20, WEAPON_CLASS },
+        { 25, ARMOR_CLASS },
+        { 15, RING_CLASS },
+        { 10, AMULET_CLASS },
+        { 15, WAND_CLASS },
+        { 15, TOOL_CLASS } },
+      shkfence },
     /* sentinel */
     { (char *) 0, NULL,
       0,
@@ -453,8 +481,6 @@ mkveggy_at(int sx, int sy)
 staticfn void
 mkshobj_at(const struct shclass *shp, int sx, int sy, boolean mkspecl)
 {
-    struct monst *mtmp;
-    struct permonst *ptr;
     int atype;
 
     /* 3.6 tribute */
@@ -467,19 +493,162 @@ mkshobj_at(const struct shclass *shp, int sx, int sy, boolean mkspecl)
         return;
     }
 
-    if (rn2(100) < depth(&u.uz) && !MON_AT(sx, sy)
-        && (ptr = mkclass(S_MIMIC, 0)) != 0
-        && (mtmp = makemon(ptr, sx, sy, NO_MM_FLAGS)) != 0) {
-        /* nothing */
-    } else {
-        atype = get_shop_item((int) (shp - shtypes));
-        if (atype == VEGETARIAN_CLASS)
-            mkveggy_at(sx, sy);
-        else if (atype < 0)
-            (void) mksobj_at(-atype, sx, sy, TRUE, TRUE);
-        else
-            (void) mkobj_at(atype, sx, sy, TRUE);
+    /* Polypiled: no mimics posing as stock; a shop full of them is
+       tedious rather than dangerous */
+    atype = get_shop_item((int) (shp - shtypes));
+    if (atype == VEGETARIAN_CLASS)
+        mkveggy_at(sx, sy);
+    else if (atype < 0)
+        (void) mksobj_at(-atype, sx, sy, TRUE, TRUE);
+    else
+        (void) mkobj_at(atype, sx, sy, TRUE);
+}
+
+/*
+ * Polypiled: the black market.  Its stock leans towards what this game has
+ * withheld from the hero: kinds never seen weigh four times their usual
+ * share, kinds seen but not held (in inventory or any container carried)
+ * twice.  Only magical or valuable kinds get the boost, so the counter
+ * doesn't fill up with unseen junk.  Goods are of good quality, artifacts
+ * are common, and dragon armor is left for the hero to make.
+ */
+#define FENCE_ARTIFACT_PCT 12
+
+staticfn void
+fence_mark_owned(struct obj *list, boolean *owned)
+{
+    for (; list; list = list->nobj) {
+        owned[list->otyp] = TRUE;
+        if (Has_contents(list))
+            fence_mark_owned(list->cobj, owned);
     }
+}
+
+/* kinds a buyer would regret; still stocked now and then by accident */
+staticfn boolean
+fence_harmful(int otyp)
+{
+    switch (otyp) {
+    case AMULET_OF_STRANGULATION:
+    case AMULET_OF_RESTFUL_SLEEP:
+    case AMULET_OF_CHANGE:
+    case RIN_HUNGER:
+    case RIN_AGGRAVATE_MONSTER:
+    case RIN_TELEPORTATION:
+    case RIN_POLYMORPH:
+    case DUNCE_CAP:
+    case FUMBLE_BOOTS:
+    case GAUNTLETS_OF_FUMBLING:
+    case HELM_OF_OPPOSITE_ALIGNMENT:
+    case BAG_OF_TRICKS:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
+/* weights are on a scale of 12 per point of oc_prob so the reductions
+   below never round a kind away entirely */
+staticfn int
+fence_weight(int otyp, const boolean *owned)
+{
+    const struct objclass *ocl = &objects[otyp];
+    int weight = 12 * ocl->oc_prob;
+
+    /* the shield of reflection is Perseus's, waiting on Medusa's island */
+    if (!weight || otyp == WAN_WISHING || otyp == SHIELD_OF_REFLECTION
+        || (otyp >= GRAY_DRAGON_SCALE_MAIL
+            && otyp <= YELLOW_DRAGON_SCALE_MAIL)
+        || (otyp >= GRAY_DRAGON_SCALES && otyp <= YELLOW_DRAGON_SCALES))
+        return 0;
+    if (fence_harmful(otyp))
+        return weight / 6;
+    if (ocl->oc_magic || ocl->oc_cost >= 100) {
+        if (!ocl->oc_encountered)
+            weight *= 4;
+        else if (!owned[otyp])
+            weight *= 2;
+    } else if (ocl->oc_cost < 20) {
+        weight /= 12; /* arrows, daggers, leather armor... */
+    } else if (ocl->oc_cost < 50) {
+        weight /= 3;
+    }
+    return weight;
+}
+
+staticfn int
+fence_pick_otyp(int oclass, const boolean *owned)
+{
+    int i, first = svb.bases[oclass], total = 0, pick;
+
+    for (i = first; i < NUM_OBJECTS && objects[i].oc_class == oclass; i++)
+        total += fence_weight(i, owned);
+    if (!total)
+        return STRANGE_OBJECT;
+    pick = rn2(total);
+    for (i = first; i < NUM_OBJECTS && objects[i].oc_class == oclass; i++)
+        if ((pick -= fence_weight(i, owned)) < 0)
+            return i;
+    return STRANGE_OBJECT; /* not reached */
+}
+
+staticfn void
+fence_polish(struct obj *otmp)
+{
+    if (otmp->cursed)
+        uncurse(otmp);
+    if (!otmp->blessed && !rn2(3))
+        bless(otmp);
+    if (otmp->spe < 0 && (otmp->oclass == WEAPON_CLASS
+                          || otmp->oclass == ARMOR_CLASS
+                          || otmp->oclass == RING_CLASS))
+        otmp->spe = -otmp->spe;
+    /* second-hand weapons: most were enchanted by a previous owner */
+    if (otmp->oclass == WEAPON_CLASS && rn2(10) < 8) {
+        int ench = rnd(3) + (!rn2(5) ? rnd(2) : 0);
+
+        if (otmp->spe < ench)
+            otmp->spe = ench;
+    }
+    otmp->oeroded = otmp->oeroded2 = 0;
+}
+
+staticfn void
+mkfenceobj_at(const struct shclass *shp, int sx, int sy,
+              const boolean *owned)
+{
+    struct obj *otmp = (struct obj *) 0;
+    int otyp;
+
+    if (rn2(100) < FENCE_ARTIFACT_PCT)
+        otmp = mk_random_artifact();
+    if (!otmp) {
+        otyp = fence_pick_otyp(get_shop_item((int) (shp - shtypes)), owned);
+        if (otyp == STRANGE_OBJECT)
+            return;
+        otmp = mksobj(otyp, TRUE, TRUE);
+    }
+    fence_polish(otmp);
+    place_object(otmp, sx, sy);
+}
+
+/* the fence can afford serious protection, and robbing them should hurt;
+   a hero ready to ascend (reflection or magic resistance) can cope */
+staticfn void
+arm_fence(struct monst *shk)
+{
+    shk->m_lev = 25;
+    shk->mhpmax = shk->mhp = 220 + d(10, 8);
+    (void) mongets(shk, WAN_DEATH);
+    (void) mongets(shk, WAN_SLEEP);
+    (void) mongets(shk, WAN_LIGHTNING);
+    (void) mongets(shk, POT_FULL_HEALING);
+    (void) mongets(shk, POT_FULL_HEALING);
+    (void) mongets(shk, SILVER_SABER);
+    (void) mongets(shk, DWARVISH_MITHRIL_COAT);
+    (void) mongets(shk, CLOAK_OF_PROTECTION);
+    (void) mongets(shk, GAUNTLETS_OF_POWER);
+    m_dowear(shk, TRUE);
 }
 
 /* extract a shopkeeper name for the given shop type */
@@ -680,6 +849,8 @@ shkinit(const struct shclass *shp, struct mkroom *sroom)
     eshkp->bill_p = (struct bill_x *) 0;
     eshkp->customer[0] = '\0';
     mkmonmoney(shk, 1000L + 30L * (long) rnd(100)); /* initial capital */
+    if (shp->shknms == shkfence)
+        arm_fence(shk);
     if (shp->shknms == shkrings)
         (void) mongets(shk, TOUCHSTONE);
     if (shp->shknms == shktools || shp->shknms == shkwands ||
@@ -778,13 +949,75 @@ stock_room(int shp_indx, struct mkroom *sroom)
         stockcount = 0;
     }
 
-    for (sx = sroom->lx; sx <= sroom->hx; sx++)
-        for (sy = sroom->ly; sy <= sroom->hy; sy++)
-            if (stock_room_goodpos(sroom, rmno, sh, sx,sy)) {
-                stockcount++;
-                mkshobj_at(shp, sx, sy,
-                           ((stockcount) && (stockcount == specialspot)));
-            }
+    if (shp->shknms == shkfence) {
+        /* black market: weighted stock plus one second-hand wand of
+           wishing (recharged once already, a single wish left) */
+        /* kinds always on the counter while this game hasn't shown
+           them yet */
+        static const short musthave[] = {
+            MAGIC_LAMP, MAGIC_WHISTLE, UNICORN_HORN
+        };
+        short wanted[SIZE(musthave)];
+        int spot[SIZE(musthave)];
+        boolean owned[NUM_OBJECTS];
+        int wishspot, nwanted = 0, i, j;
+        struct obj *wand, *otmp;
+
+        (void) memset((genericptr_t) owned, 0, sizeof owned);
+        fence_mark_owned(gi.invent, owned);
+        stockcount = 0;
+        for (sx = sroom->lx; sx <= sroom->hx; sx++)
+            for (sy = sroom->ly; sy <= sroom->hy; sy++)
+                if (stock_room_goodpos(sroom, rmno, sh, sx, sy))
+                    stockcount++;
+        wishspot = stockcount ? rnd(stockcount) : 0;
+        for (i = 0; i < SIZE(musthave); i++)
+            if (!objects[musthave[i]].oc_encountered && !owned[musthave[i]])
+                wanted[nwanted++] = musthave[i];
+        /* a distinct square for each, never the wand's */
+        for (i = 0; i < nwanted; i++) {
+            spot[i] = 0;
+            if (stockcount <= i + 1)
+                continue;
+            do {
+                spot[i] = rnd(stockcount);
+                for (j = 0; j < i; j++)
+                    if (spot[j] == spot[i])
+                        break;
+            } while (spot[i] == wishspot || j < i);
+        }
+        stockcount = 0;
+        for (sx = sroom->lx; sx <= sroom->hx; sx++)
+            for (sy = sroom->ly; sy <= sroom->hy; sy++)
+                if (stock_room_goodpos(sroom, rmno, sh, sx, sy)) {
+                    if (++stockcount == wishspot) {
+                        wand = mksobj(WAN_WISHING, TRUE, FALSE);
+                        wand->spe = 1;
+                        wand->recharged = 1;
+                        wand->blessed = wand->cursed = 0;
+                        place_object(wand, sx, sy);
+                        continue;
+                    }
+                    for (i = 0; i < nwanted; i++)
+                        if (spot[i] == stockcount)
+                            break;
+                    if (i < nwanted) {
+                        otmp = mksobj(wanted[i], TRUE, FALSE);
+                        fence_polish(otmp);
+                        place_object(otmp, sx, sy);
+                    } else {
+                        mkfenceobj_at(shp, sx, sy, owned);
+                    }
+                }
+    } else {
+        for (sx = sroom->lx; sx <= sroom->hx; sx++)
+            for (sy = sroom->ly; sy <= sroom->hy; sy++)
+                if (stock_room_goodpos(sroom, rmno, sh, sx,sy)) {
+                    stockcount++;
+                    mkshobj_at(shp, sx, sy,
+                               ((stockcount) && (stockcount == specialspot)));
+                }
+    }
 
     /*
      * Special monster placements (if any) should go here: that way,

@@ -71,6 +71,8 @@ const jaPlusTranslations: LocaleOverrides<TranslationDictionary> = {
       fire: "発射する",
       cast: "呪文を唱える",
       apply: "使う",
+      ride: "乗る",
+      dismount: "降りる",
       info: "情報",
     },
     techniqueMenu: {

@@ -168,6 +168,35 @@ artiname(int artinum)
    The max_giftvalue is the value of the sacrifice, for an artifact obtained
    by sacrificing, or 99 otherwise.
  */
+/* Polypiled: a randomly chosen artifact that random generation could
+   still produce (not yet in the game, not a quest or no-gen one), for the
+   thieves' den black market; Null once none is left */
+struct obj *
+mk_random_artifact(void)
+{
+    const struct artifact *a;
+    int m, n = 0;
+    short eligible[NROFARTIFACTS];
+    struct obj *otmp;
+
+    for (m = 1, a = &artilist[m]; a->otyp; a++, m++) {
+        if (artiexist[m].exists || (a->spfx & SPFX_NOGEN))
+            continue;
+        eligible[n++] = m;
+    }
+    if (!n)
+        return (struct obj *) 0;
+
+    m = eligible[rn2(n)];
+    a = &artilist[m];
+    otmp = mksobj((int) a->otyp, TRUE, FALSE);
+    otmp->oeroded = otmp->oeroded2 = 0;
+    otmp = oname(otmp, a->name, ONAME_NO_FLAGS);
+    otmp->oartifact = m;
+    artifact_origin(otmp, ONAME_RANDOM);
+    return otmp;
+}
+
 struct obj *
 mk_artifact(
     struct obj *otmp,    /* existing object; ignored and disposed of

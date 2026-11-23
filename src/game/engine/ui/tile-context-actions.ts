@@ -34,6 +34,7 @@ import type { PositionSelection } from "../input/position-selection";
 import type { PromptDialogs } from "./prompt-dialogs";
 import type { QuestionMenus } from "./question-menus";
 import type { RenderPipeline } from "../rendering/render-pipeline";
+import type { RuntimeEntityTracking } from "../world/runtime-entity-tracking";
 import type { TerminalRendering } from "../rendering/terminal-rendering";
 import type { TileFaceTextureRotationDebug } from "../diagnostics/tile-face-texture-rotation-debug";
 import type { TileRendering } from "../rendering/tile-rendering";
@@ -137,6 +138,10 @@ export interface TileContextActionsDependencies {
   readonly renderPipeline: Pick<
     RenderPipeline,
     "renderer"
+  >;
+  readonly runtimeEntityTracking: Pick<
+    RuntimeEntityTracking,
+    "isPlayerRiding"
   >;
   readonly terminalRendering: Pick<
     TerminalRendering,
@@ -1083,15 +1088,23 @@ export class TileContextActions {
       this.isContainerLikeGroundLootText(glanceText);
     const glanceSuggestCorpse = this.isCorpseLikeGroundLootText(glanceText);
     let isTargetPlayerTile = true;
+    let isTargetAdjacentTile = false;
     {
       const [rawX, rawY] = key.split(",");
       const tileX = Number.parseInt(rawX, 10);
       const tileY = Number.parseInt(rawY, 10);
       if (Number.isFinite(tileX) && Number.isFinite(tileY)) {
-        isTargetPlayerTile =
-          tileX === this.dependencies.playerMovement.playerPos.x && tileY === this.dependencies.playerMovement.playerPos.y;
+        const dx = tileX - this.dependencies.playerMovement.playerPos.x;
+        const dy = tileY - this.dependencies.playerMovement.playerPos.y;
+        isTargetPlayerTile = dx === 0 && dy === 0;
+        isTargetAdjacentTile =
+          !isTargetPlayerTile && Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
       }
     }
+    const isPlayerRiding = this.dependencies.runtimeEntityTracking.isPlayerRiding();
+    // Farlook names a saddled monster "tame saddled pony"; the steed itself
+    // shares the hero's square, so an adjacent saddled monster is never it.
+    const glanceSaysSaddled = /\bsaddled\b/.test(normalizedGlanceText);
     if (glanceHint) {
       switch (glanceHint) {
         case "monster":
@@ -1147,6 +1160,14 @@ export class TileContextActions {
     const isStairsUp = materialKind === "stairs_up";
     const isStairsDown = materialKind === "stairs_down";
     const supportsCastContextAction = isTargetPlayerTile || isMonster;
+
+    // #ride dismounts while mounted and otherwise asks which way to mount.
+    if (isTargetPlayerTile && isPlayerRiding) {
+      addExtendedAction("dismount", "Dismount", "ride");
+    }
+    if (isMonster && isTargetAdjacentTile && glanceSaysSaddled && !isPlayerRiding) {
+      addExtendedAction("ride", "Ride");
+    }
 
     if (glanceSuggestCorpse) {
       addQuickAction("pickup", "Pick Up");

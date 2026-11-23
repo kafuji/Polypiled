@@ -82,6 +82,14 @@ dungeon = {
             alignment = "chaotic"
          },
          {
+            -- Polypiled: the thieves' den, a black market for the hero
+            -- with gold to spare; always present, just above Medusa
+            name = "thieves",
+            bonetag = "R",
+            chainlevel = "medusa",
+            base = -1,
+         },
+         {
             name = "castle",
             base = -1
          }

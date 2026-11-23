@@ -537,7 +537,7 @@ export class InputCommands {
       return false;
     }
     const kickAdjacentDirection =
-      normalizedCommandText === "kick"
+      normalizedCommandText === "kick" || normalizedCommandText === "ride"
         ? this.getContextAutoDirectionFromActiveTileIfAdjacent()
         : null;
 
