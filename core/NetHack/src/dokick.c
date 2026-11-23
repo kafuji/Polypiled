@@ -1202,7 +1202,7 @@ kick_nondoor(coordxy x, coordxy y, int avrg_attrib)
             kick_dumb(x, y);
             return ECMD_TIME;
         }
-        if (rn2(5)) {
+        if (rn2(2)) { /* Polypiled: was rn2(5) */
             Soundeffect(se_klunk_pipe, 60);
             if (!Deaf)
                 pline("Klunk!  The pipes vibrate noisily.");

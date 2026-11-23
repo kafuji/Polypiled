@@ -182,7 +182,7 @@ struct rm {
  *         |D_WARNED     |             |            |            |            |
  * sdoor   |D_TRAPPED    | D_LOCKED    | W_MASK     | W_MASK     | W_MASK     |
  * drawbr. |DB_FLOOR     | DB_ICE      | DB_LAVA    | DB_DIR     | DB_DIR     |
- * sink    |             |             | S_LRING    | S_LDWASHER | S_LPUDDING |
+ * sink    | S_TAPSET    | S_HOTTAP    | S_LRING    | S_LDWASHER | S_LPUDDING |
  * tree    |             |             |            | TREE_SWARM | TREE_LOOTED|
  * throne  |             |             |            |            | T_LOOTED   |
  * fountain| F_QUALITY   | F_QUALITY   | F_QUALITY  | F_WARNED   | F_LOOTED   |
@@ -290,6 +290,8 @@ struct rm {
 #define S_LPUDDING 1
 #define S_LDWASHER 2
 #define S_LRING 4
+#define S_HOTTAP 8  /* Polypiled: the tap runs scalding hot */
+#define S_TAPSET 16 /* Polypiled: S_HOTTAP has been chosen */
 
 /*
  * The four directions for a DrawBridge.
