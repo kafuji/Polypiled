@@ -592,8 +592,47 @@ breaksink(coordxy x, coordxy y)
     set_levltyp(x, y, FOUNTAIN);
     levl[x][y].looted = 0;
     levl[x][y].blessedftn = 0;
-    SET_FOUNTAIN_LOOTED(x, y);
+    /* Polypiled: water from the broken pipes is a fresh fountain */
+    init_fountain_quality(x, y);
     newsym(x, y);
+}
+
+/* Polypiled: about one sink in four has a tap that only runs scalding hot */
+void
+init_sink_tap(coordxy x, coordxy y)
+{
+    levl[x][y].looted |= S_TAPSET;
+    if (!rn2(4))
+        levl[x][y].looted |= S_HOTTAP;
+}
+
+/* sinks not made by mksink() (special levels, wishes, polymorphed
+   furniture) get their tap on first use */
+staticfn boolean
+sink_tap_is_hot(coordxy x, coordxy y)
+{
+    if (!(levl[x][y].looted & S_TAPSET))
+        init_sink_tap(x, y);
+    return (levl[x][y].looted & S_HOTTAP) != 0;
+}
+
+/* Polypiled: rings dropped down a drain lie buried under the sink; bring
+   back the one that went down first, or return null if there is none */
+staticfn struct obj *
+sink_lost_ring(coordxy x, coordxy y)
+{
+    struct obj *otmp, *oldest = (struct obj *) 0;
+
+    /* add_to_buried() puts new objects at the head of the list */
+    for (otmp = svl.level.buriedobjlist; otmp; otmp = otmp->nobj)
+        if (otmp->ox == x && otmp->oy == y && otmp->oclass == RING_CLASS)
+            oldest = otmp;
+    if (oldest) {
+        obj_extract_self(oldest);
+        place_object(oldest, x, y);
+        newsym(x, y);
+    }
+    return oldest;
 }
 
 /* quaff from a sink while standing on its location */
@@ -607,14 +646,13 @@ drinksink(void)
         floating_above("sink");
         return;
     }
-    switch (rn2(20)) {
-    case 0:
-        You("take a sip of very cold %s.", hliquid("water"));
-        break;
-    case 1:
-        You("take a sip of very warm %s.", hliquid("water"));
-        break;
-    case 2:
+    if (!rn2(20)) {
+        breaksink(u.ux, u.uy);
+        return;
+    }
+
+    /* Polypiled: the tap always gives water; hot taps scald */
+    if (sink_tap_is_hot(u.ux, u.uy)) {
         You("take a sip of scalding hot %s.", hliquid("water"));
         if (Fire_resistance) {
             pline("It seems quite tasty.");
@@ -624,8 +662,17 @@ drinksink(void)
             monstunseesu(M_SEEN_FIRE);
         }
         /* boiling water burns considered fire damage */
-        break;
-    case 3:
+    } else {
+        You("take a sip of cold %s.", hliquid("water"));
+    }
+    u.uhunger += rnd(5);
+    newuhs(FALSE);
+
+    /* and sometimes something comes up the drain */
+    if (rn2(4))
+        return;
+    switch (rn2(8)) {
+    case 0:
         if (svm.mvitals[PM_SEWER_RAT].mvflags & G_GONE)
             pline_The("sink seems quite dirty.");
         else {
@@ -636,7 +683,7 @@ drinksink(void)
                                                    : a_monnam(mtmp));
         }
         break;
-    case 4:
+    case 1:
         for (;;) {
             otmp = mkobj(POTION_CLASS, FALSE);
             if (otmp->otyp != POT_WATER)
@@ -654,8 +701,11 @@ drinksink(void)
         (void) dopotion(otmp);
         obfree(otmp, (struct obj *) 0);
         break;
-    case 5:
-        if (!(levl[u.ux][u.uy].looted & S_LRING)) {
+    case 2:
+        if ((otmp = sink_lost_ring(u.ux, u.uy)) != 0) {
+            You("find %s in the sink!", doname(otmp));
+            exercise(A_WIS, TRUE);
+        } else if (!(levl[u.ux][u.uy].looted & S_LRING)) {
             You("find a ring in the sink!");
             (void) mkobj_at(RING_CLASS, u.ux, u.uy, TRUE);
             levl[u.ux][u.uy].looted |= S_LRING;
@@ -664,56 +714,33 @@ drinksink(void)
         } else
             pline("Some dirty %s backs up in the drain.", hliquid("water"));
         break;
-    case 6:
-        breaksink(u.ux, u.uy);
-        break;
-    case 7:
+    case 3:
         pline_The("%s moves as though of its own will!", hliquid("water"));
         if ((svm.mvitals[PM_WATER_ELEMENTAL].mvflags & G_GONE)
             || !makemon(&mons[PM_WATER_ELEMENTAL], u.ux, u.uy, MM_NOMSG))
             pline("But it quiets down.");
         break;
-    case 8:
+    case 4:
         pline("Yuk, this %s tastes awful.", hliquid("water"));
         more_experienced(1, 0);
         newexplevel();
         break;
-    case 9:
+    case 5:
         pline("Gaggg... this tastes like sewage!  You vomit.");
         morehungry(rn1(30 - ACURR(A_CON), 11));
         vomit();
         break;
-    case 10:
+    case 6:
         pline("This %s contains toxic wastes!", hliquid("water"));
         if (!Unchanging) {
             You("undergo a freakish metamorphosis!");
             polyself(POLY_NOFLAGS);
         }
         break;
-    /* more odd messages --JJB */
-    case 11:
-        Soundeffect(se_clanking_pipe, 50);
-        You_hear("clanking from the pipes...");
-        break;
-    case 12:
-        Soundeffect(se_sewer_song, 100);
-        You_hear("snatches of song from among the sewers...");
-        break;
-    case 13:
+    default:
         pline("Ew, what a stench!");
         create_gas_cloud(u.ux, u.uy, 1, 4);
         break;
-    case 19:
-        if (Hallucination) {
-            pline("From the murky drain, a hand reaches up... --oops--");
-            break;
-        }
-        FALLTHROUGH;
-        /*FALLTHRU*/
-    default:
-        You("take a sip of %s %s.",
-            rn2(3) ? (rn2(2) ? "cold" : "warm") : "hot",
-            hliquid("water"));
     }
 }
 
@@ -811,6 +838,7 @@ void
 sink_backs_up(coordxy x, coordxy y)
 {
     char buf[BUFSZ];
+    struct obj *otmp;
 
     if (!Blind)
         Strcpy(buf, "Muddy waste pops up from the drain");
@@ -820,7 +848,12 @@ sink_backs_up(coordxy x, coordxy y)
         Sprintf(buf, "Something splashes you in the %s", body_part(FACE));
     pline("%s%s.", !Deaf ? "Flupp!  " : "", buf);
 
-    if (!(levl[x][y].looted & S_LRING)) { /* once per sink */
+    if ((otmp = sink_lost_ring(x, y)) != 0) {
+        /* Polypiled: a ring that went down the drain comes back first */
+        if (!Blind)
+            You_see("%s shining in its midst.", doname(otmp));
+        exercise(A_WIS, TRUE);
+    } else if (!(levl[x][y].looted & S_LRING)) { /* once per sink */
         if (!Blind)
             You_see("a ring shining in its midst.");
         (void) mkobj_at(RING_CLASS, x, y, TRUE);

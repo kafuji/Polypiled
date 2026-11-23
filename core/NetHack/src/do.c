@@ -410,7 +410,8 @@ polymorph_sink(void)
     if (levl[u.ux][u.uy].typ != SINK)
         return;
 
-    sinklooted = levl[u.ux][u.uy].looted != 0;
+    sinklooted = (levl[u.ux][u.uy].looted
+                  & (S_LPUDDING | S_LDWASHER | S_LRING)) != 0;
     /* svl.level.flags.nsinks--; // set_levltyp() will update this */
     levl[u.ux][u.uy].flags = 0;
     switch (rn2(4)) {
@@ -419,8 +420,8 @@ polymorph_sink(void)
         sym = S_fountain;
         set_levltyp(u.ux, u.uy, FOUNTAIN); /* updates level.flags.nfountains */
         levl[u.ux][u.uy].blessedftn = 0;
-        if (sinklooted)
-            SET_FOUNTAIN_LOOTED(u.ux, u.uy);
+        /* Polypiled: a new fountain, with its own water and wonder */
+        init_fountain_quality(u.ux, u.uy);
         break;
     case 1:
         sym = S_throne;
@@ -650,14 +651,15 @@ dosinkring(struct obj *obj)
         pline_The("sink backs up, leaving %s.", doname(obj));
         obj->in_use = FALSE;
         dropx(obj);
-    } else if (!rn2(5)) {
+    } else {
+        /* Polypiled: the ring lies under the sink until the drain backs
+           up (sink_backs_up(), drinksink()) instead of being lost */
         freeinv(obj);
         obj->in_use = FALSE;
         obj->ox = u.ux;
         obj->oy = u.uy;
         add_to_buried(obj);
-    } else
-        useup(obj);
+    }
 }
 
 /* some common tests when trying to drop or throw items */
