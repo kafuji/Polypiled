@@ -736,10 +736,10 @@ nh3d_publish_floor_here(boolean force)
  * of tricks the hero has not identified is reported as a container, like
  * the sacks it looks like.
  *
- * Weight is given for what the hero carries: each top-level object (its
- * owt, contents included) and the total, with the carrying capacity.  The
- * hero learns these by picking things up (docs/inventory-screen-design.md,
- * section 4).  Objects inside containers carry no weight of their own here.
+ * Weight is given for what the hero carries: each top-level object (what
+ * it adds to the load now, contents included; worn armor counts for half)
+ * and the total, with the carrying capacity.  The hero learns these by picking things up
+ * (docs/inventory-screen-design.md, section 4).  Objects inside containers carry no weight of their own here.
  */
 
 #define NH3D_INVENTORY_BUFSZ 262144
@@ -847,8 +847,9 @@ nh3d_json_inventory_object(struct nh3d_json *js, struct obj *obj, int depth,
     }
 
     if (depth == 0 && carried) {
-        long wt = obj->oclass == COIN_CLASS ? (obj->quan + 50L) / 100L
-                                            : (long) obj->owt;
+        /* what it adds to the load now (worn armor counts for half);
+           its weight unworn is left for the hero to find out */
+        long wt = (long) carried_obj_weight(obj);
 
         nh3d_json_raw(js, ",\"weight\":");
         nh3d_json_int(js, wt);
