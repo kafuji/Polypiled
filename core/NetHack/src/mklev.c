@@ -2331,6 +2331,7 @@ mksink(struct mkroom *croom)
     /* Put a sink at m.x, m.y */
     if (!set_levltyp(m.x, m.y, SINK))
         return;
+    init_sink_tap(m.x, m.y);
 
     svl.level.flags.nsinks++;
 }

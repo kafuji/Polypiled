@@ -1160,6 +1160,7 @@ extern void floating_above(const char *) NONNULLARG1;
 extern void dogushforth(int);
 extern void dryup(coordxy, coordxy, boolean);
 extern void init_fountain_quality(coordxy, coordxy);
+extern void init_sink_tap(coordxy, coordxy);
 extern void drinkfountain(void);
 extern void dipfountain(struct obj *) NONNULLARG1;
 extern int wash_hands(void);
