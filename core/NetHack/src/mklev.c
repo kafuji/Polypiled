@@ -901,6 +901,7 @@ clear_level_structures(void)
     svl.level.flags.noautosearch = 0;
     svl.level.flags.fumaroles = 0;
     svl.level.flags.stormy = 0;
+    svl.level.flags.warzone = 0;
     svl.level.flags.stasis_until = 0L;
 
     svn.nroom = 0;
