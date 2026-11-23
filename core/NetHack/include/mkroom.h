@@ -74,10 +74,11 @@ enum roomtype_types {
     TOOLSHOP   = 22,
     BOOKSHOP   = 23,
     FODDERSHOP = 24, /* health food store */
-    CANDLESHOP = 25
+    CANDLESHOP = 25,
+    FENCESHOP  = 26  /* Polypiled: the thieves' den black market */
 };
 
-#define MAXRTYPE (CANDLESHOP) /* maximum valid room type */
+#define MAXRTYPE (FENCESHOP) /* maximum valid room type */
 #define UNIQUESHOP (CANDLESHOP) /* shops here & above not randomly gen'd. */
 
 /* Special type for search_special() */

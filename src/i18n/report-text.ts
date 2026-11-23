@@ -71,6 +71,7 @@ const features: Readonly<Record<string, string>> = {
   bookstore: "本屋", "health food store": "健康食品店", "vegetarian food shop": "菜食料理店", "lighting store": "照明店", "lighting shop": "照明店",
   "used armor dealership": "中古防具店", "liquor emporium": "酒屋", "antique weapons outlet": "骨董武器店", delicatessen: "総菜屋",
   jewelers: "宝石店", "quality apparel and accessories": "高級服飾店", "rare books": "稀覯本店",
+  "black market": "闇市",
 };
 
 function translateOverviewFeatures(line: string): string | undefined {

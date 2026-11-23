@@ -58,6 +58,14 @@ dungeon = {
             alignment = "neutral"
          },
          {
+            -- Polypiled: the thieves' den, a black market for the
+            -- mid-game hero with gold to spare; always present
+            name = "thieves",
+            bonetag = "R",
+            base = 17,
+            range = 4,
+         },
+         {
             name = "bigrm",
             bonetag = "B",
             base = 10,

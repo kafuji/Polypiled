@@ -146,6 +146,7 @@ extern void save_artifacts(NHFILE *);
 extern void restore_artifacts(NHFILE *);
 extern const char *artiname(int);
 extern struct obj *mk_artifact(struct obj *, aligntyp, uchar, boolean);
+extern struct obj *mk_random_artifact(void);
 extern const char *artifact_name(const char *, short *, boolean) NONNULLARG1;
 extern boolean exist_artifact(int, const char *) NONNULLPTRS;
 extern void artifact_exists(struct obj *, const char *, boolean, unsigned) ;
