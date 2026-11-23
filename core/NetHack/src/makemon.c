@@ -1227,6 +1227,8 @@ makemon(
                  /* in Sokoban, don't accept a giant on first try;
                     after that, boulder carriers are fair game */
                  && ((tryct == 1 && throws_rocks(ptr) && In_sokoban(&u.uz))
+                     /* Polypiled: no mimics among a shop's stock */
+                     || (ptr->mlet == S_MIMIC && *in_rooms(x, y, SHOPBASE))
                      || !goodpos(x, y, &fakemon, gpflags)));
         mndx = monsndx(ptr);
     }

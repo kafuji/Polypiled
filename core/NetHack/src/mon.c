@@ -5832,6 +5832,17 @@ angry_guards(boolean silent)
             mtmp->mpeaceful = 0;
         }
     }
+    /* Polypiled: the thieves' den guards are on the fence's payroll;
+       crossing them crosses their employer as well */
+    if (ct) {
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+            if (DEADMONSTER(mtmp) || !mtmp->isshk || !has_eshk(mtmp)
+                || ESHK(mtmp)->shoptype != FENCESHOP || !mtmp->mpeaceful)
+                continue;
+            if (on_level(&ESHK(mtmp)->shoplevel, &u.uz))
+                make_angry_shk(mtmp, 0, 0);
+        }
+    }
     if (ct) {
         if (!silent) { /* do we want pline msgs? */
             char buf[BUFSZ];

@@ -114,7 +114,7 @@ const shopTypes: Readonly<Record<string, string>> = {
   "general store": "雑貨店", "used armor dealership": "中古防具店", "second-hand bookstore": "古本屋", "liquor emporium": "酒屋",
   "antique weapons outlet": "骨董武器店", delicatessen: "総菜屋", jewelers: "宝石店", "quality apparel and accessories": "高級服飾店",
   "hardware store": "金物屋", "rare books": "稀覯本店", "health food store": "健康食品店", "lighting store": "照明店",
-  "lighting shop": "照明店", "tool shop": "道具屋",
+  "lighting shop": "照明店", "tool shop": "道具屋", "black market": "闇市",
 };
 const shopType = (type: string): string => own(shopTypes, type) ?? type;
 // "Asidonhopo's" (s_suffix of a shopkeeper name); names stay verbatim.

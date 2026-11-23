@@ -524,6 +524,13 @@ call_kops(struct monst *shkp, boolean nearshop)
               && (svm.mvitals[PM_KOP_LIEUTENANT].mvflags & G_GONE)
               && (svm.mvitals[PM_KOP_KAPTAIN].mvflags & G_GONE));
 
+    /* Polypiled: the black market's bribed guards answer the alarm
+       instead of the Kops */
+    if (has_eshk(shkp) && ESHK(shkp)->shoptype == FENCESHOP) {
+        (void) angry_guards(!!Deaf);
+        return;
+    }
+
     if (!angry_guards(!!Deaf) && nokops) {
         if (flags.verbose && !Deaf)
             pline("But no one seems to respond to it.");
@@ -2991,6 +2998,10 @@ get_cost(
         multiplier *= 3L, divisor *= 2L;
     else if (ACURR(A_CHA) <= 10)
         multiplier *= 4L, divisor *= 3L;
+
+    /* Polypiled: the black market charges twice the going rate */
+    if (shkp && has_eshk(shkp) && ESHK(shkp)->shoptype == FENCESHOP)
+        multiplier *= 2L;
 
     /* tmp = (tmp * multiplier) / divisor [with roundoff tweak] */
     tmp *= multiplier;
