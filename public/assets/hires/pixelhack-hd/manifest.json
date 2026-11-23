@@ -3664,6 +3664,12 @@
       "height": 256,
       "frames": 1
     },
+    "other/air": {
+      "file": "other/air.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/anti_magic_field": {
       "file": "other/anti_magic_field.png",
       "width": 256,
@@ -3682,6 +3688,18 @@
       "height": 256,
       "frames": 1
     },
+    "other/branch_ladder_down": {
+      "file": "other/branch_ladder_down.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/branch_ladder_up": {
+      "file": "other/branch_ladder_up.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/branch_staircase_down": {
       "file": "other/branch_staircase_down.png",
       "width": 256,
@@ -3696,6 +3714,12 @@
     },
     "other/chaotic_altar": {
       "file": "other/chaotic_altar.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/cloud": {
+      "file": "other/cloud.png",
       "width": 256,
       "height": 256,
       "frames": 1
@@ -3754,6 +3778,72 @@
       "height": 256,
       "frames": 1
     },
+    "other/gehennom_walls_blcorn": {
+      "file": "other/gehennom_walls_blcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_brcorn": {
+      "file": "other/gehennom_walls_brcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_cross_wall": {
+      "file": "other/gehennom_walls_cross_wall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_horizontal": {
+      "file": "other/gehennom_walls_horizontal.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_tdwall": {
+      "file": "other/gehennom_walls_tdwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_tlcorn": {
+      "file": "other/gehennom_walls_tlcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_tlwall": {
+      "file": "other/gehennom_walls_tlwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_trcorn": {
+      "file": "other/gehennom_walls_trcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_trwall": {
+      "file": "other/gehennom_walls_trwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_tuwall": {
+      "file": "other/gehennom_walls_tuwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/gehennom_walls_vertical": {
+      "file": "other/gehennom_walls_vertical.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/grave": {
       "file": "other/grave.png",
       "width": 256,
@@ -3772,14 +3862,110 @@
       "height": 256,
       "frames": 1
     },
+    "other/horizontal_closed_drawbridge": {
+      "file": "other/horizontal_closed_drawbridge.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/horizontal_open_door": {
       "file": "other/horizontal_open_door.png",
       "width": 256,
       "height": 256,
       "frames": 1
     },
+    "other/horizontal_open_drawbridge": {
+      "file": "other/horizontal_open_drawbridge.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/ice": {
+      "file": "other/ice.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/iron_bars": {
       "file": "other/iron_bars.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_blcorn": {
+      "file": "other/knox_walls_blcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_brcorn": {
+      "file": "other/knox_walls_brcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_cross_wall": {
+      "file": "other/knox_walls_cross_wall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_horizontal": {
+      "file": "other/knox_walls_horizontal.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_tdwall": {
+      "file": "other/knox_walls_tdwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_tlcorn": {
+      "file": "other/knox_walls_tlcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_tlwall": {
+      "file": "other/knox_walls_tlwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_trcorn": {
+      "file": "other/knox_walls_trcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_trwall": {
+      "file": "other/knox_walls_trwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_tuwall": {
+      "file": "other/knox_walls_tuwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/knox_walls_vertical": {
+      "file": "other/knox_walls_vertical.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/ladder_down": {
+      "file": "other/ladder_down.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/ladder_up": {
+      "file": "other/ladder_up.png",
       "width": 256,
       "height": 256,
       "frames": 1
@@ -3964,6 +4150,12 @@
       "height": 256,
       "frames": 1
     },
+    "other/molten_lava": {
+      "file": "other/molten_lava.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/neutral_altar": {
       "file": "other/neutral_altar.png",
       "width": 256,
@@ -3972,6 +4164,12 @@
     },
     "other/no_door": {
       "file": "other/no_door.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/nothing": {
+      "file": "other/nothing.png",
       "width": 256,
       "height": 256,
       "frames": 1
@@ -3990,6 +4188,12 @@
     },
     "other/polymorph_trap": {
       "file": "other/polymorph_trap.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/pool": {
+      "file": "other/pool.png",
       "width": 256,
       "height": 256,
       "frames": 1
@@ -4014,6 +4218,72 @@
     },
     "other/sleeping_gas_trap": {
       "file": "other/sleeping_gas_trap.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_blcorn": {
+      "file": "other/sokoban_walls_blcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_brcorn": {
+      "file": "other/sokoban_walls_brcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_cross_wall": {
+      "file": "other/sokoban_walls_cross_wall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_horizontal": {
+      "file": "other/sokoban_walls_horizontal.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_tdwall": {
+      "file": "other/sokoban_walls_tdwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_tlcorn": {
+      "file": "other/sokoban_walls_tlcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_tlwall": {
+      "file": "other/sokoban_walls_tlwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_trcorn": {
+      "file": "other/sokoban_walls_trcorn.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_trwall": {
+      "file": "other/sokoban_walls_trwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_tuwall": {
+      "file": "other/sokoban_walls_tuwall.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/sokoban_walls_vertical": {
+      "file": "other/sokoban_walls_vertical.png",
       "width": 256,
       "height": 256,
       "frames": 1
@@ -4060,6 +4330,12 @@
       "height": 256,
       "frames": 1
     },
+    "other/throne": {
+      "file": "other/throne.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/trap_door": {
       "file": "other/trap_door.png",
       "width": 256,
@@ -4078,14 +4354,50 @@
       "height": 256,
       "frames": 1
     },
+    "other/unexplored": {
+      "file": "other/unexplored.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/valid_position": {
+      "file": "other/valid_position.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/vertical_closed_door": {
       "file": "other/vertical_closed_door.png",
       "width": 256,
       "height": 256,
       "frames": 1
     },
+    "other/vertical_closed_drawbridge": {
+      "file": "other/vertical_closed_drawbridge.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
     "other/vertical_open_door": {
       "file": "other/vertical_open_door.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/vertical_open_drawbridge": {
+      "file": "other/vertical_open_drawbridge.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/wall_of_lava": {
+      "file": "other/wall_of_lava.png",
+      "width": 256,
+      "height": 256,
+      "frames": 1
+    },
+    "other/water": {
+      "file": "other/water.png",
       "width": 256,
       "height": 256,
       "frames": 1
