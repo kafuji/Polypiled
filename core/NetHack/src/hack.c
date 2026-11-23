@@ -4346,6 +4346,30 @@ weight_cap(void)
     return (int) max(carrcap, 1L); /* never return 0 */
 }
 
+/* Polypiled: armor the hero has on spreads its weight over the body, so it
+   counts for half of what it weighs in the pack.  This covers body armor,
+   cloak, helmet, gloves, boots and shirt; a shield is held, not worn, and
+   counts in full.  Armor still being put on counts in full until it is on;
+   armor being taken off counts as worn until it is off.  Only the hero's
+   load changes: the object's own weight (owt) stays as it is for throwing,
+   kicking, containers and everything else. */
+int
+carried_obj_weight(struct obj *otmp)
+{
+    int wt;
+
+    if (otmp->oclass == COIN_CLASS)
+        return (int) (((long) otmp->quan + 50L) / 100L);
+    if (otmp->otyp == BOULDER && throws_rocks(gy.youmonst.data))
+        return 0;
+    wt = (int) otmp->owt;
+    if (otmp->where == OBJ_INVENT
+        && (otmp->owornmask & (W_ARMOR & ~W_ARMS)) != 0L
+        && (doffing(otmp) || !donning(otmp)))
+        wt = (wt + 1) / 2;
+    return wt;
+}
+
 /* returns how far beyond the normal capacity the player is currently. */
 /* inv_weight() is negative if the player is below normal capacity. */
 int
@@ -4355,10 +4379,7 @@ inv_weight(void)
     int wt = 0;
 
     while (otmp) {
-        if (otmp->oclass == COIN_CLASS)
-            wt += (int) (((long) otmp->quan + 50L) / 100L);
-        else if (otmp->otyp != BOULDER || !throws_rocks(gy.youmonst.data))
-            wt += otmp->owt;
+        wt += carried_obj_weight(otmp);
         otmp = otmp->nobj;
     }
     gw.wc = weight_cap();

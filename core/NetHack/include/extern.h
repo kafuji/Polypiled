@@ -1262,6 +1262,7 @@ extern void unmul(const char *);
 extern void showdamage(int);
 extern void losehp(int, const char *, schar) ;
 extern int weight_cap(void);
+extern int carried_obj_weight(struct obj *) NONNULLARG1;
 extern int inv_weight(void);
 extern int near_capacity(void);
 extern int calc_capacity(int);
