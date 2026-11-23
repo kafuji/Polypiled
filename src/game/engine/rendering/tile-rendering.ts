@@ -131,7 +131,7 @@ export interface TileRenderingDependencies {
   readonly tilesetAssets: Pick<
     TilesetAssets,
     "isNh5DarkCorridorWallVariantForLegacyTileset"
-    | "isHiResTilesActive"
+    | "isTerrainModelsActive"
     | "resolveHiResTile"
     | "resolveRuntimeVersion"
     | "shouldUseVultureTiles"
@@ -311,16 +311,15 @@ export class TileRendering {
     const isStairsDown = behavior.materialKind === "stairs_down";
     const isAltarOrTombstone = this.dependencies.worldClassification.isAltarOrTombstoneLikeBehavior(behavior);
     const isStatue = behavior.effective.kind === "statue";
-    // Thrones and doors stand up only as high-resolution 3D models. An
-    // empty doorway has no door to build and stays a floor tile.
-    const isHiResThrone =
-      isThroneCmapGlyph(behavior.effective.glyph) &&
-      this.dependencies.tilesetAssets.isHiResTilesActive();
+    // Thrones and doors stand up only as 3D models. An empty doorway has
+    // no door to build and stays a floor tile.
+    const terrainModels = this.dependencies.tilesetAssets.isTerrainModelsActive();
+    const isHiResThrone = isThroneCmapGlyph(behavior.effective.glyph) && terrainModels;
     const isHiResDoor =
       !behavior.isPlayerGlyph &&
       isDoorwayCmapGlyph(behavior.effective.glyph) &&
       !isDoorlessDoorwayCmapGlyph(behavior.effective.glyph) &&
-      this.dependencies.tilesetAssets.isHiResTilesActive();
+      terrainModels;
     const useTiles = this.dependencies.engineState.clientOptions.tilesetMode === "tiles";
     const isOverheadAsciiMode = !useTiles && !this.dependencies.movementInput.isFpsMode();
     const nowMs = Date.now();
@@ -403,8 +402,7 @@ export class TileRendering {
       (useTiles &&
         (isSink || isFountain || isStairsUp ||
           (isStairsDown &&
-            (this.dependencies.tilesetAssets.shouldUseVultureTiles() ||
-              this.dependencies.tilesetAssets.isHiResTilesActive())) ||
+            (this.dependencies.tilesetAssets.shouldUseVultureTiles() || terrainModels)) ||
           isAltarOrTombstone || isStatue || isHiResThrone || isHiResDoor));
     const shouldUseElevatedBillboard =
       shouldElevateEntity &&

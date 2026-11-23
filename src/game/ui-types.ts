@@ -402,6 +402,8 @@ export type Nh3dClientOptions = {
   tilesetPath: string;
   tilesetUseTileAspectRatio: boolean;
   tilesetUseHiResTiles: boolean;
+  /** Stairs, doors, fountains and other dungeon features as 3D models in tiles mode. */
+  tilesetUse3dTerrainModels: boolean;
   antialiasing: Nh3dAntialiasingMode;
   brightness: number;
   contrast: number;
@@ -580,6 +582,7 @@ export const defaultNh3dClientOptions: Nh3dClientOptions = {
   tilesetPath: defaultNh3dTilesetPath,
   tilesetUseTileAspectRatio: true,
   tilesetUseHiResTiles: false,
+  tilesetUse3dTerrainModels: false,
   antialiasing: "taa",
   brightness: 0,
   contrast: 0,
@@ -1290,6 +1293,10 @@ export function normalizeNh3dClientOptions(
       typeof overrides?.tilesetUseHiResTiles === "boolean"
         ? overrides.tilesetUseHiResTiles
         : defaultNh3dClientOptions.tilesetUseHiResTiles,
+    tilesetUse3dTerrainModels:
+      typeof overrides?.tilesetUse3dTerrainModels === "boolean"
+        ? overrides.tilesetUse3dTerrainModels
+        : defaultNh3dClientOptions.tilesetUse3dTerrainModels,
     minimap:
       typeof overrides?.minimap === "boolean"
         ? overrides.minimap

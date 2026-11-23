@@ -108,4 +108,24 @@ describe("high-resolution tiles", () => {
     assets.syncHiResTilePack();
     expect(assets.hiResTilePack !== null).toBe(active);
   });
+
+  it("3D models are their own option and keep the pack for their textures", () => {
+    const clientOptions = {
+      tilesetMode: "tiles",
+      tilesetUseHiResTiles: false,
+      tilesetUse3dTerrainModels: true,
+      tilesetPath: "assets/5.0/PixelHack.png",
+    } as Nh3dClientOptions;
+    const assets = new TilesetAssets({
+      engineState: { characterCreationConfig: { runtimeVersion: "5.0" }, clientOptions, disposed: false },
+    } as unknown as TilesetAssetsDependencies);
+    const frame = { key: "other/stone" };
+    assets.hiResTilePack = { getTile: vi.fn(() => frame), dispose: vi.fn() } as never;
+    expect(assets.isHiResTilesActive()).toBe(false);
+    expect(assets.isTerrainModelsActive()).toBe(true);
+    expect(assets.resolveHiResTile(0)).toBeNull();
+    expect(assets.resolveTerrainModelTexture(0)).toBe(frame);
+    assets.syncHiResTilePack();
+    expect(assets.hiResTilePack).not.toBeNull();
+  });
 });

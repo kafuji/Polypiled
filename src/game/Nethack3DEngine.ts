@@ -610,7 +610,9 @@ class Nethack3DEngine implements Nethack3DEngineController {
       previous.fpsHeldWeaponSpriteFlipX !== normalized.fpsHeldWeaponSpriteFlipX;
     const tilesetModeChanged = previous.tilesetMode !== normalized.tilesetMode;
     const tilesetAspectChanged = previous.tilesetUseTileAspectRatio !== normalized.tilesetUseTileAspectRatio;
-    const hiResTilesChanged = previous.tilesetUseHiResTiles !== normalized.tilesetUseHiResTiles;
+    const hiResTilesChanged =
+      previous.tilesetUseHiResTiles !== normalized.tilesetUseHiResTiles ||
+      previous.tilesetUse3dTerrainModels !== normalized.tilesetUse3dTerrainModels;
     const animatedMovementChanged =
       previous.animatedMovement !== normalized.animatedMovement;
     const asciiColorModeChanged =

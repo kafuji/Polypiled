@@ -1012,6 +1012,10 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
           label: "高解像度タイルを使用",
           description: "NetHack 5 のみ。高解像度版があるタイルを置き換えます。それ以外のタイルは選択中のタイルセットのままです。",
         },
+        tilesetUse3dTerrainModels: {
+          label: "背景要素に3Dモデルを使用",
+          description: "タイルモードのみ。階段・はしご・扉・泉・流し台・祭壇・墓・玉座を、平面の絵ではなく3Dモデルで表示します。",
+        },
         tilesetPath: {
           label: "タイルセット",
           description: "組み込みタイルセットとアップロード済みタイルセットです。",

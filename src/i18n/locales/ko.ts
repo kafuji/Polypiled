@@ -1036,6 +1036,10 @@ export const ko = {
           label: "고해상도 타일 사용",
           description: "NetHack 5 전용. 고해상도 버전이 있는 타일을 교체합니다. 나머지 타일은 선택한 타일셋을 그대로 사용합니다.",
         },
+        tilesetUse3dTerrainModels: {
+          label: "던전 요소에 3D 모델 사용",
+          description: "타일 모드 전용. 계단, 사다리, 문, 분수, 싱크대, 제단, 무덤, 왕좌를 평면 그림 대신 3D 모델로 표시합니다.",
+        },
         tilesetPath: {
           label: "타일셋",
           description: "내장 및 업로드한 타일셋입니다.",

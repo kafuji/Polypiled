@@ -147,6 +147,7 @@ export type ClientOptionToggleKey =
   | "uiTileBackgroundRemoval"
   | "tilesetUseTileAspectRatio"
   | "tilesetUseHiResTiles"
+  | "tilesetUse3dTerrainModels"
   | "minimap"
   | "reduceInventoryMotion"
   | "inventoryTileOnlyMotion"
