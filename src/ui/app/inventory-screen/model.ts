@@ -350,6 +350,21 @@ export function groupByClass(state: InventoryState): ClassGroup[] {
     }));
 }
 
+/**
+ * Objects without letters (a container's contents) in the pack's class order,
+ * unlisted classes last; within a class they keep the order the core gave.
+ */
+export function sortByClass<T extends { readonly objectClass: number }>(objects: readonly T[], classOrder: readonly number[]): T[] {
+  const rank = (objectClass: number) => {
+    const index = classOrder.indexOf(objectClass);
+    return index < 0 ? classOrder.length + objectClass : index;
+  };
+  return objects
+    .map((object, index) => ({ object, index }))
+    .sort((a, b) => rank(a.object.objectClass) - rank(b.object.objectClass) || a.index - b.index)
+    .map(({ object }) => object);
+}
+
 /** The objects by letter, for the grid. */
 export function objectsByLetter(state: InventoryState): Map<string, InventoryObject> {
   const map = new Map<string, InventoryObject>();

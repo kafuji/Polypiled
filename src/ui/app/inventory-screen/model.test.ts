@@ -15,6 +15,7 @@ import {
   planNested,
   planPickup,
   groupByClass,
+  sortByClass,
 } from "./model";
 
 function object(letter: string, overrides: Partial<InventoryObject> = {}): InventoryObject {
@@ -169,6 +170,17 @@ describe("the pack by kind", () => {
   it("follows a changed order, and lists kinds it leaves out last", () => {
     const pack = { ...state([object("a", { objectClass: ObjectClass.weapon }), object("b", { objectClass: ObjectClass.potion })]), classOrder: [ObjectClass.potion] };
     expect(groupByClass(pack).map((g) => g.objectClass)).toEqual([ObjectClass.potion, ObjectClass.weapon]);
+  });
+
+  it("sorts a container's contents by kind, keeping the core's order within one", () => {
+    const contents = [
+      { id: 1, objectClass: ObjectClass.potion },
+      { id: 2, objectClass: ObjectClass.weapon },
+      { id: 3, objectClass: ObjectClass.potion },
+      { id: 4, objectClass: ObjectClass.coin },
+    ];
+    expect(sortByClass(contents, defaultClassOrder).map((o) => o.id)).toEqual([4, 2, 1, 3]);
+    expect(sortByClass(contents, [ObjectClass.potion]).map((o) => o.id)).toEqual([1, 3, 2, 4]);
   });
 });
 

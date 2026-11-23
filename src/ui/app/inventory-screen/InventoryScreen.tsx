@@ -27,6 +27,7 @@ import {
   groupByClass,
   planContainer,
   planDrop,
+  sortByClass,
   planEquip,
   planMove,
   planNested,
@@ -897,7 +898,10 @@ export function InventoryScreenView({
 
   const stagedIn = new Set(staging?.in ?? []);
   const stagedOut = new Set(staging?.out ?? []);
-  const containerContents = openContainer?.container?.contents ?? null;
+  // contents are shown by kind, in the pack's class order
+  const byKind = (objects: readonly InventoryObject[]) => sortByClass(objects, inventory.classOrder);
+  const openContents = openContainer?.container?.contents ?? null;
+  const containerContents = openContents ? byKind(openContents) : null;
 
   return (
     <div
@@ -1199,7 +1203,7 @@ export function InventoryScreenView({
                       </button>
                       {object.container?.contents && object.container.contents.length > 0 ? (
                         <div className="nh3d-invs-inner">
-                          {object.container.contents.map((inside) => (
+                          {byKind(object.container.contents).map((inside) => (
                             <button
                               type="button"
                               key={inside.id}
