@@ -570,6 +570,8 @@ export const esOverrides = {
         setDefaultName: (n: number) => `Conjunto ${n}`,
         setApply: "Cambiar",
         setRecordShort: "Guardar",
+        setRename: "Nombrar",
+        setNamePlaceholder: "Cuerpo a cuerpo, distancia, magia…",
         setRecorded: (n: number) => `Equipo guardado en el conjunto ${n}.`,
         setEmpty: "Vacío: clic para guardar lo que llevas",
         setMissing: (n: number) => `Faltan ${n} objeto(s) del conjunto.`,

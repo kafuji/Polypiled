@@ -575,6 +575,8 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
       setDefaultName: (n: number) => `セット ${n}`,
       setApply: "切り替え",
       setRecordShort: "記録",
+      setRename: "名前をつける",
+      setNamePlaceholder: "近接・射撃・魔法 など",
       setRecorded: (n: number) => `今の装備をセット ${n} に記録した。`,
       setEmpty: "空き：クリックで今の装備を記録",
       setMissing: (n: number) => `セットの物が ${n} 個見つからない。`,

@@ -590,6 +590,8 @@ export const en = {
       setDefaultName: (n: number) => `Set ${n}`,
       setApply: "Switch",
       setRecordShort: "Save",
+      setRename: "Name",
+      setNamePlaceholder: "Melee, Ranged, Magic…",
       setRecorded: (n: number) => `Saved what you wear to set ${n}.`,
       setEmpty: "Empty: click to save what you wear",
       setMissing: (n: number) => `${n} item(s) of the set are not with you.`,

@@ -588,6 +588,8 @@ export const ko = {
       setDefaultName: (n: number) => `세트 ${n}`,
       setApply: "교체",
       setRecordShort: "기록",
+      setRename: "이름 붙이기",
+      setNamePlaceholder: "근접, 원거리, 마법…",
       setRecorded: (n: number) => `지금 장비를 세트 ${n}에 기록했다.`,
       setEmpty: "비어 있음: 클릭하면 지금 장비를 기록",
       setMissing: (n: number) => `세트의 물건 ${n}개가 없다.`,

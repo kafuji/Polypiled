@@ -586,6 +586,8 @@ export const ru = {
       setDefaultName: (n: number) => `Комплект ${n}`,
       setApply: "Сменить",
       setRecordShort: "Запомнить",
+      setRename: "Назвать",
+      setNamePlaceholder: "Ближний бой, дальний бой, магия…",
       setRecorded: (n: number) => `Надетое сохранено в комплект ${n}.`,
       setEmpty: "Пусто: щёлкните, чтобы сохранить надетое",
       setMissing: (n: number) => `Нет ${n} предмет(ов) из комплекта.`,

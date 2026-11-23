@@ -613,6 +613,8 @@ export const fr = {
       setDefaultName: (n: number) => `Ensemble ${n}`,
       setApply: "Changer",
       setRecordShort: "Enregistrer",
+      setRename: "Nommer",
+      setNamePlaceholder: "Mêlée, distance, magie…",
       setRecorded: (n: number) => `Équipement enregistré dans l'ensemble ${n}.`,
       setEmpty: "Vide : cliquez pour enregistrer votre équipement",
       setMissing: (n: number) => `${n} objet(s) de l'ensemble manquent.`,
