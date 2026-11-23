@@ -52,15 +52,16 @@ export interface InventoryScreenProps {
 }
 
 /** Where a dragged object comes from. */
-type DragSource =
-  | { kind: "pack"; object: InventoryObject }
+export type DragSource =
+  /** fromSlot: picked up from an equipment slot rather than the pack grid */
+  | { kind: "pack"; object: InventoryObject; fromSlot?: EquipmentSlotId }
   | { kind: "floor"; object: InventoryObject }
   /** contents of the open container */
   | { kind: "content"; object: InventoryObject; containerId: number }
   /** contents of a container inside the open container */
   | { kind: "inner"; object: InventoryObject; containerId: number; innerId: number };
 
-type DropTarget =
+export type DropTarget =
   | { kind: "slot"; slot: EquipmentSlotId }
   | { kind: "letter"; letter: string }
   | { kind: "grid" }
@@ -108,7 +109,7 @@ type DropResult =
   | { kind: "notice"; text: string }
   | { kind: "none" };
 
-function resolveDrop(
+export function resolveDrop(
   state: InventoryState,
   source: DragSource,
   target: DropTarget,
@@ -124,9 +125,10 @@ function resolveDrop(
         case "slot":
           return plan(planEquip(state, object, target.slot));
         case "letter":
-          return plan(isEquipped(object) ? planUnequip(object) : planMove(object, target.letter));
+          // off its slot it comes off; within the pack it only changes letter, worn or not
+          return plan(source.fromSlot ? planUnequip(object) : planMove(object, target.letter));
         case "grid":
-          return isEquipped(object) ? plan(planUnequip(object)) : { kind: "none" };
+          return source.fromSlot ? plan(planUnequip(object)) : { kind: "none" };
         case "floor":
           return plan(planDrop(object));
         case "container":
@@ -953,10 +955,10 @@ export function InventoryScreenView({
                   data-invs-drop={`slot:${id}`}
                   {...turnsAttr(target)}
                   aria-label={`${slotLabel(id)}: ${object ? name(object) : strings.emptySlot}`}
-                  onClick={(event) => activate(target, object ? { kind: "pack", object } : null, event.detail > 0)}
+                  onClick={(event) => activate(target, object ? { kind: "pack", object, fromSlot: id } : null, event.detail > 0)}
                   onFocus={() => object && setFocused(object)}
                 >
-                  {object ? renderItem({ kind: "pack", object }) : null}
+                  {object ? renderItem({ kind: "pack", object, fromSlot: id }) : null}
                   <span className="nh3d-invs-slot-label">{slotLabel(id)}</span>
                 </button>
               );
