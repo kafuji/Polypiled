@@ -555,7 +555,8 @@ fence_weight(int otyp, const boolean *owned)
     const struct objclass *ocl = &objects[otyp];
     int weight = 12 * ocl->oc_prob;
 
-    if (!weight || otyp == WAN_WISHING
+    /* the shield of reflection is Perseus's, waiting on Medusa's island */
+    if (!weight || otyp == WAN_WISHING || otyp == SHIELD_OF_REFLECTION
         || (otyp >= GRAY_DRAGON_SCALE_MAIL
             && otyp <= YELLOW_DRAGON_SCALE_MAIL)
         || (otyp >= GRAY_DRAGON_SCALES && otyp <= YELLOW_DRAGON_SCALES))
@@ -602,6 +603,13 @@ fence_polish(struct obj *otmp)
                           || otmp->oclass == ARMOR_CLASS
                           || otmp->oclass == RING_CLASS))
         otmp->spe = -otmp->spe;
+    /* second-hand weapons: most were enchanted by a previous owner */
+    if (otmp->oclass == WEAPON_CLASS && rn2(10) < 8) {
+        int ench = rnd(3) + (!rn2(5) ? rnd(2) : 0);
+
+        if (otmp->spe < ench)
+            otmp->spe = ench;
+    }
     otmp->oeroded = otmp->oeroded2 = 0;
 }
 
@@ -944,9 +952,16 @@ stock_room(int shp_indx, struct mkroom *sroom)
     if (shp->shknms == shkfence) {
         /* black market: weighted stock plus one second-hand wand of
            wishing (recharged once already, a single wish left) */
+        /* kinds always on the counter while this game hasn't shown
+           them yet */
+        static const short musthave[] = {
+            MAGIC_LAMP, MAGIC_WHISTLE, UNICORN_HORN
+        };
+        short wanted[SIZE(musthave)];
+        int spot[SIZE(musthave)];
         boolean owned[NUM_OBJECTS];
-        int wishspot;
-        struct obj *wand;
+        int wishspot, nwanted = 0, i, j;
+        struct obj *wand, *otmp;
 
         (void) memset((genericptr_t) owned, 0, sizeof owned);
         fence_mark_owned(gi.invent, owned);
@@ -956,6 +971,21 @@ stock_room(int shp_indx, struct mkroom *sroom)
                 if (stock_room_goodpos(sroom, rmno, sh, sx, sy))
                     stockcount++;
         wishspot = stockcount ? rnd(stockcount) : 0;
+        for (i = 0; i < SIZE(musthave); i++)
+            if (!objects[musthave[i]].oc_encountered && !owned[musthave[i]])
+                wanted[nwanted++] = musthave[i];
+        /* a distinct square for each, never the wand's */
+        for (i = 0; i < nwanted; i++) {
+            spot[i] = 0;
+            if (stockcount <= i + 1)
+                continue;
+            do {
+                spot[i] = rnd(stockcount);
+                for (j = 0; j < i; j++)
+                    if (spot[j] == spot[i])
+                        break;
+            } while (spot[i] == wishspot || j < i);
+        }
         stockcount = 0;
         for (sx = sroom->lx; sx <= sroom->hx; sx++)
             for (sy = sroom->ly; sy <= sroom->hy; sy++)
@@ -966,6 +996,15 @@ stock_room(int shp_indx, struct mkroom *sroom)
                         wand->recharged = 1;
                         wand->blessed = wand->cursed = 0;
                         place_object(wand, sx, sy);
+                        continue;
+                    }
+                    for (i = 0; i < nwanted; i++)
+                        if (spot[i] == stockcount)
+                            break;
+                    if (i < nwanted) {
+                        otmp = mksobj(wanted[i], TRUE, FALSE);
+                        fence_polish(otmp);
+                        place_object(otmp, sx, sy);
                     } else {
                         mkfenceobj_at(shp, sx, sy, owned);
                     }
