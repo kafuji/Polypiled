@@ -4190,10 +4190,11 @@ nh3d_pickup_objects(const unsigned *ids, const long *counts, int n)
 }
 
 int
-nh3d_container_transfer(unsigned cid, const unsigned *outs, int nout,
-                        const unsigned *ins, int nin)
+nh3d_container_transfer(unsigned cid, const unsigned *outs,
+                        const long *outcounts, int nout, const unsigned *ins,
+                        const long *incounts, int nin)
 {
-    struct obj *container, *otmp, *nobj;
+    struct obj *container, *otmp, *nobj, *whole;
     boolean held, quantum_cat, cursed_mbag;
     int used = ECMD_OK, i, res;
     long loss;
@@ -4317,7 +4318,13 @@ nh3d_container_transfer(unsigned cid, const unsigned *outs, int nout,
                                      FALSE);
                 if (!otmp)
                     continue;
+                /* part of a stack, as menu_loot() splits it */
+                whole = otmp;
+                if (outcounts[i] > 0 && outcounts[i] < otmp->quan)
+                    otmp = splitobj(otmp, outcounts[i]);
                 res = out_container(otmp);
+                if (res <= 0 && otmp != whole)
+                    (void) unsplitobj(otmp); /* not taken: merge again */
                 if (res < 0)
                     break;
                 if (res > 0)
@@ -4329,7 +4336,13 @@ nh3d_container_transfer(unsigned cid, const unsigned *outs, int nout,
         otmp = nh3d_find_obj(gi.invent, ins[i], FALSE);
         if (!otmp || otmp == gc.current_container)
             continue;
+        whole = otmp;
+        if (incounts[i] > 0 && incounts[i] < otmp->quan)
+            otmp = splitobj(otmp, incounts[i]);
         res = in_container(otmp);
+        /* refused: merge again (gone if the container blew up) */
+        if (res <= 0 && gc.current_container && otmp != whole)
+            (void) unsplitobj(otmp);
         if (res < 0)
             break;
         if (res > 0)

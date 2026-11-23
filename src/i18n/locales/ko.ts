@@ -567,6 +567,7 @@ export const ko = {
       contentsUnknownOpen: "안에 무엇이 있는지 모른다. 열면 1턴이 걸린다.",
       locked: "잠겨 있다.",
       staged: "옮길 예정",
+      movingCount: (n: number) => `${n}개 옮김`,
       putIn: "넣기",
       takeOut: "꺼내기",
       keepOut: "넣지 않기",

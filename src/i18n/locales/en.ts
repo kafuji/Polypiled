@@ -569,6 +569,7 @@ export const en = {
       contentsUnknownOpen: "You don't know what is inside. Opening it takes a turn.",
       locked: "Locked.",
       staged: "To move",
+      movingCount: (n: number) => `Moving ${n}`,
       putIn: "Put in",
       takeOut: "Take out",
       keepOut: "Keep out",

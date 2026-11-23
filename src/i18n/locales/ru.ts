@@ -565,6 +565,7 @@ export const ru = {
       contentsUnknownOpen: "Неизвестно, что внутри. Открыть — один ход.",
       locked: "Заперто.",
       staged: "Переложить",
+      movingCount: (n: number) => `Переложить ${n}`,
       putIn: "Положить",
       takeOut: "Достать",
       keepOut: "Не класть",

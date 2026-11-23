@@ -592,6 +592,7 @@ export const fr = {
       contentsUnknownOpen: "Vous ignorez ce qu'il contient. L'ouvrir prend un tour.",
       locked: "Verrouillé.",
       staged: "À déplacer",
+      movingCount: (n: number) => `Déplacer ${n}`,
       putIn: "Ranger",
       takeOut: "Sortir",
       keepOut: "Ne pas ranger",

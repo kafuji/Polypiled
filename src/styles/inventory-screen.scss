@@ -438,6 +438,24 @@
   color: #bfe3ff;
 }
 
+/* part of a stack marked to go in or come out of the open container */
+.nh3d-invs-item-moving {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(230, 211, 106, 0.92);
+  color: #111;
+  font-size: 0.8em;
+  font-weight: bold;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .nh3d-invs-item-proof,
 .nh3d-invs-item-price {
   position: absolute;

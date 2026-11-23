@@ -434,12 +434,22 @@ export interface ContainerStaging {
   readonly out: readonly number[];
   /** Carried objects to put in. */
   readonly in: readonly number[];
+  /** How many of a marked stack move; a stack not listed moves whole. */
+  readonly counts?: Readonly<Record<number, number>>;
 }
+
+const withCount = (staging: ContainerStaging, id: number) =>
+  staging.counts?.[id] ? { id, count: staging.counts[id] } : id;
 
 /** The container's one action: take out, then put in (nothing staged opens it). */
 export function planContainer(staging: ContainerStaging): DropPlan {
   return {
-    operations: [{ op: "loot", container: staging.containerId, out: [...staging.out], in: [...staging.in] }],
+    operations: [{
+      op: "loot",
+      container: staging.containerId,
+      out: staging.out.map((id) => withCount(staging, id)),
+      in: staging.in.map((id) => withCount(staging, id)),
+    }],
     removes: [],
   };
 }
