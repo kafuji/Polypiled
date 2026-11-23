@@ -30,8 +30,8 @@ import {
   sortByClass,
   planEquip,
   planMove,
-  planNested,
   planPickup,
+  putInRefusal,
   planToggle,
   planUnequip,
   slotsFor,
@@ -58,17 +58,14 @@ export type DragSource =
   | { kind: "pack"; object: InventoryObject; fromSlot?: EquipmentSlotId }
   | { kind: "floor"; object: InventoryObject }
   /** contents of the open container */
-  | { kind: "content"; object: InventoryObject; containerId: number }
-  /** contents of a container inside the open container */
-  | { kind: "inner"; object: InventoryObject; containerId: number; innerId: number };
+  | { kind: "content"; object: InventoryObject; containerId: number };
 
 export type DropTarget =
   | { kind: "slot"; slot: EquipmentSlotId }
   | { kind: "letter"; letter: string }
   | { kind: "grid" }
   | { kind: "floor" }
-  | { kind: "container" }
-  | { kind: "inner"; innerId: number };
+  | { kind: "container" };
 
 const classSymbols: Record<number, string> = {
   [ObjectClass.weapon]: ")", [ObjectClass.armor]: "[", [ObjectClass.ring]: "=", [ObjectClass.amulet]: "\"",
@@ -80,6 +77,8 @@ const classSymbols: Record<number, string> = {
 const DRAG_START_DISTANCE_PX = 6;
 const LONG_PRESS_MS = 550;
 const PROCEDURE_NOTICE_MS = 5000;
+/** Contents listed in the hover panel of a container; the rest is counted. */
+const HOVER_CONTENTS_SHOWN = 8;
 
 /**
  * Item-menu actions that take no game time keep the screen open; every
@@ -96,7 +95,6 @@ function parseDropTarget(element: Element | null): DropTarget | null {
   const [kind, id] = value.split(":");
   if (kind === "slot" && id) return { kind: "slot", slot: id as EquipmentSlotId };
   if (kind === "letter" && id) return { kind: "letter", letter: id };
-  if (kind === "inner" && id) return { kind: "inner", innerId: Number(id) };
   return null;
 }
 
@@ -105,7 +103,7 @@ const sameTarget = (a: DropTarget | null, b: DropTarget) =>
 
 /** What a drop means: commands, or a change to the open container's staging. */
 type DropResult =
-  | { kind: "plan"; plan: DropPlan; label: string; confirm?: boolean }
+  | { kind: "plan"; plan: DropPlan; label: string }
   | { kind: "stage"; out?: number; in?: number }
   | { kind: "notice"; text: string }
   | { kind: "none" };
@@ -116,46 +114,44 @@ export function resolveDrop(
   target: DropTarget,
   openContainer: InventoryObject | null,
 ): DropResult {
-  const strings = t.inventoryScreen;
   const { object } = source;
-  const plan = (value: DropPlan, label = strings.planEquip, confirm = false): DropResult =>
-    value.operations.length > 0 || value.unsupported ? { kind: "plan", plan: value, label, confirm } : { kind: "none" };
-  switch (source.kind) {
-    case "pack":
-      switch (target.kind) {
-        case "slot":
-          return plan(planEquip(state, object, target.slot));
-        case "letter":
-          // off its slot it comes off; within the pack it only changes letter, worn or not
-          return plan(source.fromSlot ? planUnequip(object) : planMove(object, target.letter));
-        case "grid":
-          return source.fromSlot ? plan(planUnequip(object)) : { kind: "none" };
-        case "floor":
-          return plan(planDrop(object));
-        case "container":
-          if (!openContainer || openContainer.id === object.id) return { kind: "none" };
-          return { kind: "stage", in: object.id };
-        case "inner": {
-          if (!openContainer || target.innerId === object.id) return { kind: "none" };
-          const inner = openContainer.container?.contents?.find((inside) => inside.id === target.innerId);
-          return inner ? plan(planNested(openContainer, inner, { in: [object.id] }), strings.planNested, true) : { kind: "none" };
-        }
-      }
-      return { kind: "none" };
-    case "floor":
-      if (target.kind === "slot" || target.kind === "letter" || target.kind === "grid") return plan(planPickup([object]));
-      if (target.kind === "container" || target.kind === "inner") return { kind: "notice", text: strings.floorToContainer };
-      return { kind: "none" };
-    case "content":
-      if (target.kind === "letter" || target.kind === "grid" || target.kind === "slot") return { kind: "stage", out: object.id };
-      if (target.kind === "floor") return { kind: "notice", text: strings.containerToFloor };
-      return { kind: "none" };
-    case "inner": {
-      if (!(target.kind === "letter" || target.kind === "grid" || target.kind === "slot") || !openContainer) return { kind: "none" };
-      const inner = openContainer.container?.contents?.find((inside) => inside.id === source.innerId);
-      return inner ? plan(planNested(openContainer, inner, { out: [object.id] }), strings.planNested, true) : { kind: "none" };
+  const plan = (value: DropPlan, label = t.inventoryScreen.planEquip): DropResult =>
+    value.operations.length > 0 || value.unsupported ? { kind: "plan", plan: value, label } : { kind: "none" };
+  // an open container is a mode of its own: things only go in and come out
+  if (openContainer) {
+    if (target.kind === "container") {
+      if (source.kind === "pack") return putIn(openContainer, object);
+      if (source.kind === "content") return { kind: "stage", in: object.id }; // back in: stays
+    }
+    if (target.kind === "letter" || target.kind === "grid") {
+      // out of the container, or a thing waiting to go in kept out
+      if (source.kind === "content" || source.kind === "pack") return { kind: "stage", out: object.id };
+    }
+    return { kind: "none" };
+  }
+  if (source.kind === "pack") {
+    switch (target.kind) {
+      case "slot":
+        return plan(planEquip(state, object, target.slot));
+      case "letter":
+        // off its slot it comes off; within the pack it only changes letter, worn or not
+        return plan(source.fromSlot ? planUnequip(object) : planMove(object, target.letter));
+      case "grid":
+        return source.fromSlot ? plan(planUnequip(object)) : { kind: "none" };
+      case "floor":
+        return plan(planDrop(object));
     }
   }
+  if (source.kind === "floor" && (target.kind === "slot" || target.kind === "letter" || target.kind === "grid")) {
+    return plan(planPickup([object]));
+  }
+  return { kind: "none" };
+}
+
+/** Into the open container, or why not. */
+function putIn(container: InventoryObject, object: InventoryObject): DropResult {
+  const refusal = putInRefusal(container, object);
+  return refusal ? { kind: "notice", text: t.inventoryScreen.putInRefused[refusal] } : { kind: "stage", in: object.id };
 }
 
 function itemClasses(object: InventoryObject): string {
@@ -267,6 +263,8 @@ export function InventoryScreen(props: InventoryScreenProps) {
       if (!match || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
       const store = useGameStore.getState();
       if (!store.inventoryState || store.question || store.directionQuestion) return;
+      // an open container allows only putting in and taking out
+      if (typeof document !== "undefined" && document.querySelector(".nh3d-inventory-screen.is-container-mode")) return;
       const set = sets[Number(match[1]) - 1];
       if (!set || !store.engineController) return;
       event.preventDefault();
@@ -310,11 +308,6 @@ interface MenuState {
 interface CountPrompt {
   object: InventoryObject;
   make: (count: number) => DropPlan;
-  label: string;
-}
-
-interface ConfirmPrompt {
-  plan: DropPlan;
   label: string;
 }
 
@@ -476,12 +469,15 @@ export function InventoryScreenView({
   const [staging, setStaging] = useState<ContainerStaging | null>(null);
   const [countPrompt, setCountPrompt] = useState<CountPrompt | null>(null);
   const [countValue, setCountValue] = useState("1");
-  const [confirm, setConfirm] = useState<ConfirmPrompt | null>(null);
   /** The equipment set menu (right click, long press, the pad's search). */
   const [setsMenu, setSetsMenu] = useState<{ index: number; x: number; y: number } | null>(null);
   const [procedureNotice, setProcedureNotice] = useState<InventoryProcedureState | null>(null);
   const pressRef = useRef<PressState | null>(null);
   const suppressClickRef = useRef(false);
+  /** The body and the equipment column as last seen, so a container takes their place without resizing the screen. */
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const equipmentRef = useRef<HTMLElement | null>(null);
+  const modeSizeRef = useRef<{ width: number; height: number } | null>(null);
 
   const findObject = useCallback(
     (id: number): InventoryObject | null => {
@@ -500,6 +496,13 @@ export function InventoryScreenView({
   const focusedObject = focused ? findObject(focused.id) : null;
   const heldObject = held ? findObject(held.object.id) : null;
   const activeSource: DragSource | null = dragSource ?? (held && heldObject ? { ...held, object: heldObject } : null);
+
+  useLayoutEffect(() => {
+    if (openContainer) return;
+    const body = bodyRef.current;
+    const equipment = equipmentRef.current;
+    if (body && equipment) modeSizeRef.current = { width: equipment.offsetWidth, height: body.offsetHeight };
+  });
 
   // the report replaces objects: forget what no longer exists
   useEffect(() => {
@@ -542,6 +545,28 @@ export function InventoryScreenView({
     setStaging(null);
   };
 
+  /**
+   * Marks a thing to come out or go in. Moving it back where it came from
+   * unmarks it; a carried thing marked to go in is kept out the same way.
+   */
+  const stage = useCallback(
+    (change: { readonly out?: number; readonly in?: number }) => {
+      if (!staging) return;
+      const contents = new Set((openContainer?.container?.contents ?? []).map((inside) => inside.id));
+      let { out, in: into } = staging;
+      if (change.out !== undefined) {
+        if (into.includes(change.out)) into = into.filter((id) => id !== change.out);
+        else if (contents.has(change.out) && !out.includes(change.out)) out = [...out, change.out];
+      }
+      if (change.in !== undefined) {
+        if (out.includes(change.in)) out = out.filter((id) => id !== change.in);
+        else if (!contents.has(change.in) && !into.includes(change.in)) into = [...into, change.in];
+      }
+      if (out !== staging.out || into !== staging.in) setStaging({ ...staging, out, in: into });
+    },
+    [openContainer, staging],
+  );
+
   const apply = useCallback(
     (source: DragSource, target: DropTarget, shift: boolean) => {
       const result = resolveDrop(inventory, source, target, openContainer);
@@ -551,15 +576,7 @@ export function InventoryScreenView({
         return;
       }
       if (result.kind === "stage") {
-        if (!staging) return;
-        const next = {
-          ...staging,
-          out: result.out !== undefined ? [...new Set([...staging.out, result.out])] : staging.out.filter((id) => id !== result.in),
-          in: result.in !== undefined ? [...new Set([...staging.in, result.in])] : staging.in.filter((id) => id !== result.out),
-        };
-        // moving back where it came from undoes the staging
-        if (result.out !== undefined && staging.in.includes(result.out)) next.out = next.out.filter((id) => id !== result.out);
-        setStaging(next);
+        stage(result);
         return;
       }
       if (result.kind !== "plan") return;
@@ -577,13 +594,9 @@ export function InventoryScreenView({
         });
         return;
       }
-      if (result.confirm) {
-        setConfirm({ plan: result.plan, label: result.label });
-        return;
-      }
       runPlan(controller, result.plan, result.label);
     },
-    [controller, inventory, openContainer, staging, strings],
+    [controller, inventory, openContainer, stage, strings],
   );
 
   // pointer: drag to move, tap to pick up and place, long press for the menu
@@ -630,7 +643,7 @@ export function InventoryScreenView({
   useEffect(() => () => endPress(), [endPress]);
 
   const openMenuAt = (object: InventoryObject, x: number, y: number) => {
-    if (!object.letter) return;
+    if (!object.letter && !openContainer) return;
     setHeld(null);
     setMenu({ object, x, y });
   };
@@ -690,6 +703,18 @@ export function InventoryScreenView({
   const toggle = (source: DragSource) => {
     setHeld(null);
     const object = source.object;
+    if (openContainer && staging) {
+      // container mode: in from the pack, out of the container, or back
+      setNotice(null);
+      if (source.kind === "content") stage(staging.out.includes(object.id) ? { in: object.id } : { out: object.id });
+      else if (source.kind === "pack" && staging.in.includes(object.id)) stage({ out: object.id });
+      else if (source.kind === "pack") {
+        const result = putIn(openContainer, object);
+        if (result.kind === "notice") setNotice(result.text);
+        else if (result.kind === "stage") stage(result);
+      }
+      return;
+    }
     if (isContainerLike(object) && (source.kind === "pack" || source.kind === "floor")) {
       openContainerPanel(object);
       return;
@@ -795,7 +820,6 @@ export function InventoryScreenView({
         if (menu) setMenu(null);
         else if (setsMenu) setSetsMenu(null);
         else if (countPrompt) setCountPrompt(null);
-        else if (confirm) setConfirm(null);
         else if (held) setHeld(null);
         else if (staging) closeContainerPanel();
         else controller?.closeInventoryScreen();
@@ -813,9 +837,11 @@ export function InventoryScreenView({
       } else if (event.key === "m" && focusedObject) {
         const rect = (document.activeElement as HTMLElement | null)?.getBoundingClientRect();
         openMenuAt(focusedObject, rect ? rect.left + rect.width / 2 : window.innerWidth / 2, rect ? rect.bottom : window.innerHeight / 2);
-      } else if (event.key === "e" && focusedObject?.letter) {
-        toggle({ kind: "pack", object: focusedObject });
-      } else if (/^[1-9]$/.test(event.key) && Number(event.key) <= EQUIPMENT_SET_COUNT && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      } else if (event.key === "e" && focusedObject && (focusedObject.letter || openContainer)) {
+        toggle(focusedObject.letter
+          ? { kind: "pack", object: focusedObject }
+          : { kind: "content", object: focusedObject, containerId: openContainer!.id });
+      } else if (!openContainer && /^[1-9]$/.test(event.key) && Number(event.key) <= EQUIPMENT_SET_COUNT && !event.ctrlKey && !event.altKey && !event.metaKey) {
         applySet(Number(event.key) - 1);
       } else {
         handled = false;
@@ -879,6 +905,7 @@ export function InventoryScreenView({
     "is-filled",
     isEquipped(object) ? "is-equipped" : "",
     stagedIn.has(object.id) ? "is-staged" : "",
+    openContainer && putInRefusal(openContainer, object) ? "is-refused" : "",
     heldObject?.id === object.id ? "is-held" : "",
   ].filter(Boolean).join(" ");
 
@@ -905,7 +932,7 @@ export function InventoryScreenView({
 
   return (
     <div
-      className={`nh3d-inventory-screen${reducedMotion ? " is-reduced-motion" : ""}`}
+      className={`nh3d-inventory-screen${reducedMotion ? " is-reduced-motion" : ""}${openContainer ? " is-container-mode" : ""}`}
       role="dialog"
       aria-label={strings.title}
       onClick={() => setMenu(null)}
@@ -943,8 +970,17 @@ export function InventoryScreenView({
         </button>
       </header>
 
-      <div className="nh3d-invs-body">
-        <section className="nh3d-invs-equipment" aria-label={strings.equipped}>
+      <div
+        ref={bodyRef}
+        className={`nh3d-invs-body${openContainer ? " is-container-mode" : ""}`}
+        style={openContainer && modeSizeRef.current ? {
+          "--invs-mode-width": `${modeSizeRef.current.width}px`,
+          "--invs-mode-height": `${modeSizeRef.current.height}px`,
+        } as React.CSSProperties : undefined}
+      >
+        {/* an open container takes the equipment's place: only in and out */}
+        {openContainer ? null : (
+        <section ref={equipmentRef} className="nh3d-invs-equipment" aria-label={strings.equipped}>
           <div className="nh3d-invs-figure">
             {equipmentSlotLayout.map(({ id, column, row }) => {
               const object = objectInSlot(inventory, id);
@@ -1015,9 +1051,14 @@ export function InventoryScreenView({
             ))}
           </div>
         </section>
+        )}
 
         <div className="nh3d-invs-side">
-          <section className="nh3d-invs-pack" data-invs-drop="grid" aria-label={strings.title}>
+          <section
+            className={`nh3d-invs-pack${openContainer && activeSource?.kind === "content" ? " is-valid-target" : ""}`}
+            data-invs-drop="grid"
+            aria-label={strings.title}
+          >
             <div className="nh3d-invs-section-head nh3d-invs-pack-head">
               <div className="nh3d-invs-view" role="group">
                 {(["letters", "classes"] as const).map((option) => (
@@ -1032,7 +1073,7 @@ export function InventoryScreenView({
                   </button>
                 ))}
               </div>
-              <button
+              {openContainer ? null : <button
                 type="button"
                 disabled={!controller}
                 onClick={() => {
@@ -1041,7 +1082,7 @@ export function InventoryScreenView({
                 }}
               >
                 {strings.sort}
-              </button>
+              </button>}
             </div>
             {view === "classes" ? (
               <div className="nh3d-invs-classes">
@@ -1080,7 +1121,7 @@ export function InventoryScreenView({
                   <button
                     type="button"
                     key={letter}
-                    className={`${classes}${targetClass(target, Boolean(activeSource) && activeSource?.object.objectClass !== ObjectClass.coin)}`}
+                    className={`${classes}${targetClass(target, !openContainer && Boolean(activeSource) && activeSource?.object.objectClass !== ObjectClass.coin)}`}
                     data-invs-drop={`letter:${letter}`}
                     {...turnsAttr(target)}
                     aria-label={object ? `${letter} - ${name(object)}` : strings.letter(letter)}
@@ -1109,6 +1150,7 @@ export function InventoryScreenView({
             )}
           </section>
 
+          {openContainer ? null : (
           <section
             className={`nh3d-invs-floor${targetClass({ kind: "floor" }, activeSource?.kind === "pack")}`}
             data-invs-drop="floor"
@@ -1148,6 +1190,8 @@ export function InventoryScreenView({
               </div>
             )}
           </section>
+          )}
+        </div>
 
           {openContainer ? (
             <section
@@ -1181,47 +1225,21 @@ export function InventoryScreenView({
               ) : (
                 <div className="nh3d-invs-row">
                   {containerContents.map((object) => (
-                    <div key={object.id} className="nh3d-invs-content">
-                      <button
-                        type="button"
-                        className={`nh3d-invs-cell is-filled${stagedOut.has(object.id) ? " is-staged" : ""}${object.container ? " is-inner-container" : ""}${object.container ? targetClass({ kind: "inner", innerId: object.id }, activeSource?.kind === "pack") : ""}`}
-                        data-invs-drop={object.container ? `inner:${object.id}` : undefined}
-                        {...(object.container ? turnsAttr({ kind: "inner", innerId: object.id }) : {})}
-                        aria-label={name(object)}
-                        onClick={(event) => {
-                          // marked to come out: click to leave it in
-                          if (!held && staging && stagedOut.has(object.id)) {
-                            setStaging({ ...staging, out: staging.out.filter((other) => other !== object.id) });
-                            return;
-                          }
-                          activate(object.container ? { kind: "inner", innerId: object.id } : { kind: "container" }, { kind: "content", object, containerId: openContainer.id }, event.detail > 0);
-                        }}
-                        onFocus={() => setFocused(object)}
-                      >
-                        {renderItem({ kind: "content", object, containerId: openContainer.id })}
-                        {cellName(object)}
-                      </button>
-                      {object.container?.contents && object.container.contents.length > 0 ? (
-                        <div className="nh3d-invs-inner">
-                          {byKind(object.container.contents).map((inside) => (
-                            <button
-                              type="button"
-                              key={inside.id}
-                              className="nh3d-invs-cell is-filled is-inner"
-                              aria-label={name(inside)}
-                              onClick={(event) => activate({ kind: "container" }, { kind: "inner", object: inside, containerId: openContainer.id, innerId: object.id }, event.detail > 0)}
-                              onFocus={() => setFocused(inside)}
-                            >
-                              {renderItem({ kind: "inner", object: inside, containerId: openContainer.id, innerId: object.id })}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
+                    <button
+                      type="button"
+                      key={object.id}
+                      className={`nh3d-invs-cell is-filled${stagedOut.has(object.id) ? " is-staged" : ""}`}
+                      aria-label={name(object)}
+                      onClick={(event) => activate({ kind: "container" }, { kind: "content", object, containerId: openContainer.id }, event.detail > 0)}
+                      onFocus={() => setFocused(object)}
+                    >
+                      {renderItem({ kind: "content", object, containerId: openContainer.id })}
+                      {cellName(object)}
+                    </button>
                   ))}
                   {staging?.in.map((id) => {
                     const object = findObject(id);
-                    // waiting to go in: click to keep it out
+                    // waiting to go in: double-click or drag back to keep it out
                     return object ? (
                       <button
                         type="button"
@@ -1229,7 +1247,8 @@ export function InventoryScreenView({
                         className="nh3d-invs-cell is-filled is-staged is-pending"
                         title={strings.staged}
                         aria-label={`${strings.staged}: ${name(object)}`}
-                        onClick={() => staging && setStaging({ ...staging, in: staging.in.filter((other) => other !== id) })}
+                        onClick={(event) => activate({ kind: "container" }, { kind: "pack", object }, event.detail > 0)}
+                        onFocus={() => setFocused(object)}
                       >
                         {renderItem({ kind: "pack", object })}
                         {cellName(object)}
@@ -1246,7 +1265,6 @@ export function InventoryScreenView({
               )}
             </section>
           ) : null}
-        </div>
       </div>
 
       <footer className="nh3d-invs-detail" aria-live="polite">
@@ -1275,15 +1293,6 @@ export function InventoryScreenView({
             <button type="submit">{strings.ok}</button>
             <button type="button" onClick={() => setCountPrompt(null)}>{strings.cancel}</button>
           </form>
-        ) : confirm ? (
-          <span className="nh3d-invs-prompt">
-            <span>{strings.nestedConfirm(confirm.plan.operations.length, estimateTurns(inventory, confirm.plan.operations))}</span>
-            <button type="button" autoFocus onClick={() => {
-              runPlan(controller, confirm.plan, confirm.label);
-              setConfirm(null);
-            }}>{strings.run}</button>
-            <button type="button" onClick={() => setConfirm(null)}>{strings.stop}</button>
-          </span>
         ) : detail ? (
           <>
             {detail.letter ? <span className="nh3d-invs-detail-letter">{detail.letter}</span> : null}
@@ -1291,7 +1300,7 @@ export function InventoryScreenView({
             <span className="nh3d-invs-detail-lines">{detailLines(detail).join(" · ")}</span>
           </>
         ) : (
-          <span className="nh3d-invs-detail-hint">{strings.hint}</span>
+          <span className="nh3d-invs-detail-hint">{openContainer ? strings.containerHint : strings.hint}</span>
         )}
         {hintTurns ? <span className="nh3d-invs-detail-turns">{strings.turns(hintTurns)}</span> : null}
         {hintPlan && hintPlan.removes.length > 0 ? (
@@ -1312,10 +1321,19 @@ export function InventoryScreenView({
           object.weight !== null ? strings.itemWeight(object.weight) : null,
           object.price !== null && object.priceKind ? strings.price[object.priceKind](object.price) : null,
         ].filter(Boolean);
+        // a container's known contents (one inside the open container cannot be opened)
+        const inside = object.container?.contents ? byKind(object.container.contents) : [];
+        const rest = inside.length - HOVER_CONTENTS_SHOWN + (object.container?.more ?? 0);
         return (
           <HoverPanel x={hovered.x} y={hovered.y}>
             <span className="nh3d-invs-hover-name">{name(object)}</span>
             {facts.length > 0 ? <span className="nh3d-invs-hover-facts">{facts.join(" · ")}</span> : null}
+            {inside.length > 0 ? (
+              <span className="nh3d-invs-hover-contents">
+                {inside.slice(0, HOVER_CONTENTS_SHOWN).map((thing) => <span key={thing.id}>{name(thing)}</span>)}
+                {rest > 0 ? <span className="nh3d-invs-hover-more">{strings.floorMore(rest)}</span> : null}
+              </span>
+            ) : null}
           </HoverPanel>
         );
       })() : null}
@@ -1357,7 +1375,26 @@ export function InventoryScreenView({
         </ItemMenu>
       ) : null}
 
-      {menu ? (
+      {menu && openContainer && staging ? (() => {
+        // container mode: the menu only puts in and takes out
+        const object = menu.object;
+        const source: DragSource = object.letter
+          ? { kind: "pack", object }
+          : { kind: "content", object, containerId: openContainer.id };
+        const label = source.kind === "content"
+          ? (stagedOut.has(object.id) ? strings.keepIn : strings.takeOut)
+          : (stagedIn.has(object.id) ? strings.keepOut : strings.putIn);
+        return (
+          <ItemMenu x={menu.x} y={menu.y} title={name(object)} onDismiss={() => setMenu(null)}>
+            <button type="button" role="menuitem" autoFocus onClick={() => {
+              setMenu(null);
+              toggle(source);
+            }}>
+              {label}
+            </button>
+          </ItemMenu>
+        );
+      })() : menu ? (
         <ItemMenu x={menu.x} y={menu.y} title={name(menu.object)} onDismiss={() => setMenu(null)}>
           {/* whatever holds it: armor, accessory, weapon, alternate, quiver
               (the screen stays open, as when it is dragged off) */}

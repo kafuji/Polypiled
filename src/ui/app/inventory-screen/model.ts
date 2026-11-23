@@ -444,23 +444,34 @@ export function planContainer(staging: ContainerStaging): DropPlan {
   };
 }
 
+/** What the game refuses to put in a container, or would destroy it. */
+export type PutInRefusal = "self" | "worn" | "attached" | "explodes";
+
+const wornNotStashable =
+  InventoryWornMask.bodyArmor | InventoryWornMask.cloak | InventoryWornMask.helmet | InventoryWornMask.shield |
+  InventoryWornMask.gloves | InventoryWornMask.boots | InventoryWornMask.shirt | InventoryWornMask.amulet |
+  InventoryWornMask.leftRing | InventoryWornMask.rightRing | InventoryWornMask.eyewear;
+const attachedMask = InventoryWornMask.ball | InventoryWornMask.chain;
+/** Known magic that blows up a bag of holding (mbag_explodes), as the core names it once identified. */
+const explosive = /^(?:bags? of (?:holding|tricks)|wands? of cancellation)$/;
+
+function carriesExplosive(object: InventoryObject): boolean {
+  if (object.baseName && explosive.test(object.baseName)) return true;
+  return (object.container?.contents ?? []).some(carriesExplosive);
+}
+
 /**
- * A bag inside a bag cannot be opened where it is: take the inner one out,
- * use it, put it back (three actions).
+ * Why an object cannot go into the open container (in_container()): the
+ * container itself, worn armor or accessories, the ball and chain. A wielded
+ * weapon or the quiver is fine (the game lets go of it). Putting known magic
+ * into a known bag of holding is refused too, as it would blow up.
  */
-export function planNested(
-  outer: InventoryObject,
-  inner: InventoryObject,
-  change: { readonly out?: readonly number[]; readonly in?: readonly number[] },
-): DropPlan {
-  return {
-    operations: [
-      { op: "loot", container: outer.id, out: [inner.id], in: [] },
-      { op: "loot", container: inner.id, out: [...(change.out ?? [])], in: [...(change.in ?? [])] },
-      { op: "loot", container: outer.id, out: [], in: [inner.id] },
-    ],
-    removes: [],
-  };
+export function putInRefusal(container: InventoryObject, object: InventoryObject): PutInRefusal | null {
+  if (object.id === container.id) return "self";
+  if (object.wornMask & wornNotStashable) return "worn";
+  if (object.wornMask & attachedMask) return "attached";
+  if (container.baseName === "bag of holding" && carriesExplosive(object)) return "explodes";
+  return null;
 }
 
 /** Anything that looks like a container (an unidentified bag of tricks too). */

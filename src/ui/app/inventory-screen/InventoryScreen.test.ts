@@ -198,3 +198,27 @@ describe("dropping a worn item", () => {
     expect(ops(resolveDrop(inventory, fromSlot, { kind: "grid" }, null))).toEqual([{ op: "wield", item: "-" }]);
   });
 });
+
+describe("with a container open", () => {
+  const bag = object("p", { container: { locked: null, contents: [object("x", { letter: null })], more: 0, tooDeep: false } });
+  const state = { ...inventory, objects: [...inventory.objects, bag] };
+  const [sword, helmet, potions] = inventory.objects;
+  const inside = bag.container!.contents![0];
+
+  it("puts carried things in and takes contents out, nothing else", () => {
+    expect(resolveDrop(state, { kind: "pack", object: potions }, { kind: "container" }, bag)).toEqual({ kind: "stage", in: potions.id });
+    expect(resolveDrop(state, { kind: "content", object: inside, containerId: bag.id }, { kind: "letter", letter: "b" }, bag))
+      .toEqual({ kind: "stage", out: inside.id });
+    expect(resolveDrop(state, { kind: "content", object: inside, containerId: bag.id }, { kind: "grid" }, bag))
+      .toEqual({ kind: "stage", out: inside.id });
+    // no rearranging, equipping or dropping meanwhile
+    expect(resolveDrop(state, { kind: "pack", object: potions }, { kind: "slot", slot: "weapon" }, bag)).toEqual({ kind: "none" });
+    expect(resolveDrop(state, { kind: "pack", object: potions }, { kind: "floor" }, bag)).toEqual({ kind: "none" });
+  });
+
+  it("says why worn armor or the bag itself cannot go in, but takes a wielded weapon", () => {
+    expect(resolveDrop(state, { kind: "pack", object: helmet }, { kind: "container" }, bag).kind).toBe("notice");
+    expect(resolveDrop(state, { kind: "pack", object: bag }, { kind: "container" }, bag).kind).toBe("notice");
+    expect(resolveDrop(state, { kind: "pack", object: sword }, { kind: "container" }, bag)).toEqual({ kind: "stage", in: sword.id });
+  });
+});
