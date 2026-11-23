@@ -7,8 +7,8 @@ import type { GlyphCatalogEntry, GlyphCatalogMeta, GlyphCatalogRange } from "./t
 export const GLYPH_CATALOG_META: GlyphCatalogMeta = {
   sourceJsPath: "public/nethack-5.js",
   sourceWasmPath: "public/nethack-5.wasm",
-  sourceJsSha256: "685ab93b9fb62a023143def055226b611e15855e06c44d380959ce3e77d7b057",
-  sourceWasmSha256: "8613b1cdd4447be86c8451efc67483fa8034567b3d37b7ee3cf964027c4a4c25",
+  sourceJsSha256: "c8ff5661deba0ac3d1834e26544784dcad8d20ec1975e9fef8e5376921ced83b",
+  sourceWasmSha256: "ecb7490d5417d839a94fe2c5b2f8da669b982cf254b13fcec4ea231c6e5db4ce",
   maxGlyph: 9624,
   noGlyph: 9624,
 };
