@@ -185,7 +185,7 @@ struct rm {
  * sink    |             |             | S_LRING    | S_LDWASHER | S_LPUDDING |
  * tree    |             |             |            | TREE_SWARM | TREE_LOOTED|
  * throne  |             |             |            |            | T_LOOTED   |
- * fountain|             |             |            | F_WARNED   | F_LOOTED   |
+ * fountain| F_QUALITY   | F_QUALITY   | F_QUALITY  | F_WARNED   | F_LOOTED   |
  * ladder  |             |             |            | LA_DOWN    | LA_UP      |
  * pool    |ICED_MOAT    | ICED_POOL   |            |            |            |
  * grave   |             |             |            |            | emptygrave |
@@ -261,6 +261,21 @@ struct rm {
 #define SET_FOUNTAIN_LOOTED(x, y) levl[x][y].looted |= F_LOOTED;
 #define CLEAR_FOUNTAIN_WARNED(x, y) levl[x][y].looted &= ~F_WARNED;
 #define CLEAR_FOUNTAIN_LOOTED(x, y) levl[x][y].looted &= ~F_LOOTED;
+
+/*
+ * Polypiled: each fountain holds one kind of water, chosen when it is made
+ * (or the first time it is used, for fountains made some other way), and
+ * gives one wonder in its life.  F_LOOTED marks the wonder as spent.
+ */
+#define F_QUALITY_SHIFT 2
+#define F_QUALITY_MASK (7 << F_QUALITY_SHIFT)
+#define FTN_UNSET  0
+#define FTN_COOL   1
+#define FTN_TEPID  2
+#define FTN_FOUL   3
+#define FTN_POISON 4
+#define FOUNTAIN_QUALITY(x, y)     ((levl[x][y].looted & F_QUALITY_MASK) >> F_QUALITY_SHIFT)
+#define SET_FOUNTAIN_QUALITY(x, y, q)     levl[x][y].looted = ((levl[x][y].looted & ~F_QUALITY_MASK)                          | (((q) << F_QUALITY_SHIFT) & F_QUALITY_MASK));
 
 /*
  * doors are even worse :-) The special warning has a side effect

@@ -197,11 +197,11 @@ watchman_warn_fountain(struct monst *mtmp)
     return FALSE;
 }
 
-void
-dryup(coordxy x, coordxy y, boolean isyou)
+staticfn void
+dryup_odds(coordxy x, coordxy y, boolean isyou, int odds)
 {
     if (IS_FOUNTAIN(levl[x][y].typ)
-        && (!rn2(3) || FOUNTAIN_IS_WARNED(x, y))) {
+        && (!rn2(odds) || FOUNTAIN_IS_WARNED(x, y))) {
         if (isyou && in_town(x, y) && !FOUNTAIN_IS_WARNED(x, y)) {
             struct monst *mtmp;
 
@@ -238,155 +238,231 @@ dryup(coordxy x, coordxy y, boolean isyou)
     }
 }
 
-/* quaff from a fountain when standing on its location */
+/* a fountain dries up one time in three when something else disturbs it */
 void
-drinkfountain(void)
+dryup(coordxy x, coordxy y, boolean isyou)
 {
-    /* What happens when you drink from a fountain? */
-    boolean mgkftn = (levl[u.ux][u.uy].blessedftn == 1);
-    int fate = rnd(30);
+    dryup_odds(x, y, isyou, 3);
+}
 
-    if (Levitation) {
-        floating_above("fountain");
-        return;
-    }
+/* Polypiled: pick the kind of water a fountain holds */
+void
+init_fountain_quality(coordxy x, coordxy y)
+{
+    int roll = rn2(100), q;
 
-    if (mgkftn && u.uluck >= 0 && fate >= 10) {
-        int i, ii, littleluck = (u.uluck < 4);
+    if (roll < 40)
+        q = FTN_COOL;
+    else if (roll < 75)
+        q = FTN_TEPID;
+    else if (roll < 90)
+        q = FTN_FOUL;
+    else
+        q = FTN_POISON;
+    SET_FOUNTAIN_QUALITY(x, y, q);
+}
 
-        pline("Wow!  This makes you feel great!");
-        /* blessed restore ability */
-        for (ii = 0; ii < A_MAX; ii++)
-            if (ABASE(ii) < AMAX(ii)) {
-                ABASE(ii) = AMAX(ii);
-                disp.botl = TRUE;
-            }
-        /* gain ability, blessed if "natural" luck is high */
-        i = rn2(A_MAX); /* start at a random attribute */
-        for (ii = 0; ii < A_MAX; ii++) {
-            if (adjattrib(i, 1, littleluck ? -1 : 0) && littleluck)
-                break;
-            if (++i >= A_MAX)
-                i = 0;
+/* the kind of water in a fountain; fountains not made by mkfount() (special
+   levels, wishes, sinks turned into fountains) get theirs on first use */
+staticfn int
+fountain_quality(coordxy x, coordxy y)
+{
+    if (FOUNTAIN_QUALITY(x, y) == FTN_UNSET)
+        init_fountain_quality(x, y);
+    return FOUNTAIN_QUALITY(x, y);
+}
+
+/* a magic fountain's wonder: restore and gain ability */
+staticfn void
+magic_fountain_wonder(void)
+{
+    int i, ii, littleluck = (u.uluck < 4);
+
+    pline("Wow!  This makes you feel great!");
+    /* blessed restore ability */
+    for (ii = 0; ii < A_MAX; ii++)
+        if (ABASE(ii) < AMAX(ii)) {
+            ABASE(ii) = AMAX(ii);
+            disp.botl = TRUE;
         }
-        display_nhwindow(WIN_MESSAGE, FALSE);
-        pline("A wisp of vapor escapes the fountain...");
-        exercise(A_WIS, TRUE);
+    /* gain ability, blessed if "natural" luck is high */
+    i = rn2(A_MAX); /* start at a random attribute */
+    for (ii = 0; ii < A_MAX; ii++) {
+        if (adjattrib(i, 1, littleluck ? -1 : 0) && littleluck)
+            break;
+        if (++i >= A_MAX)
+            i = 0;
+    }
+    display_nhwindow(WIN_MESSAGE, FALSE);
+    pline("A wisp of vapor escapes the fountain...");
+    exercise(A_WIS, TRUE);
+}
+
+/* Polypiled: the one wonder a fountain gives in its life, when the hero
+   drinks from it (obj is null) or dips obj (or bare hands) into it */
+staticfn void
+fountain_wonder(struct obj *obj)
+{
+    boolean drinking = !obj, is_hands = (obj == &hands_obj);
+
+    SET_FOUNTAIN_LOOTED(u.ux, u.uy); /* the wonder is spent */
+    if (levl[u.ux][u.uy].blessedftn) {
         levl[u.ux][u.uy].blessedftn = 0;
-        return;
+        if (drinking && u.uluck >= 0) {
+            magic_fountain_wonder();
+            return;
+        }
     }
 
-    if (fate < 10) {
-        pline_The("cool draught refreshes you.");
-        u.uhunger += rnd(10); /* don't choke on water */
-        newuhs(FALSE);
-        if (mgkftn)
-            return;
-    } else {
-        switch (fate) {
-        case 19: /* Self-knowledge */
-            You_feel("self-knowledgeable...");
-            display_nhwindow(WIN_MESSAGE, FALSE);
-            enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
-            exercise(A_WIS, TRUE);
-            pline_The("feeling subsides.");
-            break;
-        case 20: /* Foul water */
-            pline_The("water is foul!  You gag and vomit.");
-            morehungry(rn1(20, 11));
-            vomit();
-            break;
-        case 21: /* Poisonous */
-            pline_The("water is contaminated!");
-            if (Poison_resistance) {
-                pline("Perhaps it is runoff from the nearby %s farm.",
-                      fruitname(FALSE));
-                losehp(rnd(4), "unrefrigerated sip of juice", KILLED_BY_AN);
-                break;
+    switch (rn2(11)) {
+    case 0: /* Self-knowledge */
+        You_feel("self-knowledgeable...");
+        display_nhwindow(WIN_MESSAGE, FALSE);
+        enlightenment(MAGICENLIGHTENMENT, ENL_GAMEINPROGRESS);
+        exercise(A_WIS, TRUE);
+        pline_The("feeling subsides.");
+        break;
+    case 1: /* See invisible */
+        if (Blind) {
+            if (Invisible) {
+                You("feel transparent.");
+            } else {
+                You("feel very self-conscious.");
+                pline("Then it passes.");
             }
-            poison_strdmg(rn1(4, 3), rnd(10), "contaminated water",
-                          KILLED_BY);
-            exercise(A_CON, FALSE);
-            break;
-        case 22: /* Fountain of snakes! */
-            dowatersnakes();
-            break;
-        case 23: /* Water demon */
-            dowaterdemon();
-            break;
-        case 24: { /* Maybe curse some items */
-            struct obj *obj, *nextobj;
+        } else {
+            You_see("an image of someone stalking you.");
+            pline("But it disappears.");
+        }
+        HSee_invisible |= FROMOUTSIDE;
+        newsym(u.ux, u.uy);
+        exercise(A_WIS, TRUE);
+        break;
+    case 2: /* See Monsters */
+        if (monster_detect((struct obj *) 0, 0)) {
+            if (drinking)
+                pline_The("%s tastes like nothing.", hliquid("water"));
+            else
+                You_feel("a sudden chill.");
+        }
+        exercise(A_WIS, TRUE);
+        break;
+    case 3: /* Find a gem in the sparkling waters. */
+        dofindgem();
+        break;
+    case 4: /* You see coins */
+        /* We make fountains have more coins the closer you are to the
+         * surface.  After all, there will have been more people going
+         * by.  Just like a shopping mall!  Chris Woodbury  */
+        (void) mkgold((long) (rnd((dunlevs_in_dungeon(&u.uz) - dunlev(&u.uz)
+                                   + 1) * 2) + 5),
+                      u.ux, u.uy);
+        if (!Blind)
+            pline("Far below you, you see coins glistening in the %s.",
+                  hliquid("water"));
+        exercise(A_WIS, TRUE);
+        newsym(u.ux, u.uy);
+        break;
+    case 5: /* Water demon */
+        dowaterdemon();
+        break;
+    case 6: /* Water Nymph */
+        dowaternymph();
+        break;
+    case 7: /* Fountain of snakes! */
+        dowatersnakes();
+        break;
+    case 8: /* Curse items */
+        if (drinking) {
+            struct obj *otmp, *nextobj;
             int buc_changed = 0;
 
             pline("This water's no good!");
             morehungry(rn1(20, 11));
             exercise(A_CON, FALSE);
             /* this is more severe than rndcurse() */
-            for (obj = gi.invent; obj; obj = nextobj) {
-                nextobj = obj->nobj;
-                if (obj->oclass != COIN_CLASS && !obj->cursed && !rn2(5)) {
-                    curse(obj);
+            for (otmp = gi.invent; otmp; otmp = nextobj) {
+                nextobj = otmp->nobj;
+                if (otmp->oclass != COIN_CLASS && !otmp->cursed
+                    && !rn2(5)) {
+                    curse(otmp);
                     ++buc_changed;
                 }
             }
             if (buc_changed)
                 update_inventory();
-            break;
+        } else if (!is_hands && obj->oclass != COIN_CLASS && !obj->cursed) {
+            curse(obj); /* the dipped item */
         }
-        case 25: /* See invisible */
-            if (Blind) {
-                if (Invisible) {
-                    You("feel transparent.");
-                } else {
-                    You("feel very self-conscious.");
-                    pline("Then it passes.");
-                }
-            } else {
-                You_see("an image of someone stalking you.");
-                pline("But it disappears.");
-            }
-            HSee_invisible |= FROMOUTSIDE;
-            newsym(u.ux, u.uy);
-            exercise(A_WIS, TRUE);
-            break;
-        case 26: /* See Monsters */
-            if (monster_detect((struct obj *) 0, 0))
-                pline_The("%s tastes like nothing.", hliquid("water"));
-            exercise(A_WIS, TRUE);
-            break;
-        case 27: /* Find a gem in the sparkling waters. */
-            if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy)) {
-                dofindgem();
-                break;
-            }
-            FALLTHROUGH;
-            /*FALLTHRU*/
-        case 28: /* Water Nymph */
-            dowaternymph();
-            break;
-        case 29: /* Scare */
-        {
-            struct monst *mtmp;
+        break;
+    case 9: /* Gushing forth in this room */
+        dogushforth(drinking);
+        break;
+    default: /* Scare */
+    {
+        struct monst *mtmp;
 
-            pline("This %s gives you bad breath!",
-                  hliquid("water"));
-            for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-                if (DEADMONSTER(mtmp))
-                    continue;
-                monflee(mtmp, 0, FALSE, FALSE);
-            }
-            break;
+        if (drinking)
+            pline("This %s gives you bad breath!", hliquid("water"));
+        else
+            pline_The("fountain gives off a foul stench!");
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+            if (DEADMONSTER(mtmp))
+                continue;
+            monflee(mtmp, 0, FALSE, FALSE);
         }
-        case 30: /* Gushing forth in this room */
-            dogushforth(TRUE);
-            break;
-        default:
-            pline("This tepid %s is tasteless.",
-                  hliquid("water"));
-            break;
-        }
+        break;
     }
-    dryup(u.ux, u.uy, TRUE);
+    }
+}
+
+/* quaff from a fountain when standing on its location */
+void
+drinkfountain(void)
+{
+    if (Levitation) {
+        floating_above("fountain");
+        return;
+    }
+
+    /* Polypiled: the taste of the water depends on the fountain */
+    switch (fountain_quality(u.ux, u.uy)) {
+    case FTN_COOL:
+        pline_The("cool draught refreshes you.");
+        u.uhunger += rnd(10); /* don't choke on water */
+        newuhs(FALSE);
+        healup(d(2, 4), 0, FALSE, FALSE);
+        break;
+    case FTN_TEPID:
+    default:
+        pline("This tepid %s is tasteless.", hliquid("water"));
+        u.uhunger += rnd(5);
+        newuhs(FALSE);
+        break;
+    case FTN_FOUL:
+        pline_The("water is foul!  You gag and vomit.");
+        morehungry(rn1(20, 11));
+        vomit();
+        break;
+    case FTN_POISON:
+        pline_The("water is contaminated!");
+        if (Poison_resistance) {
+            pline("Perhaps it is runoff from the nearby %s farm.",
+                  fruitname(FALSE));
+            losehp(rnd(4), "unrefrigerated sip of juice", KILLED_BY_AN);
+            break;
+        }
+        poison_strdmg(rn1(4, 3), rnd(10), "contaminated water", KILLED_BY);
+        exercise(A_CON, FALSE);
+        break;
+    }
+
+    /* the fountain may have dried up or turned to a pool meanwhile */
+    if (!IS_FOUNTAIN(levl[u.ux][u.uy].typ))
+        return;
+    if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy) && !rn2(6))
+        fountain_wonder((struct obj *) 0);
+    dryup_odds(u.ux, u.uy, TRUE, 12);
 }
 
 /* dip an object into a fountain when standing on its location */
@@ -394,6 +470,7 @@ void
 dipfountain(struct obj *obj)
 {
     int er = ER_NOTHING;
+    boolean happened = FALSE;
     boolean is_hands = (obj == &hands_obj);
 
     if (Levitation) {
@@ -445,6 +522,14 @@ dipfountain(struct obj *obj)
         if (in_town(u.ux, u.uy))
             (void) angry_guards(FALSE);
         return;
+    } else if (obj->otyp == UNICORN_HORN && !obj->cursed
+               && fountain_quality(u.ux, u.uy) == FTN_POISON) {
+        /* Polypiled: a unicorn horn purifies a poisoned fountain */
+        SET_FOUNTAIN_QUALITY(u.ux, u.uy, rn1(3, FTN_COOL));
+        if (!Blind)
+            pline_The("%s clears.", hliquid("water"));
+        exercise(A_WIS, TRUE);
+        return;
     } else if (is_hands || obj == uarmg) {
         er = wash_hands();
     } else {
@@ -455,102 +540,23 @@ dipfountain(struct obj *obj)
         return; /* no further effect */
     }
 
-    switch (rnd(30)) {
-    case 16: /* Curse the item */
-        if (!is_hands && obj->oclass != COIN_CLASS && !obj->cursed) {
-            curse(obj);
-        }
-        break;
-    case 17:
-    case 18:
-    case 19:
-    case 20: /* Uncurse the item */
-        if (!is_hands && obj->cursed) {
-            if (!Blind)
-                pline_The("%s glows for a moment.", hliquid("water"));
-            uncurse(obj);
-        } else {
-            pline("A feeling of loss comes over you.");
-        }
-        break;
-    case 21: /* Water Demon */
-        dowaterdemon();
-        break;
-    case 22: /* Water Nymph */
-        dowaternymph();
-        break;
-    case 23: /* an Endless Stream of Snakes */
-        dowatersnakes();
-        break;
-    case 24: /* Find a gem */
-        if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy)) {
-            dofindgem();
-            break;
-        }
-        FALLTHROUGH;
-        /*FALLTHRU*/
-    case 25: /* Water gushes forth */
-        dogushforth(FALSE);
-        break;
-    case 26: /* Strange feeling */
-        pline("A strange tingling runs up your %s.", body_part(ARM));
-        break;
-    case 27: /* Strange feeling */
-        You_feel("a sudden chill.");
-        break;
-    case 28: /* Strange feeling */
-        pline("An urge to take a bath overwhelms you.");
-        {
-            long money = money_cnt(gi.invent);
-            struct obj *otmp, *nextobj;
-
-            if (money > 10) {
-                /* Amount to lose.  Might get rounded up as fountains don't
-                 * pay change... */
-                money = somegold(money) / 10;
-                for (otmp = gi.invent; otmp && money > 0; otmp = nextobj) {
-                    nextobj = otmp->nobj;
-                    if (otmp->oclass == COIN_CLASS) {
-                        int denomination = objects[otmp->otyp].oc_cost;
-                        long coin_loss =
-                            (money + denomination - 1) / denomination;
-                        coin_loss = min(coin_loss, otmp->quan);
-                        otmp->quan -= coin_loss;
-                        money -= coin_loss * denomination;
-                        if (!otmp->quan)
-                            delobj(otmp);
-                    }
-                }
-                You("lost some of your gold in the fountain!");
-                CLEAR_FOUNTAIN_LOOTED(u.ux, u.uy);
-                exercise(A_WIS, FALSE);
-            }
-        }
-        break;
-    case 29: /* You see coins */
-        /* We make fountains have more coins the closer you are to the
-         * surface.  After all, there will have been more people going
-         * by.  Just like a shopping mall!  Chris Woodbury  */
-
-        if (FOUNTAIN_IS_LOOTED(u.ux, u.uy))
-            break;
-        SET_FOUNTAIN_LOOTED(u.ux, u.uy);
-        (void) mkgold((long) (rnd((dunlevs_in_dungeon(&u.uz) - dunlev(&u.uz)
-                                   + 1) * 2) + 5),
-                      u.ux, u.uy);
+    /* Polypiled: fountain water sometimes lifts a curse */
+    if (!is_hands && obj->cursed && rn2(30) < 4) {
         if (!Blind)
-            pline("Far below you, you see coins glistening in the %s.",
-                  hliquid("water"));
-        exercise(A_WIS, TRUE);
-        newsym(u.ux, u.uy);
-        break;
-    default:
-        if (er == ER_NOTHING)
-            pline1(nothing_seems_to_happen);
-        break;
+            pline_The("%s glows for a moment.", hliquid("water"));
+        uncurse(obj);
+        happened = TRUE;
     }
+    /* a magic fountain keeps its wonder for the one who drinks from it */
+    if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy) && !levl[u.ux][u.uy].blessedftn
+        && !rn2(6)) {
+        fountain_wonder(obj);
+        happened = TRUE;
+    }
+    if (!happened && er == ER_NOTHING)
+        pline1(nothing_seems_to_happen);
     update_inventory();
-    dryup(u.ux, u.uy, TRUE);
+    dryup_odds(u.ux, u.uy, TRUE, 12);
 }
 
 /* dipping '-' in fountain, pool, or sink */
