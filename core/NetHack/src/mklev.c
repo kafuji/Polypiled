@@ -2301,6 +2301,7 @@ mkfount(struct mkroom *croom)
     /* Is it a "blessed" fountain? (affects drinking from fountain) */
     if (!rn2(7))
         levl[m.x][m.y].blessedftn = 1;
+    init_fountain_quality(m.x, m.y);
 
     svl.level.flags.nfountains++;
 }
