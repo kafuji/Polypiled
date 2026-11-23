@@ -813,8 +813,12 @@
 /* equipment sets */
 .nh3d-invs-sets {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) ;
+  /* equal thirds whatever the names: a long name is cut, never widens the column */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
+  /* as wide as the figure above, without adding to the column's width */
+  width: 0;
+  min-width: 100%;
 
   button {
     display: flex;

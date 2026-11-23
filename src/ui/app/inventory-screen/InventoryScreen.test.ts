@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { TranslationProvider } from "../../../i18n";
 import { ja } from "../../../i18n/locales/ja";
 import { defaultClassOrder, InventoryWornMask, type InventoryObject, type InventoryState } from "../../../runtime/inventory-state";
-import { InventoryScreenView, menuActionsThatKeepScreenOpen } from "./InventoryScreen";
+import { InventoryScreenView, menuActionsThatKeepScreenOpen, resolveDrop } from "./InventoryScreen";
 import { inventoryContextActions } from "../inventory/actions";
 import { ObjectClass } from "./model";
 
@@ -178,5 +178,23 @@ describe("InventoryScreen", () => {
     const strings = ja.app.inventoryScreen;
     expect(strings.title).toBe("持ち物");
     expect(strings.encumbrance.burdened).toBe("重荷");
+  });
+});
+
+describe("dropping a worn item", () => {
+  const sword = inventory.objects[0];
+  const ops = (result: ReturnType<typeof resolveDrop>) => (result.kind === "plan" ? result.plan.operations : []);
+
+  it("only changes its letter when dragged within the pack", () => {
+    expect(ops(resolveDrop(inventory, { kind: "pack", object: sword }, { kind: "letter", letter: "b" }, null))).toEqual([
+      { op: "adjust", from: "a", to: "b" },
+    ]);
+    expect(resolveDrop(inventory, { kind: "pack", object: sword }, { kind: "grid" }, null)).toEqual({ kind: "none" });
+  });
+
+  it("comes off when dragged from its slot into the pack", () => {
+    const fromSlot = { kind: "pack", object: sword, fromSlot: "weapon" } as const;
+    expect(ops(resolveDrop(inventory, fromSlot, { kind: "letter", letter: "b" }, null))).toEqual([{ op: "wield", item: "-" }]);
+    expect(ops(resolveDrop(inventory, fromSlot, { kind: "grid" }, null))).toEqual([{ op: "wield", item: "-" }]);
   });
 });
