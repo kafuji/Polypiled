@@ -882,6 +882,10 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
           label: "Käytä korkearesoluutioisia ruutuja",
           description: "Vain NetHack 5. Korvaa ruudut korkearesoluutioisilla versioilla, jos sellaiset on; muut ruudut käyttävät valittua ruutusarjaa.",
         },
+        tilesetUse3dTerrainModels: {
+          label: "Käytä 3D-malleja luolaston kohteille",
+          description: "Vain ruututilassa. Näyttää portaat, tikkaat, ovet, suihkulähteet, pesualtaat, alttarit, haudat ja valtaistuimet 3D-malleina litteiden kuvien sijaan.",
+        },
         tilesetPath: {
           label: "Ruutusetti",
           description: "Sisäänrakennetut ja ladatut ruutusetit.",

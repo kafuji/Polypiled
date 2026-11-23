@@ -86,8 +86,8 @@ export interface EntityBillboardsDependencies {
     | "tileSourceSize"
     | "tileSourceHeight"
     | "getWorldTileScaleX"
-    | "isHiResTilesActive"
-    | "resolveHiResTile"
+    | "isTerrainModelsActive"
+    | "resolveTerrainModelTexture"
   >;
   readonly vultureProjection: Pick<
     VultureProjection,
@@ -822,12 +822,9 @@ export class EntityBillboards {
     this.disposeDetachedMonsterBillboard(sprite);
   }
 
-  /** High-resolution tiles show stairs, ladders and features as 3D models. */
+  /** The 3D model option shows stairs, ladders and features as models. */
   shouldUseTerrainPropModels(): boolean {
-    return (
-      this.dependencies.engineState.clientOptions.tilesetMode === "tiles" &&
-      this.dependencies.tilesetAssets.isHiResTilesActive()
-    );
+    return this.dependencies.tilesetAssets.isTerrainModelsActive();
   }
 
   private ensureTerrainProp(
@@ -846,9 +843,9 @@ export class EntityBillboards {
       // Built lazily so the textures come from the pack (and the level's
       // terrain style) as it is now; removeAllTerrainProps starts over.
       this.terrainPropModels ??= new TerrainPropModels(
-        (material) =>
-          this.dependencies.lighting.patchMaterialForVignette(material, { faceShade: true }),
-        (tileIndex) => this.dependencies.tilesetAssets.resolveHiResTile(tileIndex),
+        (material, options) =>
+          this.dependencies.lighting.patchMaterialForVignette(material, options),
+        (tileIndex) => this.dependencies.tilesetAssets.resolveTerrainModelTexture(tileIndex),
         this.dependencies.tilesetAssets.resolveTextureAnisotropyLevel(),
       );
       prop = this.terrainPropModels.build(spec);

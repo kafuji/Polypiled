@@ -876,6 +876,10 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
           label: "Hochauflösende Kacheln verwenden",
           description: "Nur NetHack 5. Ersetzt Kacheln durch hochauflösende Versionen, sofern vorhanden; andere Kacheln verwenden weiterhin das gewählte Kachelset.",
         },
+        tilesetUse3dTerrainModels: {
+          label: "3D-Modelle für Dungeon-Elemente verwenden",
+          description: "Nur im Kachelmodus. Treppen, Leitern, Türen, Brunnen, Spülen, Altäre, Gräber und Throne als 3D-Modelle statt flacher Bilder anzeigen.",
+        },
         tilesetPath: {
           label: "Tileset",
           description: "Integrierte und hochgeladene Tilesets.",

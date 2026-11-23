@@ -805,6 +805,10 @@ export const zhCnOverrides = {
           label: "使用高分辨率图块",
           description: "仅限 NetHack 5。有高分辨率版本的图块会被替换，其余图块仍使用所选图块集。",
         },
+        tilesetUse3dTerrainModels: {
+          label: "为地牢设施使用 3D 模型",
+          description: "仅限图块模式。将楼梯、梯子、门、喷泉、水槽、祭坛、坟墓和王座显示为 3D 模型，而不是平面图片。",
+        },
         tilesetPath: {
           label: "瓦片集",
           description: "内置和已上传的瓦片集。",

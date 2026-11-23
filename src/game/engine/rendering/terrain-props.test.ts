@@ -55,7 +55,19 @@ describe("terrain props", () => {
     models.dispose();
   });
 
-  it.each([true, false])("replaces the stairs billboard only with high-resolution tiles (%s)", (hiRes) => {
+  it("gives the fountain moving water and stone that fits inside its tile", () => {
+    const patch = vi.fn();
+    const models = new TerrainPropModels(patch);
+    const fountain = models.build({ kind: "fountain", branch: false });
+    expect(patch.mock.calls.some(([, options]) => options.liquid)).toBe(true);
+    const bounds = new THREE.Box3().setFromObject(fountain);
+    expect(bounds.max.x).toBeLessThanOrEqual(0.5);
+    expect(bounds.min.y).toBeGreaterThanOrEqual(-0.5);
+    expect(bounds.min.z).toBeGreaterThanOrEqual(0);
+    models.dispose();
+  });
+
+  it.each([true, false])("replaces the stairs billboard only with the 3D model option (%s)", (models) => {
     vi.stubGlobal("HTMLCanvasElement", class {});
     const scene = new THREE.Scene();
     const billboards = new EntityBillboards({
@@ -66,8 +78,8 @@ describe("terrain props", () => {
         tileSourceSize: 32,
         shouldUseVultureTiles: () => false,
         getWorldTileScaleX: () => 1,
-        isHiResTilesActive: () => hiRes,
-        resolveHiResTile: () => null,
+        isTerrainModelsActive: () => models,
+        resolveTerrainModelTexture: () => null,
         resolveTextureAnisotropyLevel: () => 1,
       },
       glyphTextures: { createTileTexture: () => new THREE.CanvasTexture(undefined) },
@@ -83,9 +95,9 @@ describe("terrain props", () => {
     vi.spyOn(billboards, "updateMonsterBillboardPitchLockStateForEntry").mockImplementation(() => {});
     const stairs = cmapGlyphWithSymidx(26);
     billboards.ensureMonsterBillboard("3,4", 3, 4, ">", "#fff", 10, "monster", false, stairs, "stairs_down");
-    expect(billboards.terrainProps.has("3,4")).toBe(hiRes);
-    expect(billboards.monsterBillboards.has("3,4")).toBe(!hiRes);
-    if (hiRes) {
+    expect(billboards.terrainProps.has("3,4")).toBe(models);
+    expect(billboards.monsterBillboards.has("3,4")).toBe(!models);
+    if (models) {
       expect(billboards.terrainProps.get("3,4")!.position.toArray()).toEqual([3, -4, 0]);
     }
     billboards.removeMonsterBillboard("3,4");

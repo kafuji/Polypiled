@@ -998,6 +998,10 @@ export const esOverrides = {
                   label: "Usar casillas de alta resolución",
                   description: "Solo NetHack 5. Sustituye las casillas por versiones de alta resolución cuando existen; el resto sigue usando el conjunto seleccionado.",
                 },
+                tilesetUse3dTerrainModels: {
+                  label: "Usar modelos 3D para elementos de la mazmorra",
+                  description: "Solo en modo de casillas. Muestra escaleras, escalas, puertas, fuentes, fregaderos, altares, tumbas y tronos como modelos 3D en lugar de imágenes planas.",
+                },
                 tilesetPath: {
                     label: "Conjunto de mosaicos",
                     description: "Conjuntos de mosaicos integrados y cargados.",

@@ -208,6 +208,31 @@ export class TilesetAssets {
     return this.hiResTilePack.getTile(Math.trunc(runtimeTileIndex), this.hiResTerrainStyle);
   }
 
+  /**
+   * Stairs, doors and other dungeon features drawn as 3D models. This is
+   * its own option: the high-resolution tiles option only swaps pictures.
+   */
+  isTerrainModelsActive(
+    options: Nh3dClientOptions = this.dependencies.engineState.clientOptions,
+  ): boolean {
+    return (
+      options.tilesetMode === "tiles" &&
+      options.tilesetUse3dTerrainModels === true &&
+      !this.isVultureTilesActive(options)
+    );
+  }
+
+  /**
+   * Pack art the 3D models borrow as surface textures. The models load the
+   * pack for this even when the tiles themselves keep the plain tileset.
+   */
+  resolveTerrainModelTexture(runtimeTileIndex: number): HiResTileFrame | null {
+    if (!this.hiResTilePack || !this.isTerrainModelsActive()) {
+      return null;
+    }
+    return this.hiResTilePack.getTile(Math.trunc(runtimeTileIndex), this.hiResTerrainStyle);
+  }
+
   readonly handleHiResTilesReady = (): void => {
     if (this.dependencies.engineState.disposed) {
       return;
@@ -226,7 +251,7 @@ export class TilesetAssets {
 
   /** Loads or releases the pack to match the current options and runtime. */
   syncHiResTilePack(): void {
-    if (!this.isHiResTilesActive()) {
+    if (!this.isHiResTilesActive() && !this.isTerrainModelsActive()) {
       this.hiResTilePack?.dispose();
       this.hiResTilePack = null;
       return;
@@ -246,7 +271,7 @@ export class TilesetAssets {
     });
   }
 
-  /** Toggling the option swaps already-built textures in or out. */
+  /** Toggling either option swaps already-built textures and models in or out. */
   applyHiResTilesOption(): void {
     const hadTiles = (this.hiResTilePack?.loadedTileCount ?? 0) > 0;
     this.syncHiResTilePack();

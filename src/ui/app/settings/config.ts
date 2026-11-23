@@ -238,6 +238,12 @@ export const clientOptionsConfig: ClientOption[] = [
     type: "boolean",
   },
   {
+    key: "tilesetUse3dTerrainModels",
+    label: t.clientOptions.config.tilesetUse3dTerrainModels.label,
+    description: t.clientOptions.config.tilesetUse3dTerrainModels.description,
+    type: "boolean",
+  },
+  {
     key: "antialiasing",
     label: t.clientOptions.config.antialiasing.label,
     description: t.clientOptions.config.antialiasing.description,

@@ -41,7 +41,7 @@ function createWorldFixture() {
     tileRendering,
     tilesetAssets: {
       loadedTilesetTileLayoutVersion: "3.6.7",
-      isHiResTilesActive: () => false,
+      isTerrainModelsActive: () => false,
       resolveHiResTile: () => null,
       resolveRuntimeVersion: () => "5.0",
       resolveTilesetBackgroundReferenceTileIndex: () => 0,

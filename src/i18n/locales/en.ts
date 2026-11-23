@@ -1052,6 +1052,10 @@ export const en = {
           label: "Use high-resolution tiles",
           description: "NetHack 5 only. Replace tiles with high-resolution versions where they exist; other tiles keep using the selected tileset.",
         },
+        tilesetUse3dTerrainModels: {
+          label: "Use 3D models for dungeon features",
+          description: "Tiles mode only. Show stairs, ladders, doors, fountains, sinks, altars, graves and thrones as 3D models instead of flat pictures.",
+        },
         tilesetPath: {
           label: "Tileset",
           description: "Built-in and uploaded tilesets.",

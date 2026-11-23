@@ -1058,6 +1058,10 @@ export const ptBrOverrides = {
           label: "Usar blocos em alta resolução",
           description: "Somente NetHack 5. Substitui os blocos por versões em alta resolução quando existirem; os demais continuam usando o conjunto selecionado.",
         },
+        tilesetUse3dTerrainModels: {
+          label: "Usar modelos 3D para elementos da masmorra",
+          description: "Somente no modo de blocos. Mostra escadas, escadas de mão, portas, fontes, pias, altares, túmulos e tronos como modelos 3D em vez de imagens planas.",
+        },
         tilesetPath: {
           label: "Conjunto de tiles",
           description: "Tilesets internos e enviados.",

@@ -8,6 +8,8 @@ import {
 } from "../../glyphs/behavior";
 import type { HiResTileFrame } from "../../hires-tiles/hires-tile-pack";
 import { NH5_TILE_KEYS } from "../../hires-tiles/tile-keys.5.generated";
+import { paintPropTexture, type GeneratedPropTexture } from "./terrain-prop-textures";
+import { setLiquidSurface } from "./world-shading";
 
 /** Terrain that the high-resolution tile mode shows as a small 3D model. */
 export type TerrainPropKind =
@@ -186,6 +188,13 @@ const DOOR_HEIGHT = WALL_HEIGHT;
 const DOOR_THICKNESS = TILE_SIZE * 0.14;
 const VOID = 0x050505;
 const WATER = 0x3d7fc4;
+const MARBLE_FALLBACK = 0xe6dfd0;
+const MARBLE_TRIM_FALLBACK = 0x9aa4b0;
+const FALLING_WATER_FALLBACK = 0xb4dcf5;
+/** Seconds for falling water to scroll one texture repeat. */
+const FLOW_PERIOD = 1.6;
+/** Seconds for a ripple ring to spread out and fade. */
+const RIPPLE_PERIOD = 1.4;
 const METAL = 0xa7adb3;
 const EARTH_TINT = 0xb08a62;
 const GOLD = 0xc9a23a;
@@ -212,12 +221,32 @@ const LINING_TOP_GAP = 0.006;
 const SHAFT_RENDER_ORDER = -2;
 const OPENING_MASK_RENDER_ORDER = -1;
 
-/** A surface: an optional pack texture under a colour tint. */
+/** Which way a flowing texture moves across its surface. */
+type FlowDirection = "down" | "up" | "along";
+
+/** A surface: an optional pack or painted texture under a colour tint. */
 interface Surface {
   texture: TerrainPropTextureSlot | null;
+  /** A texture painted in code; used instead of `texture` when set. */
+  painted?: GeneratedPropTexture;
   color: number;
   /** Colour (before the tint) to use when the texture is unavailable. */
   fallback?: number;
+  opacity?: number;
+  /** Moving water: ripples and glints from the shared liquid shader. */
+  liquid?: boolean;
+  /** Seen from both sides, for thin shells such as basins and falling water. */
+  doubleSided?: boolean;
+  /** Leave out the face shading, for water that should stay bright. */
+  unshaded?: boolean;
+  /** Scrolls the texture over time. */
+  flow?: FlowDirection;
+}
+
+/** Options the shared lighting patch takes for one material. */
+export interface TerrainPropPatchOptions {
+  faceShade: boolean;
+  liquid: boolean;
 }
 
 const surface = (
@@ -225,6 +254,14 @@ const surface = (
   color: number = PLAIN,
   fallback?: number,
 ): Surface => ({ texture, color, fallback });
+
+const painted = (texture: GeneratedPropTexture, fallback: number, extra: Partial<Surface> = {}): Surface => ({
+  texture: null,
+  painted: texture,
+  color: PLAIN,
+  fallback,
+  ...extra,
+});
 
 const stairTread = (tint: number): Surface => surface("stairTread", tint, STAIR_TREAD_FALLBACK);
 const stairRiser = (tint: number): Surface => surface("stairRiser", tint, STAIR_RISER_FALLBACK);
@@ -238,12 +275,16 @@ const stairRiser = (tint: number): Surface => surface("stairRiser", tint, STAIR_
 export class TerrainPropModels {
   private readonly materials = new Map<string, THREE.MeshBasicMaterial>();
 
-  private readonly textures = new Map<TerrainPropTextureSlot, THREE.Texture | null>();
+  private readonly textures = new Map<string, THREE.Texture | null>();
+
+  private readonly flowingTextures: Array<{ texture: THREE.Texture; flow: FlowDirection }> = [];
+
+  private readonly rippleMaterials: THREE.MeshBasicMaterial[] = [];
 
   private openingMaskMaterial: THREE.MeshBasicMaterial | null = null;
 
   constructor(
-    private readonly patchMaterial: (material: THREE.Material) => void,
+    private readonly patchMaterial: (material: THREE.Material, options: TerrainPropPatchOptions) => void,
     private readonly resolveTextureFrame: (tileIndex: number) => HiResTileFrame | null = () => null,
     private readonly anisotropy: number = 1,
   ) {}
@@ -298,6 +339,9 @@ export class TerrainPropModels {
   dispose(): void {
     this.materials.forEach((material) => material.dispose());
     this.materials.clear();
+    this.rippleMaterials.forEach((material) => material.dispose());
+    this.rippleMaterials.length = 0;
+    this.flowingTextures.length = 0;
     this.textures.forEach((texture) => texture?.dispose());
     this.textures.clear();
     this.openingMaskMaterial?.dispose();
@@ -392,17 +436,118 @@ export class TerrainPropModels {
     group.add(ladder);
   }
 
-  /** A round stone basin with a spouting column in the middle. */
+  /**
+   * A two-tier marble fountain: a wide basin on an octagonal plinth, a
+   * turned pedestal holding a smaller bowl, and a jet on top whose water
+   * arcs into the bowl and spills over its rim as a veil into the basin.
+   */
   private buildFountain(group: THREE.Group): void {
-    const stone = surface("wall");
-    const basinHeight = WALL_HEIGHT * 0.15;
-    this.addCylinder(group, surface("floor"), stone, TILE_SIZE * 0.38, basinHeight, 0, 0, basinHeight / 2);
-    this.addCylinder(group, surface(null, WATER), surface(null, WATER), TILE_SIZE * 0.32, 0.01, 0, 0, basinHeight + 0.002);
-    const columnHeight = WALL_HEIGHT * 0.4;
-    this.addCylinder(group, stone, stone, TILE_SIZE * 0.06, columnHeight, 0, 0, columnHeight / 2);
-    const bowlHeight = WALL_HEIGHT * 0.05;
-    this.addCylinder(group, surface("floor"), stone, TILE_SIZE * 0.15, bowlHeight, 0, 0, columnHeight + bowlHeight / 2);
-    this.addCylinder(group, surface(null, WATER), surface(null, WATER), TILE_SIZE * 0.12, 0.01, 0, 0, columnHeight + bowlHeight + 0.002);
+    const marble = painted("marble", MARBLE_FALLBACK, { doubleSided: true });
+    const trim = painted("marbleTrim", MARBLE_TRIM_FALLBACK, { doubleSided: true });
+    const water = painted("water", WATER, { liquid: true });
+    const veil = painted("waterFall", FALLING_WATER_FALLBACK, {
+      opacity: 0.8,
+      doubleSided: true,
+      unshaded: true,
+      flow: "down",
+    });
+    const jet = painted("waterFall", FALLING_WATER_FALLBACK, { opacity: 0.9, unshaded: true, flow: "up" });
+    const arc = painted("waterFall", FALLING_WATER_FALLBACK, { opacity: 0.9, unshaded: true, flow: "along" });
+
+    // Plinth: two octagonal steps, flat sides toward the walls.
+    this.addPrism(group, trim, 8, 0.47, 0, 0.03);
+    this.addPrism(group, marble, 8, 0.455, 0.03, 0.045);
+
+    // Lower basin: a bellied wall under a rolled rim.
+    const basinWaterZ = 0.19;
+    this.addLathe(group, marble, [
+      [0.44, 0.045],
+      [0.44, 0.06],
+      [0.43, 0.085],
+      [0.415, 0.13],
+      [0.425, 0.175],
+    ]);
+    this.addLathe(group, trim, [
+      [0.425, 0.175],
+      [0.445, 0.185],
+      [0.448, 0.203],
+      [0.432, 0.216],
+      [0.39, 0.216],
+      [0.378, 0.205],
+      [0.372, 0.16],
+    ]);
+    this.addDisc(group, water, 0.376, basinWaterZ);
+
+    // Pedestal rising out of the basin, with a carved knot halfway up.
+    this.addLathe(group, marble, [
+      [0.12, basinWaterZ - 0.02],
+      [0.12, 0.215],
+      [0.09, 0.235],
+      [0.062, 0.27],
+      [0.054, 0.33],
+      [0.06, 0.35],
+    ]);
+    this.addLathe(group, trim, [
+      [0.06, 0.35],
+      [0.085, 0.36],
+      [0.088, 0.375],
+      [0.06, 0.39],
+    ]);
+    // Upper bowl: the pedestal widens into a shallow tazza.
+    const bowlWaterZ = 0.583;
+    this.addLathe(group, marble, [
+      [0.06, 0.39],
+      [0.046, 0.43],
+      [0.05, 0.465],
+      [0.09, 0.49],
+      [0.15, 0.512],
+      [0.2, 0.545],
+      [0.226, 0.57],
+    ]);
+    this.addLathe(group, trim, [
+      [0.226, 0.57],
+      [0.232, 0.585],
+      [0.22, 0.596],
+      [0.207, 0.59],
+      [0.2, 0.575],
+    ]);
+    this.addDisc(group, water, 0.206, bowlWaterZ);
+
+    // Finial in the bowl that the jet springs from.
+    this.addLathe(group, trim, [
+      [0.055, bowlWaterZ - 0.01],
+      [0.05, 0.61],
+      [0.03, 0.64],
+      [0.027, 0.675],
+      [0.048, 0.69],
+      [0.052, 0.7],
+      [0.034, 0.714],
+      [0.012, 0.72],
+    ]);
+
+    // The jet, and the arcs it throws down into the bowl.
+    const jetTop = 0.82;
+    this.addTube(group, jet, 0.012, 0.004, 0.72, jetTop);
+    const arcs = 8;
+    for (let i = 0; i < arcs; i++) {
+      const angle = ((i + 0.5) / arcs) * Math.PI * 2;
+      const dx = Math.cos(angle) * TILE_SIZE;
+      const dy = Math.sin(angle) * TILE_SIZE;
+      const curve = new THREE.QuadraticBezierCurve3(
+        new THREE.Vector3(dx * 0.006, dy * 0.006, (jetTop - 0.01) * WALL_HEIGHT),
+        new THREE.Vector3(dx * 0.12, dy * 0.12, (jetTop + 0.05) * WALL_HEIGHT),
+        new THREE.Vector3(dx * 0.17, dy * 0.17, bowlWaterZ * WALL_HEIGHT),
+      );
+      const geometry = new THREE.TubeGeometry(curve, 16, 0.0055 * TILE_SIZE, 5, false);
+      scaleUvs(geometry, 2, 1);
+      this.addMesh(group, geometry, this.material(arc), 0);
+    }
+
+    // Water spilling over the bowl rim in a veil, and rings where it lands.
+    this.addTube(group, veil, 0.236, 0.272, basinWaterZ, bowlWaterZ - 0.005, true);
+    for (let i = 0; i < 2; i++) {
+      this.addRipple(group, 0.275, basinWaterZ + 0.002, i);
+    }
   }
 
   /** A stone counter with a dark basin and a metal tap at the back. */
@@ -653,6 +798,106 @@ export class TerrainPropModels {
     this.addMesh(group, geometry, [sideMaterial, capMaterial, capMaterial], 0);
   }
 
+  /**
+   * An upright prism with `sides` flat faces; with a multiple of four sides
+   * one face looks toward each wall. Sizes are in tile units.
+   */
+  private addPrism(group: THREE.Group, look: Surface, sides: number, radius: number, bottom: number, top: number): void {
+    const geometry = new THREE.CylinderGeometry(
+      radius * TILE_SIZE,
+      radius * TILE_SIZE,
+      (top - bottom) * WALL_HEIGHT,
+      sides,
+    );
+    geometry.rotateX(Math.PI / 2);
+    geometry.rotateZ(Math.PI / sides);
+    geometry.translate(0, 0, ((top + bottom) / 2) * WALL_HEIGHT);
+    applyWorldUvs(geometry, null);
+    this.addMesh(group, geometry, this.material(look), 0);
+  }
+
+  /**
+   * Turns a profile of (radius, height) points, in tile units, about the
+   * vertical axis. The texture wraps around a whole number of times and runs
+   * along the profile at world scale.
+   */
+  private addLathe(group: THREE.Group, look: Surface, profile: Array<[number, number]>): void {
+    const points = profile.map(([radius, z]) => new THREE.Vector2(radius * TILE_SIZE, z * WALL_HEIGHT));
+    const geometry = new THREE.LatheGeometry(points, 40);
+    // Lathes turn about Y; the world's up axis is Z.
+    geometry.rotateX(Math.PI / 2);
+    let length = 0;
+    for (let i = 1; i < points.length; i++) {
+      length += points[i].distanceTo(points[i - 1]);
+    }
+    const widest = Math.max(...points.map((point) => point.x));
+    const around = Math.max(1, Math.round(((Math.PI * 2 * widest) / TILE_SIZE) * 1.5));
+    scaleUvs(geometry, around, length / TILE_SIZE);
+    this.addMesh(group, geometry, this.material(look), 0);
+  }
+
+  /** A flat round surface facing up, such as standing water. */
+  private addDisc(group: THREE.Group, look: Surface, radius: number, z: number): void {
+    const geometry = new THREE.CircleGeometry(radius * TILE_SIZE, 48);
+    geometry.translate(0, 0, z * WALL_HEIGHT);
+    applyWorldUvs(geometry, null);
+    this.addMesh(group, geometry, this.material(look), 0);
+  }
+
+  /** An open tube on the vertical axis, narrowing or widening from bottom to top. */
+  private addTube(
+    group: THREE.Group,
+    look: Surface,
+    bottomRadius: number,
+    topRadius: number,
+    bottom: number,
+    top: number,
+    wide: boolean = false,
+  ): void {
+    const geometry = new THREE.CylinderGeometry(
+      topRadius * TILE_SIZE,
+      bottomRadius * TILE_SIZE,
+      (top - bottom) * WALL_HEIGHT,
+      wide ? 48 : 8,
+      1,
+      true,
+    );
+    geometry.rotateX(Math.PI / 2);
+    geometry.translate(0, 0, ((top + bottom) / 2) * WALL_HEIGHT);
+    scaleUvs(geometry, wide ? 5 : 1, wide ? 1.2 : 0.6);
+    this.addMesh(group, geometry, this.material(look), 0);
+  }
+
+  /** A thin ring on the water that spreads out and fades, over and over. */
+  private addRipple(group: THREE.Group, radius: number, z: number, phase: number): void {
+    const geometry = new THREE.TorusGeometry(radius * TILE_SIZE, 0.004, 4, 48);
+    geometry.translate(0, 0, z * WALL_HEIGHT);
+    let material = this.rippleMaterials[phase];
+    if (!material) {
+      material = new THREE.MeshBasicMaterial({
+        color: 0xe8f6ff,
+        transparent: true,
+        depthWrite: false,
+        toneMapped: false,
+      });
+      this.patchMaterial(material, { faceShade: false, liquid: false });
+      this.rippleMaterials[phase] = material;
+    }
+    const ripple = material;
+    const mesh = new THREE.Mesh(geometry, ripple);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    // The ring is centred on the prop, so scaling spreads it across the water.
+    mesh.onBeforeRender = () => {
+      const t = (nowSeconds() / RIPPLE_PERIOD + phase / 2) % 1;
+      const spread = 1 + t * 0.32;
+      mesh.scale.set(spread, spread, 1);
+      mesh.updateMatrixWorld();
+      ripple.opacity = 0.55 * (1 - t);
+    };
+    group.add(mesh);
+  }
+
   private addMesh(
     group: THREE.Group,
     geometry: THREE.BufferGeometry,
@@ -663,21 +908,87 @@ export class TerrainPropModels {
     mesh.renderOrder = renderOrder;
     mesh.castShadow = false;
     mesh.receiveShadow = false;
+    const materials = Array.isArray(material) ? material : [material];
+    if (materials.some((entry) => entry.userData.terrainPropFlow)) {
+      mesh.onBeforeRender = () => this.advanceFlow();
+    }
     group.add(mesh);
   }
 
   private material(look: Surface): THREE.MeshBasicMaterial {
-    const texture = look.texture ? this.texture(look.texture) : null;
+    const texture = look.painted
+      ? this.paintedTexture(look.painted, look.flow)
+      : look.texture
+        ? this.texture(look.texture)
+        : null;
     const color =
       !texture && look.fallback !== undefined ? multiplyColors(look.fallback, look.color) : look.color;
-    const key = `${texture ? look.texture : "plain"}|${color.toString(16)}`;
+    const opacity = look.opacity ?? 1;
+    const key = [
+      texture ? (look.painted ?? look.texture) : "plain",
+      color.toString(16),
+      opacity,
+      look.liquid ? "liquid" : "",
+      look.doubleSided ? "double" : "",
+      look.unshaded ? "unshaded" : "",
+      look.flow ?? "",
+    ].join("|");
     let material = this.materials.get(key);
     if (!material) {
-      material = new THREE.MeshBasicMaterial({ color, map: texture, toneMapped: false });
-      this.patchMaterial(material);
+      // Falling water carries see-through streaks in its texture alpha.
+      const transparent = opacity < 1 || (texture !== null && look.painted === "waterFall");
+      material = new THREE.MeshBasicMaterial({
+        color,
+        map: texture,
+        toneMapped: false,
+        transparent,
+        opacity,
+        depthWrite: !transparent,
+        side: look.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
+      });
+      material.userData.terrainPropFlow = look.flow !== undefined && texture !== null;
+      this.patchMaterial(material, { faceShade: !look.unshaded, liquid: look.liquid === true });
+      if (look.liquid) {
+        setLiquidSurface(material, 1);
+      }
       this.materials.set(key, material);
     }
     return material;
+  }
+
+  /** A painted texture; each flow direction gets its own copy so it can scroll separately. */
+  private paintedTexture(kind: GeneratedPropTexture, flow: FlowDirection | undefined): THREE.Texture | null {
+    const key = `painted:${kind}`;
+    if (!this.textures.has(key)) {
+      const canvas = paintPropTexture(kind);
+      this.textures.set(key, canvas ? createCanvasTexture(canvas, "linear", this.anisotropy) : null);
+    }
+    const base = this.textures.get(key) ?? null;
+    if (!base || !flow) {
+      return base;
+    }
+    const flowKey = `${key}:${flow}`;
+    if (!this.textures.has(flowKey)) {
+      const texture = base.clone();
+      texture.needsUpdate = true;
+      this.textures.set(flowKey, texture);
+      this.flowingTextures.push({ texture, flow });
+    }
+    return this.textures.get(flowKey) ?? null;
+  }
+
+  /** Moves every flowing texture to where it is now; cheap enough to run for each mesh drawn. */
+  private advanceFlow(): void {
+    const t = (nowSeconds() / FLOW_PERIOD) % 1;
+    for (const { texture, flow } of this.flowingTextures) {
+      if (flow === "down") {
+        texture.offset.y = t;
+      } else if (flow === "up") {
+        texture.offset.y = -t;
+      } else {
+        texture.offset.x = -t;
+      }
+    }
   }
 
   private texture(slot: TerrainPropTextureSlot): THREE.Texture | null {
@@ -714,10 +1025,18 @@ function createRepeatingTexture(
     return null;
   }
   context.drawImage(frame.source, sx, sy, width, height, 0, 0, width, height);
+  return createCanvasTexture(canvas, frame.filter === "nearest" ? "nearest" : "linear", anisotropy);
+}
+
+function createCanvasTexture(
+  canvas: HTMLCanvasElement,
+  filter: "nearest" | "linear",
+  anisotropy: number,
+): THREE.Texture {
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  if (frame.filter === "nearest") {
+  if (filter === "nearest") {
     texture.magFilter = THREE.NearestFilter;
     texture.minFilter = THREE.NearestFilter;
     texture.generateMipmaps = false;
@@ -772,6 +1091,19 @@ function applyWorldUvs(
     uv.setXY(i, u, v);
   }
   uv.needsUpdate = true;
+}
+
+/** Stretches a geometry's texture coordinates so the texture repeats more often. */
+function scaleUvs(geometry: THREE.BufferGeometry, u: number, v: number): void {
+  const uv = geometry.getAttribute("uv");
+  for (let i = 0; i < uv.count; i++) {
+    uv.setXY(i, uv.getX(i) * u, uv.getY(i) * v);
+  }
+  uv.needsUpdate = true;
+}
+
+function nowSeconds(): number {
+  return (typeof performance !== "undefined" ? performance.now() : Date.now()) / 1000;
 }
 
 /** Brightness at a depth below the floor: lit at the rim, near black at the bottom. */

@@ -1067,6 +1067,10 @@ export const fr = {
           label: "Utiliser des tuiles haute résolution",
           description: "NetHack 5 uniquement. Remplace les tuiles par des versions haute résolution lorsqu'elles existent ; les autres tuiles gardent le jeu sélectionné.",
         },
+        tilesetUse3dTerrainModels: {
+          label: "Utiliser des modèles 3D pour les éléments du donjon",
+          description: "Mode tuiles uniquement. Affiche escaliers, échelles, portes, fontaines, éviers, autels, tombes et trônes en modèles 3D plutôt qu'en images plates.",
+        },
         tilesetPath: {
           label: "Jeu de tuiles",
           description: "Jeux de tuiles integres et importes.",
