@@ -16,6 +16,7 @@ staticfn void nameshk(struct monst *, const char *const *);
 staticfn int good_shopdoor(struct mkroom *, coordxy *, coordxy *);
 staticfn int shkinit(const struct shclass *, struct mkroom *);
 staticfn void fence_mark_owned(struct obj *, boolean *);
+staticfn boolean fence_harmful(int);
 staticfn int fence_weight(int, const boolean *);
 staticfn int fence_pick_otyp(int, const boolean *);
 staticfn void fence_polish(struct obj *);
@@ -480,8 +481,6 @@ mkveggy_at(int sx, int sy)
 staticfn void
 mkshobj_at(const struct shclass *shp, int sx, int sy, boolean mkspecl)
 {
-    struct monst *mtmp;
-    struct permonst *ptr;
     int atype;
 
     /* 3.6 tribute */
@@ -494,19 +493,15 @@ mkshobj_at(const struct shclass *shp, int sx, int sy, boolean mkspecl)
         return;
     }
 
-    if (rn2(100) < depth(&u.uz) && !MON_AT(sx, sy)
-        && (ptr = mkclass(S_MIMIC, 0)) != 0
-        && (mtmp = makemon(ptr, sx, sy, NO_MM_FLAGS)) != 0) {
-        /* nothing */
-    } else {
-        atype = get_shop_item((int) (shp - shtypes));
-        if (atype == VEGETARIAN_CLASS)
-            mkveggy_at(sx, sy);
-        else if (atype < 0)
-            (void) mksobj_at(-atype, sx, sy, TRUE, TRUE);
-        else
-            (void) mkobj_at(atype, sx, sy, TRUE);
-    }
+    /* Polypiled: no mimics posing as stock; a shop full of them is
+       tedious rather than dangerous */
+    atype = get_shop_item((int) (shp - shtypes));
+    if (atype == VEGETARIAN_CLASS)
+        mkveggy_at(sx, sy);
+    else if (atype < 0)
+        (void) mksobj_at(-atype, sx, sy, TRUE, TRUE);
+    else
+        (void) mkobj_at(atype, sx, sy, TRUE);
 }
 
 /*
@@ -529,22 +524,53 @@ fence_mark_owned(struct obj *list, boolean *owned)
     }
 }
 
+/* kinds a buyer would regret; still stocked now and then by accident */
+staticfn boolean
+fence_harmful(int otyp)
+{
+    switch (otyp) {
+    case AMULET_OF_STRANGULATION:
+    case AMULET_OF_RESTFUL_SLEEP:
+    case AMULET_OF_CHANGE:
+    case RIN_HUNGER:
+    case RIN_AGGRAVATE_MONSTER:
+    case RIN_TELEPORTATION:
+    case RIN_POLYMORPH:
+    case DUNCE_CAP:
+    case FUMBLE_BOOTS:
+    case GAUNTLETS_OF_FUMBLING:
+    case HELM_OF_OPPOSITE_ALIGNMENT:
+    case BAG_OF_TRICKS:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
+/* weights are on a scale of 12 per point of oc_prob so the reductions
+   below never round a kind away entirely */
 staticfn int
 fence_weight(int otyp, const boolean *owned)
 {
     const struct objclass *ocl = &objects[otyp];
-    int weight = ocl->oc_prob;
+    int weight = 12 * ocl->oc_prob;
 
     if (!weight || otyp == WAN_WISHING
         || (otyp >= GRAY_DRAGON_SCALE_MAIL
             && otyp <= YELLOW_DRAGON_SCALE_MAIL)
         || (otyp >= GRAY_DRAGON_SCALES && otyp <= YELLOW_DRAGON_SCALES))
         return 0;
+    if (fence_harmful(otyp))
+        return weight / 6;
     if (ocl->oc_magic || ocl->oc_cost >= 100) {
         if (!ocl->oc_encountered)
             weight *= 4;
         else if (!owned[otyp])
             weight *= 2;
+    } else if (ocl->oc_cost < 20) {
+        weight /= 12; /* arrows, daggers, leather armor... */
+    } else if (ocl->oc_cost < 50) {
+        weight /= 3;
     }
     return weight;
 }
@@ -584,13 +610,7 @@ mkfenceobj_at(const struct shclass *shp, int sx, int sy,
               const boolean *owned)
 {
     struct obj *otmp = (struct obj *) 0;
-    struct permonst *ptr;
     int otyp;
-
-    if (rn2(100) < depth(&u.uz) && !MON_AT(sx, sy)
-        && (ptr = mkclass(S_MIMIC, 0)) != 0
-        && makemon(ptr, sx, sy, NO_MM_FLAGS) != 0)
-        return;
 
     if (rn2(100) < FENCE_ARTIFACT_PCT)
         otmp = mk_random_artifact();
