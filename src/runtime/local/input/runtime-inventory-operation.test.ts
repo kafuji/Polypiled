@@ -101,6 +101,11 @@ describe("inventory operations at command boundaries", () => {
     expect(encodeInventoryOperation({ op: "loot", container: 5, out: [7, 8], in: [] })).toBe("loot:5:7,8:");
     expect(encodeInventoryOperation({ op: "loot", container: 5, out: [], in: [] })).toBe("loot:5::");
     expect(isInventoryOperationRequest("loot:5::")).toBe(true);
+    // part of a stack out of or into a container
+    expect(encodeInventoryOperation({ op: "loot", container: 5, out: [{ id: 7, count: 2 }, 8], in: [{ id: 9, count: 0 }] }))
+      .toBe("loot:5:7x2,8:9");
+    expect(isInventoryOperationRequest("loot:5:7x2,8:9x10")).toBe(true);
+    expect(isInventoryOperationRequest("loot:5:7x:")).toBe(false);
     expect(isInventoryOperationRequest("pickup:12,40x3")).toBe(true);
     expect(isInventoryOperationRequest("pickup:x")).toBe(false);
   });

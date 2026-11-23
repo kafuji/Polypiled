@@ -232,6 +232,10 @@ describe("floor, containers and turn estimates", () => {
     expect(planContainer({ containerId: 3, out: [1], in: [2] }).operations).toEqual([
       { op: "loot", container: 3, out: [1], in: [2] },
     ]);
+    // a marked count moves part of the stack; the rest move whole
+    expect(planContainer({ containerId: 3, out: [1, 4], in: [2], counts: { 4: 5, 2: 1 } }).operations).toEqual([
+      { op: "loot", container: 3, out: [1, { id: 4, count: 5 }], in: [{ id: 2, count: 1 }] },
+    ]);
   });
 
   it("refuses what the game will not put in a container", () => {

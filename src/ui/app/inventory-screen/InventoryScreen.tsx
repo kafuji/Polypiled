@@ -39,6 +39,7 @@ import {
 } from "./model";
 import {
   EQUIPMENT_SET_COUNT,
+  EQUIPMENT_SET_NAME_MAX,
   type EquipmentSet,
   equipmentSetProcedure,
   loadEquipmentSets,
@@ -307,8 +308,8 @@ interface MenuState {
 
 interface CountPrompt {
   object: InventoryObject;
-  make: (count: number) => DropPlan;
-  label: string;
+  /** What to do with the chosen count. */
+  run: (count: number) => void;
 }
 
 const emptySets: (EquipmentSet | null)[] = Array.from({ length: EQUIPMENT_SET_COUNT }, () => null);
@@ -470,14 +471,14 @@ export function InventoryScreenView({
   const [countPrompt, setCountPrompt] = useState<CountPrompt | null>(null);
   const [countValue, setCountValue] = useState("1");
   /** The equipment set menu (right click, long press, the pad's search). */
-  const [setsMenu, setSetsMenu] = useState<{ index: number; x: number; y: number } | null>(null);
+  const [setsMenu, setSetsMenu] = useState<{ index: number; x: number; y: number; naming?: string } | null>(null);
   const [procedureNotice, setProcedureNotice] = useState<InventoryProcedureState | null>(null);
   const pressRef = useRef<PressState | null>(null);
   const suppressClickRef = useRef(false);
-  /** The body and the equipment column as last seen, so a container takes their place without resizing the screen. */
+  /** The body as last seen without a container, so one opening keeps the screen's height. */
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const equipmentRef = useRef<HTMLElement | null>(null);
-  const modeSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const modeSizeRef = useRef<{ height: number } | null>(null);
 
   const findObject = useCallback(
     (id: number): InventoryObject | null => {
@@ -501,7 +502,7 @@ export function InventoryScreenView({
     if (openContainer) return;
     const body = bodyRef.current;
     const equipment = equipmentRef.current;
-    if (body && equipment) modeSizeRef.current = { width: equipment.offsetWidth, height: body.offsetHeight };
+    if (body && equipment) modeSizeRef.current = { height: body.offsetHeight };
   });
 
   // the report replaces objects: forget what no longer exists
@@ -546,25 +547,46 @@ export function InventoryScreenView({
   };
 
   /**
-   * Marks a thing to come out or go in. Moving it back where it came from
-   * unmarks it; a carried thing marked to go in is kept out the same way.
+   * Marks a thing to come out or go in, the whole stack or `count` of it.
+   * Moving it back where it came from unmarks it; a carried thing marked to
+   * go in is kept out the same way. Marking a marked one again with a count
+   * changes the count.
    */
   const stage = useCallback(
-    (change: { readonly out?: number; readonly in?: number }) => {
-      if (!staging) return;
+    (change: { readonly out?: number; readonly in?: number; readonly count?: number }) => {
       const contents = new Set((openContainer?.container?.contents ?? []).map((inside) => inside.id));
-      let { out, in: into } = staging;
-      if (change.out !== undefined) {
-        if (into.includes(change.out)) into = into.filter((id) => id !== change.out);
-        else if (contents.has(change.out) && !out.includes(change.out)) out = [...out, change.out];
-      }
-      if (change.in !== undefined) {
-        if (out.includes(change.in)) out = out.filter((id) => id !== change.in);
-        else if (!contents.has(change.in) && !into.includes(change.in)) into = [...into, change.in];
-      }
-      if (out !== staging.out || into !== staging.in) setStaging({ ...staging, out, in: into });
+      setStaging((current) => {
+        if (!current) return current;
+        let { out, in: into } = current;
+        const counts: Record<number, number> = { ...current.counts };
+        const mark = (id: number) => {
+          if (change.count) counts[id] = change.count;
+          else delete counts[id];
+        };
+        if (change.out !== undefined) {
+          const id = change.out;
+          if (into.includes(id)) {
+            into = into.filter((other) => other !== id);
+            delete counts[id];
+          } else if (contents.has(id)) {
+            if (!out.includes(id)) out = [...out, id];
+            mark(id);
+          }
+        }
+        if (change.in !== undefined) {
+          const id = change.in;
+          if (out.includes(id)) {
+            out = out.filter((other) => other !== id);
+            delete counts[id];
+          } else if (!contents.has(id)) {
+            if (!into.includes(id)) into = [...into, id];
+            mark(id);
+          }
+        }
+        return { ...current, out, in: into, counts };
+      });
     },
-    [openContainer, staging],
+    [openContainer],
   );
 
   const apply = useCallback(
@@ -576,6 +598,14 @@ export function InventoryScreenView({
         return;
       }
       if (result.kind === "stage") {
+        // with Shift, part of a stack: how many to move
+        const object = source.object;
+        const marking = (result.in !== undefined && source.kind === "pack") || (result.out !== undefined && source.kind === "content");
+        if (shift && marking && object.quantity > 1) {
+          setCountValue(String(staging?.counts?.[object.id] ?? object.quantity));
+          setCountPrompt({ object, run: (count) => stage({ ...result, count: count < object.quantity ? count : undefined }) });
+          return;
+        }
         stage(result);
         return;
       }
@@ -589,14 +619,13 @@ export function InventoryScreenView({
         setCountValue(String(object.quantity));
         setCountPrompt({
           object,
-          label: strings.planEquip,
-          make: (count) => (source.kind === "floor" ? planPickup([object], count) : planDrop(object, count)),
+          run: (count) => runPlan(controller, source.kind === "floor" ? planPickup([object], count) : planDrop(object, count), strings.planEquip),
         });
         return;
       }
       runPlan(controller, result.plan, result.label);
     },
-    [controller, inventory, openContainer, stage, strings],
+    [controller, inventory, openContainer, stage, staging, strings],
   );
 
   // pointer: drag to move, tap to pick up and place, long press for the menu
@@ -756,9 +785,17 @@ export function InventoryScreenView({
     setNotice(missing.length > 0 ? strings.setMissing(missing.length) : null);
     controller.runInventoryProcedure(equipmentSetProcedure(set, setLabel(index)));
   };
+  const renameSet = (index: number, name: string) => {
+    const set = sets[index];
+    if (!set) return;
+    const next = [...sets];
+    next[index] = { ...set, name: name.trim().slice(0, EQUIPMENT_SET_NAME_MAX) };
+    onSetsChange(next);
+  };
   const recordSet = (index: number) => {
     const next = [...sets];
-    next[index] = recordEquipmentSet(inventory, "");
+    // saving again keeps the name
+    next[index] = recordEquipmentSet(inventory, sets[index]?.name ?? "");
     onSetsChange(next);
     setNotice(strings.setRecorded(index + 1));
   };
@@ -892,6 +929,10 @@ export function InventoryScreenView({
           {tile ?? <span className="nh3d-invs-item-symbol">{classSymbols[object.objectClass] ?? "?"}</span>}
         </span>
         {object.quantity > 1 ? <span className="nh3d-invs-item-quantity">{object.quantity}</span> : null}
+        {/* part of the stack marked to go in or come out */}
+        {staging?.counts?.[object.id] && (stagedIn.has(object.id) || stagedOut.has(object.id))
+          ? <span className="nh3d-invs-item-moving" title={strings.movingCount(staging.counts[object.id])}>→{staging.counts[object.id]}</span>
+          : null}
         {badge ? <span className="nh3d-invs-item-badge">{badge}</span> : null}
         {object.erodeproof ? <span className="nh3d-invs-item-proof" aria-hidden="true">⛨</span> : null}
         {object.unpaid ? <span className="nh3d-invs-item-price" aria-hidden="true">¤</span> : null}
@@ -974,7 +1015,6 @@ export function InventoryScreenView({
         ref={bodyRef}
         className={`nh3d-invs-body${openContainer ? " is-container-mode" : ""}`}
         style={openContainer && modeSizeRef.current ? {
-          "--invs-mode-width": `${modeSizeRef.current.width}px`,
           "--invs-mode-height": `${modeSizeRef.current.height}px`,
         } as React.CSSProperties : undefined}
       >
@@ -1046,7 +1086,7 @@ export function InventoryScreenView({
                 onPointerLeave={endSetPress}
               >
                 <span className="nh3d-invs-set-key">{index + 1}</span>
-                <span className="nh3d-invs-set-name">{set ? setLabel(index) : "+"}</span>
+                {set?.name ? <span className="nh3d-invs-set-name">{set.name}</span> : null}
               </button>
             ))}
           </div>
@@ -1274,8 +1314,8 @@ export function InventoryScreenView({
             onSubmit={(event) => {
               event.preventDefault();
               const count = Math.max(1, Math.min(countPrompt.object.quantity, Math.trunc(Number(countValue)) || 1));
-              runPlan(controller, countPrompt.make(count), countPrompt.label);
               setCountPrompt(null);
+              countPrompt.run(count);
             }}
           >
             <span>{name(countPrompt.object)}</span>
@@ -1347,7 +1387,31 @@ export function InventoryScreenView({
         )
         : null}
 
-      {setsMenu ? (
+      {setsMenu && setsMenu.naming !== undefined ? (
+        <ItemMenu x={setsMenu.x} y={setsMenu.y} title={setLabel(setsMenu.index)} onDismiss={() => setSetsMenu(null)}>
+          {/* naming the set: Melee, Ranged, Magic, ... (empty goes back to the number) */}
+          <form
+            className="nh3d-invs-set-naming"
+            onSubmit={(event) => {
+              event.preventDefault();
+              renameSet(setsMenu.index, setsMenu.naming ?? "");
+              setSetsMenu(null);
+            }}
+          >
+            <input
+              type="text"
+              value={setsMenu.naming}
+              maxLength={EQUIPMENT_SET_NAME_MAX}
+              placeholder={strings.setNamePlaceholder}
+              aria-label={strings.setRename}
+              autoFocus
+              onChange={(event) => setSetsMenu({ ...setsMenu, naming: event.target.value })}
+            />
+            <button type="submit">{strings.ok}</button>
+            <button type="button" onClick={() => setSetsMenu(null)}>{strings.cancel}</button>
+          </form>
+        </ItemMenu>
+      ) : setsMenu ? (
         <ItemMenu x={setsMenu.x} y={setsMenu.y} title={setLabel(setsMenu.index)} onDismiss={() => setSetsMenu(null)}>
           <button
             type="button"
@@ -1371,6 +1435,14 @@ export function InventoryScreenView({
             }}
           >
             {strings.setRecordShort}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!sets[setsMenu.index]}
+            onClick={() => setSetsMenu({ ...setsMenu, naming: sets[setsMenu.index]?.name ?? "" })}
+          >
+            {strings.setRename}
           </button>
         </ItemMenu>
       ) : null}
