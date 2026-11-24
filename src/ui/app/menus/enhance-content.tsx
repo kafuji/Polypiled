@@ -119,6 +119,13 @@ export function renderEnhanceMenuContent(
                       </span>
                     )}
                   </div>
+                  {entry.familyRank ? (
+                    <div className="nh3d-enhance-family-rank">
+                      {translationStrings.enhanceMenu.familyLabel(
+                        translateSkillName(entry.familyRank, locale),
+                      )}
+                    </div>
+                  ) : null}
                   {enhanceMenuData.showSlotCost && entry.slotCostForNextRank ? (
                     <div className="nh3d-enhance-slot-cost">
                       {translationStrings.enhanceMenu.slotCount(
@@ -154,6 +161,13 @@ export function renderEnhanceMenuContent(
                       </span>
                     )}
                   </div>
+                  {entry.familyRank ? (
+                    <div className="nh3d-enhance-family-rank">
+                      {translationStrings.enhanceMenu.familyLabel(
+                        translateSkillName(entry.familyRank, locale),
+                      )}
+                    </div>
+                  ) : null}
                   {enhanceMenuData.showSlotCost && entry.slotCostForNextRank ? (
                     <div className="nh3d-enhance-slot-cost">
                       {translationStrings.enhanceMenu.slotCount(

@@ -332,6 +332,7 @@ export const zhCnOverrides = {
       maxed: (count: number) => `${count} 项已满`,
     },
     maxLabel: "最大",
+    familyLabel: (rank: string) => `同系: ${rank}`,
     slotCount: (count: number) => `${count} 个槽位`,
   },
   app: {

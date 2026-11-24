@@ -86,6 +86,13 @@ describe("assembled NetHack 5 messages", () => {
     expect(ja("Your katana glows octarine for a moment.")).toBe("あなたの刀は一瞬オクタリン色に輝いた。");
   });
 
+  it("translates skill rows with a family level", () => {
+    const row = ja("     saber      [Unskilled] (family: Skilled)");
+    expect(row).toContain("[未熟]（系統: 熟練）");
+    expect(row).not.toContain("saber");
+    expect(ja(" broadsword [Restricted] (family: Basic)")).toContain("[制限]（系統: 基本）");
+  });
+
   it("keeps joined or unknown messages unchanged", () => {
     expect(ja("You hit the goblin. You kill it!")).toBe("You hit the goblin. You kill it!");
     expect(ja("You stop doing something odd.")).toBe("You stop doing something odd.");

@@ -3799,6 +3799,8 @@ extern int weapon_type(struct obj *) NO_NNARGS;
 extern int uwep_skill_type(void);
 /* find_roll_to_hit() calls weapon_hit_bonus() with a NULL argument,
    preventing NONNULLARG1 */
+extern int family_weapon_skill(int);
+extern int effective_weapon_skill(int);
 extern int weapon_hit_bonus(struct obj *) NO_NNARGS;
 extern int weapon_dam_bonus(struct obj *) NO_NNARGS;
 extern void skill_init(const struct def_skill *) NONNULLARG1;

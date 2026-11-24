@@ -542,6 +542,7 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
       maxed: (count: number) => `${count} maksimissa`,
     },
     maxLabel: "Maks.",
+    familyLabel: (rank: string) => `Ryhmä: ${rank}`,
     slotCount: (count: number) => `${count} paikka${count === 1 ? "" : "a"}`,
   },
   app: {

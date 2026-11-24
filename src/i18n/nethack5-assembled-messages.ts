@@ -859,10 +859,10 @@ export const assembledMessageTemplates: readonly Template[] = [
     const located = translateGameLocation(branch, "ja");
     return `${star}${located !== branch ? located : arg(branch)}への${kinds[kind]}：${level}階`;
   }],
-  [/^(\s*)(.+?)\s+(Restricted|Unskilled|Basic|Skilled|Expert|Master|Grand Master)\s+(\d+\(\s*\d+\))$/, (indent, skill, level, training) => {
+  [/^(\s*)(.+?)\s+(Restricted|Unskilled|Basic|Skilled|Expert|Master|Grand Master)\s+(\d+\(\s*\d+\))(?: \(family: (Basic|Skilled|Expert)\))?$/, (indent, skill, level, training, family) => {
     const levels: Readonly<Record<string, string>> = { Restricted: "制限", Unskilled: "未熟", Basic: "基本", Skilled: "熟練", Expert: "達人", Master: "師範", "Grand Master": "大師範" };
     const name = translateSkillName(skill, "ja");
-    return name === skill ? "" : `${indent}${name} ${levels[level]} ${training}`;
+    return name === skill ? "" : `${indent}${name} ${levels[level]} ${training}${family ? `（系統: ${levels[family]}）` : ""}`;
   }],
   [/^(.+?) \[\]$/, (item) => {
     const shown = translateInventoryItem(item, "ja");
@@ -888,10 +888,10 @@ export const assembledMessageTemplates: readonly Template[] = [
   [/^Set options as OPTIONS=<options> in (\S+)$/, (file) => `オプションは ${file} に OPTIONS=<options> の形で設定するか、`],
   [/^or use `NETHACKOPTIONS="<options>"' in your environment$/, () => "環境変数 NETHACKOPTIONS=\"<options>\" を使うか、"],
   [/^an? (Archeologist|Barbarian|Caveman|Cavewoman|Healer|Knight|Monk|Priest|Priestess|Rogue|Ranger|Samurai|Tourist|Valkyrie|Wizard)$/, (role) => own(heroRoles, role.toLowerCase()) ?? ""],
-  [/^(\s*)(.+?)\s+\[(Restricted|Unskilled|Basic|Skilled|Expert|Master|Grand Master)\]$/, (indent, skill, level) => {
+  [/^(\s*)(.+?)\s+\[(Restricted|Unskilled|Basic|Skilled|Expert|Master|Grand Master)\](?: \(family: (Basic|Skilled|Expert)\))?$/, (indent, skill, level, family) => {
     const levels: Readonly<Record<string, string>> = { Restricted: "制限", Unskilled: "未熟", Basic: "基本", Skilled: "熟練", Expert: "達人", Master: "師範", "Grand Master": "大師範" };
     const name = translateSkillName(skill, "ja");
-    return name === skill ? "" : `${indent}${name} [${levels[level]}]`;
+    return name === skill ? "" : `${indent}${name} [${levels[level]}]${family ? `（系統: ${levels[family]}）` : ""}`;
   }],
   // potion.c: tasting a potion of fruit juice or see invisible while sick.
   [/^\(But in fact it was (biologically contaminated )?(.+) juice\.\)$/, (dirty, fruit) => `（実は${dirty ? "生物学的に汚染された" : ""}${arg(fruit)}のジュースだった）`],

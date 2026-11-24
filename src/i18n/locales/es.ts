@@ -532,6 +532,7 @@ export const esOverrides = {
             maxed: (count: number) => `${count}al m\u00E1ximo`,
         },
         maxLabel: "m\u00E1x.",
+        familyLabel: (rank: string) => `Familia: ${rank}`,
         slotCount: (count: number) => `${count}ranura${count === 1 ? "" : "s"}`,
     },
     app: {

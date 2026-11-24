@@ -12,6 +12,8 @@ export type EnhanceSkillEntry = {
   category: string;
   name: string;
   currentRank: string;
+  /** Polypiled: level the weapon is used at through its skill family. */
+  familyRank: string | null;
   nextRank: string | null;
   slotCostForNextRank: number | null;
   availability: EnhanceSkillAvailability;
@@ -94,10 +96,15 @@ function toTitleCase(value: string): string {
 
 function parseSkillRow(
   menuText: string,
-): { marker: "*" | "#" | null; name: string; rank: string } | null {
+): {
+  marker: "*" | "#" | null;
+  name: string;
+  rank: string;
+  familyRank: string | null;
+} | null {
   const normalized = String(menuText || "");
   const match = normalized.match(
-    /^\s*(?:([*#])\s+)?(.+?)\s+\[([^\]]+)\]\s*$/,
+    /^\s*(?:([*#])\s+)?(.+?)\s+\[([^\]]+)\](?:\s+\(family: ([^)]+)\))?\s*$/,
   );
   if (!match || !match[2] || !match[3]) {
     return null;
@@ -108,7 +115,8 @@ function parseSkillRow(
   if (!name || !rank) {
     return null;
   }
-  return { marker, name, rank };
+  const familyRank = match[4] ? normalizeMenuLine(match[4]) : null;
+  return { marker, name, rank, familyRank };
 }
 
 function isMenuItemSelectable(item: NethackMenuItem): boolean {
@@ -277,6 +285,7 @@ export function parseEnhanceMenu(
       category: group.title,
       name: parsedRow.name,
       currentRank: parsedRow.rank,
+      familyRank: parsedRow.familyRank,
       nextRank,
       slotCostForNextRank,
       availability,
