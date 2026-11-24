@@ -550,6 +550,19 @@ spec_ability(struct obj *otmp, unsigned long abil)
                       && (arti->spfx & abil) != 0L);
 }
 
+/* Polypiled: two self-willed artifacts of different alignments won't
+   share the hero's hands when dual-wielding */
+boolean
+artifacts_feud(struct obj *obj1, struct obj *obj2)
+{
+    const struct artifact *a1 = get_artifact(obj1), *a2 = get_artifact(obj2);
+
+    return (boolean) ((a1->spfx & SPFX_INTEL) != 0L
+                      && (a2->spfx & SPFX_INTEL) != 0L
+                      && a1->alignment != A_NONE && a2->alignment != A_NONE
+                      && a1->alignment != a2->alignment);
+}
+
 /* used so that callers don't need to known about SPFX_ codes */
 boolean
 confers_luck(struct obj *obj)

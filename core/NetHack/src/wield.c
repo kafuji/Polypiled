@@ -793,9 +793,11 @@ can_twoweapon(void)
         pline("%s isn't one-handed.", Yname2(otmp));
     } else if (uarms) {
         You_cant("use two weapons while wearing a shield.");
-    } else if (uswapwep->oartifact) {
-        pline("%s being held second to another weapon!",
-              Yobjnam2(uswapwep, "resist"));
+    } else if (artifacts_feud(uwep, uswapwep)) {
+        /* Polypiled: an artifact may be the secondary weapon, but two
+           intelligent artifacts of different alignments refuse to pair */
+        pline("%s and %s refuse to fight side by side!", Yname2(uwep),
+              yname(uswapwep));
     } else if (uswapwep->otyp == CORPSE && cant_wield_corpse(uswapwep)) {
         /* [Note: !TWOWEAPOK() check prevents ever getting here...] */
         ; /* must be life-saved to reach here; return FALSE */
