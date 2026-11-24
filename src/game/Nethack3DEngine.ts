@@ -5,6 +5,7 @@ import { setNativeInputModeFps } from "../quest/webxr/native-input-mode";
 import { gameFrameTime } from "./engine/rendering/frame-time";
 import { WebHaptics } from "web-haptics";
 import { WorkerRuntimeBridge } from "../runtime";
+import { setPortrait } from "../plus/portrait-dialog/store";
 import type { RuntimeEvent } from "../runtime";
 import { FmodRuntime } from "../audio";
 import { BackgroundMusic, type MusicMood } from "../audio/music";
@@ -164,6 +165,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
   public returnToStartupMenu(): void {
     if (this.systems.engineState.disposed || this.startupOnly) return;
+    setPortrait(null);
     this.runtimeGeneration++;
     this.systems.engineState.session?.dispose();
     this.systems.engineState.session = null;
@@ -539,6 +541,11 @@ class Nethack3DEngine implements Nethack3DEngineController {
   private applyClientOptions(nextOptions: Nh3dClientOptions): void {
     const normalized = normalizeNh3dClientOptions(nextOptions);
     const previous = this.systems.engineState.clientOptions;
+    const session = this.systems.engineState.session;
+    if (session instanceof WorkerRuntimeBridge && previous.portraitDialog !== normalized.portraitDialog) {
+      session.setPortraitDialog(normalized.portraitDialog);
+      if (!normalized.portraitDialog) setPortrait(null);
+    }
     const wasUsingVultureTiles = this.systems.tilesetAssets.isVultureTilesActive(previous);
     const isUsingVultureTiles = this.systems.tilesetAssets.isVultureTilesActive(normalized);
     const playModeChanged = previous.fpsMode !== normalized.fpsMode;
@@ -871,6 +878,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
       },
       {
         runtimeVersion: "5.0",
+        portraitDialog: this.systems.engineState.clientOptions.portraitDialog,
         characterCreation: {
           mode: this.systems.engineState.characterCreationConfig.mode,
           name: this.systems.engineState.characterCreationConfig.name,
@@ -1240,6 +1248,26 @@ class Nethack3DEngine implements Nethack3DEngineController {
         }
         break;
 
+      case "portrait_conversation_end":
+        setPortrait(null);
+        this.systems.pointerLock.syncFpsPointerLockForUiState(false);
+        break;
+      case "portrait_dialog": {
+        const session = this.systems.engineState.session;
+        if (!(session instanceof WorkerRuntimeBridge)) break;
+        const id = Number(data.id);
+        if (!this.systems.engineState.clientOptions.portraitDialog) { session.dismissPortrait(id); break; }
+        setPortrait({ actor: String(data.actor), text: String(data.text), tileIndex: data.tileIndex, input: data.input,
+          preview: data.tileIndex != null ? this.systems.menuPreviews.resolveMenuItemTilePreviewDataUrl({ tileIndex: data.tileIndex }) : null,
+          acknowledge: (answer) => {
+            if (!data.conversation) setPortrait(null);
+            session.dismissPortrait(id, answer);
+            if (!data.conversation) this.systems.pointerLock.syncFpsPointerLockForUiState(false);
+          },
+        });
+        this.systems.pointerLock.syncFpsPointerLockForUiState(false);
+        break;
+      }
       case "text":
         if (this.systems.inputCommands.shouldSkipMobileFpsClickLookPromptMessageEvent(data.text)) {
           break;
@@ -1603,6 +1631,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         break;
 
       case "runtime_terminated":
+        setPortrait(null);
         this.systems.playerKnowledge.reset();
         this.systems.engineState.uiAdapter.setFloorHere(null);
         this.systems.menuPreviews.publishInventoryState(null);
@@ -1614,6 +1643,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         break;
 
       case "runtime_error":
+        setPortrait(null);
         this.systems.promptDialogs.handleRuntimeError(
           typeof data.error === "string" ? data.error : "",
         );
@@ -1766,6 +1796,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
   }
 
   public dispose(): void {
+    setPortrait(null);
     if (this.systems.engineState.disposed) {
       return;
     }

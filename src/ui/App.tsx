@@ -1,4 +1,5 @@
 import { useAppModel } from "./app/useAppModel";
+import { PortraitDialog } from "../plus/portrait-dialog/PortraitDialog";
 import { CanvasRoot } from "./app/layout/CanvasRoot";
 import { TerminalMessageGutter } from "./app/messages/TerminalMessageGutter";
 import { PauseMenu } from "./app/layout/PauseMenu";
@@ -56,6 +57,7 @@ export default function App(): JSX.Element {
   const model = useAppModel();
   return (
     <>
+      <PortraitDialog />
       <CanvasRoot {...model.canvasRoot} />
       <TerminalMessageGutter {...model.terminalMessageGutter} />
       <PauseMenu {...model.pauseMenu} />

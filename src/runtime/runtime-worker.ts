@@ -460,6 +460,12 @@ self.onmessage = async (message: MessageEvent<RuntimeCommand>) => {
       case "request_runtime_globals_snapshot":
         ensureRuntime().requestRuntimeGlobalsSnapshot();
         return;
+      case "set_portrait_dialog":
+        ensureRuntime().portraits.setEnabled(command.enabled);
+        return;
+      case "dismiss_portrait_dialog":
+        ensureRuntime().portraits.dismiss(command.id, command.answer);
+        return;
       case "set_logging":
         setLoggingEnabled(Boolean(command.enabled));
         return;

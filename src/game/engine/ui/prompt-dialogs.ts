@@ -2,6 +2,7 @@ import { silentInventoryRefreshCommand } from "../../../runtime/input/inventory-
 // nh3d-plus: localized engine-side messages.
 import { getTranslationStrings } from "../../../i18n/core";
 import { useGameStore } from "../../../state/gameStore";
+import { portraitSnapshot } from "../../../plus/portrait-dialog/store";
 import type { InventoryDialogState, NethackConnectionState } from "../../ui-types";
 import { getItemTextClassName } from "../../helpers/helpers";
 import type { InventoryDialogOptions } from "../shared/types";
@@ -232,7 +233,7 @@ export class PromptDialogs {
 
   isUiInputBlocked(): boolean {
     const { loadingVisible, uiBlockingVisible } = useGameStore.getState();
-    return loadingVisible || uiBlockingVisible;
+    return loadingVisible || uiBlockingVisible || portraitSnapshot() !== null;
   }
 
   /**
@@ -558,7 +559,7 @@ export class PromptDialogs {
   }
 
   isAnyModalVisible(): boolean {
-    if (this.isInventoryScreenVisible) {
+    if (portraitSnapshot() || this.isInventoryScreenVisible) {
       return true;
     }
     if (this.dependencies.extendedCommands.metaCommandModal?.classList.contains("is-visible")) {

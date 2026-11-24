@@ -9,6 +9,11 @@ import { clientOptionsTabs, resolveClientOptionsDefaultTabId } from "./config";
 
 afterEach(() => vi.unstubAllGlobals());
 
+it("enables portrait dialogs for older settings and honors an explicit opt-out", () => {
+  expect(resolveInitialClientOptionsFromPersisted({}).portraitDialog).toBe(true);
+  expect(resolveInitialClientOptionsFromPersisted({ portraitDialog: false }).portraitDialog).toBe(false);
+});
+
 it("restores the saved controller support choice", () => {
   expect(resolveInitialClientOptionsFromPersisted({ controllerEnabled: true }).controllerEnabled).toBe(true);
   expect(resolveInitialClientOptionsFromPersisted({ controllerEnabled: false }).controllerEnabled).toBe(false);

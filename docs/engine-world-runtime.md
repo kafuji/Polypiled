@@ -121,3 +121,7 @@ npm run check:tsc
 ```
 
 For rendering or movement changes, also check player movement, level changes, item refreshes, and direction/inventory prompts in the affected display modes. Unit tests cover state coordination; visual presentation still needs a running client.
+
+### Portrait Dialog
+
+The worker logs a message normally before checking it in `RuntimePortraitDialogs`. A matching message suspends the originating message callback (`shim_raw_print`, `shim_raw_print_bold`, or message-window `shim_putstr`) and drains buffered gameplay input. The bridge invalidates delayed input on receipt of `portrait_dialog`. The UI releases that callback with a session-scoped dialog ID. Conversation pages keep their portraits between text, yes/no questions and bribe offers. The worker validates replies against the pending page and returns the selected key or writes the offer to the original getlin buffer. Settings changes and shutdown also release pending callbacks. Portrait selection and layout live in `src/plus/portrait-dialog/`, with square transparent artwork in `public/assets/portraits/`.

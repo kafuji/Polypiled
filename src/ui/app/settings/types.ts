@@ -162,6 +162,7 @@ export type ClientOptionToggleKey =
   | "monsterShatterBloodBorders"
   | "liveMessageLog"
   | "wikiLinks"
+  | "portraitDialog"
   | "showPersistentMobileMessageLog"
   | "rumbleEnabled"
   | "manualMobileBottomSafeZoneEnabled"

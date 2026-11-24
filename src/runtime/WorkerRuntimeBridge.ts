@@ -238,6 +238,20 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
     this.postCommand({ type: "request_runtime_globals_snapshot" });
   }
 
+  private portraitId: number | null = null;
+  private portraitGeneration = 0;
+
+  setPortraitDialog(enabled: boolean): void {
+    this.postCommand({ type: "set_portrait_dialog", enabled });
+    if (!enabled) this.portraitId = null;
+  }
+
+  dismissPortrait(id: number, answer?: string): void {
+    if (this.portraitId !== id) return;
+    this.postCommand({ type: "dismiss_portrait_dialog", id, answer });
+    this.portraitId = null;
+  }
+
   setLoggingEnabled(enabled: boolean): void {
     this.postCommand({ type: "set_logging", enabled: Boolean(enabled) });
   }
@@ -301,6 +315,7 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
   }
 
   private postCommand(command: RuntimeCommand): void {
+    if (this.portraitId !== null && ["send_input", "send_mouse_input", "send_input_sequence"].includes(command.type)) return;
     if (this.disposed || (this.protocolFailed && command.type !== "shutdown")) {
       return;
     }
@@ -326,6 +341,10 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
   }
 
   private deliverEvent(event: RuntimeEvent): void {
+    if (event.type === "portrait_dialog") {
+      this.portraitId = Number(event.id);
+      this.portraitGeneration++;
+    }
     if (event.type === "runtime_boundary") {
       this.lastBoundary = { reason: String(event.reason), sequence: this.receiver.lastProcessedSequence + 1 };
       return;
@@ -425,8 +444,10 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
       this.postCommand(command);
       return;
     }
+    if (this.portraitId !== null) return;
+    const generation = this.portraitGeneration;
     globalThis.setTimeout(() => {
-      this.postCommand(command);
+      if (generation === this.portraitGeneration) this.postCommand(command);
     }, delayMs);
   }
 

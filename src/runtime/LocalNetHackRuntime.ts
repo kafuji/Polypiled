@@ -1,5 +1,6 @@
 import type { NethackRuntimeVersion } from "./types";
 import { isLoggingEnabled } from "../logging";
+import { RuntimePortraitDialogs } from "./local/messages/portrait-dialog";
 import { extractRuntimeNumberPadModeEnabled } from "./number-pad-mode";
 import { createRuntimeSystems, type RuntimeSystems } from "./local/create-runtime-systems";
 import type { RuntimeEventHandler, RuntimeStartupOptions, RuntimeEvent } from "./types";
@@ -25,6 +26,7 @@ class LocalNetHackRuntime {
 
   private readonly systems: RuntimeSystems;
   readonly protocol: RuntimeProtocolSession;
+  readonly portraits: RuntimePortraitDialogs;
   readonly runtimeSourceUrl = import.meta.url;
 
   constructor(eventHandler: RuntimeEventHandler, startupOptions: RuntimeStartupOptions | null = null) {
@@ -45,6 +47,10 @@ class LocalNetHackRuntime {
       () => this.getProtocolLevelIdentity(),
     );
     this.systems = createRuntimeSystems(this);
+    this.portraits = new RuntimePortraitDialogs(this.startupOptions.portraitDialog !== false, (id, scene) => {
+      this.systems.inputRequests.inputBroker.drain();
+      this.emit({ type: "portrait_dialog", id, ...scene });
+    }, () => this.emit({ type: "portrait_conversation_end" }));
     this.ready = this.systems.bootstrap.initializeNetHack();
   }
 
@@ -56,14 +62,17 @@ class LocalNetHackRuntime {
   }
 
   sendInput(input: string, identity?: RuntimeCommandIdentity): void {
+    if (this.portraits.active) return;
     this.protocol.dispatchCommand(identity, () => this.systems.inputDispatch.handleClientInput(input));
   }
 
   sendInputSequence(inputs: string[], identity?: RuntimeCommandIdentity): void {
+    if (this.portraits.active) return;
     this.protocol.dispatchCommand(identity, () => this.systems.inputDispatch.handleClientInputSequence(inputs));
   }
 
   sendMouseInput(x: number, y: number, button: number, identity?: RuntimeCommandIdentity): void {
+    if (this.portraits.active) return;
     this.protocol.dispatchCommand(identity, () => this.systems.inputDispatch.handleClientMouseInput(x, y, button));
   }
 
@@ -148,6 +157,7 @@ class LocalNetHackRuntime {
     }
 
     this.isClosed = true;
+    this.portraits.setEnabled(false);
     this.protocol.shutdown();
     this.systems.tileRefresh.cancelPendingRefreshSets();
     console.log(`Shutting down NetHack session: ${reason}`);
@@ -240,14 +250,47 @@ class LocalNetHackRuntime {
       : this.dispatchUICallback(name, args);
   }
 
+  private presentPortraitMessage(value: unknown): number | Promise<number> {
+    const text = this.systems.promptContext.normalizePromptContextMessage(value);
+    if (!text || this.systems.contextualLook.isContextualInfoQuiet() || this.systems.gameOver.gameOverSequenceActive) return 0;
+    return this.portraits.message(text, () => this.systems.status.readLatestStatusInteger("BL_TIME"));
+  }
+
   private dispatchUICallback(name: string, args: any[]): any {
     switch (name) {
       case "shim_get_nh_event": return this.systems.inputRequests.handleShimGetNhEvent();
-      case "shim_nhgetch": return this.systems.inputRequests.handleShimNhGetch();
-      case "shim_yn_function": return this.systems.questionInput.handleShimYnFunction(args);
-      case "shim_nh_poskey": return this.systems.positionInput.handleShimNhPoskey(args);
-      case "shim_getlin": return this.systems.textInput.handleShimGetlin(args);
+      case "shim_nhgetch":
+        this.portraits.endConversation();
+        return this.systems.inputRequests.handleShimNhGetch();
+      case "shim_yn_function": {
+        const portrait = this.portraits.question(String(args[0]), String(args[1] ?? ""));
+        if (portrait) return portrait;
+        this.portraits.endConversation();
+        const answer = this.systems.questionInput.handleShimYnFunction(args);
+        if (!/^Talk to whom\?/i.test(String(args[0]))) return answer;
+        return Promise.resolve(answer).then(code => {
+          const target = this.systems.keyboardInput.resolveMovementTargetPositionFromInput(String.fromCharCode(code));
+          const tile = target && this.systems.mapCallbacks.gameMap.get(`${target.x},${target.y}`);
+          if (code !== 27) this.portraits.chatResponse(tile && this.systems.runtimeGlyphs.isMonsterLikeRuntimeMapTile(tile) ? tile.tileIndex ?? null : null);
+          return code;
+        });
+      }
+      case "shim_nh_poskey":
+        this.portraits.beginCommand();
+        return this.systems.positionInput.handleShimNhPoskey(args);
+      case "shim_getlin": {
+        const input = this.systems.textInput;
+        const buffer = input.resolveTextInputBufferPointer(args[1]);
+        const offer = buffer && this.portraits.offer(String(args[0]));
+        if (offer) return offer.then((amount: string) => {
+          input.writeTextInputBuffer(buffer, amount, input.textInputMaxLength);
+          return 0;
+        });
+        this.portraits.endConversation();
+        return input.handleShimGetlin(args);
+      }
       case "shim_get_ext_cmd":
+        this.portraits.endConversation();
         return this.systems.extendedCommands.handleShimGetExtCmd();
 
       case "shim_init_nhwindows":
@@ -262,13 +305,15 @@ class LocalNetHackRuntime {
       case "shim_end_menu":
         return this.systems.menuCapture.handleShimEndMenu(args);
       case "shim_display_nhwindow":
+        if (args[1] && this.systems.windowText.shouldCaptureWindowTextForDialog(args[0])) this.portraits.endConversation();
         return this.systems.windowText.handleShimDisplayNhwindow(args);
       case "shim_display_file":
         return this.systems.windowText.handleShimDisplayFile(args);
       case "shim_add_menu":
         return this.systems.menuCapture.handleShimAddMenu(args);
       case "shim_putstr":
-        return this.systems.messages.handleShimPutstr(args);
+        this.systems.messages.handleShimPutstr(args);
+        return this.systems.windows.isMessageWindow(args[0]) ? this.presentPortraitMessage(args[2]) : 0;
       case "shim_print_glyph":
         return this.systems.mapCallbacks.handleShimPrintGlyph(args);
 
@@ -295,9 +340,11 @@ class LocalNetHackRuntime {
         // TO-DO: Is it OK we ignore this?
         return 0;
       case "shim_raw_print":
-        return this.systems.messages.handleShimRawPrint(args);
+        this.systems.messages.handleShimRawPrint(args);
+        return this.presentPortraitMessage(args[0]);
       case "shim_raw_print_bold":
-        return this.systems.messages.handleShimRawPrintBold(args);
+        this.systems.messages.handleShimRawPrintBold(args);
+        return this.presentPortraitMessage(args[0]);
       case "shim_message_menu":
         return this.systems.messages.handleShimMessageMenu(args);
       case "shim_update_inventory":
@@ -309,6 +356,7 @@ class LocalNetHackRuntime {
         console.log("NetHack requested bell");
         return 0;
       case "shim_select_menu":
+        this.portraits.endConversation();
         return this.systems.menuSelection.handleShimSelectMenu(args);
 
       case "shim_askname":

@@ -50,6 +50,7 @@ export type RuntimeStartupOptions = {
   characterCreation?: RuntimeCharacterCreationConfig;
   initOptions?: string[];
   loggingEnabled?: boolean;
+  portraitDialog?: boolean;
 };
 
 export type RuntimeCommand = (
@@ -73,6 +74,8 @@ export type RuntimeCommand = (
     }
   | { type: "request_runtime_globals_snapshot" }
   | { type: "set_logging"; enabled: boolean }
+  | { type: "set_portrait_dialog"; enabled: boolean }
+  | { type: "dismiss_portrait_dialog"; id: number; answer?: string }
   | { type: "shutdown" }
 ) & Partial<RuntimeCommandIdentity>;
 

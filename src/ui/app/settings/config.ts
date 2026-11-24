@@ -388,6 +388,11 @@ export const clientOptionsConfig: ClientOption[] = [
     type: "section",
   },
   {
+    key: "portraitDialog",
+    ...plusStrings.clientOptions.portraitDialog,
+    type: "boolean",
+  },
+  {
     key: "desktopMessageLogWindowScale",
     label: t.clientOptions.config.desktopMessageLogWindowScale.label,
     description:

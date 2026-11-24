@@ -2,6 +2,7 @@
 // these from src/plus/i18n/<locale>.ts and fall back to English otherwise.
 export const plusEn = {
   clientOptions: {
+    portraitDialog: { label: "Portrait Dialog", description: "Pause for conversations and important encounters. Click Continue or press Enter or Esc to advance." },
     desktopMessageLogBackgroundOpacity: {
       label: "Desktop message log background opacity",
       description:
