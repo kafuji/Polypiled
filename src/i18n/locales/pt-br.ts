@@ -566,6 +566,7 @@ export const ptBrOverrides = {
       maxed: (count: number) => `${count} no máximo`,
     },
     maxLabel: "Máx",
+    familyLabel: (rank: string) => `Família: ${rank}`,
     slotCount: (count: number) => `${count} slot${count === 1 ? "" : "s"}`,
   },
   app: {

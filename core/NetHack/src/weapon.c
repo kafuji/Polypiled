@@ -17,6 +17,8 @@ staticfn boolean peaked_skill(int);
 staticfn int slots_required(int);
 staticfn void skill_advance(int);
 staticfn void add_skills_to_menu(winid, boolean, boolean);
+staticfn const char *skill_rank_name(int);
+staticfn boolean skill_listed(int);
 
 /* Categories whose names don't come from OBJ_NAME(objects[type])
  */
@@ -1091,9 +1093,20 @@ dry_a_towel(
 char *
 skill_level_name(int skill, char *buf)
 {
+    Strcpy(buf, skill_rank_name(P_SKILL(skill)));
+    return buf;
+}
+
+/* Polypiled: name of a skill level, also used for family levels */
+staticfn const char *
+skill_rank_name(int level)
+{
     const char *ptr;
 
-    switch (P_SKILL(skill)) {
+    switch (level) {
+    case P_ISRESTRICTED:
+        ptr = "Restricted";
+        break;
     case P_UNSKILLED:
         ptr = "Unskilled";
         break;
@@ -1117,8 +1130,98 @@ skill_level_name(int skill, char *buf)
         ptr = "Unknown";
         break;
     }
-    Strcpy(buf, ptr);
-    return buf;
+    return ptr;
+}
+
+/*
+ * Polypiled: weapon skill families.  Skill in one weapon of a family
+ * carries over to the others at one level lower, capped by the other
+ * weapon's own role limit (Basic for a restricted weapon).  Practice
+ * still goes only to the weapon actually used, and multishot, polearm
+ * reach and jousting keep using the weapon's own skill.
+ */
+enum skill_families {
+    FAM_NONE = 0,
+    FAM_SHORT_BLADE,
+    FAM_SWORD,
+    FAM_AXE,
+    FAM_BLUNT,
+    FAM_POLE,
+    FAM_BOW,
+    FAM_THROWN
+};
+
+static const schar skill_family[P_LAST_WEAPON + 1] = {
+    FAM_NONE,        /* P_NONE */
+    FAM_SHORT_BLADE, /* P_DAGGER */
+    FAM_SHORT_BLADE, /* P_KNIFE */
+    FAM_AXE,         /* P_AXE */
+    FAM_AXE,         /* P_PICK_AXE */
+    FAM_SWORD,       /* P_SHORT_SWORD */
+    FAM_SWORD,       /* P_BROAD_SWORD */
+    FAM_SWORD,       /* P_LONG_SWORD */
+    FAM_SWORD,       /* P_TWO_HANDED_SWORD */
+    FAM_SWORD,       /* P_SABER */
+    FAM_BLUNT,       /* P_CLUB */
+    FAM_BLUNT,       /* P_MACE */
+    FAM_BLUNT,       /* P_MORNING_STAR */
+    FAM_BLUNT,       /* P_FLAIL */
+    FAM_BLUNT,       /* P_HAMMER */
+    FAM_BLUNT,       /* P_QUARTERSTAFF */
+    FAM_POLE,        /* P_POLEARMS */
+    FAM_POLE,        /* P_SPEAR */
+    FAM_POLE,        /* P_TRIDENT */
+    FAM_POLE,        /* P_LANCE */
+    FAM_BOW,         /* P_BOW */
+    FAM_NONE,        /* P_SLING */
+    FAM_BOW,         /* P_CROSSBOW */
+    FAM_THROWN,      /* P_DART */
+    FAM_THROWN,      /* P_SHURIKEN */
+    FAM_THROWN,      /* P_BOOMERANG */
+    FAM_NONE,        /* P_WHIP */
+    FAM_NONE,        /* P_UNICORN_HORN */
+};
+
+/* the level a weapon skill gets from its family, or P_ISRESTRICTED
+   when the family gives it nothing useful */
+int
+family_weapon_skill(int skill)
+{
+    int i, fam, cap, best = P_ISRESTRICTED;
+
+    if (skill < P_FIRST_WEAPON || skill > P_LAST_WEAPON
+        || (fam = skill_family[skill]) == FAM_NONE)
+        return P_ISRESTRICTED;
+    for (i = P_FIRST_WEAPON; i <= P_LAST_WEAPON; i++)
+        if (i != skill && skill_family[i] == fam && P_SKILL(i) > best)
+            best = P_SKILL(i);
+    best--; /* one level below the family's best */
+    cap = P_RESTRICTED(skill) ? P_BASIC : P_MAX_SKILL(skill);
+    if (best > cap)
+        best = cap;
+    return (best > P_UNSKILLED) ? best : P_ISRESTRICTED;
+}
+
+/* the level a weapon skill is used at: its own or its family's */
+int
+effective_weapon_skill(int skill)
+{
+    int own, fam;
+
+    if (skill < P_FIRST_WEAPON || skill > P_LAST_WEAPON)
+        return P_SKILL(skill);
+    own = P_SKILL(skill);
+    fam = family_weapon_skill(skill);
+    return max(own, fam);
+}
+
+/* whether #enhance lists a skill: a restricted weapon is listed when
+   its family lets it be used at Basic */
+staticfn boolean
+skill_listed(int skill)
+{
+    return (boolean) (!P_RESTRICTED(skill)
+                      || family_weapon_skill(skill) > P_ISRESTRICTED);
 }
 
 const char *
@@ -1228,15 +1331,15 @@ static const struct skill_range {
 void
 add_skills_to_menu(winid win, boolean selectable, boolean speedy)
 {
-    int pass, i, len, longest;
+    int pass, i, len, longest, famlvl;
     anything any;
-    char buf[BUFSZ], sklnambuf[BUFSZ];
+    char buf[BUFSZ], sklnambuf[BUFSZ], famsuffix[BUFSZ];
     const char *prefix;
     int clr = NO_COLOR;
 
     /* Find the longest skill name. */
     for (longest = 0, i = 0; i < P_NUM_SKILLS; i++) {
-        if (P_RESTRICTED(i))
+        if (!skill_listed(i))
             continue;
         if ((len = Strlen(P_NAME(i))) > longest)
             longest = len;
@@ -1254,7 +1357,7 @@ add_skills_to_menu(winid win, boolean selectable, boolean speedy)
             if (i == skill_ranges[pass].first)
                 add_menu_heading(win, skill_ranges[pass].name);
 
-            if (P_RESTRICTED(i))
+            if (!skill_listed(i))
                 continue;
             /*
              * Sigh, this assumes a monospaced font unless
@@ -1269,31 +1372,41 @@ add_skills_to_menu(winid win, boolean selectable, boolean speedy)
                 prefix = ""; /* will be preceded by menu choice */
             else if (could_advance(i))
                 prefix = "  * ";
-            else if (peaked_skill(i))
+            else if (peaked_skill(i) || P_RESTRICTED(i))
                 prefix = "  # ";
             else
                 prefix = "    ";
             (void) skill_level_name(i, sklnambuf);
+            /* Polypiled: show the level a weapon is used at when its
+               family raises it above its own */
+            famlvl = family_weapon_skill(i);
+            if (famlvl > P_SKILL(i))
+                Snprintf(famsuffix, sizeof famsuffix, " (family: %s)",
+                         skill_rank_name(famlvl));
+            else
+                famsuffix[0] = '\0';
             if (wizard) {
                 if (!iflags.menu_tab_sep)
                     Snprintf(buf, sizeof buf,
-                             " %s%-*s %-12s %5d(%4d)", prefix,
+                             " %s%-*s %-12s %5d(%4d)%s", prefix,
                              longest, P_NAME(i), sklnambuf, P_ADVANCE(i),
-                             practice_needed_to_advance(P_SKILL(i)));
+                             practice_needed_to_advance(P_SKILL(i)),
+                             famsuffix);
                 else
                     Snprintf(buf, sizeof buf,
-                             " %s%s\t%s\t%5d(%4d)", prefix, P_NAME(i),
+                             " %s%s\t%s\t%5d(%4d)%s", prefix, P_NAME(i),
                              sklnambuf, P_ADVANCE(i),
-                             practice_needed_to_advance(P_SKILL(i)));
+                             practice_needed_to_advance(P_SKILL(i)),
+                             famsuffix);
             } else {
                 if (!iflags.menu_tab_sep)
                     Snprintf(buf, sizeof buf,
-                             " %s %-*s [%s]", prefix, longest,
-                             P_NAME(i), sklnambuf);
+                             " %s %-*s [%s]%s", prefix, longest,
+                             P_NAME(i), sklnambuf, famsuffix);
                 else
                     Snprintf(buf, sizeof buf,
-                             " %s%s\t[%s]", prefix, P_NAME(i),
-                             sklnambuf);
+                             " %s%s\t[%s]%s", prefix, P_NAME(i),
+                             sklnambuf, famsuffix);
             }
             any.a_int = selectable && can_advance(i, speedy) ? i + 1 : 0;
             add_menu(win, &nul_glyphinfo, &any, 0, 0,
@@ -1344,8 +1457,12 @@ enhance_weapon_skill(void)
         /* count advanceable skills */
         to_advance = eventually_advance = maxxed_cnt = 0;
         for (i = 0; i < P_NUM_SKILLS; i++) {
-            if (P_RESTRICTED(i))
+            if (P_RESTRICTED(i)) {
+                /* listed with "#" when its family makes it usable */
+                if (skill_listed(i))
+                    maxxed_cnt++;
                 continue;
+            }
             if (can_advance(i, speedy))
                 to_advance++;
             else if (could_advance(i))
@@ -1556,7 +1673,7 @@ weapon_hit_bonus(struct obj *weapon)
     if (type == P_NONE) {
         bonus = 0;
     } else if (type <= P_LAST_WEAPON) {
-        switch (P_SKILL(type)) {
+        switch (effective_weapon_skill(type)) {
         default:
             impossible(bad_skill, P_SKILL(type));
             FALLTHROUGH;
@@ -1577,8 +1694,8 @@ weapon_hit_bonus(struct obj *weapon)
         }
     } else if (type == P_TWO_WEAPON_COMBAT) {
         skill = P_SKILL(P_TWO_WEAPON_COMBAT);
-        if (P_SKILL(wep_type) < skill)
-            skill = P_SKILL(wep_type);
+        if (effective_weapon_skill(wep_type) < skill)
+            skill = effective_weapon_skill(wep_type);
         switch (skill) {
         default:
             impossible(bad_skill, skill);
@@ -1654,7 +1771,7 @@ weapon_dam_bonus(struct obj *weapon)
     if (type == P_NONE) {
         bonus = 0;
     } else if (type <= P_LAST_WEAPON) {
-        switch (P_SKILL(type)) {
+        switch (effective_weapon_skill(type)) {
         default:
             impossible("weapon_dam_bonus: bad skill %d", P_SKILL(type));
             FALLTHROUGH;
@@ -1675,8 +1792,8 @@ weapon_dam_bonus(struct obj *weapon)
         }
     } else if (type == P_TWO_WEAPON_COMBAT) {
         skill = P_SKILL(P_TWO_WEAPON_COMBAT);
-        if (P_SKILL(wep_type) < skill)
-            skill = P_SKILL(wep_type);
+        if (effective_weapon_skill(wep_type) < skill)
+            skill = effective_weapon_skill(wep_type);
         switch (skill) {
         default:
         case P_ISRESTRICTED:

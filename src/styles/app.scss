@@ -9244,6 +9244,13 @@ button.nh3d-technique-row {
   line-height: 1.2;
 }
 
+/* Polypiled: level a weapon gets from its skill family */
+.nh3d-enhance-family-rank {
+  color: var(--nh3d-ui-text-muted);
+  font-size: nh3d-scale-font(12px);
+  line-height: 1.2;
+}
+
 .nh3d-question-item-leading {
   display: inline-flex;
   align-items: center;

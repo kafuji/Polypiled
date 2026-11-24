@@ -552,6 +552,7 @@ export const en = {
       maxed: (count: number) => `${count} maxed`,
     },
     maxLabel: "Max",
+    familyLabel: (rank: string) => `Family: ${rank}`,
     slotCount: (count: number) => `${count} slot${count === 1 ? "" : "s"}`,
   },
   app: {

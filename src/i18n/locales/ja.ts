@@ -537,6 +537,7 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
       maxed: (count: number) => `${count} 件は最大`,
     },
     maxLabel: "最大",
+    familyLabel: (rank: string) => `系統: ${rank}`,
     slotCount: (count: number) => `${count} スロット`,
   },
   app: {

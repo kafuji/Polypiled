@@ -550,6 +550,7 @@ export const ko = {
       maxed: (count: number) => `최대치 ${count}개`,
     },
     maxLabel: "최대",
+    familyLabel: (rank: string) => `계열: ${rank}`,
     slotCount: (count: number) => `슬롯 ${count}개`,
   },
   app: {

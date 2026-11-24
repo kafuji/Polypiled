@@ -545,6 +545,7 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
       maxed: (count: number) => `${count} maximal`,
     },
     maxLabel: "Max",
+    familyLabel: (rank: string) => `Waffengruppe: ${rank}`,
     slotCount: (count: number) => `${count} Slot${count === 1 ? "" : "s"}`,
   },
   app: {

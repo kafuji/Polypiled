@@ -548,6 +548,7 @@ export const ru = {
       maxed: (count: number) => `Максимум: ${count}`,
     },
     maxLabel: "Макс.",
+    familyLabel: (rank: string) => `Группа: ${rank}`,
     slotCount: (count: number) => `Слотов: ${count}`,
   },
   app: {
