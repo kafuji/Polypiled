@@ -1033,6 +1033,44 @@ stock_room(int shp_indx, struct mkroom *sroom)
     svl.level.flags.has_shop = TRUE;
 }
 
+/* Polypiled: shopkeepers restock while the hero is away.  Called when the
+   hero comes back to a level after 'elapsed' turns.  Every 1000 turns away
+   gives each empty shelf a 15% chance to be filled, up to half of them.
+   The black market doesn't restock: its goods are one-off finds. */
+void
+restock_shops(long elapsed)
+{
+    struct monst *shkp;
+    struct mkroom *sroom;
+    const struct shclass *shp;
+    int sx, sy, sh, rmno, pct;
+
+    if (elapsed < 1000L)
+        return;
+    pct = (elapsed >= 4000L) ? 50 : (int) (elapsed / 1000L) * 15;
+
+    for (shkp = fmon; shkp; shkp = shkp->nmon) {
+        if (DEADMONSTER(shkp) || !shkp->isshk || !inhishop(shkp)
+            || !shkp->mpeaceful || ESHK(shkp)->shoptype == FENCESHOP)
+            continue;
+        rmno = ESHK(shkp)->shoproom;
+        sroom = &svr.rooms[rmno - ROOMOFFSET];
+        shp = &shtypes[ESHK(shkp)->shoptype - SHOPBASE];
+        for (sh = 0; sh < gd.doorindex; sh++)
+            if (svd.doors[sh].x == ESHK(shkp)->shd.x
+                && svd.doors[sh].y == ESHK(shkp)->shd.y)
+                break;
+        if (sh == gd.doorindex)
+            continue;
+        for (sx = sroom->lx; sx <= sroom->hx; sx++)
+            for (sy = sroom->ly; sy <= sroom->hy; sy++)
+                if (stock_room_goodpos(sroom, rmno, sh, sx, sy)
+                    && !OBJ_AT(sx, sy) && !t_at(sx, sy)
+                    && !u_at(sx, sy) && rn2(100) < pct)
+                    mkshobj_at(shp, sx, sy, FALSE);
+    }
+}
+
 /* does shkp's shop stock this item type? */
 boolean
 saleable(struct monst *shkp, struct obj *obj)

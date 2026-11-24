@@ -1731,6 +1731,8 @@ goto_level(
         getlev(nhfp, svh.hackpid, new_ledger);
         close_nhfile(nhfp);
         oinit(); /* reassign level dependent obj probabilities */
+        /* Polypiled: shopkeepers restocked while the hero was away */
+        restock_shops(svm.moves - svo.omoves);
     }
     reglyph_darkroom();
     set_uinwater(0); /* u.uinwater = 0 */

@@ -484,6 +484,8 @@ struct obj {
 #define LOST_STOLEN    3 /* stolen from hero's inventory by a monster */
 #define LOSTOVERRIDEMASK 0x3
 #define LOST_EXPLODING 4 /* the object is exploding (i.e. POT_OIL) */
+#define LOST_SHOPGOODS 5 /* Polypiled: shop goods a pet picked up; the
+                          * shopkeeper takes them back at the door */
 
 /* tracking how a name got acquired by an object in named_how field */
 #define NAMED_PLAIN 0 /* nothing special, typical naming */

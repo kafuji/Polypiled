@@ -467,7 +467,17 @@ dog_invent(struct monst *mtmp, struct edog *edog, int udist)
                         }
                         obj_extract_self(otmp);
                         newsym(omx, omy);
-                        (void) mpickobj(mtmp, otmp);
+                        /* Polypiled: remember shop goods so the shopkeeper
+                           can take them back at the door; keep them from
+                           merging into the pet's own stack */
+                        if (costly_spot(omx, omy) && !otmp->no_charge) {
+                            otmp->how_lost = LOST_SHOPGOODS;
+                            otmp->nomerge = 1;
+                            (void) mpickobj(mtmp, otmp);
+                            otmp->nomerge = 0;
+                        } else {
+                            (void) mpickobj(mtmp, otmp);
+                        }
                         if (attacktype(mtmp->data, AT_WEAP)
                             && mtmp->weapon_check == NEED_WEAPON) {
                             mtmp->weapon_check = NEED_HTH_WEAPON;
@@ -1015,6 +1025,8 @@ dog_move(
     omy = mtmp->my;
     if (edog && dog_hunger(mtmp, edog))
         return MMOVE_DIED; /* starved */
+    /* Polypiled: a pet carrying shop goods gets stopped at the door */
+    shk_reclaim_from_pet(mtmp);
 
     udist = distu(omx, omy);
     /* Let steeds eat and maybe throw rider during Conflict */

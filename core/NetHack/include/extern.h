@@ -2970,7 +2970,6 @@ extern char inside_shop(coordxy, coordxy);
 extern void u_left_shop(char *, boolean) NONNULLARG1;
 extern void remote_burglary(coordxy, coordxy);
 extern void u_entered_shop(char *);
-extern void pick_pick(struct obj *) NONNULLARG1;
 extern boolean same_price(struct obj *, struct obj *) NONNULLARG12;
 extern void shopper_financial_report(void);
 extern int inhishop(struct monst *) NONNULLARG1;
@@ -3017,6 +3016,7 @@ extern boolean is_fshk(struct monst *) NONNULLARG1;
 extern void shopdig(int);
 extern void pay_for_damage(const char *, boolean);
 extern boolean costly_spot(coordxy, coordxy);
+extern void shk_reclaim_from_pet(struct monst *);
 /* costly_adjacent() has checks for null 1st arg, and an early return,
    so it cannot be NONNULLARG1 */
 extern boolean costly_adjacent(struct monst *, coordxy, coordxy) NO_NNARGS;
@@ -3047,6 +3047,7 @@ extern void neweshk(struct monst *) NONNULLARG1;
 extern void free_eshk(struct monst *) NONNULLARG1;
 extern void stock_room(int, struct mkroom *) NONNULLARG2;
 extern boolean saleable(struct monst *, struct obj *) NONNULLARG12;
+extern void restock_shops(long);
 extern int get_shop_item(int);
 extern char *Shknam(struct monst *) NONNULLARG1;
 extern char *shkname(struct monst *) NONNULLARG1;

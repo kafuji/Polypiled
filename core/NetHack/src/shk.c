@@ -130,6 +130,12 @@ staticfn boolean rob_shop(struct monst *);
 staticfn void deserted_shop(char *);
 staticfn boolean special_stock(struct obj *, struct monst *, boolean);
 staticfn const char *cad(boolean);
+staticfn struct monst *shk_defense_target(struct monst *);
+staticfn int shk_defend_customer(struct monst *);
+staticfn boolean shk_can_appraise(struct monst *, struct obj *);
+staticfn int shk_appraise_ok(struct obj *);
+staticfn long shk_appraisal_fee(struct monst *, struct obj *);
+staticfn boolean shk_appraise(struct monst *);
 
 /*
         invariants: obj->unpaid iff onbill(obj) [unless bp->useup]
@@ -858,99 +864,11 @@ u_entered_shop(char *enterstring)
                 eshkp->visitct++ ? " again" : "");
         }
     }
-    /* can't do anything about blocking if teleported in */
-    if (!inside_shop(u.ux, u.uy)) {
-        boolean should_block, not_upset = !eshkp->surcharge;
-        int cnt;
-        const char *tool;
-        struct obj *pick = carrying(PICK_AXE),
-                   *mattock = carrying(DWARVISH_MATTOCK);
-
-        if (pick || mattock) {
-            cnt = 1;               /* so far */
-            if (pick && mattock) { /* carrying both types */
-                tool = "digging tool";
-                cnt = 2; /* `more than 1' is all that matters */
-            } else if (pick) {
-                tool = "pick-axe";
-                /* hack: `pick' already points somewhere into inventory */
-                while ((pick = pick->nobj) != 0)
-                    if (pick->otyp == PICK_AXE)
-                        ++cnt;
-            } else { /* assert(mattock != 0) */
-                tool = "mattock";
-                while ((mattock = mattock->nobj) != 0)
-                    if (mattock->otyp == DWARVISH_MATTOCK)
-                        ++cnt;
-                /* [ALI] Shopkeeper identifies mattock(s) */
-                if (!Blind)
-                    makeknown(DWARVISH_MATTOCK);
-            }
-            if (!Deaf && !muteshk(shkp)) {
-                SetVoice(shkp, 0, 80, 0);
-                verbalize(not_upset
-                              ? "Will you please leave your %s%s outside?"
-                              : "Leave the %s%s outside.",
-                          tool, plur(cnt));
-            } else {
-                pline("%s %s to let you in with your %s%s.",
-                      Shknam(shkp),
-                      not_upset ? "is hesitant" : "refuses",
-                      tool, plur(cnt));
-            }
-            should_block = TRUE;
-        } else if (u.usteed) {
-            if (!Deaf && !muteshk(shkp)) {
-                SetVoice(shkp, 0, 80, 0);
-                verbalize(not_upset ? "Will you please leave %s outside?"
-                                    : "Leave %s outside.",
-                          y_monnam(u.usteed));
-            } else {
-                pline("%s %s to let you in while you're riding %s.",
-                      Shknam(shkp),
-                      not_upset ? "doesn't want" : "refuses",
-                      y_monnam(u.usteed));
-            }
-            should_block = TRUE;
-        } else {
-            should_block =
-                (Fast && (sobj_at(PICK_AXE, u.ux, u.uy)
-                          || sobj_at(DWARVISH_MATTOCK, u.ux, u.uy)));
-        }
-        if (should_block)
-            (void) dochug(shkp); /* shk gets extra move */
-    }
+    /* Polypiled: digging tools and steeds are welcome.  Digging out of
+       the shop is already answered by the shopkeeper grabbing the
+       hero's pack or billing for wall damage, and a wand of digging
+       was never turned away. */
     return;
-}
-
-/* called when removing a pick-axe or mattock from a container */
-void
-pick_pick(struct obj *obj)
-{
-    struct monst *shkp;
-
-    if (obj->unpaid || !is_pick(obj))
-        return;
-    shkp = shop_keeper(*u.ushops);
-    if (shkp && inhishop(shkp)) {
-        static NEARDATA long pickmovetime = 0L;
-
-        /* if you bring a sack of N picks into a shop to sell,
-           don't repeat this N times when they're taken out */
-        if (svm.moves != pickmovetime) {
-            if (!Deaf && !muteshk(shkp)) {
-                SetVoice(shkp, 0, 80, 0);
-                verbalize("You sneaky %s!  Get out of here with that pick!",
-                      cad(FALSE));
-            } else {
-                pline("%s %s your pick!",
-                      Shknam(shkp),
-                      haseyes(shkp->data) ? "glares at"
-                                          : "is dismayed because of");
-            }
-        }
-        pickmovetime = svm.moves;
-    }
 }
 
 /*
@@ -4924,13 +4842,16 @@ shk_move(struct monst *shkp)
     schar appr;
     struct eshk *eshkp = ESHK(shkp);
     int z;
-    boolean uondoor = FALSE, satdoor, avoid = FALSE, badinv;
+    boolean uondoor = FALSE, satdoor, avoid = FALSE;
 
     omx = shkp->mx;
     omy = shkp->my;
 
     if (inhishop(shkp))
         shk_fixes_damage(shkp);
+
+    if ((z = shk_defend_customer(shkp)) != -1)
+        return z;
 
     if ((udist = distu(omx, omy)) < 3 && (shkp->data != &mons[PM_GRID_BUG]
                                           || (omx == u.ux || omy == u.uy))) {
@@ -4997,25 +4918,20 @@ shk_move(struct monst *shkp)
         avoid = FALSE;
     } else {
 #define GDIST(x, y) (dist2(x, y, gtx, gty))
-        if (Invis || u.usteed) {
+        if (Invis) {
             avoid = FALSE;
         } else {
+            /* Polypiled: digging tools and steeds no longer keep the
+               hero out, so the shopkeeper steps aside for them too */
             uondoor = u_at(eshkp->shd.x, eshkp->shd.y);
-            if (uondoor) {
-                badinv = (carrying(PICK_AXE) || carrying(DWARVISH_MATTOCK)
-                          || (Fast && (sobj_at(PICK_AXE, u.ux, u.uy)
-                                  || sobj_at(DWARVISH_MATTOCK, u.ux, u.uy))));
-                if (satdoor && badinv)
-                    return 0;
-                avoid = !badinv;
-            } else {
+            if (uondoor)
+                avoid = TRUE;
+            else
                 avoid = (*u.ushops && distu(gtx, gty) > 8);
-                badinv = FALSE;
-            }
 
             if (((!eshkp->robbed && !eshkp->billct && !eshkp->debit) || avoid)
                 && GDIST(omx, omy) < 3) {
-                if (!badinv && !onlineu(omx, omy))
+                if (!onlineu(omx, omy))
                     return 0;
                 if (satdoor)
                     appr = gtx = gty = 0;
@@ -5030,6 +4946,147 @@ shk_move(struct monst *shkp)
         after_shk_move(shkp);
 
     return z;
+}
+
+/* Polypiled: a hostile monster inside the shop that a peaceful shopkeeper
+   should deal with while the hero is shopping there: one that is close to
+   the hero, or one that is right next to the shopkeeper.  Disguised and
+   hidden monsters go unnoticed.  Picks the one nearest the shopkeeper. */
+staticfn struct monst *
+shk_defense_target(struct monst *shkp)
+{
+    struct eshk *eshkp = ESHK(shkp);
+    struct monst *mtmp, *best = (struct monst *) 0;
+    int d, bestd = 0;
+
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        if (DEADMONSTER(mtmp) || mtmp == shkp || mtmp->mtame
+            || mtmp->mpeaceful || mtmp->isshk || mtmp->mundetected
+            || M_AP_TYPE(mtmp) != M_AP_NOTHING)
+            continue;
+        if (inside_shop(mtmp->mx, mtmp->my) != eshkp->shoproom)
+            continue;
+        d = dist2(shkp->mx, shkp->my, mtmp->mx, mtmp->my);
+        if (d > 2 && distu(mtmp->mx, mtmp->my) > 8)
+            continue;
+        if (!m_cansee(shkp, mtmp->mx, mtmp->my))
+            continue;
+        if (!best || d < bestd)
+            best = mtmp, bestd = d;
+    }
+    return best;
+}
+
+/* Polypiled: a shopkeeper looks after the customers in the shop and goes
+   for a hostile monster that troubles them.  While the hero owes money,
+   the shopkeeper stays put by the door and only strikes at what comes
+   within reach.  Returns -1 when there is nothing to do, otherwise the
+   value for shk_move() to return. */
+staticfn int
+shk_defend_customer(struct monst *shkp)
+{
+    static unsigned last_target = 0;
+    struct eshk *eshkp = ESHK(shkp);
+    struct monst *mtmp;
+    int res;
+
+    if (ANGRY(shkp) || !inhishop(shkp)
+        || !strchr(u.ushops, eshkp->shoproom)
+        || (Conflict && !resist_conflict(shkp)))
+        return -1;
+    if (!(mtmp = shk_defense_target(shkp)))
+        return -1;
+
+    if (dist2(shkp->mx, shkp->my, mtmp->mx, mtmp->my) <= 2) {
+        if (mtmp->m_id != last_target) {
+            last_target = mtmp->m_id;
+            if (!Deaf && !muteshk(shkp) && canspotmon(shkp)) {
+                SetVoice(shkp, 0, 80, 0);
+                verbalize("Nobody bothers my customers!");
+            }
+        }
+        gb.bhitpos.x = mtmp->mx, gb.bhitpos.y = mtmp->my;
+        gn.notonhead = FALSE;
+        res = mattackm(shkp, mtmp);
+        return (res & M_ATTK_AGR_DIED) ? -2 : 0;
+    }
+    if (eshkp->billct || eshkp->debit)
+        return -1;
+    res = move_special(shkp, TRUE, 1, FALSE, FALSE, shkp->mx, shkp->my,
+                       mtmp->mx, mtmp->my);
+    if (res > 0)
+        after_shk_move(shkp);
+    return (res == -1) ? 0 : res;
+}
+
+/* Polypiled: a pet that reaches the shop door carrying goods it picked up
+   inside has them taken back by the shopkeeper, who returns them to the
+   shelves.  Pets still fetch things around the shop; they just can't
+   carry them out. */
+void
+shk_reclaim_from_pet(struct monst *pet)
+{
+    struct monst *shkp;
+    struct eshk *eshkp;
+    struct mkroom *sroom;
+    struct obj *otmp, *nobj;
+    coordxy x, y;
+    int tries;
+    boolean said = FALSE, seen;
+
+    if (!svl.level.flags.has_shop)
+        return;
+    for (otmp = pet->minvent; otmp; otmp = otmp->nobj)
+        if (otmp->how_lost == LOST_SHOPGOODS)
+            break;
+    if (!otmp)
+        return;
+
+    for (shkp = fmon; shkp; shkp = shkp->nmon) {
+        if (DEADMONSTER(shkp) || !shkp->isshk || !inhishop(shkp)
+            || ANGRY(shkp) || helpless(shkp))
+            continue;
+        eshkp = ESHK(shkp);
+        if (pet->mx == eshkp->shd.x && pet->my == eshkp->shd.y)
+            break;
+    }
+    if (!shkp)
+        return;
+
+    sroom = &svr.rooms[eshkp->shoproom - ROOMOFFSET];
+    seen = (canseemon(pet) || canseemon(shkp));
+    for (otmp = pet->minvent; otmp; otmp = nobj) {
+        nobj = otmp->nobj;
+        if (otmp->how_lost != LOST_SHOPGOODS)
+            continue;
+        if (seen) {
+            if (!said && !Deaf && !muteshk(shkp)) {
+                SetVoice(shkp, 0, 80, 0);
+                verbalize("That stays in the shop!");
+            }
+            said = TRUE;
+            pline("%s takes %s back from %s.", Shknam(shkp),
+                  distant_name(otmp, doname), mon_nam(pet));
+        }
+        extract_from_minvent(pet, otmp, TRUE, TRUE);
+        otmp->how_lost = LOST_NONE;
+        otmp->no_charge = 0;
+        /* back on a shelf: a random square of the shop proper */
+        for (tries = 0; tries < 50; tries++) {
+            x = rn1(sroom->hx - sroom->lx + 1, sroom->lx);
+            y = rn1(sroom->hy - sroom->ly + 1, sroom->ly);
+            if (costly_spot(x, y) && inside_shop(x, y) == eshkp->shoproom
+                && !u_at(x, y))
+                break;
+        }
+        if (tries < 50) {
+            place_object(otmp, x, y);
+            stackobj(otmp);
+            newsym(x, y);
+        } else {
+            (void) mpickobj(shkp, otmp);
+        }
+    }
 }
 
 /* called after shopkeeper moves, in case move causes re-entry into shop */
@@ -5612,6 +5669,8 @@ shk_chat(struct monst *shkp)
               Shknam(shkp),
               (!Deaf && !muteshk(shkp)) ? "reminds you" : "indicates",
               noit_mhim(shkp), eshk->debit, currency(eshk->debit));
+    } else if (shk_appraise(shkp)) {
+        ; /* Polypiled: the shopkeeper offered to identify something */
     } else if (eshk->credit) {
         pline("%s encourages you to use your %ld %s of credit.",
               Shknam(shkp), eshk->credit, currency(eshk->credit));
@@ -5641,6 +5700,93 @@ shk_chat(struct monst *shkp)
 }
 
 RESTORE_WARNING_FORMAT_NONLITERAL
+
+/* Polypiled: shopkeepers identify, for a fee, the kinds of goods their shop
+   deals in.  Only the type of the item is learned; its curse status and
+   enchantment stay unknown. */
+static struct monst *appraiser = (struct monst *) 0;
+
+staticfn boolean
+shk_can_appraise(struct monst *shkp, struct obj *obj)
+{
+    return (boolean) (obj->where == OBJ_INVENT && obj->oclass != COIN_CLASS
+                      && !obj->unpaid
+                      && !objects[obj->otyp].oc_name_known
+                      && saleable(shkp, obj));
+}
+
+staticfn int
+shk_appraise_ok(struct obj *obj)
+{
+    if (!obj || !appraiser)
+        return GETOBJ_EXCLUDE;
+    return shk_can_appraise(appraiser, obj) ? GETOBJ_SUGGEST
+                                            : GETOBJ_EXCLUDE;
+}
+
+/* the item's list price, at least 50; a general store charges half again
+   as much and the black market twice as much */
+staticfn long
+shk_appraisal_fee(struct monst *shkp, struct obj *obj)
+{
+    long fee = max((long) objects[obj->otyp].oc_cost, 50L);
+
+    if (ESHK(shkp)->shoptype == SHOPBASE)
+        fee += fee / 2L;
+    else if (ESHK(shkp)->shoptype == FENCESHOP)
+        fee *= 2L;
+    return fee;
+}
+
+/* returns TRUE when the shopkeeper made the offer (even if declined) */
+staticfn boolean
+shk_appraise(struct monst *shkp)
+{
+    struct obj *otmp;
+    long fee;
+    char qbuf[QBUFSZ];
+    boolean talks = (!Deaf && !muteshk(shkp));
+
+    if (!inhishop(shkp) || !strchr(u.ushops, ESHK(shkp)->shoproom))
+        return FALSE;
+    for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (shk_can_appraise(shkp, otmp))
+            break;
+    if (!otmp)
+        return FALSE;
+
+    pline("%s offers to identify your goods, for a fee.", Shknam(shkp));
+    appraiser = shkp;
+    otmp = getobj("have identified", shk_appraise_ok, GETOBJ_NOFLAGS);
+    appraiser = (struct monst *) 0;
+    if (!otmp || !shk_can_appraise(shkp, otmp))
+        return TRUE;
+
+    fee = shk_appraisal_fee(shkp, otmp);
+    if (money_cnt(gi.invent) < fee) {
+        if (talks) {
+            SetVoice(shkp, 0, 80, 0);
+            verbalize("That would cost you %ld %s.  Come back when you have it.",
+                      fee, currency(fee));
+        } else {
+            pline("%s shakes %s %s in refusal.", Shknam(shkp),
+                  noit_mhis(shkp), mbodypart(shkp, HEAD));
+        }
+        return TRUE;
+    }
+    Sprintf(qbuf, "Identifying that costs %ld %s.  Pay?", fee, currency(fee));
+    if (y_n(qbuf) != 'y')
+        return TRUE;
+
+    (void) money2mon(shkp, fee);
+    disp.botl = TRUE;
+    pline("%s takes a close look at it.", Shknam(shkp));
+    otmp->dknown = 1;
+    makeknown(otmp->otyp);
+    prinv((char *) 0, otmp, 0L);
+    update_inventory();
+    return TRUE;
+}
 
 staticfn void
 kops_gone(boolean silent)
@@ -5888,8 +6034,7 @@ block_entry(coordxy x, coordxy y)
 
     if (shkp->mx == sx && shkp->my == sy && !helpless(shkp)
         && (x == sx - 1 || x == sx + 1 || y == sy - 1 || y == sy + 1)
-        && (Invis || carrying(PICK_AXE) || carrying(DWARVISH_MATTOCK)
-            || u.usteed)) {
+        && Invis) {
         pline("%s%s blocks your way!", Shknam(shkp),
               Invis ? " senses your motion and" : "");
         return TRUE;
