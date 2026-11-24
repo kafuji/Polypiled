@@ -5,7 +5,7 @@ import { setNativeInputModeFps } from "../quest/webxr/native-input-mode";
 import { gameFrameTime } from "./engine/rendering/frame-time";
 import { WebHaptics } from "web-haptics";
 import { WorkerRuntimeBridge } from "../runtime";
-import { setPortrait } from "../plus/portrait-dialog/store";
+import { markPortraitAcknowledged, portraitSnapshot, releaseAcknowledgedPortrait, setPortrait } from "../plus/portrait-dialog/store";
 import type { RuntimeEvent } from "../runtime";
 import { FmodRuntime } from "../audio";
 import { BackgroundMusic, type MusicMood } from "../audio/music";
@@ -45,6 +45,9 @@ import {
 } from "./engine/rendering/wall-tops";
 
 /** Main engine composition, ordered lifecycle, and public UI controller. */
+/** Runtime events that open a game prompt the player has to answer. */
+const portraitPromptEvents = new Set(["question", "direction_question", "text_request", "name_request", "position_request"]);
+
 class Nethack3DEngine implements Nethack3DEngineController {
   private readonly systems: EngineSystems;
   private startupOnly = false;
@@ -946,6 +949,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
       this.automationStatus.observe(event, observationSession.sessionId);
     }
     const data = event as RuntimeEvent & Record<string, any>;
+    if (portraitPromptEvents.has(data.type)) {
+      releaseAcknowledgedPortrait();
+      if (!portraitSnapshot()) this.systems.pointerLock.syncFpsPointerLockForUiState(false);
+    }
     switch (data.type) {
       case "map_glyph":
         this.systems.runtimeEntityTracking.updateRuntimeMonsterTrackingFromTile(data);
@@ -1260,9 +1267,13 @@ class Nethack3DEngine implements Nethack3DEngineController {
         setPortrait({ actor: String(data.actor), text: String(data.text), tileIndex: data.tileIndex, input: data.input,
           preview: data.tileIndex != null ? this.systems.menuPreviews.resolveMenuItemTilePreviewDataUrl({ tileIndex: data.tileIndex }) : null,
           acknowledge: (answer) => {
-            if (!data.conversation) setPortrait(null);
+            // A conversation page stays up to frame the next line; acknowledging
+            // it a second time closes it, so it can never trap the player.
+            const close = !data.conversation || Boolean(portraitSnapshot()?.acknowledged);
+            if (close) setPortrait(null);
+            else markPortraitAcknowledged();
             session.dismissPortrait(id, answer);
-            if (!data.conversation) this.systems.pointerLock.syncFpsPointerLockForUiState(false);
+            if (close) this.systems.pointerLock.syncFpsPointerLockForUiState(false);
           },
         });
         this.systems.pointerLock.syncFpsPointerLockForUiState(false);
