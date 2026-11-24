@@ -205,6 +205,7 @@ extern void change_luck(schar);
 extern int stone_luck(boolean);
 extern void set_moreluck(void);
 extern void restore_attrib(void);
+extern void recover_lowered_attrib(void);
 extern void exercise(int, boolean);
 extern void exerchk(void);
 extern void init_attr(int);

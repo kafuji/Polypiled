@@ -357,6 +357,7 @@ moveloop_core(void)
                 gethungry();
                 age_spells();
                 exerchk();
+                recover_lowered_attrib();
                 invault();
                 if (u.uhave.amulet)
                     amulet();
