@@ -3017,6 +3017,7 @@ extern boolean is_fshk(struct monst *) NONNULLARG1;
 extern void shopdig(int);
 extern void pay_for_damage(const char *, boolean);
 extern boolean costly_spot(coordxy, coordxy);
+extern void shk_reclaim_from_pet(struct monst *);
 /* costly_adjacent() has checks for null 1st arg, and an early return,
    so it cannot be NONNULLARG1 */
 extern boolean costly_adjacent(struct monst *, coordxy, coordxy) NO_NNARGS;

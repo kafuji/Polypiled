@@ -8301,5 +8301,7 @@
 "%s offers to identify your goods, for a fee.":"{1}は料金と引き換えに品物の識別を申し出た。",
 "That would cost you %ld %s.  Come back when you have it.":"それなら{1}{2}かかるよ。用意できたらまたおいで。",
 "Identifying that costs %ld %s.  Pay?":"識別料は{1}{2}です。払いますか？",
-"%s takes a close look at it.":"{1}はそれをじっくりと調べた。"
+"%s takes a close look at it.":"{1}はそれをじっくりと調べた。",
+"That stays in the shop!":"それは店の品だ、置いていきな！",
+"%s takes %s back from %s.":"{1}は{3}から{2}を取り返した。"
 }
