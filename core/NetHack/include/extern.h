@@ -156,6 +156,7 @@ extern int nartifact_exist(void);
 extern void artifact_origin(struct obj *, unsigned) NONNULLPTRS;
 extern boolean arti_immune(struct obj *, int);
 extern boolean spec_ability(struct obj *, unsigned long);
+extern boolean artifacts_feud(struct obj *, struct obj *);
 extern boolean confers_luck(struct obj *) NONNULLPTRS;
 extern boolean arti_reflects(struct obj *);
 extern boolean shade_glare(struct obj *) NONNULLPTRS;
