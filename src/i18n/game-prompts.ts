@@ -89,6 +89,7 @@ const japanesePrompts: Readonly<Record<string, string>> = {
   "Beware, there will be no return!  Still climb?": "気をつけろ、もう戻れないぞ！ それでも登りますか？",
   "What would you like to eat?": "何を食べますか？",
   "What do you want to eat?": "何を食べますか？",
+  "What do you want to have identified?": "何を識別してもらいますか？",
   "What do you want to read?": "何を読みますか？",
   "What do you want to use or apply?": "何を使いますか？",
   "What do you want to wear?": "何を着ますか？",

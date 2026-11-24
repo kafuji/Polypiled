@@ -130,6 +130,12 @@ staticfn boolean rob_shop(struct monst *);
 staticfn void deserted_shop(char *);
 staticfn boolean special_stock(struct obj *, struct monst *, boolean);
 staticfn const char *cad(boolean);
+staticfn struct monst *shk_defense_target(struct monst *);
+staticfn int shk_defend_customer(struct monst *);
+staticfn boolean shk_can_appraise(struct monst *, struct obj *);
+staticfn int shk_appraise_ok(struct obj *);
+staticfn long shk_appraisal_fee(struct monst *, struct obj *);
+staticfn boolean shk_appraise(struct monst *);
 
 /*
         invariants: obj->unpaid iff onbill(obj) [unless bp->useup]
@@ -4932,6 +4938,9 @@ shk_move(struct monst *shkp)
     if (inhishop(shkp))
         shk_fixes_damage(shkp);
 
+    if ((z = shk_defend_customer(shkp)) != -1)
+        return z;
+
     if ((udist = distu(omx, omy)) < 3 && (shkp->data != &mons[PM_GRID_BUG]
                                           || (omx == u.ux || omy == u.uy))) {
         if (ANGRY(shkp) || (Conflict && !resist_conflict(shkp))) {
@@ -5030,6 +5039,77 @@ shk_move(struct monst *shkp)
         after_shk_move(shkp);
 
     return z;
+}
+
+/* Polypiled: a hostile monster inside the shop that a peaceful shopkeeper
+   should deal with while the hero is shopping there: one that is close to
+   the hero, or one that is right next to the shopkeeper.  Disguised and
+   hidden monsters go unnoticed.  Picks the one nearest the shopkeeper. */
+staticfn struct monst *
+shk_defense_target(struct monst *shkp)
+{
+    struct eshk *eshkp = ESHK(shkp);
+    struct monst *mtmp, *best = (struct monst *) 0;
+    int d, bestd = 0;
+
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        if (DEADMONSTER(mtmp) || mtmp == shkp || mtmp->mtame
+            || mtmp->mpeaceful || mtmp->isshk || mtmp->mundetected
+            || M_AP_TYPE(mtmp) != M_AP_NOTHING)
+            continue;
+        if (inside_shop(mtmp->mx, mtmp->my) != eshkp->shoproom)
+            continue;
+        d = dist2(shkp->mx, shkp->my, mtmp->mx, mtmp->my);
+        if (d > 2 && distu(mtmp->mx, mtmp->my) > 8)
+            continue;
+        if (!m_cansee(shkp, mtmp->mx, mtmp->my))
+            continue;
+        if (!best || d < bestd)
+            best = mtmp, bestd = d;
+    }
+    return best;
+}
+
+/* Polypiled: a shopkeeper looks after the customers in the shop and goes
+   for a hostile monster that troubles them.  While the hero owes money,
+   the shopkeeper stays put by the door and only strikes at what comes
+   within reach.  Returns -1 when there is nothing to do, otherwise the
+   value for shk_move() to return. */
+staticfn int
+shk_defend_customer(struct monst *shkp)
+{
+    static unsigned last_target = 0;
+    struct eshk *eshkp = ESHK(shkp);
+    struct monst *mtmp;
+    int res;
+
+    if (ANGRY(shkp) || !inhishop(shkp)
+        || !strchr(u.ushops, eshkp->shoproom)
+        || (Conflict && !resist_conflict(shkp)))
+        return -1;
+    if (!(mtmp = shk_defense_target(shkp)))
+        return -1;
+
+    if (dist2(shkp->mx, shkp->my, mtmp->mx, mtmp->my) <= 2) {
+        if (mtmp->m_id != last_target) {
+            last_target = mtmp->m_id;
+            if (!Deaf && !muteshk(shkp) && canspotmon(shkp)) {
+                SetVoice(shkp, 0, 80, 0);
+                verbalize("Nobody bothers my customers!");
+            }
+        }
+        gb.bhitpos.x = mtmp->mx, gb.bhitpos.y = mtmp->my;
+        gn.notonhead = FALSE;
+        res = mattackm(shkp, mtmp);
+        return (res & M_ATTK_AGR_DIED) ? -2 : 0;
+    }
+    if (eshkp->billct || eshkp->debit)
+        return -1;
+    res = move_special(shkp, TRUE, 1, FALSE, FALSE, shkp->mx, shkp->my,
+                       mtmp->mx, mtmp->my);
+    if (res > 0)
+        after_shk_move(shkp);
+    return (res == -1) ? 0 : res;
 }
 
 /* called after shopkeeper moves, in case move causes re-entry into shop */
@@ -5612,6 +5692,8 @@ shk_chat(struct monst *shkp)
               Shknam(shkp),
               (!Deaf && !muteshk(shkp)) ? "reminds you" : "indicates",
               noit_mhim(shkp), eshk->debit, currency(eshk->debit));
+    } else if (shk_appraise(shkp)) {
+        ; /* Polypiled: the shopkeeper offered to identify something */
     } else if (eshk->credit) {
         pline("%s encourages you to use your %ld %s of credit.",
               Shknam(shkp), eshk->credit, currency(eshk->credit));
@@ -5641,6 +5723,93 @@ shk_chat(struct monst *shkp)
 }
 
 RESTORE_WARNING_FORMAT_NONLITERAL
+
+/* Polypiled: shopkeepers identify, for a fee, the kinds of goods their shop
+   deals in.  Only the type of the item is learned; its curse status and
+   enchantment stay unknown. */
+static struct monst *appraiser = (struct monst *) 0;
+
+staticfn boolean
+shk_can_appraise(struct monst *shkp, struct obj *obj)
+{
+    return (boolean) (obj->where == OBJ_INVENT && obj->oclass != COIN_CLASS
+                      && !obj->unpaid
+                      && !objects[obj->otyp].oc_name_known
+                      && saleable(shkp, obj));
+}
+
+staticfn int
+shk_appraise_ok(struct obj *obj)
+{
+    if (!obj || !appraiser)
+        return GETOBJ_EXCLUDE;
+    return shk_can_appraise(appraiser, obj) ? GETOBJ_SUGGEST
+                                            : GETOBJ_EXCLUDE;
+}
+
+/* the item's list price, at least 50; a general store charges half again
+   as much and the black market twice as much */
+staticfn long
+shk_appraisal_fee(struct monst *shkp, struct obj *obj)
+{
+    long fee = max((long) objects[obj->otyp].oc_cost, 50L);
+
+    if (ESHK(shkp)->shoptype == SHOPBASE)
+        fee += fee / 2L;
+    else if (ESHK(shkp)->shoptype == FENCESHOP)
+        fee *= 2L;
+    return fee;
+}
+
+/* returns TRUE when the shopkeeper made the offer (even if declined) */
+staticfn boolean
+shk_appraise(struct monst *shkp)
+{
+    struct obj *otmp;
+    long fee;
+    char qbuf[QBUFSZ];
+    boolean talks = (!Deaf && !muteshk(shkp));
+
+    if (!inhishop(shkp) || !strchr(u.ushops, ESHK(shkp)->shoproom))
+        return FALSE;
+    for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (shk_can_appraise(shkp, otmp))
+            break;
+    if (!otmp)
+        return FALSE;
+
+    pline("%s offers to identify your goods, for a fee.", Shknam(shkp));
+    appraiser = shkp;
+    otmp = getobj("have identified", shk_appraise_ok, GETOBJ_NOFLAGS);
+    appraiser = (struct monst *) 0;
+    if (!otmp || !shk_can_appraise(shkp, otmp))
+        return TRUE;
+
+    fee = shk_appraisal_fee(shkp, otmp);
+    if (money_cnt(gi.invent) < fee) {
+        if (talks) {
+            SetVoice(shkp, 0, 80, 0);
+            verbalize("That would cost you %ld %s.  Come back when you have it.",
+                      fee, currency(fee));
+        } else {
+            pline("%s shakes %s %s in refusal.", Shknam(shkp),
+                  noit_mhis(shkp), mbodypart(shkp, HEAD));
+        }
+        return TRUE;
+    }
+    Sprintf(qbuf, "Identifying that costs %ld %s.  Pay?", fee, currency(fee));
+    if (y_n(qbuf) != 'y')
+        return TRUE;
+
+    (void) money2mon(shkp, fee);
+    disp.botl = TRUE;
+    pline("%s takes a close look at it.", Shknam(shkp));
+    otmp->dknown = 1;
+    makeknown(otmp->otyp);
+    prinv((char *) 0, otmp, 0L);
+    update_inventory();
+    return TRUE;
+}
 
 staticfn void
 kops_gone(boolean silent)
