@@ -483,6 +483,44 @@ restore_attrib(void)
         encumber_msg();
 }
 
+/* Polypiled: characteristics lowered below their peak (poison, mind
+   flayers, and the like) come back on their own, one point at a time.
+   Called once per turn.  The odds of a point returning on a given turn
+   depend on Con, so a hale hero recovers faster: about one point every
+   400 turns at Con 10, every 240 at Con 18.  Poison resistance halves
+   the wait.  Only the gap between the current value and the peak (AMAX)
+   heals; a peak that was itself driven down stays lowered.  Sustain
+   ability does not stop it, just as it doesn't stop restore ability. */
+void
+recover_lowered_attrib(void)
+{
+    int i, lowered[A_MAX], nlowered = 0, odds;
+
+    for (i = 0; i < A_MAX; i++)
+        if (ABASE(i) < AMAX(i))
+            lowered[nlowered++] = i;
+    if (!nlowered)
+        return;
+
+    odds = 600 - 20 * ACURR(A_CON);
+    if (Poison_resistance)
+        odds /= 2;
+    if (odds < 50)
+        odds = 50;
+    if (rn2(odds))
+        return;
+
+    i = lowered[rn2(nlowered)];
+    ABASE(i)++;
+    if (ABASE(i) < AMAX(i))
+        pline("Some of your lost %s returns.", attrname[i]);
+    else
+        Your("%s is fully restored.", attrname[i]);
+    disp.botl = TRUE;
+    if (i == A_STR || i == A_CON)
+        encumber_msg();
+}
+
 #define AVAL 50 /* tune value for exercise gains */
 
 void
