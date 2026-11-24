@@ -5112,6 +5112,76 @@ shk_defend_customer(struct monst *shkp)
     return (res == -1) ? 0 : res;
 }
 
+/* Polypiled: a pet that reaches the shop door carrying goods it picked up
+   inside has them taken back by the shopkeeper, who returns them to the
+   shelves.  Pets still fetch things around the shop; they just can't
+   carry them out. */
+void
+shk_reclaim_from_pet(struct monst *pet)
+{
+    struct monst *shkp;
+    struct eshk *eshkp;
+    struct mkroom *sroom;
+    struct obj *otmp, *nobj;
+    coordxy x, y;
+    int tries;
+    boolean said = FALSE, seen;
+
+    if (!svl.level.flags.has_shop)
+        return;
+    for (otmp = pet->minvent; otmp; otmp = otmp->nobj)
+        if (otmp->how_lost == LOST_SHOPGOODS)
+            break;
+    if (!otmp)
+        return;
+
+    for (shkp = fmon; shkp; shkp = shkp->nmon) {
+        if (DEADMONSTER(shkp) || !shkp->isshk || !inhishop(shkp)
+            || ANGRY(shkp) || helpless(shkp))
+            continue;
+        eshkp = ESHK(shkp);
+        if (pet->mx == eshkp->shd.x && pet->my == eshkp->shd.y)
+            break;
+    }
+    if (!shkp)
+        return;
+
+    sroom = &svr.rooms[eshkp->shoproom - ROOMOFFSET];
+    seen = (canseemon(pet) || canseemon(shkp));
+    for (otmp = pet->minvent; otmp; otmp = nobj) {
+        nobj = otmp->nobj;
+        if (otmp->how_lost != LOST_SHOPGOODS)
+            continue;
+        if (seen) {
+            if (!said && !Deaf && !muteshk(shkp)) {
+                SetVoice(shkp, 0, 80, 0);
+                verbalize("That stays in the shop!");
+            }
+            said = TRUE;
+            pline("%s takes %s back from %s.", Shknam(shkp),
+                  distant_name(otmp, doname), mon_nam(pet));
+        }
+        extract_from_minvent(pet, otmp, TRUE, TRUE);
+        otmp->how_lost = LOST_NONE;
+        otmp->no_charge = 0;
+        /* back on a shelf: a random square of the shop proper */
+        for (tries = 0; tries < 50; tries++) {
+            x = rn1(sroom->hx - sroom->lx + 1, sroom->lx);
+            y = rn1(sroom->hy - sroom->ly + 1, sroom->ly);
+            if (costly_spot(x, y) && inside_shop(x, y) == eshkp->shoproom
+                && !u_at(x, y))
+                break;
+        }
+        if (tries < 50) {
+            place_object(otmp, x, y);
+            stackobj(otmp);
+            newsym(x, y);
+        } else {
+            (void) mpickobj(shkp, otmp);
+        }
+    }
+}
+
 /* called after shopkeeper moves, in case move causes re-entry into shop */
 void
 after_shk_move(struct monst *shkp)
