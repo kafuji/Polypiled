@@ -8296,5 +8296,10 @@
 "your starting role (e.g., Barbarian, Valkyrie)":"開始時の職業（例：Barbarian、Valkyrie）",
 "zap (cast) a spell":"呪文を唱える",
 "zap a wand":"杖を振る",
-"zlib failed to allocate memory":"zlib がメモリを確保できませんでした"
+"zlib failed to allocate memory":"zlib がメモリを確保できませんでした",
+"Nobody bothers my customers!":"うちのお客に手出しはさせんぞ！",
+"%s offers to identify your goods, for a fee.":"{1}は料金と引き換えに品物の識別を申し出た。",
+"That would cost you %ld %s.  Come back when you have it.":"それなら{1}{2}かかるよ。用意できたらまたおいで。",
+"Identifying that costs %ld %s.  Pay?":"識別料は{1}{2}です。払いますか？",
+"%s takes a close look at it.":"{1}はそれをじっくりと調べた。"
 }

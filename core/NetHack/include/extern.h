@@ -3047,6 +3047,7 @@ extern void neweshk(struct monst *) NONNULLARG1;
 extern void free_eshk(struct monst *) NONNULLARG1;
 extern void stock_room(int, struct mkroom *) NONNULLARG2;
 extern boolean saleable(struct monst *, struct obj *) NONNULLARG12;
+extern void restock_shops(long);
 extern int get_shop_item(int);
 extern char *Shknam(struct monst *) NONNULLARG1;
 extern char *shkname(struct monst *) NONNULLARG1;
