@@ -498,7 +498,7 @@ recover_lowered_attrib(void)
         "strength", "intelligence", "wisdom",
         "dexterity", "constitution", "charisma"
     };
-    int i, lowered[A_MAX], nlowered = 0, wait;
+    int i, lowered[A_MAX], nlowered = 0, odds;
 
     for (i = 0; i < A_MAX; i++)
         if (ABASE(i) < AMAX(i))
@@ -506,12 +506,12 @@ recover_lowered_attrib(void)
     if (!nlowered)
         return;
 
-    wait = 600 - 20 * ACURR(A_CON);
+    odds = 600 - 20 * ACURR(A_CON);
     if (Poison_resistance)
-        wait /= 2;
-    if (wait < 50)
-        wait = 50;
-    if (rn2(wait))
+        odds /= 2;
+    if (odds < 50)
+        odds = 50;
+    if (rn2(odds))
         return;
 
     i = lowered[rn2(nlowered)];
