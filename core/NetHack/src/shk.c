@@ -864,99 +864,11 @@ u_entered_shop(char *enterstring)
                 eshkp->visitct++ ? " again" : "");
         }
     }
-    /* can't do anything about blocking if teleported in */
-    if (!inside_shop(u.ux, u.uy)) {
-        boolean should_block, not_upset = !eshkp->surcharge;
-        int cnt;
-        const char *tool;
-        struct obj *pick = carrying(PICK_AXE),
-                   *mattock = carrying(DWARVISH_MATTOCK);
-
-        if (pick || mattock) {
-            cnt = 1;               /* so far */
-            if (pick && mattock) { /* carrying both types */
-                tool = "digging tool";
-                cnt = 2; /* `more than 1' is all that matters */
-            } else if (pick) {
-                tool = "pick-axe";
-                /* hack: `pick' already points somewhere into inventory */
-                while ((pick = pick->nobj) != 0)
-                    if (pick->otyp == PICK_AXE)
-                        ++cnt;
-            } else { /* assert(mattock != 0) */
-                tool = "mattock";
-                while ((mattock = mattock->nobj) != 0)
-                    if (mattock->otyp == DWARVISH_MATTOCK)
-                        ++cnt;
-                /* [ALI] Shopkeeper identifies mattock(s) */
-                if (!Blind)
-                    makeknown(DWARVISH_MATTOCK);
-            }
-            if (!Deaf && !muteshk(shkp)) {
-                SetVoice(shkp, 0, 80, 0);
-                verbalize(not_upset
-                              ? "Will you please leave your %s%s outside?"
-                              : "Leave the %s%s outside.",
-                          tool, plur(cnt));
-            } else {
-                pline("%s %s to let you in with your %s%s.",
-                      Shknam(shkp),
-                      not_upset ? "is hesitant" : "refuses",
-                      tool, plur(cnt));
-            }
-            should_block = TRUE;
-        } else if (u.usteed) {
-            if (!Deaf && !muteshk(shkp)) {
-                SetVoice(shkp, 0, 80, 0);
-                verbalize(not_upset ? "Will you please leave %s outside?"
-                                    : "Leave %s outside.",
-                          y_monnam(u.usteed));
-            } else {
-                pline("%s %s to let you in while you're riding %s.",
-                      Shknam(shkp),
-                      not_upset ? "doesn't want" : "refuses",
-                      y_monnam(u.usteed));
-            }
-            should_block = TRUE;
-        } else {
-            should_block =
-                (Fast && (sobj_at(PICK_AXE, u.ux, u.uy)
-                          || sobj_at(DWARVISH_MATTOCK, u.ux, u.uy)));
-        }
-        if (should_block)
-            (void) dochug(shkp); /* shk gets extra move */
-    }
+    /* Polypiled: digging tools and steeds are welcome.  Digging out of
+       the shop is already answered by the shopkeeper grabbing the
+       hero's pack or billing for wall damage, and a wand of digging
+       was never turned away. */
     return;
-}
-
-/* called when removing a pick-axe or mattock from a container */
-void
-pick_pick(struct obj *obj)
-{
-    struct monst *shkp;
-
-    if (obj->unpaid || !is_pick(obj))
-        return;
-    shkp = shop_keeper(*u.ushops);
-    if (shkp && inhishop(shkp)) {
-        static NEARDATA long pickmovetime = 0L;
-
-        /* if you bring a sack of N picks into a shop to sell,
-           don't repeat this N times when they're taken out */
-        if (svm.moves != pickmovetime) {
-            if (!Deaf && !muteshk(shkp)) {
-                SetVoice(shkp, 0, 80, 0);
-                verbalize("You sneaky %s!  Get out of here with that pick!",
-                      cad(FALSE));
-            } else {
-                pline("%s %s your pick!",
-                      Shknam(shkp),
-                      haseyes(shkp->data) ? "glares at"
-                                          : "is dismayed because of");
-            }
-        }
-        pickmovetime = svm.moves;
-    }
 }
 
 /*
@@ -4930,7 +4842,7 @@ shk_move(struct monst *shkp)
     schar appr;
     struct eshk *eshkp = ESHK(shkp);
     int z;
-    boolean uondoor = FALSE, satdoor, avoid = FALSE, badinv;
+    boolean uondoor = FALSE, satdoor, avoid = FALSE;
 
     omx = shkp->mx;
     omy = shkp->my;
@@ -5006,25 +4918,20 @@ shk_move(struct monst *shkp)
         avoid = FALSE;
     } else {
 #define GDIST(x, y) (dist2(x, y, gtx, gty))
-        if (Invis || u.usteed) {
+        if (Invis) {
             avoid = FALSE;
         } else {
+            /* Polypiled: digging tools and steeds no longer keep the
+               hero out, so the shopkeeper steps aside for them too */
             uondoor = u_at(eshkp->shd.x, eshkp->shd.y);
-            if (uondoor) {
-                badinv = (carrying(PICK_AXE) || carrying(DWARVISH_MATTOCK)
-                          || (Fast && (sobj_at(PICK_AXE, u.ux, u.uy)
-                                  || sobj_at(DWARVISH_MATTOCK, u.ux, u.uy))));
-                if (satdoor && badinv)
-                    return 0;
-                avoid = !badinv;
-            } else {
+            if (uondoor)
+                avoid = TRUE;
+            else
                 avoid = (*u.ushops && distu(gtx, gty) > 8);
-                badinv = FALSE;
-            }
 
             if (((!eshkp->robbed && !eshkp->billct && !eshkp->debit) || avoid)
                 && GDIST(omx, omy) < 3) {
-                if (!badinv && !onlineu(omx, omy))
+                if (!onlineu(omx, omy))
                     return 0;
                 if (satdoor)
                     appr = gtx = gty = 0;
@@ -6127,8 +6034,7 @@ block_entry(coordxy x, coordxy y)
 
     if (shkp->mx == sx && shkp->my == sy && !helpless(shkp)
         && (x == sx - 1 || x == sx + 1 || y == sy - 1 || y == sy + 1)
-        && (Invis || carrying(PICK_AXE) || carrying(DWARVISH_MATTOCK)
-            || u.usteed)) {
+        && Invis) {
         pline("%s%s blocks your way!", Shknam(shkp),
               Invis ? " senses your motion and" : "");
         return TRUE;

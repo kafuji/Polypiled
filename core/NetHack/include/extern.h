@@ -2970,7 +2970,6 @@ extern char inside_shop(coordxy, coordxy);
 extern void u_left_shop(char *, boolean) NONNULLARG1;
 extern void remote_burglary(coordxy, coordxy);
 extern void u_entered_shop(char *);
-extern void pick_pick(struct obj *) NONNULLARG1;
 extern boolean same_price(struct obj *, struct obj *) NONNULLARG12;
 extern void shopper_financial_report(void);
 extern int inhishop(struct monst *) NONNULLARG1;
