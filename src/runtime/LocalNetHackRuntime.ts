@@ -1,6 +1,7 @@
 import type { NethackRuntimeVersion } from "./types";
 import { isLoggingEnabled } from "../logging";
 import { RuntimePortraitDialogs } from "./local/messages/portrait-dialog";
+import { nearbySpeakerTile } from "../plus/portrait-dialog/actors";
 import { extractRuntimeNumberPadModeEnabled } from "./number-pad-mode";
 import { createRuntimeSystems, type RuntimeSystems } from "./local/create-runtime-systems";
 import type { RuntimeEventHandler, RuntimeStartupOptions, RuntimeEvent } from "./types";
@@ -253,7 +254,9 @@ class LocalNetHackRuntime {
   private presentPortraitMessage(value: unknown): number | Promise<number> {
     const text = this.systems.promptContext.normalizePromptContextMessage(value);
     if (!text || this.systems.contextualLook.isContextualInfoQuiet() || this.systems.gameOver.gameOverSequenceActive) return 0;
-    return this.portraits.message(text, () => this.systems.status.readLatestStatusInteger("BL_TIME"));
+    const map = this.systems.mapCallbacks;
+    return this.portraits.message(text, () => this.systems.status.readLatestStatusInteger("BL_TIME"),
+      actor => nearbySpeakerTile(actor, map.gameMap.values(), map.playerPosition));
   }
 
   private dispatchUICallback(name: string, args: any[]): any {

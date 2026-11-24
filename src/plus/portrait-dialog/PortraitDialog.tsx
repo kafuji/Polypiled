@@ -2,18 +2,20 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useI18n } from "../../i18n";
 import { translateMonsterName } from "../../i18n/game-monsters";
 import { presentGameMessage } from "../../i18n/message-presentation";
-import { NH5_TILE_KEYS } from "../../game/hires-tiles/tile-keys.5.generated";
+import { hasPaintedPortrait, portraitActor } from "./actors";
 import { portraitSnapshot, subscribePortrait } from "./store";
 import "./portrait-dialog.css";
 
 const labels: Record<string, [string, string]> = {
   shopkeeper: ["Shopkeeper", "店主"], nurse: ["Nurse", "看護師"],
-  dog: ["Dog", "犬"], kitten: ["Cat", "猫"], pony: ["Horse", "馬"],
+  little_dog: ["Little dog", "子犬"], dog: ["Dog", "犬"], large_dog: ["Large dog", "大型犬"],
+  kitten: ["Kitten", "子猫"], housecat: ["Housecat", "飼い猫"], large_cat: ["Large cat", "大型猫"],
+  pony: ["Pony", "仔馬"], horse: ["Horse", "馬"], warhorse: ["Warhorse", "軍馬"],
+  shopkeeper_female: ["Shopkeeper", "店主"], oracle: ["Oracle", "神託者"], watchman: ["Watchman", "衛兵"],
   wizard: ["Wizard of Yendor", "イェンダーの魔法使い"], pet: ["Pet", "ペット"],
   baalzebub: ["Baalzebub", "ベルゼブブ"], succubus: ["Succubus", "サキュバス"],
   incubus: ["Incubus", "インキュバス"], chat: ["Conversation", "会話"],
 };
-const painted = new Set(["shopkeeper", "nurse", "dog", "wizard"]);
 
 export function PortraitDialog() {
   const scene = useSyncExternalStore(subscribePortrait, portraitSnapshot);
@@ -70,10 +72,9 @@ export function PortraitDialog() {
     }
   }, [scene]);
   if (!scene) return null;
-  const species = scene.tileIndex === undefined ? "" : NH5_TILE_KEYS[scene.tileIndex]?.match(/^mon\/(.+?)_(?:male|female)$/)?.[1];
-  const actor = scene.actor === "chat" && species ? ({ little_dog: "dog", large_dog: "dog", wizard_of_yendor: "wizard" }[species] ?? species) : scene.actor;
+  const actor = portraitActor(scene.actor, scene.tileIndex);
   const label = labels[actor]?.[locale === "ja" ? 1 : 0] ?? translateMonsterName(actor.replace(/_/g, " "), locale);
-  const portrait = painted.has(actor) ? `assets/portraits/${actor}.png`
+  const portrait = hasPaintedPortrait(actor) ? `assets/portraits/${actor}.png`
     : scene.preview ?? (/^[a-z0-9_]+$/.test(actor) && !["pet", "chat"].includes(actor)
       ? `assets/vulture/win/vulture/gamedata/tiles/monster.pm_${actor}.png` : null);
   return <dialog ref={dialog} className="portrait-dialog" aria-labelledby="portrait-speaker"

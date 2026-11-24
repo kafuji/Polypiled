@@ -7,9 +7,12 @@ export interface PortraitScene {
 }
 
 const nurseHit = /^(?:the |a )?nurse(?: named .+?)? hits(?: you)?[!.]/i;
+const shopEntranceRequest = /^"(?:Will you please leave .+ outside[?]|Leave .+ outside[.])"$| (?:is hesitant|refuses) to let you in with your (?:pick-axe|mattock|digging tool)s?[.]$| (?:doesn't want|refuses) to let you in while you're riding .+[.]$/i;
 const pets = / (whines|meows|whinnies|is confused from hunger|seems famished)\.$/i;
 
 function petActor(text: string): string {
+  const stage = text.match(/\b(little dog|large dog|kitten|housecat|large cat|pony|warhorse|horse)\b/i)?.[1];
+  if (stage) return stage.toLowerCase().replace(" ", "_");
   if (/\b(?:dog|puppy|hound)\b| whines\.$/i.test(text)) return "dog";
   if (/\b(?:cat|kitten)\b| meows\.$/i.test(text)) return "kitten";
   if (/\b(?:horse|pony|warhorse)\b| whinnies\.$/i.test(text)) return "pony";
@@ -98,13 +101,15 @@ export class RuntimePortraitDialogs {
       return this.page({ actor: this.speaker, text, input: "offer" });
   }
 
-  message(text: string, readTurn: () => number | null): number | Promise<number> {
+  message(text: string, readTurn: () => number | null, nearbyTile?: (actor: string) => number | undefined): number | Promise<number> {
     if (!this.enabled || this.pending) return 0;
-    const tileIndex = this.chatTile;
+    const chatTile = this.chatTile;
+    let tileIndex = chatTile;
     this.chatTile = undefined;
     let actor: string;
     let warning = "";
-    if (/!\s+Welcome(?: again)? to |^"Invisible customers are not welcome!|^"So, .+, you dare return to |^"Back again, .+I've got my/i.test(text)) actor = "shopkeeper";
+    if (/^".+, welcome to Delphi!"$|^"You're in Delphi, /i.test(text)) actor = "oracle";
+    else if (shopEntranceRequest.test(text) || /!\s+Welcome(?: again)? to |^"Invisible customers are not welcome!|^"So, .+, you dare return to |^"Back again, .+I've got my/i.test(text)) actor = "shopkeeper";
     else if (nurseHit.test(text)) { actor = "nurse"; warning = actor; }
     else if (pets.test(text) || /^"I'm hungry\."$|^You feel worried about .+\.$/i.test(text)) {
       actor = petActor(text);
@@ -116,14 +121,18 @@ export class RuntimePortraitDialogs {
     else if (tileIndex === null && / (?:purrs|mews|yowls)\.$/i.test(text)) actor = "kitten";
     else if (tileIndex === null && / (?:whickers|neighs)\.$/i.test(text)) actor = "pony";
     else if (tileIndex !== undefined && (tileIndex !== null || /^"/.test(text))) actor = "chat";
-    else if (this.speaker && (/^"|^(?:The |An? )?(?:succubus|incubus|Baalzebub)\b|^(?:He|She) |^Time stands still while |^You (?:refuse\.|give |seem to have enjoyed)/i.test(text))) actor = this.speaker;
+    else if (this.speaker && this.speaker !== "shopkeeper" && (/^"|^(?:The |An? )?(?:succubus|incubus|Baalzebub)\b|^(?:He|She) |^Time stands still while |^You (?:refuse\.|give |seem to have enjoyed)/i.test(text))) actor = this.speaker;
     else return 0;
-    if (["succubus", "incubus", "baalzebub", "chat"].includes(actor)) {
+    if (tileIndex == null && (actor === "shopkeeper" || ["dog", "kitten", "pony", "pet"].includes(actor))) {
+      tileIndex = (this.speaker === actor ? this.speakerTile : undefined) ?? nearbyTile?.(actor);
+    }
+    if (["shopkeeper", "succubus", "incubus", "baalzebub", "chat"].includes(actor)) {
+      if (this.speaker !== actor) this.speakerTile = undefined;
       this.speaker = actor;
       if (tileIndex != null) this.speakerTile = tileIndex;
     }
     else this.endConversation();
-    if (warning && tileIndex === undefined) {
+    if (warning && chatTile === undefined) {
       // Consecutive hits or cries belong to one encounter. Re-arm after a quiet interval.
       const now = readTurn() ?? this.commands;
       const previous = this.lastWarning.get(warning);

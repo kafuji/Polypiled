@@ -1,4 +1,4 @@
-.portrait-dialog { position: fixed; inset: auto 0 0; margin: 0 auto; width: 94vw; max-width: 100vw; padding: 0; border: 0; color: #f7ecd8; background: transparent; overflow: visible; }
+.portrait-dialog { position: fixed; inset: auto 0 0; margin: 0 auto; width: min(94vw, 80rem); max-width: 100vw; padding: 0; border: 0; color: #f7ecd8; background: transparent; overflow: visible; }
 .portrait-dialog::backdrop { background: linear-gradient(transparent 10%, #10101880); }
 .portrait-stage { position: relative; isolation: isolate; padding-top: min(40dvh, 23rem); }
 .portrait-player, .portrait-speaker-art { position: absolute; z-index: -1; width: 46%; height: min(58dvh, 33rem); object-fit: contain; bottom: 3rem; pointer-events: none; }

@@ -41,6 +41,30 @@ it("keeps the ordinary log when disabled", () => {
   expect(events.map(e => e.type)).not.toContain("portrait_dialog");
 });
 
+it.each([
+  '"Will you please leave your pick-axe outside?"',
+  '"Leave the digging tools outside."',
+  '"Will you please leave your warhorse outside?"',
+  '"Leave Silver outside."',
+  "Izchak refuses to let you in while you're riding Silver.",
+])("keeps the shopkeeper on screen for the entrance restriction %s", async text => {
+  const { events } = setup();
+  const raw = (line: string) => runtime.handleUICallback("shim_raw_print", [line]);
+  const greeting = raw('"Hello, wizard!  Welcome to Izchak\'s lighting store!"');
+  runtime.portraits.dismiss(1);
+  await greeting;
+  const request = raw(text);
+  expect(events.filter(event => event.type === "portrait_dialog")).toMatchObject([
+    { actor: "shopkeeper", conversation: true, id: 1 },
+    { actor: "shopkeeper", conversation: true, id: 2, text },
+  ]);
+  expect(events.some(event => event.type === "portrait_conversation_end")).toBe(false);
+  runtime.portraits.dismiss(2);
+  await request;
+  runtime.portraits.beginCommand();
+  expect(events[events.length - 1].type).toBe("portrait_conversation_end");
+});
+
 it.each(["shim_raw_print", "shim_raw_print_bold"])("pauses a pet reply delivered by %s", async callback => {
   const { events } = setup();
   const question = runtime.handleUICallback("shim_yn_function", ["Talk to whom? (in what direction)", "", 0]);
