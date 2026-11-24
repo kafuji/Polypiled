@@ -494,10 +494,6 @@ restore_attrib(void)
 void
 recover_lowered_attrib(void)
 {
-    static const char *const attrname[] = {
-        "strength", "intelligence", "wisdom",
-        "dexterity", "constitution", "charisma"
-    };
     int i, lowered[A_MAX], nlowered = 0, odds;
 
     for (i = 0; i < A_MAX; i++)
