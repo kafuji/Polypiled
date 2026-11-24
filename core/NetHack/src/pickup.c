@@ -2769,8 +2769,6 @@ out_container(struct obj *obj)
         obj->oy = gc.current_container->oy;
         addtobill(obj, FALSE, FALSE, FALSE);
     }
-    if (is_pick(obj))
-        pick_pick(obj); /* shopkeeper feedback */
 
     otmp = addinv(obj);
     pickup_prinv(otmp, count, "removing");
