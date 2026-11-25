@@ -335,6 +335,9 @@ class LocalNetHackRuntime {
       case "shim_floor_here":
         return this.systems.mapCallbacks.handleShimFloorHere(args);
 
+      case "shim_monster_glance":
+        return this.systems.mapCallbacks.handleShimMonsterGlance(args);
+
       case "shim_inventory":
         return this.systems.mapCallbacks.handleShimInventory(args);
 

@@ -5907,8 +5907,9 @@ maybe_destroy_item(
                                        destroyed */
         if (obj->in_use)
             --quan; /* one will be used up elsewhere */
+        /* Polypiled: 1 in 6 of each stack is lost (vanilla 1 in 3) */
         for (i = cnt = 0L; i < quan; i++)
-            if (!rn2(3))
+            if (!rn2(6))
                 cnt++;
 
         if (!cnt)
@@ -5968,7 +5969,8 @@ maybe_destroy_item(
 }
 
 /* scaling factor; dmg/5 stacks will be subjected to destroy_items() */
-#define DMG_DESTROY_SCALE 5
+/* Polypiled: one stack at risk per 10 HP of damage (vanilla 5) */
+#define DMG_DESTROY_SCALE 10
 /* largest amount of stacks that will be destroyed in a single call */
 #define MAX_ITEMS_DESTROYED 20
 

@@ -6,6 +6,7 @@ import { gameFrameTime } from "./engine/rendering/frame-time";
 import { WebHaptics } from "web-haptics";
 import { WorkerRuntimeBridge } from "../runtime";
 import { markPortraitAcknowledged, portraitSnapshot, releaseAcknowledgedPortrait, setPortrait } from "../plus/portrait-dialog/store";
+import { resetMonsterGlance, setGlancedMonsters } from "../plus/monster-glance/store";
 import type { RuntimeEvent } from "../runtime";
 import { FmodRuntime } from "../audio";
 import { BackgroundMusic, type MusicMood } from "../audio/music";
@@ -984,6 +985,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
         if (data.floorHere) this.systems.engineState.uiAdapter.setFloorHere(data.floorHere);
         break;
 
+      case "monster_glance":
+        if (Array.isArray(data.monsters)) setGlancedMonsters(data.monsters);
+        break;
+
       case "inventory_operation_settled":
         this.systems.inventoryProcedures.onSettled();
         break;
@@ -1645,6 +1650,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         setPortrait(null);
         this.systems.playerKnowledge.reset();
         this.systems.engineState.uiAdapter.setFloorHere(null);
+        resetMonsterGlance();
         this.systems.menuPreviews.publishInventoryState(null);
         this.systems.inventoryProcedures.reset();
         this.systems.promptDialogs.setInventoryStateAvailable(false);

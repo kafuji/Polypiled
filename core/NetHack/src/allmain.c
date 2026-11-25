@@ -611,9 +611,13 @@ regen_pw(int wtcap)
 {
     if (u.uen < u.uenmax
         && ((wtcap < MOD_ENCUMBER
+             /* Polypiled: half vanilla's wait plus 3 turns, so a low-level
+                caster gets Pw back about half again as fast (XL1: every 15
+                turns, Wizard 12; vanilla 24 and 18) while the late game
+                stays about the same (XL30: every 5) */
              && (!(svm.moves % ((MAXULEV + 8 - u.ulevel)
                               * (Role_if(PM_WIZARD) ? 3 : 4)
-                              / 6)))) || Energy_regeneration)) {
+                              / 12 + 3)))) || Energy_regeneration)) {
         int upper = (int) (ACURR(A_WIS) + ACURR(A_INT)) / 15 + 1;
 
         if (EMagical_breathing)

@@ -725,6 +725,88 @@ nh3d_publish_floor_here(boolean force)
 }
 
 /*
+ * Polypiled: the monsters the hero actually sees, with their names and how
+ * hurt they look, for the shell's hover label.  Sent as a JSON string
+ * (notification "shim_monster_glance") whenever it changes.  Only what one
+ * can tell by looking: no monster sensed by telepathy, warning or
+ * detection, no disguised mimic or hider, and nothing while hallucinating.
+ */
+#define NH3D_GLANCE_BUFSZ 16384
+
+static char nh3d_glance_json[NH3D_GLANCE_BUFSZ];
+static char nh3d_glance_prev[NH3D_GLANCE_BUFSZ];
+
+static const char *
+nh3d_health_word(struct monst *mon)
+{
+    int mhp_max = max(mon->mhpmax, 1), pct = (mon->mhp * 100) / mhp_max;
+
+    return (mon->mhp >= mhp_max) ? "uninjured"
+           : (pct >= 50) ? "wounded"
+             : (pct >= 15) ? "badly wounded"
+               : "nearly dead";
+}
+
+static void
+nh3d_build_monster_glance(struct nh3d_json *js)
+{
+    struct monst *mtmp;
+    boolean first = TRUE;
+
+    nh3d_json_raw(js, "{\"v\":1,\"monsters\":[");
+    if (!Hallucination) {
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+            if (DEADMONSTER(mtmp) || !canseemon(mtmp) || mtmp->mundetected
+                || M_AP_TYPE(mtmp) != M_AP_NOTHING)
+                continue;
+            if (!first)
+                nh3d_json_raw(js, ",");
+            first = FALSE;
+            nh3d_json_raw(js, "{\"x\":");
+            nh3d_json_int(js, mtmp->mx);
+            nh3d_json_raw(js, ",\"y\":");
+            nh3d_json_int(js, mtmp->my);
+            nh3d_json_raw(js, ",\"name\":");
+            nh3d_json_string(js, l_monnam(mtmp));
+            nh3d_json_raw(js, ",\"health\":");
+            nh3d_json_string(js, nh3d_health_word(mtmp));
+            nh3d_json_raw(js, mtmp->mtame ? ",\"tame\":true"
+                              : mtmp->mpeaceful ? ",\"peaceful\":true" : "");
+            nh3d_json_raw(js, "}");
+        }
+    }
+    nh3d_json_raw(js, "]}");
+}
+
+static void
+nh3d_publish_monster_glance(boolean force)
+{
+    struct nh3d_json js;
+
+    js.buf = nh3d_glance_json;
+    js.len = 0;
+    js.cap = sizeof nh3d_glance_json;
+    js.overflow = FALSE;
+    nh3d_glance_json[0] = '\0';
+    nh3d_build_monster_glance(&js);
+    if (js.overflow)
+        return;
+    if (!force && !strcmp(nh3d_glance_json, nh3d_glance_prev))
+        return;
+    Strcpy(nh3d_glance_prev, nh3d_glance_json);
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_monster_glance",
+            UTF8ToString($0),
+        ]);
+    }, nh3d_glance_json);
+}
+
+/*
  * The hero's inventory, for the shell's inventory screen: every carried
  * object with what doname() would tell about it, split into fields, and the
  * contents of containers whose contents the hero knows.  Sent as a JSON
@@ -1359,6 +1441,7 @@ nh3d_knowledge_publish(void)
                || nh3d_full_frame_requested();
     nh3d_publish_floor_here(complete);
     nh3d_publish_inventory(complete);
+    nh3d_publish_monster_glance(complete); /* Polypiled */
 
     nh3d_fill_hero(hero);
     nh3d_fill_level(level);

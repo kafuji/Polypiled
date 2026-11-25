@@ -8302,5 +8302,12 @@
 "Identifying that costs %ld %s.  Pay?":"識別料は{1}{2}です。払いますか？",
 "%s takes a close look at it.":"{1}はそれをじっくりと調べた。",
 "That stays in the shop!":"それは店の品だ、置いていきな！",
-"%s takes %s back from %s.":"{1}は{3}から{2}を取り返した。"
+"%s takes %s back from %s.":"{1}は{3}から{2}を取り返した。",
+"You stuff yourself until you can't move.":"動けなくなるまで腹に詰め込んだ。",
+"You pass out from overeating.":"食べすぎて気を失った。",
+"You come out of your food coma.":"満腹の昏睡から目を覚ました。",
+"Putting that inside will blow up %s.  Do it anyway?":"それを入れると{1}が吹き飛びます。それでも入れますか？",
+"You can now see what was invisible!":"見えなかったものが見えるようになった！",
+"%s offers to read the blessings upon your possessions for %ld %s.  Accept?":"{1}は{2}{3}で持ち物の祝福と呪いを見てくれるという。頼みますか？",
+"%s lays hands upon your possessions.":"{1}はあなたの持ち物に手をかざした。"
 }

@@ -1558,7 +1558,9 @@ goto_level(
      * gradually but substantially.  The drop off is greater when hero is
      * sent down farther so benefits lawfuls more than chaotics this time.
      */
-    if (Inhell && up && u.uhave.amulet && !newdungeon && !portal
+    /* Polypiled: no mysterious force; climbing out with the Amulet only
+       lengthened the run without asking anything of the player */
+    if (FALSE && Inhell && up && u.uhave.amulet && !newdungeon && !portal
         && (dunlev(&u.uz) < dunlevs_in_dungeon(&u.uz) - 3)) {
         if (!rn2(4 + svc.context.mysteryforce)) {
             int odds = 3 + (int) u.ualign.type,   /* 2..4 */

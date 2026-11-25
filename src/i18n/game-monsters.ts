@@ -65,11 +65,13 @@ export function translateMonsterName(text: string, locale: SupportedLocale): str
   if (!match) return text;
   const adjectives: Readonly<Record<string, string>> = {
     renegade: "背教の", tame: "飼いならされた", peaceful: "友好的な", invisible: "透明な", saddled: "鞍を付けた", poor: "かわいそうな",
+    // Polypiled: farlook tells how hurt a seen monster looks (pager.c mon_looks_hurt()).
+    uninjured: "無傷の", wounded: "負傷した", "badly wounded": "重傷の", "nearly dead": "瀕死の",
   };
   let name = match[2];
   const modifiers: string[] = [];
   for (;;) {
-    const modifier = /^(renegade|tame|peaceful|invisible|saddled|poor) (.+)$/.exec(name);
+    const modifier = /^(renegade|tame|peaceful|invisible|saddled|poor|uninjured|wounded|badly wounded|nearly dead) (.+)$/.exec(name);
     if (!modifier) break;
     modifiers.push(adjectives[modifier[1]]);
     name = modifier[2];

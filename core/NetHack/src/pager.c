@@ -11,6 +11,7 @@
 #include "hack.h"
 #include "dlb.h"
 
+staticfn char *mon_looks_hurt(struct monst *, char *);
 staticfn boolean is_swallow_sym(int);
 staticfn int append_str(char *, const char *) NONNULLPTRS;
 staticfn void trap_description(char *, int, coordxy, coordxy) NONNULLARG1;
@@ -134,6 +135,22 @@ self_lookat(char *outbuf)
 
 /* format a description of 'mon's health for look_at_monster(), done_in_by();
    result isn't Healer-specific (not trained for arbitrary creatures) */
+/* Polypiled: what anyone looking at a monster can tell about its
+   health, with a trailing space: "uninjured ", "wounded ", "badly wounded "
+   or "nearly dead " (vanilla's monhealthdescr() stays disabled, since
+   death messages use it too) */
+staticfn char *
+mon_looks_hurt(struct monst *mon, char *outbuf)
+{
+    int mhp_max = max(mon->mhpmax, 1), pct = (mon->mhp * 100) / mhp_max;
+
+    Strcpy(outbuf, (mon->mhp >= mhp_max) ? "uninjured "
+                   : (pct >= 50) ? "wounded "
+                     : (pct >= 15) ? "badly wounded "
+                       : "nearly dead ");
+    return outbuf;
+}
+
 char *
 monhealthdescr(struct monst *mon, boolean addspace, char *outbuf)
 {
@@ -434,7 +451,9 @@ look_at_monster(
             (mtmp->mx != x || mtmp->my != y)
                 ? ((mtmp->isshk && accurate) ? "tail of " : "tail of a ")
                 : "",
-            accurate ? monhealthdescr(mtmp, TRUE, healthbuf) : "",
+            /* Polypiled: how hurt a monster the hero actually sees looks */
+            (accurate && canseemon(mtmp)) ? mon_looks_hurt(mtmp, healthbuf)
+                                          : "",
             (mtmp->mtame && accurate)
                 ? "tame "
                 : (mtmp->mpeaceful && accurate)

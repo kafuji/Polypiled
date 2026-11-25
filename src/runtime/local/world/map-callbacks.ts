@@ -5,6 +5,7 @@ import type { RuntimeCoordinator } from "../runtime-coordinator";
 import { isLoggingEnabled } from "../../../logging";
 import { decodeKnowledgeFrame } from "../../knowledge";
 import { parseFloorHere } from "../../floor-here";
+import { parseMonsterGlance } from "../../monster-glance";
 import { parseInventoryState } from "../../inventory-state";
 import type { RuntimePointerContract } from "../abi/pointer-contract";
 import type { RuntimeGlyphs } from "./glyphs";
@@ -392,6 +393,19 @@ export class RuntimeMapCallbacks {
     }
     if (this.deps.coordinator.eventHandler) {
       this.deps.coordinator.emit({ type: "floor_here", floorHere });
+    }
+    return 0;
+  }
+
+  /** Polypiled: the monsters the hero sees, with how hurt they look (src/runtime/monster-glance.ts). */
+  handleShimMonsterGlance(args) {
+    const monsters = parseMonsterGlance(args[0]);
+    if (!monsters) {
+      console.warn("Ignoring monster glance information this client cannot read.");
+      return 0;
+    }
+    if (this.deps.coordinator.eventHandler) {
+      this.deps.coordinator.emit({ type: "monster_glance", monsters });
     }
     return 0;
   }
