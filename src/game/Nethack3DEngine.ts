@@ -6,7 +6,7 @@ import { gameFrameTime } from "./engine/rendering/frame-time";
 import { WebHaptics } from "web-haptics";
 import { WorkerRuntimeBridge } from "../runtime";
 import { markPortraitAcknowledged, portraitSnapshot, releaseAcknowledgedPortrait, setPortrait } from "../plus/portrait-dialog/store";
-import { resetMonsterGlance, setGlancedMonsters } from "../plus/monster-glance/store";
+import { resetMonsterGlance, setGlancePointer, setGlancedMonsters } from "../plus/monster-glance/store";
 import type { RuntimeEvent } from "../runtime";
 import { FmodRuntime } from "../audio";
 import { BackgroundMusic, type MusicMood } from "../audio/music";
@@ -950,6 +950,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
       this.automationStatus.observe(event, observationSession.sessionId);
     }
     const data = event as RuntimeEvent & Record<string, any>;
+    if (portraitPromptEvents.has(data.type) || data.type === "portrait_dialog") {
+      // The hover label belongs to the map; a prompt or portrait takes over.
+      setGlancePointer(null);
+    }
     if (portraitPromptEvents.has(data.type)) {
       releaseAcknowledgedPortrait();
       if (!portraitSnapshot()) this.systems.pointerLock.syncFpsPointerLockForUiState(false);

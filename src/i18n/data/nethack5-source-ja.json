@@ -8341,5 +8341,22 @@
 "%s stops fetching things.":"{1}は物を取ってくるのをやめた。",
 "%s takes %s.":"{1}は{2}を受け取った。",
 "%s can't carry that.":"{1}にはそれは持てない。",
-"You can't give away something you are wearing.":"身に着けている物は渡せない。"
+"You can't give away something you are wearing.":"身に着けている物は渡せない。",
+"%s barks.":"{1}はワンと吠えた。",
+"%s burbles.":"{1}はブクブクと音を立てた。",
+"%s chirps.":"{1}はチュンと鳴いた。",
+"%s grunts.":"{1}はうなった。",
+"%s gurgles.":"{1}はゴボゴボと音を立てた。",
+"%s howls.":"{1}は遠吠えした。",
+"%s meows.":"{1}はニャーと鳴いた。",
+"%s mews.":"{1}はミャーと鳴いた。",
+"%s moans.":"{1}はうめいた。",
+"%s purrs.":"{1}はゴロゴロとのどを鳴らした。",
+"%s shrieks.":"{1}は金切り声を上げた。",
+"%s squawks.":"{1}はギャアギャアと鳴いた。",
+"%s squeaks.":"{1}はキーキーと鳴いた。",
+"%s talks about mining.":"{1}は採掘の話をした。",
+"%s whickers.":"{1}はヒヒンと鳴いた。",
+"%s whinnies.":"{1}はいなないた。",
+"%s yips.":"{1}はキャンと鳴いた。"
 }

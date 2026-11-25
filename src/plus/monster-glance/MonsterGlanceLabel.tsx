@@ -17,9 +17,13 @@ const pointerGapPx = 14;
 function monsterTitle(monster: GlancedMonster, ja: boolean): string {
   const attitude = monster.tame ? "tame " : monster.peaceful ? "peaceful " : "";
   if (!ja) return `${attitude}${monster.name}`;
+  // "little dog called Hachi": the kind is translated, the given name kept.
+  const called = /^(.+?) (?:called|named) (.+)$/.exec(monster.name);
+  const kind = called ? called[1] : monster.name;
   // translateMonsterName needs an article; an untranslated name stays English.
-  const translated = translateMonsterName(`the ${attitude}${monster.name}`, "ja");
-  return translated === `the ${attitude}${monster.name}` ? `${attitude}${monster.name}` : translated;
+  const translated = translateMonsterName(`the ${attitude}${kind}`, "ja");
+  const shown = translated === `the ${attitude}${kind}` ? `${attitude}${kind}` : translated;
+  return called ? `${called[2]}という${shown}` : shown;
 }
 
 /** Polypiled: the name and look of the monster under the pointer. */
