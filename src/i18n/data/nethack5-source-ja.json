@@ -8326,5 +8326,20 @@
 "%s is hit by a shard of glass!":"{1}にガラスの破片が当たった！",
 "Your shield blocks a flying rock.":"盾が飛んできた石を防いだ。",
 "Your shield blocks a shard of glass.":"盾がガラスの破片を防いだ。",
-"polymorphed container's explosion":"変化した容器の爆発"
+"polymorphed container's explosion":"変化した容器の爆発",
+"Stay here.":"待て。",
+"Follow me.":"ついてこい。",
+"Do as you please.":"好きにしていいぞ。",
+"Fetch things for me.":"物を取ってきてくれ。",
+"Stop fetching things.":"もう物は取ってこなくていい。",
+"Take this.":"これを持て。",
+"What do you tell %s?":"{1}に何と言いますか？",
+"%s stays put.":"{1}はその場で待つことにした。",
+"%s looks ready to follow you.":"{1}はあなたについていく気になったようだ。",
+"%s relaxes.":"{1}はくつろいだ。",
+"%s perks up, ready to fetch.":"{1}は張り切って物を取ってこようとしている。",
+"%s stops fetching things.":"{1}は物を取ってくるのをやめた。",
+"%s takes %s.":"{1}は{2}を受け取った。",
+"%s can't carry that.":"{1}にはそれは持てない。",
+"You can't give away something you are wearing.":"身に着けている物は渡せない。"
 }

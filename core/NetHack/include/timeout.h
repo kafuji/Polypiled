@@ -57,7 +57,8 @@ enum timeout_types {
                              || (ttype) == BURN_OBJECT   \
                              || (ttype) == HATCH_EGG     \
                              || (ttype) == FIG_TRANSFORM \
-                             || (ttype) == SHRINK_GLOB \n                             || (ttype) == CONTAINER_BURST)
+                             || (ttype) == SHRINK_GLOB   \
+                             || (ttype) == CONTAINER_BURST)
 
 /* used in timeout.c */
 typedef struct fe {

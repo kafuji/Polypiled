@@ -818,6 +818,7 @@ extern void losedogs(void);
 extern void mon_arrive(struct monst *, int) NONNULLARG1;
 extern void mon_catchup_elapsed_time(struct monst *, long) NONNULLARG1;
 extern void keepdogs(boolean);
+extern int pet_orders(struct monst *) NONNULLARG1;
 extern void migrate_to_level(struct monst *, xint16, xint16, coord *) NONNULLARG1;
 extern void discard_migrations(void);
 extern int dogfood(struct monst *, struct obj *) NONNULLPTRS;
