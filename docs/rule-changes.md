@@ -382,6 +382,22 @@ The game shows what anyone can tell by looking at a monster:
 
 Some monsters are not described: those sensed by telepathy, warning or
 detection, disguised mimics, hiders, and anything seen while hallucinating.
+
+The hover label also tells what the hero knows of the square, top to
+bottom as things stack on it:
+
+- the top object the hero remembers there, named as farlook names it
+- a trap the hero has found
+- a dungeon feature: stairs, ladder, altar (with its alignment), grave,
+  throne, sink or fountain
+- the ground: floor, corridor, doorway, door, wall, water, lava, ice and
+  so on
+
+Only squares the hero has seen or mapped are described, and naming a
+square never teaches the hero anything: no object becomes seen up close
+and no artifact is discovered. While hallucinating, objects and traps are
+left out. The core sends this as the notification `shim_square_glance`
+(`nh3d_knowledge.c`). The label hides while the pause menu is open.
 A stethoscope still gives exact figures.
 
 ## Identification by obvious effect

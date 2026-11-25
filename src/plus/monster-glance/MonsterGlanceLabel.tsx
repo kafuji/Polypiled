@@ -28,10 +28,10 @@ function monsterTitle(monster: GlancedMonster, ja: boolean): string {
 }
 
 /** Polypiled: what the hero can tell of the map square under the pointer. */
-export function MonsterGlanceLabel(): JSX.Element | null {
+export function MonsterGlanceLabel({ hidden = false }: { readonly hidden?: boolean }): JSX.Element | null {
   const { locale } = useI18n();
   const glance = useMonsterGlance();
-  if (!glance) return null;
+  if (!glance || hidden) return null;
   const ja = locale === "ja";
   const { monster, square } = glance;
   const name = (text: string): string => translateSquareName(text, locale);

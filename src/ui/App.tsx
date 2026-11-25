@@ -59,7 +59,7 @@ export default function App(): JSX.Element {
   return (
     <>
       <PortraitDialog />
-      <MonsterGlanceLabel />
+      <MonsterGlanceLabel {...model.monsterGlanceLabel} />
       <CanvasRoot {...model.canvasRoot} />
       <TerminalMessageGutter {...model.terminalMessageGutter} />
       <PauseMenu {...model.pauseMenu} />
