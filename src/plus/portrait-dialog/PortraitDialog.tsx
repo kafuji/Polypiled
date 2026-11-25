@@ -64,7 +64,7 @@ export function PortraitDialog() {
           if (event.key === "Escape") current.acknowledge("0");
           else if (event.key === "Enter" && event.target instanceof HTMLButtonElement) event.target.click();
           else if (event.key === "Enter") offerField.current?.form?.requestSubmit();
-        } else if (event.key === "Enter" || event.key === "Escape") current.acknowledge();
+        } else if (event.key === "Enter" || event.key === " " || event.key === "Escape") current.acknowledge();
       }
     }
     window.addEventListener("keydown", key, true);
@@ -130,7 +130,7 @@ export function PortraitDialog() {
             <button type="submit">{locale === "ja" ? "提示する" : "Offer"}</button>
             <button type="button" onClick={() => scene.acknowledge("0")}>{locale === "ja" ? "断る" : "Refuse"}</button>
           </form> : <button type="button">
-            {locale === "ja" ? "次へ" : "Continue"} ▸ <kbd>Enter / Esc</kbd>
+            {locale === "ja" ? "次へ" : "Continue"} ▸ <kbd>Enter / Space / Esc</kbd>
           </button>}
         </div>
       </div>

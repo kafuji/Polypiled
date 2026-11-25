@@ -26,7 +26,7 @@ const jaPlusTranslations: LocaleOverrides<TranslationDictionary> = {
   },
   plus: {
     clientOptions: {
-      portraitDialog: { label: "立ち絵ダイアログ", description: "会話や重要な出来事を立ち絵とともに表示します。「次へ」、Enter、Escで進めます。" },
+      portraitDialog: { label: "立ち絵ダイアログ", description: "会話や重要な出来事を立ち絵とともに表示します。画面クリック、Enter、Space、Escで進めます。" },
       wikiLinks: {
         label: "NetHackWiki リンク",
         description:
