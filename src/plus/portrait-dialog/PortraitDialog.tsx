@@ -78,7 +78,11 @@ export function PortraitDialog() {
     : scene.preview ?? (/^[a-z0-9_]+$/.test(actor) && !["pet", "chat"].includes(actor)
       ? `assets/vulture/win/vulture/gamedata/tiles/monster.pm_${actor}.png` : null);
   return <dialog ref={dialog} className="portrait-dialog" aria-labelledby="portrait-speaker"
-    onCancel={event => event.preventDefault()}>
+    onCancel={event => event.preventDefault()}
+    onClick={event => {
+      event.stopPropagation();
+      if (!scene.input) scene.acknowledge();
+    }}>
     <div className="portrait-stage">
       <img className="portrait-player" alt="" src="assets/portraits/traveler.png" />
       {portrait && <img key={portrait} className="portrait-speaker-art" alt="" src={portrait}
@@ -86,7 +90,7 @@ export function PortraitDialog() {
       <div className="portrait-caption">
         <strong id="portrait-speaker">{label}</strong>
         <p>{presentGameMessage(scene.text, locale).text}</p>
-        <div className="portrait-actions" onClick={event => event.stopPropagation()}>
+        <div className="portrait-actions">
           {scene.input === "yes-no" ? <>
             <button type="button" data-answer="y" onClick={() => scene.acknowledge("y")}>{locale === "ja" ? "はい" : "Yes"} <kbd>Y</kbd></button>
             <button type="button" data-answer="n" onClick={() => scene.acknowledge("n")}>{locale === "ja" ? "いいえ" : "No"} <kbd>N</kbd></button>
@@ -98,7 +102,7 @@ export function PortraitDialog() {
             <input ref={offerField} aria-label={locale === "ja" ? "提示額" : "Offer amount"} placeholder="0" inputMode="numeric" pattern="[0-9]{1,10}" maxLength={10} required />
             <button type="submit">{locale === "ja" ? "提示する" : "Offer"}</button>
             <button type="button" onClick={() => scene.acknowledge("0")}>{locale === "ja" ? "断る" : "Refuse"}</button>
-          </form> : <button type="button" onClick={() => scene.acknowledge()}>
+          </form> : <button type="button">
             {locale === "ja" ? "次へ" : "Continue"} ▸ <kbd>Enter / Esc</kbd>
           </button>}
         </div>
