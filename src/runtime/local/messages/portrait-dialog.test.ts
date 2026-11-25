@@ -41,6 +41,62 @@ it("keeps the ordinary log when disabled", () => {
   expect(events.map(e => e.type)).not.toContain("portrait_dialog");
 });
 
+const minorConsultation = '"Wilt thou settle for a minor consultation?" (50 zorkmids)';
+const majorConsultation = '"Then dost thou desire a major one?" (550 zorkmids)';
+
+it("keeps both Oracle questions and the full major consultation in one portrait conversation", async () => {
+  const { events } = setup();
+  const minor = runtime.handleUICallback("shim_yn_function", [minorConsultation, "ynq", 113]);
+  expect(events[events.length - 1]).toMatchObject({ actor: "oracle", choices: "ynq", input: "yes-no", conversation: true });
+  runtime.portraits.dismiss(1, "");
+  expect(runtime.portraits.active).toBe(true);
+  runtime.portraits.dismiss(1, "n");
+  await expect(minor).resolves.toBe(110);
+
+  const major = runtime.handleUICallback("shim_yn_function", [majorConsultation, "yn", 110]);
+  expect(events[events.length - 1]).toMatchObject({ actor: "oracle", choices: "yn", input: "yes-no" });
+  runtime.portraits.dismiss(2, "q");
+  expect(runtime.portraits.active).toBe(true);
+  runtime.portraits.dismiss(2, "y");
+  await expect(major).resolves.toBe(121);
+
+  const lines = ["The Oracle meditates for a moment and then intones:", "", "First line.", "Second line."];
+  const window = runtime.handleUICallback("shim_create_nhwindow", [5]);
+  for (const line of lines) runtime.handleUICallback("shim_putstr", [window, 0, line]);
+  const consultation = runtime.handleUICallback("shim_display_nhwindow", [window, true]);
+  expect(events[events.length - 1]).toMatchObject({ actor: "oracle", oracleDocument: true, text: lines.join("\n") });
+  expect(events.some(event => ["question", "info_menu", "portrait_conversation_end"].includes(event.type))).toBe(false);
+  runtime.portraits.dismiss(3);
+  await expect(consultation).resolves.toBe(0);
+  runtime.portraits.beginCommand();
+  expect(events[events.length - 1]?.type).toBe("portrait_conversation_end");
+});
+
+it("presents the minor consultation lead-in and rumor on the same page", async () => {
+  const { events, say } = setup();
+  const minor = runtime.handleUICallback("shim_yn_function", [minorConsultation, "ynq", 113]);
+  runtime.portraits.dismiss(1, "y");
+  await expect(minor).resolves.toBe(121);
+  const intro = "True to her word, the Oracle nonchalantly says:";
+  const rumor = '"They say that healing potions often come in pairs."';
+  expect(say(intro)).toBe(0);
+  const result = say(rumor);
+  expect(events[events.length - 1]).toMatchObject({ actor: "oracle", text: `${intro}\n\n${rumor}` });
+  runtime.portraits.dismiss(2);
+  await expect(result).resolves.toBe(0);
+});
+
+it("preserves the ordinary text window when portraits are disabled", async () => {
+  const { events } = setup(false);
+  const window = runtime.handleUICallback("shim_create_nhwindow", [5]);
+  runtime.handleUICallback("shim_putstr", [window, 0, "The Oracle meditates for a moment and then intones:"]);
+  const consultation = runtime.handleUICallback("shim_display_nhwindow", [window, true]);
+  expect(events).toContainEqual(expect.objectContaining({ type: "info_menu" }));
+  expect(events.some(event => event.type === "portrait_dialog")).toBe(false);
+  runtime.sendInput("Enter");
+  await expect(consultation).resolves.toBe(13);
+});
+
 it.each([
   '"Will you please leave your pick-axe outside?"',
   '"Leave the digging tools outside."',

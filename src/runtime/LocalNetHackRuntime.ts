@@ -308,8 +308,11 @@ class LocalNetHackRuntime {
       case "shim_end_menu":
         return this.systems.menuCapture.handleShimEndMenu(args);
       case "shim_display_nhwindow":
-        if (args[1] && this.systems.windowText.shouldCaptureWindowTextForDialog(args[0])) this.portraits.endConversation();
-        return this.systems.windowText.handleShimDisplayNhwindow(args);
+        return this.systems.windowText.handleShimDisplayNhwindow(args, lines => {
+          const dialogue = this.systems.gameOver.gameOverSequenceActive ? undefined : this.portraits.document(lines);
+          if (!dialogue) this.portraits.endConversation();
+          return dialogue;
+        });
       case "shim_display_file":
         return this.systems.windowText.handleShimDisplayFile(args);
       case "shim_add_menu":

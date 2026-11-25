@@ -1,7 +1,9 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useI18n } from "../../i18n";
 import { translateMonsterName } from "../../i18n/game-monsters";
+import { translateGamePrompt } from "../../i18n/game-prompts";
 import { presentGameMessage } from "../../i18n/message-presentation";
+import { translateOracleDocument } from "../../i18n/oracle-text";
 import { hasPaintedPortrait, portraitActor } from "./actors";
 import { portraitSnapshot, subscribePortrait } from "./store";
 import "./portrait-dialog.css";
@@ -46,8 +48,8 @@ export function PortraitDialog() {
         if (!current || event.repeat || event.isComposing) return;
         if (current.input === "yes-no") {
           const answer = event.key.toLowerCase();
-          if (answer === "y" || answer === "n") current.acknowledge(answer);
-          else if (event.key === "Escape") current.acknowledge("n");
+          if (answer.length === 1 && (current.choices ?? "yn").includes(answer)) current.acknowledge(answer);
+          else if (event.key === "Escape") current.acknowledge(current.choices === "ynq" ? "q" : "n");
           else if (event.key === "Enter" && event.target instanceof HTMLButtonElement && event.target.dataset.answer)
             current.acknowledge(event.target.dataset.answer);
         } else if (current.input === "offer") {
@@ -74,6 +76,9 @@ export function PortraitDialog() {
   if (!scene) return null;
   const actor = portraitActor(scene.actor, scene.tileIndex);
   const label = labels[actor]?.[locale === "ja" ? 1 : 0] ?? translateMonsterName(actor.replace(/_/g, " "), locale);
+  const prompt = scene.input ? translateGamePrompt(scene.text, locale) : scene.text;
+  const text = (scene.oracleDocument ? translateOracleDocument(scene.text.split("\n"), locale) : null)
+    ?? (prompt === scene.text ? presentGameMessage(scene.text, locale).text : prompt);
   const portrait = hasPaintedPortrait(actor) ? `assets/portraits/${actor}.png`
     : scene.preview ?? (/^[a-z0-9_]+$/.test(actor) && !["pet", "chat"].includes(actor)
       ? `assets/vulture/win/vulture/gamedata/tiles/monster.pm_${actor}.png` : null);
@@ -89,11 +94,14 @@ export function PortraitDialog() {
         onError={event => { event.currentTarget.hidden = true; }} />}
       <div className="portrait-caption">
         <strong id="portrait-speaker">{label}</strong>
-        <p>{presentGameMessage(scene.text, locale).text}</p>
+        <p>{text}</p>
         <div className="portrait-actions">
           {scene.input === "yes-no" ? <>
             <button type="button" data-answer="y" onClick={() => scene.acknowledge("y")}>{locale === "ja" ? "はい" : "Yes"} <kbd>Y</kbd></button>
             <button type="button" data-answer="n" onClick={() => scene.acknowledge("n")}>{locale === "ja" ? "いいえ" : "No"} <kbd>N</kbd></button>
+            {scene.choices === "ynq" && <button type="button" data-answer="q" onClick={() => scene.acknowledge("q")}>
+              {locale === "ja" ? "やめる" : "Cancel"} <kbd>Q / Esc</kbd>
+            </button>}
           </> : scene.input === "offer" ? <form onSubmit={event => {
             event.preventDefault();
             const value = offerField.current?.value ?? "";

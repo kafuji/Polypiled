@@ -242,7 +242,7 @@ export class RuntimeWindowText {
     return windowType;
   }
 
-  handleShimDisplayNhwindow(args) {
+  handleShimDisplayNhwindow(args, presentDialogue?: (lines: readonly string[]) => Promise<number> | undefined) {
     const [winid, blocking] = args;
     if (this.deps.windows.isMapWindow(winid)) this.deps.coordinator.protocol.boundary("map-display");
     this.deps.coordinator.logRoutine(`DISPLAY WINDOW [Win ${winid}], blocking: ${blocking}`);
@@ -255,6 +255,8 @@ export class RuntimeWindowText {
       const normalizedLines = displayLines.map((line) =>
         String(line || "").replace(/\u0000/g, ""),
       );
+      const dialogue = blocking && presentDialogue?.(normalizedLines);
+      if (dialogue) return dialogue;
       this.deps.gameOver.captureGameOverSummaryFromLines(
         normalizedLines,
         "display_nhwindow",

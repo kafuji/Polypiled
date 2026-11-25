@@ -1272,8 +1272,12 @@ class Nethack3DEngine implements Nethack3DEngineController {
         const session = this.systems.engineState.session;
         if (!(session instanceof WorkerRuntimeBridge)) break;
         const id = Number(data.id);
-        if (!this.systems.engineState.clientOptions.portraitDialog) { session.dismissPortrait(id); break; }
+        if (!this.systems.engineState.clientOptions.portraitDialog) {
+          session.dismissPortrait(id, data.choices === "ynq" ? "q" : data.input === "yes-no" ? "n" : data.input === "offer" ? "0" : undefined);
+          break;
+        }
         setPortrait({ actor: String(data.actor), text: String(data.text), tileIndex: data.tileIndex, input: data.input,
+          choices: data.choices, oracleDocument: data.oracleDocument,
           preview: data.tileIndex != null ? this.systems.menuPreviews.resolveMenuItemTilePreviewDataUrl({ tileIndex: data.tileIndex }) : null,
           acknowledge: (answer) => {
             // A conversation page stays up to frame the next line; acknowledging
