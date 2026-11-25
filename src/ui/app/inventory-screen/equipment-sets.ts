@@ -227,25 +227,23 @@ export interface SetHotkeyContext {
   readonly busy: boolean;
   /** The key went to a text field. */
   readonly typing: boolean;
-  /** The top-row digits typed just before were a count for the game (number_pad off). */
-  readonly countInProgress: boolean;
 }
 
 /**
- * The set (0-based) a key puts on during play, or null: F1-F3, and the
- * top-row 1-3 (`event.code` Digit1-3, so the numeric keypad keeps moving).
- * Without number_pad the top-row digits are the game's count prefix: a
- * count started with another digit ("40s") keeps its 1-3.
+ * The set (0-based) a key puts on during play, or null: F1-F3, and
+ * Alt+1-3 on the top row (`event.code` Digit1-3). The plain digits stay
+ * the game's count prefix and the keypad keeps moving; Ctrl+1-3 would be
+ * the browser's tab switching.
  */
 export function setHotkeyIndex(
   event: Pick<KeyboardEvent, "key" | "code" | "ctrlKey" | "altKey" | "metaKey" | "shiftKey">,
   context: SetHotkeyContext,
 ): number | null {
-  if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
+  if (event.ctrlKey || event.metaKey || event.shiftKey) return null;
   if (context.busy || context.typing) return null;
   const fKey = /^F([1-9])$/.exec(event.key);
-  if (fKey) return Number(fKey[1]) <= EQUIPMENT_SET_COUNT ? Number(fKey[1]) - 1 : null;
+  if (fKey) return !event.altKey && Number(fKey[1]) <= EQUIPMENT_SET_COUNT ? Number(fKey[1]) - 1 : null;
   const digit = /^Digit([1-9])$/.exec(event.code);
-  if (!digit || context.countInProgress) return null;
+  if (!digit || !event.altKey) return null;
   return Number(digit[1]) <= EQUIPMENT_SET_COUNT ? Number(digit[1]) - 1 : null;
 }
