@@ -261,8 +261,7 @@ export function InventoryScreen(props: InventoryScreenProps) {
     [gameId],
   );
 
-  // 1-3 (top row) and F1-F3 put on a set from anywhere in play
-  const countInProgress = useRef(false);
+  // Alt+1-3 and F1-F3 put on a set from anywhere in play
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -277,24 +276,18 @@ export function InventoryScreen(props: InventoryScreenProps) {
         || store.positionInputActive
         || store.gameOver.active
         || store.newGamePrompt.visible;
-      // with the screen open its own handler takes 1-3; an open container
-      // allows only putting in and taking out
-      if (store.inventoryScreenOpen && (/^Digit\d$/.test(event.code)
-        || (typeof document !== "undefined" && document.querySelector(".nh3d-inventory-screen.is-container-mode")))) return;
+      // an open container allows only putting in and taking out
+      if (store.inventoryScreenOpen && typeof document !== "undefined"
+        && document.querySelector(".nh3d-inventory-screen.is-container-mode")) return;
       const target = event.target as HTMLElement | null;
       const typing = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable);
-      const index = setHotkeyIndex(event, { busy, typing, countInProgress: countInProgress.current });
-      if (index === null) {
-        // a top-row digit the game reads as a count keeps the next 1-3 for it
-        if (/^Digit\d$/.test(event.code)) countInProgress.current = !busy && !typing && !store.numberPadModeEnabled;
-        else if (!["Shift", "Control", "Alt", "Meta"].includes(event.key)) countInProgress.current = false;
-        return;
-      }
-      countInProgress.current = false;
-      const set = sets[index];
-      if (!set || !store.engineController) return;
+      const index = setHotkeyIndex(event, { busy, typing });
+      if (index === null) return;
+      // the key is the set's even when the set is empty, not a meta key for the game
       event.preventDefault();
       event.stopPropagation();
+      const set = sets[index];
+      if (!set || !store.engineController) return;
       store.engineController.runInventoryProcedure(equipmentSetProcedure(set, set.name || t.inventoryScreen.setDefaultName(index + 1)));
     };
     window.addEventListener("keydown", onKeyDown, true);

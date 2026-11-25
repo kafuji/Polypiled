@@ -206,27 +206,26 @@ describe("equipment set storage", () => {
 describe("setHotkeyIndex", () => {
   const key = (k: string, code: string, extra: Partial<KeyboardEvent> = {}) =>
     ({ key: k, code, ctrlKey: false, altKey: false, metaKey: false, shiftKey: false, ...extra });
-  const idle = { busy: false, typing: false, countInProgress: false };
+  const idle = { busy: false, typing: false };
 
-  it("takes the top-row 1-3 and F1-F3", () => {
-    expect(setHotkeyIndex(key("1", "Digit1"), idle)).toBe(0);
-    expect(setHotkeyIndex(key("3", "Digit3"), idle)).toBe(2);
+  it("takes Alt+1-3 on the top row and F1-F3", () => {
+    expect(setHotkeyIndex(key("1", "Digit1", { altKey: true }), idle)).toBe(0);
+    expect(setHotkeyIndex(key("3", "Digit3", { altKey: true }), idle)).toBe(2);
     expect(setHotkeyIndex(key("F2", "F2"), idle)).toBe(1);
   });
 
-  it("leaves other digits, the keypad and modified keys to the game", () => {
-    expect(setHotkeyIndex(key("4", "Digit4"), idle)).toBeNull();
-    expect(setHotkeyIndex(key("1", "Numpad1"), idle)).toBeNull();
+  it("leaves plain digits (counts), the keypad and other modifiers to the game", () => {
+    expect(setHotkeyIndex(key("1", "Digit1"), idle)).toBeNull();
+    expect(setHotkeyIndex(key("4", "Digit4", { altKey: true }), idle)).toBeNull();
+    expect(setHotkeyIndex(key("1", "Numpad1", { altKey: true }), idle)).toBeNull();
+    expect(setHotkeyIndex(key("1", "Digit1", { ctrlKey: true }), idle)).toBeNull();
+    expect(setHotkeyIndex(key("1", "Digit1", { altKey: true, shiftKey: true }), idle)).toBeNull();
     expect(setHotkeyIndex(key("F4", "F4"), idle)).toBeNull();
-    expect(setHotkeyIndex(key("!", "Digit1", { shiftKey: true }), idle)).toBeNull();
-    expect(setHotkeyIndex(key("1", "Digit1", { altKey: true }), idle)).toBeNull();
+    expect(setHotkeyIndex(key("F1", "F1", { altKey: true }), idle)).toBeNull();
   });
 
-  it("does nothing while the game asks, a field has the key, or a count is being typed", () => {
-    expect(setHotkeyIndex(key("1", "Digit1"), { ...idle, busy: true })).toBeNull();
-    expect(setHotkeyIndex(key("1", "Digit1"), { ...idle, typing: true })).toBeNull();
-    expect(setHotkeyIndex(key("2", "Digit2"), { ...idle, countInProgress: true })).toBeNull();
-    // an F key is never part of a count
-    expect(setHotkeyIndex(key("F1", "F1"), { ...idle, countInProgress: true })).toBe(0);
+  it("does nothing while the game asks or a field has the key", () => {
+    expect(setHotkeyIndex(key("1", "Digit1", { altKey: true }), { ...idle, busy: true })).toBeNull();
+    expect(setHotkeyIndex(key("1", "Digit1", { altKey: true }), { ...idle, typing: true })).toBeNull();
   });
 });
