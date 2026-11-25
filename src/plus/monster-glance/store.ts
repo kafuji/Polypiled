@@ -1,11 +1,14 @@
-// Polypiled: the hover label over a monster on the map. The core lists the
-// monsters the hero sees (src/runtime/monster-glance.ts); the mouse handler
-// reports which map square the pointer rests on.
+// Polypiled: the hover label over a map square. The core lists the monsters
+// the hero sees (src/runtime/monster-glance.ts) and what the hero knows of
+// each square (src/runtime/square-glance.ts); the mouse handler reports
+// which map square the pointer rests on.
 import { useSyncExternalStore } from "react";
 import type { GlancedMonster } from "../../runtime/monster-glance";
+import type { GlancedSquare } from "../../runtime/square-glance";
 
 export interface MonsterGlanceLabel {
-  readonly monster: GlancedMonster;
+  readonly monster: GlancedMonster | null;
+  readonly square: GlancedSquare | null;
   readonly clientX: number;
   readonly clientY: number;
 }
@@ -18,16 +21,25 @@ interface Pointer {
 }
 
 let monsters: readonly GlancedMonster[] = [];
+let squares = new Map<number, GlancedSquare>();
 let pointer: Pointer | null = null;
 let label: MonsterGlanceLabel | null = null;
 const listeners = new Set<() => void>();
 
+const squareKey = (x: number, y: number): number => y * 256 + x;
+
 function update(): void {
-  const monster = pointer ? monsters.find((m) => m.x === pointer!.tileX && m.y === pointer!.tileY) : undefined;
-  const next = monster && pointer ? { monster, clientX: pointer.clientX, clientY: pointer.clientY } : null;
+  let next: MonsterGlanceLabel | null = null;
+  if (pointer) {
+    const { tileX, tileY } = pointer;
+    const monster = monsters.find((m) => m.x === tileX && m.y === tileY) ?? null;
+    const square = squares.get(squareKey(tileX, tileY)) ?? null;
+    if (monster || square) next = { monster, square, clientX: pointer.clientX, clientY: pointer.clientY };
+  }
   if (
     next === label ||
-    (next && label && next.monster === label.monster && next.clientX === label.clientX && next.clientY === label.clientY)
+    (next && label && next.monster === label.monster && next.square === label.square &&
+      next.clientX === label.clientX && next.clientY === label.clientY)
   ) {
     return;
   }
@@ -37,6 +49,24 @@ function update(): void {
 
 export function setGlancedMonsters(list: readonly GlancedMonster[]): void {
   monsters = list;
+  update();
+}
+
+export function setGlancedSquares(list: readonly GlancedSquare[]): void {
+  const next = new Map<number, GlancedSquare>();
+  for (const square of list) {
+    // Keep the old object for an unchanged square so the label does not re-render.
+    const key = squareKey(square.x, square.y);
+    const old = squares.get(key);
+    next.set(
+      key,
+      old && old.ground === square.ground && old.feature === square.feature &&
+        old.trap === square.trap && old.object === square.object
+        ? old
+        : square,
+    );
+  }
+  squares = next;
   update();
 }
 
@@ -55,6 +85,7 @@ export function setGlancePointer(next: Pointer | null): void {
 
 export function resetMonsterGlance(): void {
   monsters = [];
+  squares = new Map();
   pointer = null;
   update();
 }

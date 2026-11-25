@@ -1902,6 +1902,10 @@ export function useAppModel() {
     pauseMenu: {
       renderPauseMenu,
     },
+    // Polypiled: the map's hover label stays hidden behind the pause menu.
+    monsterGlanceLabel: {
+      hidden: isPauseMenuVisible,
+    },
     startupBackdrop: {
       startupMenuVisible,
       startupBuildLabelClickCount,
