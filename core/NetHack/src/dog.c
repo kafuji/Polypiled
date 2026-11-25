@@ -1461,7 +1461,7 @@ pet_take_item(struct monst *mtmp)
     struct obj *obj = getobj("give", pet_give_ok, GETOBJ_NOFLAGS);
     char objname[BUFSZ];
 
-    if (!obj)
+    if (!obj || obj == &hands_obj)
         return;
     if ((obj->owornmask & (W_ARMOR | W_ACCESSORY)) != 0L) {
         You("can't give away something you are wearing.");
@@ -1486,8 +1486,8 @@ pet_take_item(struct monst *mtmp)
     pline("%s takes %s.", Monnam(mtmp), objname);
     (void) mpickobj(mtmp, obj);
     m_dowear(mtmp, FALSE);
+    /* it picks the weapon to wield on its own turn */
     mtmp->weapon_check = NEED_WEAPON;
-    (void) mon_wield_item(mtmp);
 }
 
 /* #chat with a pet: give it an order.  Returns 1 if an order was given,

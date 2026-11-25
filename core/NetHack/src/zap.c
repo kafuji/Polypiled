@@ -6900,6 +6900,15 @@ polypile_hurt(coordxy x, coordxy y, int dmg, int what)
         wakeup(mtmp, TRUE);
 }
 
+/* what the blast breaks: potions, eggs, mirrors, crystal balls and the
+   like, but not glass wands or gems */
+staticfn boolean
+polypile_fragile(struct obj *otmp)
+{
+    return (boolean) (otmp->oclass != WAND_CLASS && otmp->oclass != GEM_CLASS
+                      && breaktest(otmp));
+}
+
 /* fragile things the blast can reach at x,y break */
 staticfn void
 polypile_break_fragile(coordxy x, coordxy y)
@@ -6909,20 +6918,20 @@ polypile_break_fragile(coordxy x, coordxy y)
 
     for (otmp = svl.level.objects[x][y]; otmp; otmp = next) {
         next = otmp->nexthere;
-        if (breaktest(otmp))
+        if (polypile_fragile(otmp))
             (void) hero_breaks(otmp, x, y, 0);
     }
     if (u_at(x, y)) {
         for (otmp = gi.invent; otmp; otmp = next) {
             next = otmp->nobj;
-            if (!otmp->owornmask && !otmp->in_use && breaktest(otmp))
+            if (!otmp->owornmask && !otmp->in_use && polypile_fragile(otmp))
                 (void) hero_breaks(otmp, x, y, BRK_FROM_INV
                                                    | BRK_KNOWN2BREAK);
         }
     } else if ((mtmp = m_at(x, y)) != 0) {
         for (otmp = mtmp->minvent; otmp; otmp = next) {
             next = otmp->nobj;
-            if (!otmp->owornmask && breaktest(otmp)) {
+            if (!otmp->owornmask && polypile_fragile(otmp)) {
                 obj_extract_self(otmp);
                 obfree(otmp, (struct obj *) 0);
             }
@@ -7080,10 +7089,10 @@ polypile_fragments(coordxy x0, coordxy y0, long mass)
         dest.y = y0 + ((side == 2) ? -far : (side == 3) ? far : t);
         (void) walk_path(&src, &dest, polypile_fragment_step,
                          (genericptr_t) 0);
-        otmp = mksobj_at(gpb.rock ? ROCK : POLYPILE_SHARD, gpb.lastx,
-                         gpb.lasty, FALSE, FALSE);
-        if (otmp)
-            stackobj(otmp);
+        otmp = mksobj(gpb.rock ? ROCK : POLYPILE_SHARD, FALSE, FALSE);
+        otmp->dknown = 1; /* so the debris stacks with its like */
+        place_object(otmp, gpb.lastx, gpb.lasty);
+        stackobj(otmp);
         newsym(gpb.lastx, gpb.lasty);
     }
 }
