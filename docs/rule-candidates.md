@@ -94,8 +94,7 @@ This replaces the "pets follow more readily" idea.
 
 ## Done
 
-One line each, grouped by theme. Entries marked † are not yet written up in
-`rule-changes.md`.
+One line each, grouped by theme; `rule-changes.md` has the details.
 
 ### Food and hunger
 
@@ -111,9 +110,9 @@ One line each, grouped by theme. Entries marked † are not yet written up in
 
 - Experience levels follow one smooth curve; XL14 comes at 27,300.
 - Weapon skill families: skill in one weapon carries over to the rest of its
-  family one level lower. †
+  family one level lower.
 - Lowered characteristics such as Str lost to poison come back on their own,
-  faster with high Con. †
+  faster with high Con.
 - Pending: poison can keep lowering Str with no floor.
 
 ### Equipment and combat
@@ -121,9 +120,9 @@ One line each, grouped by theme. Entries marked † are not yet written up in
 - Worn armor counts for half its weight; a shield counts in full.
 - Missiles that hit break about half as often.
 - An artifact may be the secondary weapon, but two self-willed artifacts of
-  different alignments won't be wielded together. †
+  different alignments won't be wielded together.
 
-### Shops †
+### Shops
 
 - No mimics among the stock.
 - The shopkeeper protects customers from hostile monsters.
@@ -133,7 +132,7 @@ One line each, grouped by theme. Entries marked † are not yet written up in
 - The shopkeeper takes back goods a pet carries to the door.
 - Pick-axes and steeds are allowed in; only invisibility is refused.
 
-### Dungeon and terrain †
+### Dungeon and terrain
 
 - One of three mid-dungeon set pieces is always present: the battlefield
   (elves and orcs fight on sight), the giants' dining hall or the
@@ -147,7 +146,7 @@ One line each, grouped by theme. Entries marked † are not yet written up in
   drain lies under the sink and comes back first.
 - Sokoban has no monsters that stay put and no mimics posing as boulders.
 
-### Interface-side core changes †
+### Interface-side core changes
 
 - A plain left click always moves or attacks, and travels when the target is
   farther away.
