@@ -220,3 +220,32 @@ export function missingFromSet(state: InventoryState, set: EquipmentSet): number
     (value): value is number => typeof value === "number" && !carried(state, value) && !bagHolding(state, value),
   );
 }
+
+/** What the play-time set keys need to know about the screen and the game. */
+export interface SetHotkeyContext {
+  /** The game is asking something, a dialog or prompt is up, or the inventory screen is open. */
+  readonly busy: boolean;
+  /** The key went to a text field. */
+  readonly typing: boolean;
+  /** The top-row digits typed just before were a count for the game (number_pad off). */
+  readonly countInProgress: boolean;
+}
+
+/**
+ * The set (0-based) a key puts on during play, or null: F1-F3, and the
+ * top-row 1-3 (`event.code` Digit1-3, so the numeric keypad keeps moving).
+ * Without number_pad the top-row digits are the game's count prefix: a
+ * count started with another digit ("40s") keeps its 1-3.
+ */
+export function setHotkeyIndex(
+  event: Pick<KeyboardEvent, "key" | "code" | "ctrlKey" | "altKey" | "metaKey" | "shiftKey">,
+  context: SetHotkeyContext,
+): number | null {
+  if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
+  if (context.busy || context.typing) return null;
+  const fKey = /^F([1-9])$/.exec(event.key);
+  if (fKey) return Number(fKey[1]) <= EQUIPMENT_SET_COUNT ? Number(fKey[1]) - 1 : null;
+  const digit = /^Digit([1-9])$/.exec(event.code);
+  if (!digit || context.countInProgress) return null;
+  return Number(digit[1]) <= EQUIPMENT_SET_COUNT ? Number(digit[1]) - 1 : null;
+}

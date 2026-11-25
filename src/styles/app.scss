@@ -7814,14 +7814,6 @@ canvas {
   }
 }
 
-.blessed-text {
-  color: #00ff00;
-}
-
-.cursed-text {
-  color: #ff3333;
-}
-
 .nh3d-context-menu {
   @extend %custom-scrollbar;
   --nh3d-context-menu-transform-base: translate3d(0, 0, 0);

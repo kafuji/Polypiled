@@ -5,6 +5,7 @@ import type { NethackMenuItem, InventoryDialogState, Nethack3DEngineController, 
 import { useI18n } from "../../../i18n";
 import { translateInventoryCategory, translateInventoryItem } from "../../../i18n/inventory-text";
 import { WikiLinkedText } from "../../../plus/wiki-links/WikiLinkedText";
+import { iconShellProps, itemTextClassName } from "./item-decoration";
 import AnimatedDialog from "../../modals/AnimatedDialog";
 import type * as React from "react";
 import type {
@@ -390,7 +391,7 @@ export function InventoryDialog({
                         className="nh3d-inventory-icon-anchor"
                         aria-hidden="true"
                       >
-                        <span className="nh3d-inventory-icon-shell">
+                        <span {...iconShellProps("nh3d-inventory-icon-shell", item.text)}>
                           {tilePreview ? (
                             <span className="nh3d-inventory-icon-art">
                               {tilePreview}
@@ -407,7 +408,7 @@ export function InventoryDialog({
                       {item.accelerator || "?"})
                     </span>
                   </span>
-                  <span className={item.className as string}>
+                  <span className={itemTextClassName("nh3d-inventory-text", item.text, tileApplicable)}>
                     {item.text ? <WikiLinkedText english={item.text} display={translateInventoryItem(item.text, locale)} /> : t.dialogs.inventory.unknownItem}
                   </span>
                 </div>
