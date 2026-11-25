@@ -7,6 +7,7 @@ import { translateMenuHeading } from "../../../i18n/game-menu";
 import { translateReportLine } from "../../../i18n/report-text";
 import { translateInventoryCategory, translateMenuItemText } from "../../../i18n/inventory-text";
 import { WikiLinkedText } from "../../../plus/wiki-links/WikiLinkedText";
+import { iconShellProps, itemTextClassName } from "../inventory/item-decoration";
 import { translateGameMenuItem } from "../../../i18n/game-menu";
 import {
   Nh3dIcon,
@@ -277,7 +278,7 @@ export function QuestionDialog({
                       <span className="nh3d-question-item-leading">
                         {tileApplicable ? (
                           <span
-                            className="nh3d-question-item-icon-shell"
+                            {...iconShellProps("nh3d-question-item-icon-shell", item.text)}
                             aria-hidden="true"
                           >
                             {tilePreview ? (
@@ -295,7 +296,7 @@ export function QuestionDialog({
                           {item.accelerator})
                         </span>
                       </span>
-                      <span className="nh3d-pickup-text"><WikiLinkedText english={item.text ?? ""} display={translateMenuItemText(item.text ?? "", locale)} /></span>
+                      <span className={itemTextClassName("nh3d-pickup-text", item.text, tileApplicable)}><WikiLinkedText english={item.text ?? ""} display={translateMenuItemText(item.text ?? "", locale)} /></span>
                       {typeof selectedCount === "number" &&
                         Number.isFinite(selectedCount) &&
                         selectedCount > 0 ? (
@@ -517,7 +518,7 @@ export function QuestionDialog({
                       <span className="nh3d-question-item-leading">
                         {tileApplicable ? (
                           <span
-                            className="nh3d-question-item-icon-shell"
+                            {...iconShellProps("nh3d-question-item-icon-shell", item.text)}
                             aria-hidden="true"
                           >
                             {tilePreview ? (
@@ -535,7 +536,7 @@ export function QuestionDialog({
                           {item.accelerator})
                         </span>
                       </span>
-                      <span className="nh3d-menu-button-label">
+                      <span className={itemTextClassName("nh3d-menu-button-label", item.text, tileApplicable)}>
                         {translateReportLine(translateGameMenuItem(item.text ?? "", question.text, locale), locale)}
                       </span>
                     </button>
@@ -629,7 +630,7 @@ export function QuestionDialog({
                       >
                         {tileApplicable ? (
                           <span
-                            className="nh3d-question-item-icon-shell"
+                            {...iconShellProps("nh3d-question-item-icon-shell", choiceSourceItem?.text)}
                             aria-hidden="true"
                           >
                             {tilePreview ? (
@@ -643,7 +644,7 @@ export function QuestionDialog({
                             )}
                           </span>
                         ) : null}
-                        <span className="nh3d-choice-button-item-label">
+                        <span className={itemTextClassName("nh3d-choice-button-item-label", choiceSourceItem?.text, choiceSourceItemTileApplicable)}>
                           {choiceLabel}
                         </span>
                       </button>

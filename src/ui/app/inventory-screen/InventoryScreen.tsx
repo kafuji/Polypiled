@@ -46,6 +46,7 @@ import {
   missingFromSet,
   recordEquipmentSet,
   saveEquipmentSets,
+  setHotkeyIndex,
 } from "./equipment-sets";
 
 export interface InventoryScreenProps {
@@ -260,22 +261,41 @@ export function InventoryScreen(props: InventoryScreenProps) {
     [gameId],
   );
 
-  // F1-F3 put on a set from anywhere in play
+  // 1-3 (top row) and F1-F3 put on a set from anywhere in play
+  const countInProgress = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
-      const match = /^F([1-9])$/.exec(event.key);
-      if (match && Number(match[1]) > EQUIPMENT_SET_COUNT) return;
-      if (!match || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
       const store = useGameStore.getState();
-      if (!store.inventoryState || store.question || store.directionQuestion) return;
-      // an open container allows only putting in and taking out
-      if (typeof document !== "undefined" && document.querySelector(".nh3d-inventory-screen.is-container-mode")) return;
-      const set = sets[Number(match[1]) - 1];
+      const busy = !store.inventoryState
+        || store.inventory.visible
+        || !!store.question
+        || !!store.directionQuestion
+        || !!store.infoMenu
+        || !!store.textInput
+        || !!store.positionRequest
+        || store.positionInputActive
+        || store.gameOver.active
+        || store.newGamePrompt.visible;
+      // with the screen open its own handler takes 1-3; an open container
+      // allows only putting in and taking out
+      if (store.inventoryScreenOpen && (/^Digit\d$/.test(event.code)
+        || (typeof document !== "undefined" && document.querySelector(".nh3d-inventory-screen.is-container-mode")))) return;
+      const target = event.target as HTMLElement | null;
+      const typing = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable);
+      const index = setHotkeyIndex(event, { busy, typing, countInProgress: countInProgress.current });
+      if (index === null) {
+        // a top-row digit the game reads as a count keeps the next 1-3 for it
+        if (/^Digit\d$/.test(event.code)) countInProgress.current = !busy && !typing && !store.numberPadModeEnabled;
+        else if (!["Shift", "Control", "Alt", "Meta"].includes(event.key)) countInProgress.current = false;
+        return;
+      }
+      countInProgress.current = false;
+      const set = sets[index];
       if (!set || !store.engineController) return;
       event.preventDefault();
       event.stopPropagation();
-      store.engineController.runInventoryProcedure(equipmentSetProcedure(set, set.name || t.inventoryScreen.setDefaultName(Number(match[1]))));
+      store.engineController.runInventoryProcedure(equipmentSetProcedure(set, set.name || t.inventoryScreen.setDefaultName(index + 1)));
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);

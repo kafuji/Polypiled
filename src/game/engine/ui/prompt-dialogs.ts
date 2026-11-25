@@ -4,7 +4,6 @@ import { getTranslationStrings } from "../../../i18n/core";
 import { useGameStore } from "../../../state/gameStore";
 import { portraitSnapshot } from "../../../plus/portrait-dialog/store";
 import type { InventoryDialogState, NethackConnectionState } from "../../ui-types";
-import { getItemTextClassName } from "../../helpers/helpers";
 import type { InventoryDialogOptions } from "../shared/types";
 import type { DirectionPrompts } from "./direction-prompts";
 import type { EngineMessages } from "./engine-messages";
@@ -265,19 +264,9 @@ export class PromptDialogs {
   }
 
   buildInventoryDialogState(): InventoryDialogState {
-    const items = this.currentInventory.map((item) => {
-      if (item.text) {
-        return {
-          ...item,
-          className: getItemTextClassName(item.text),
-        };
-      }
-      return item;
-    });
-
     return {
       visible: this.isInventoryDialogVisible,
-      items: items,
+      items: this.currentInventory,
       contextActionsEnabled:
         this.inventoryContextActionsEnabled && !this.dependencies.gameOver.gameOverState.active,
     };
