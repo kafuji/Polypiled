@@ -134,99 +134,166 @@ monster and an object becomes another object.
   - **Unrelated objects** can't take shape together and turn into junk.
   - **Similar objects** concentrate their energy and tend to take shape as
     something more valuable.
-- **A container that stops being a container** leaves its contents nowhere
-  to go. They burst out as countless fragments. Even a tiny loss of mass
-  releases huge energy, enough to blow out the walls around.
+- **A container that becomes something other than a container** leaves its
+  contents nowhere to go, and they explode (see "The container explosion"
+  below).
 
-This replaces vanilla's stack penalties (shuddering, fusing, gems turning to
-rocks) with one principle. The busywork of splitting stacks becomes a real
-choice: what to pile together. Spare bags gain a use, and a wand of
-polymorph becomes a detonator for a bag packed beforehand, a strategy for
-the final battle.
+This one principle replaces vanilla's stack penalties: shuddering, fusing,
+and gems turning to rocks. The busywork of splitting stacks becomes a real
+choice about what to pile together.
 
-#### Rough mapping to rules
+Dropped: explosions from mixing objects that repel each other. They made the
+rules too complicated.
 
-- **Similarity.** Rank pairs of objects, most alike first:
+#### Mixing piles
+
+- **Luck decides, and size raises the stakes.** A big pile of weapons is
+  more likely to give a good weapon. With a wand of polymorph found once in
+  a game, polypiling a pile should be worth trying once. Sometimes the
+  pile's total value rises explosively.
+- **Similarity.** The more alike the pile as a whole, the more it is drawn
+  towards dearer results. Pairs rank, most alike first:
   1. same kind
   2. same class and same material
   3. same class
   4. same material
   5. unrelated
+- **Junk is rocks and worthless glass shards only.** No new object is
+  added. These two can't change any further, so they mark a pile that has
+  been polypiled to the end. Their only other use is as bomb filling.
+- **Mass is roughly kept.** When a pile fuses, it can end in rocks and
+  glass shards, the dead end of polymorph. That dead end takes over the job
+  of vanilla's vanishing and fusing.
+- **Golems.** The pile's mix of materials and its mass set which golems it
+  can turn into, and how likely each is. The bigger the pile, the stronger
+  (higher-level) the golem.
 
-  The more alike the pile as a whole, the more it is drawn towards dearer
-  results.
-- **Taking shape.** A similar pile becomes fewer objects of higher value,
-  weighting the choice by list price, for example. Decide whether the total
-  value of the pile is kept or raised. Golems fit the model: a large mass of
-  one material takes shape as a body.
-- **Junk.** An unrelated pile becomes rocks, worthless glass or scrap.
-  Decide whether to add a new object for scrap; it would need a tile and
-  art.
-- **The container explosion.**
-  - Vanilla quietly destroys a polymorphed container's contents
-    (`poly_obj()` in `zap.c`). This replaces that silent loss with a
-    consequence the player can see.
-  - A container that becomes another container keeps its contents.
-  - Contents don't count as touching the objects outside, so they don't mix
-    into the pile.
-  - **Force.** It scales with the real mass of the contents. A bag of holding
-    hides how heavy its contents are, so it makes a much bigger blast than
-    it seems to.
-  - **Fragments.** The contents are ground to dust and scattered as worthless
-    rocks and shards of glass.
-    - One fragment flies out for every 10 weight of contents, spreading in
-      concentric rings. A rock weighs 10, so the mass roughly carries over.
-    - Each fragment damages the creatures and breaks the walls along its
-      path, then drops to the floor where it runs out of energy.
-    - Undiggable walls and special levels hold.
-    - Wall damage in a shop is billed as usual, and the shopkeeper reacts to
-      it.
-    - To set against the rest of the game: the damage per fragment, the
-      range, and how much energy a wall costs a fragment. Test cases: a full
-      bag of holding, many hits on one target, and the hero caught in the
-      blast.
-    - Vanilla's `scatter()` (used for exploding boxes and land mines) already
-      hits creatures and breaks objects, so it could be the base. It does
-      not break walls.
-    - If a crafting system comes later, the dust could break down by material
-      instead: iron, aluminium, gold and silver, gems and so on.
-  - **Surviving the blast.** The rules themselves have to give the hero a
-    way to stay safe, or the explosion only kills the player:
-    - **Fuse.** The container "trembles" for one to three turns before it
-      bursts. That leaves time to drop a bag that was polymorphed in the
-      hero's own pack and get away. It also allows a grenade: zap the bag
-      in hand, then throw it.
-    - **Range.** Fragments fly a shorter distance than a wand's ray (7 to 13
-      squares), so zapping from a distance is safe in itself. Damage falls
-      as the fragments lose energy, so the danger is near the centre.
-    - **Cover.** Fragments fly in straight lines and stop at what they hit.
-      The hero is safe behind a wall, a boulder or a corner, at the bottom
-      of a pit, or underwater. A monster in the way takes the hit. Breaking
-      a wall costs a fragment much of its energy, so a blast in a closed
-      room is mostly contained.
-  - To decide: protection against polymorphing one's own bag by accident,
-    for example a confirmation, as under "Confirm the irreversible".
-- **Vanishing.** Decide whether objects still sometimes vanish. Options:
-  drop vanishing altogether, or turn it into a weak form of the same energy
-  release.
+#### The container explosion
 
-#### To decide
+Vanilla quietly destroys a polymorphed container's contents (`poly_obj()`
+in `zap.c`). Here they burst out instead.
 
-- **Other sources of polymorph.** The same model could apply to the
-  polymorph spell, polymorph traps and dipping in a potion of polymorph.
-  Zapping oneself, which polymorphs the inventory, is also open.
-- **Unknown items.** Decide how much the hero can predict without knowing
-  what the objects are.
-- **Monsters.** Monsters on the same square as objects stay separate from
-  them, as in vanilla.
+- A container that becomes another container keeps its contents.
+- Contents never mix with the objects outside.
+- The contents' real mass sets the force. A bag of holding hides its
+  contents' weight, so it makes a far bigger blast than it seems to.
 
-#### Rejected
+The example below uses contents weighing 100.
 
-- **Objects that repel each other.** An explosion from mixing objects that
-  repel, such as blessed with cursed or artifacts of opposite alignments.
-  Too complex. The container is the only source of explosions.
-- **Other ways to survive the blast:** fragments rolling to hit against AC,
-  a blast's size teaching the player, and warning messages.
+**The blast: half the mass (50).** Blast damage is physical, so traits that
+reduce physical damage reduce it.
+
+- **Spread.** The blast spreads square by square in concentric rings. Each
+  square passes on half the force it received, until nothing is left: 50 on
+  the adjacent squares, then 25, 12, 6, 3 and 1. Reach grows only with the
+  logarithm of the mass. A blast of 500 ends after about nine rings, so a
+  packed bag of holding needs no cap.
+- **Fragile objects.** A blast of 10 or more breaks exposed fragile objects
+  (on the floor or carried, not inside a container), such as potions, glass
+  and eggs. The threshold is still to tune.
+- **Walls, doors and boulders.** Only the blast breaks these; fragments
+  don't. Each breaks at or above its threshold:
+  - door: 10
+  - boulder: 20 (it breaks into rocks)
+  - wall: 30
+
+  Undiggable walls never break. With contents of 100, walls break only on
+  the adjacent ring (50), while doors and boulders also break one ring out
+  (25).
+- **What it meets on the way.**
+  - **An obstacle that holds** stops the blast behind it, which is the
+    cover rule for the blast.
+  - **An obstacle that breaks** uses up its threshold, and only the rest
+    goes on, halving as usual. A wall hit by 50 breaks with 30, so the
+    square behind gets 10 instead of 25.
+  - **A monster in the way** takes the force of its square, and what it
+    passes on is halved once more. A monster hit by 50 passes on only 12
+    instead of 25, so a crowd shields what is behind it.
+
+**The fragments: the other half (50).** The contents are ground to dust and
+fly out in concentric rings.
+
+| Fragment | Share of fragment mass | From 50 | Damage |
+|---|---|---|---|
+| Rock | 80% | 4 (one per 10 weight) | about 50 each |
+| Glass shard | 20% | 10 (one per 1 weight) | about 10 each |
+
+- **Range.** Each fragment flies in a straight line. Its damage drops by 1
+  for every square it flies, and it falls to the floor when the damage
+  reaches 0. That is its real range:
+  - A rock reaches about 50 squares. With bad luck it can strike the hero
+    on the far side of the map.
+  - A glass shard reaches about 10 squares, so it works as buckshot close
+    to the blast.
+
+  The fragments also fan out as they go, so the farther away a target is,
+  the less likely it is to be hit.
+- **Hitting.** A fragment rolls to hit against AC like a thrown rock, so
+  high AC sometimes keeps it off. A shield may block some.
+- **Passing through.** On its first hit a fragment passes through. The next
+  thing it hits takes half damage, and the fragment stops there. The damage
+  at that point is the remaining damage after the drop with distance.
+- **Walls and boulders.** Fragments don't break them. A fragment stops
+  there and drops.
+- **Landing.** A fragment that runs out of energy drops to the floor as a
+  worthless rock or glass shard.
+- **Weight.** Weight is roughly conserved: a rock weighs 10 and a worthless
+  glass weighs 1.
+
+**Fuse.** The container trembles before it bursts. The wand's blessed or
+cursed state sets the delay:
+
+| Wand | Delay |
+|---|---|
+| Cursed | 0 to 1 turns |
+| Uncursed | 1 to 2 turns |
+| Blessed | 2 to 3 turns |
+
+The only warning is the trembling, with no confirmation. Cause and effect
+are simple enough that one bad experience teaches it. That settles the
+"Confirm the irreversible" question for bags as well.
+
+**Responsibility.** Whoever set off the explosion bears the blame and karma
+for everything it hits, whether hostile or not. That covers kills,
+alignment, luck, and angering peacefuls, shopkeepers and priests included.
+Shop walls the blast breaks are billed as for a pick-axe or a wand of
+digging.
+
+**Surviving it.** An adjacent hero takes the full blast and most of the
+fragments, which is meant to be lethal even at XL30. Four things keep it
+usable:
+
+- the fuse
+- distance: the blast halves every ring and the fragments fan out
+- AC and shields against the fragments
+- cover: walls, boulders, corners and monsters stop the blast
+
+A small sack with little in it makes a small blast, so the player learns
+the strength gradually.
+
+**Uses.** A spare container finally has a use. In the endgame, a wand of
+polymorph becomes the detonator for a bag packed like a charge of TNT. Each
+bomb costs a container and a wand charge, which keeps it in check.
+
+#### Other polymorph sources
+
+- **Zapping oneself** works as in vanilla: the hero's body changes and the
+  inventory is untouched.
+
+#### Still open
+
+- **Fragment numbers:** how fast the hit chance falls with distance
+- **Pile formulas:**
+  - the value-weighted choice for similar piles
+  - the golem table by material and mass
+- **Vanishing:** whether objects still sometimes vanish, or the rocks and
+  glass dead end replaces vanishing entirely
+- **Other sources:** whether the spell of polymorph, polymorph traps and
+  dipping into a potion of polymorph follow the same model
+- **Unknown items:** how much the hero can foresee about a pile of
+  unidentified items
+- **Crafting:** if a crafting system comes later, the dust could break down
+  by material instead (iron, aluminium, gold and silver, gems and so on)
 
 Write the spec before implementing; this is large enough to deserve its own
 round of design.
