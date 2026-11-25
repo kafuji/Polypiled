@@ -43,3 +43,17 @@ export function translateGroundObject(text: string, locale: SupportedLocale): st
   }
   return translateInventoryItem(text, locale);
 }
+
+// Polypiled: names only the hover label uses (core/NetHack/win/shim/nh3d_knowledge.c).
+// Kept apart from `features` so message translation is unaffected.
+const squareNames: Readonly<Record<string, string>> = {
+  wall: "壁", "lawful altar": "秩序の祭壇", "neutral altar": "中立の祭壇", "chaotic altar": "混沌の祭壇",
+  "unaligned altar": "無属性の祭壇", "high altar": "高位の祭壇", "lowered drawbridge": "下りた跳ね橋",
+  "raised drawbridge": "上がった跳ね橋", air: "空中", cloud: "雲", "falling rock trap": "落石の罠", "statue trap": "石像の罠",
+};
+
+/** Translate a name the hover label shows for a map square (ground, feature, trap or object). */
+export function translateSquareName(text: string, locale: SupportedLocale): string {
+  if (locale === "ja" && Object.prototype.hasOwnProperty.call(squareNames, text)) return squareNames[text];
+  return translateGroundObject(text, locale);
+}

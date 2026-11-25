@@ -6,7 +6,7 @@ import { gameFrameTime } from "./engine/rendering/frame-time";
 import { WebHaptics } from "web-haptics";
 import { WorkerRuntimeBridge } from "../runtime";
 import { markPortraitAcknowledged, portraitSnapshot, releaseAcknowledgedPortrait, setPortrait } from "../plus/portrait-dialog/store";
-import { resetMonsterGlance, setGlancePointer, setGlancedMonsters } from "../plus/monster-glance/store";
+import { resetMonsterGlance, setGlancePointer, setGlancedMonsters, setGlancedSquares } from "../plus/monster-glance/store";
 import type { RuntimeEvent } from "../runtime";
 import { FmodRuntime } from "../audio";
 import { BackgroundMusic, type MusicMood } from "../audio/music";
@@ -991,6 +991,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
       case "monster_glance":
         if (Array.isArray(data.monsters)) setGlancedMonsters(data.monsters);
+        break;
+
+      case "square_glance":
+        if (Array.isArray(data.squares)) setGlancedSquares(data.squares);
         break;
 
       case "inventory_operation_settled":

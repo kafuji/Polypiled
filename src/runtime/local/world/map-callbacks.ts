@@ -6,6 +6,7 @@ import { isLoggingEnabled } from "../../../logging";
 import { decodeKnowledgeFrame } from "../../knowledge";
 import { parseFloorHere } from "../../floor-here";
 import { parseMonsterGlance } from "../../monster-glance";
+import { parseSquareGlance } from "../../square-glance";
 import { parseInventoryState } from "../../inventory-state";
 import type { RuntimePointerContract } from "../abi/pointer-contract";
 import type { RuntimeGlyphs } from "./glyphs";
@@ -406,6 +407,19 @@ export class RuntimeMapCallbacks {
     }
     if (this.deps.coordinator.eventHandler) {
       this.deps.coordinator.emit({ type: "monster_glance", monsters });
+    }
+    return 0;
+  }
+
+  /** Polypiled: what the hero knows of each map square (src/runtime/square-glance.ts). */
+  handleShimSquareGlance(args) {
+    const squares = parseSquareGlance(args[0]);
+    if (!squares) {
+      console.warn("Ignoring square glance information this client cannot read.");
+      return 0;
+    }
+    if (this.deps.coordinator.eventHandler) {
+      this.deps.coordinator.emit({ type: "square_glance", squares });
     }
     return 0;
   }
