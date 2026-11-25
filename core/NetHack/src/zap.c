@@ -6495,7 +6495,7 @@ flash_str(
 #define POLYPILE_BOULDER_FORCE 20
 #define POLYPILE_WALL_FORCE 30
 #define POLYPILE_FRAGILE_FORCE 10 /* blast that breaks exposed fragile things */
-#define POLYPILE_SHARD WORTHLESS_PIECE_OF_WHITE_GLASS
+#define POLYPILE_SHARD WORTHLESS_WHITE_GLASS
 #define POLYPILE_NMAT (MINERAL + 1)
 
 /* containers that hold things (a bag of tricks doesn't) */
