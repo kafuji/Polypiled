@@ -83,6 +83,154 @@ This replaces the "pets follow more readily" idea.
   - pet armor, for example barding for steeds (some variants have it,
     EvilHack among them)
 
+### No "mysterious force"
+
+Climbing out of Gehennom with the Amulet no longer sends the hero back down
+at random. 5.0 already makes it rarer each time it strikes (`do.c`,
+`svc.context.mysteryforce`). It only lengthens the ascension run without
+adding a decision. The tension on the way up comes from the Wizard's
+harassment instead; whether to strengthen that is a separate question.
+
+### Fewer dull Gehennom mazes
+
+5.0 already mixes caverns into the filler levels (`hellfill`). Options:
+
+- fewer filler levels; Gehennom is 20 to 24 levels deep (`dungeon.lua`)
+- more varied filler, such as themed caverns, small set pieces, and mazes
+  with rooms
+- mazes the hero can learn quickly, for example by mapping each one as it
+  is crossed
+
+The layout only applies to new games, but it does change how saves read the
+dungeon, so check save compatibility.
+
+### Faster early Pw regeneration
+
+At XL1 one point comes back every 24 turns (Wizard 18); at XL30, every 5
+(Wizard 4). The gain per regeneration is 1 to (Wis + Int) / 15 + 1
+(`regen_pw()` in `allmain.c`). The aim is to raise the floor in the early
+game so a low-level caster can actually cast, while keeping the late game
+about the same. One option is a bonus for Int/Wis that also applies at low
+XL.
+
+### Rethinking polypiling
+
+The variant's namesake. Vanilla's per-stack limits:
+
+- **Shuddering.** A stack of more than 4 shudders twice as often
+  (`obj_shudders()`).
+- **Fusing.** A merged stack fuses into a single object, more often the
+  bigger it is (`poly_obj()`).
+- **Gems.** A large stack of mineral gems may become rocks.
+
+#### Model
+
+The wand turns what it hits into something else. A monster becomes another
+monster and an object becomes another object.
+
+- **One object on its own** changes at random, as in vanilla.
+- **Objects sharing a square** touch, get confused with each other, and
+  tend to change together. How alike they are decides the result:
+  - **Unrelated objects** can't take shape together and turn into junk.
+  - **Similar objects** concentrate their energy and tend to take shape as
+    something more valuable.
+- **A container that stops being a container** leaves its contents nowhere
+  to go. They burst out as countless fragments. Even a tiny loss of mass
+  releases huge energy, enough to blow out the walls around.
+
+This replaces vanilla's stack penalties (shuddering, fusing, gems turning to
+rocks) with one principle. The busywork of splitting stacks becomes a real
+choice: what to pile together. Spare bags gain a use, and a wand of
+polymorph becomes a detonator for a bag packed beforehand, a strategy for
+the final battle.
+
+#### Rough mapping to rules
+
+- **Similarity.** Rank pairs of objects, most alike first:
+  1. same kind
+  2. same class and same material
+  3. same class
+  4. same material
+  5. unrelated
+
+  The more alike the pile as a whole, the more it is drawn towards dearer
+  results.
+- **Taking shape.** A similar pile becomes fewer objects of higher value,
+  weighting the choice by list price, for example. Decide whether the total
+  value of the pile is kept or raised. Golems fit the model: a large mass of
+  one material takes shape as a body.
+- **Junk.** An unrelated pile becomes rocks, worthless glass or scrap.
+  Decide whether to add a new object for scrap; it would need a tile and
+  art.
+- **The container explosion.**
+  - Vanilla quietly destroys a polymorphed container's contents
+    (`poly_obj()` in `zap.c`). This replaces that silent loss with a
+    consequence the player can see.
+  - A container that becomes another container keeps its contents.
+  - Contents don't count as touching the objects outside, so they don't mix
+    into the pile.
+  - **Force.** It scales with the real mass of the contents. A bag of holding
+    hides how heavy its contents are, so it makes a much bigger blast than
+    it seems to.
+  - **Fragments.** The contents are ground to dust and scattered as worthless
+    rocks and shards of glass.
+    - One fragment flies out for every 10 weight of contents, spreading in
+      concentric rings. A rock weighs 10, so the mass roughly carries over.
+    - Each fragment damages the creatures and breaks the walls along its
+      path, then drops to the floor where it runs out of energy.
+    - Undiggable walls and special levels hold.
+    - Wall damage in a shop is billed as usual, and the shopkeeper reacts to
+      it.
+    - To set against the rest of the game: the damage per fragment, the
+      range, and how much energy a wall costs a fragment. Test cases: a full
+      bag of holding, many hits on one target, and the hero caught in the
+      blast.
+    - Vanilla's `scatter()` (used for exploding boxes and land mines) already
+      hits creatures and breaks objects, so it could be the base. It does
+      not break walls.
+    - If a crafting system comes later, the dust could break down by material
+      instead: iron, aluminium, gold and silver, gems and so on.
+  - **Surviving the blast.** The rules themselves have to give the hero a
+    way to stay safe, or the explosion only kills the player:
+    - **Fuse.** The container "trembles" for one to three turns before it
+      bursts. That leaves time to drop a bag that was polymorphed in the
+      hero's own pack and get away. It also allows a grenade: zap the bag
+      in hand, then throw it.
+    - **Range.** Fragments fly a shorter distance than a wand's ray (7 to 13
+      squares), so zapping from a distance is safe in itself. Damage falls
+      as the fragments lose energy, so the danger is near the centre.
+    - **Cover.** Fragments fly in straight lines and stop at what they hit.
+      The hero is safe behind a wall, a boulder or a corner, at the bottom
+      of a pit, or underwater. A monster in the way takes the hit. Breaking
+      a wall costs a fragment much of its energy, so a blast in a closed
+      room is mostly contained.
+  - To decide: protection against polymorphing one's own bag by accident,
+    for example a confirmation, as under "Confirm the irreversible".
+- **Vanishing.** Decide whether objects still sometimes vanish. Options:
+  drop vanishing altogether, or turn it into a weak form of the same energy
+  release.
+
+#### To decide
+
+- **Other sources of polymorph.** The same model could apply to the
+  polymorph spell, polymorph traps and dipping in a potion of polymorph.
+  Zapping oneself, which polymorphs the inventory, is also open.
+- **Unknown items.** Decide how much the hero can predict without knowing
+  what the objects are.
+- **Monsters.** Monsters on the same square as objects stay separate from
+  them, as in vanilla.
+
+#### Rejected
+
+- **Objects that repel each other.** An explosion from mixing objects that
+  repel, such as blessed with cursed or artifacts of opposite alignments.
+  Too complex. The container is the only source of explosions.
+- **Other ways to survive the blast:** fragments rolling to hit against AC,
+  a blast's size teaching the player, and warning messages.
+
+Write the spec before implementing; this is large enough to deserve its own
+round of design.
+
 ## Not for now
 
 - Warnings before instadeaths (after FIQHack, UnNetHack)
