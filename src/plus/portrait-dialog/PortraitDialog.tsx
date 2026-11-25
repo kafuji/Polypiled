@@ -4,6 +4,12 @@ import { translateMonsterName } from "../../i18n/game-monsters";
 import { translateGamePrompt } from "../../i18n/game-prompts";
 import { presentGameMessage } from "../../i18n/message-presentation";
 import { translateOracleDocument } from "../../i18n/oracle-text";
+import { translateQuestDocument } from "../../i18n/quest-text";
+import { translateIntroStory } from "../../i18n/intro-story";
+import { translateHelpDocument } from "../../i18n/help-text";
+import { translateEncyclopediaEntry } from "../../i18n/encyclopedia-text";
+import { translateDiscoveryReport } from "../../i18n/discovery-text";
+import { translateReportLine } from "../../i18n/report-text";
 import { hasPaintedPortrait, portraitActor } from "./actors";
 import { portraitSnapshot, subscribePortrait } from "./store";
 import "./portrait-dialog.css";
@@ -23,6 +29,7 @@ export function PortraitDialog() {
   const scene = useSyncExternalStore(subscribePortrait, portraitSnapshot);
   const { locale } = useI18n();
   const dialog = useRef<HTMLDialogElement>(null);
+  const body = useRef<HTMLParagraphElement>(null);
   const offerField = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const held = new Set<string>();
@@ -39,7 +46,8 @@ export function PortraitDialog() {
       }
       event.stopImmediatePropagation();
       const editing = current?.input === "offer" && event.target === offerField.current;
-      if (current?.input && event.key === "Tab") return;
+      if ((current?.input || current?.document) && event.key === "Tab") return;
+      if (current?.document && event.target === body.current && ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(event.key)) return;
       if (editing && !["Enter", "Escape"].includes(event.key)) return;
       event.preventDefault();
       if (event.type === "keyup") held.delete(code);
@@ -73,16 +81,27 @@ export function PortraitDialog() {
       offerField.current.focus();
     }
   }, [scene]);
+  useEffect(() => {
+    if (body.current) body.current.scrollTop = 0;
+  }, [scene?.text]);
   if (!scene) return null;
   const actor = portraitActor(scene.actor, scene.tileIndex);
+  const narration = actor === "narration";
   const label = labels[actor]?.[locale === "ja" ? 1 : 0] ?? translateMonsterName(actor.replace(/_/g, " "), locale);
   const prompt = scene.input ? translateGamePrompt(scene.text, locale) : scene.text;
-  const text = (scene.oracleDocument ? translateOracleDocument(scene.text.split("\n"), locale) : null)
+  const lines = scene.document ? scene.text.split("\n") : undefined;
+  const translation = lines && (translateOracleDocument(lines, locale) ?? translateIntroStory(lines, locale)
+    ?? (locale === "ja" ? translateQuestDocument(lines) : undefined)
+    ?? translateHelpDocument(lines, locale) ?? translateEncyclopediaEntry(lines, locale)
+    ?? translateDiscoveryReport(lines, locale)?.join("\n")
+    ?? lines.map(line => presentGameMessage(translateReportLine(line, locale), locale).text).join("\n"));
+  const text = translation
     ?? (prompt === scene.text ? presentGameMessage(scene.text, locale).text : prompt);
-  const portrait = hasPaintedPortrait(actor) ? `assets/portraits/${actor}.png`
+  const portrait = narration ? null : hasPaintedPortrait(actor) ? `assets/portraits/${actor}.png`
     : scene.preview ?? (/^[a-z0-9_]+$/.test(actor) && !["pet", "chat"].includes(actor)
       ? `assets/vulture/win/vulture/gamedata/tiles/monster.pm_${actor}.png` : null);
-  return <dialog ref={dialog} className="portrait-dialog" aria-labelledby="portrait-speaker"
+  return <dialog ref={dialog} className="portrait-dialog" aria-labelledby={narration ? undefined : "portrait-speaker"}
+    aria-label={narration ? (locale === "ja" ? "状況描写" : "Narration") : undefined}
     onCancel={event => event.preventDefault()}
     onClick={event => {
       event.stopPropagation();
@@ -93,8 +112,8 @@ export function PortraitDialog() {
       {portrait && <img key={portrait} className="portrait-speaker-art" alt="" src={portrait}
         onError={event => { event.currentTarget.hidden = true; }} />}
       <div className="portrait-caption">
-        <strong id="portrait-speaker">{label}</strong>
-        <p>{text}</p>
+        {!narration && <strong id="portrait-speaker">{label}</strong>}
+        <p ref={body} tabIndex={scene.document ? 0 : undefined}>{text}</p>
         <div className="portrait-actions">
           {scene.input === "yes-no" ? <>
             <button type="button" data-answer="y" onClick={() => scene.acknowledge("y")}>{locale === "ja" ? "はい" : "Yes"} <kbd>Y</kbd></button>

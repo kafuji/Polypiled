@@ -255,8 +255,6 @@ export class RuntimeWindowText {
       const normalizedLines = displayLines.map((line) =>
         String(line || "").replace(/\u0000/g, ""),
       );
-      const dialogue = blocking && presentDialogue?.(normalizedLines);
-      if (dialogue) return dialogue;
       this.deps.gameOver.captureGameOverSummaryFromLines(
         normalizedLines,
         "display_nhwindow",
@@ -271,6 +269,8 @@ export class RuntimeWindowText {
       if (!this.deps.coordinator.eventHandler) {
         return 0;
       }
+      const dialogue = blocking && presentDialogue?.(normalizedLines);
+      if (dialogue) return dialogue;
       this.deps.coordinator.logRoutine(
         `Emitting info dialog for window ${winid} with ${normalizedLines.length} lines`,
       );

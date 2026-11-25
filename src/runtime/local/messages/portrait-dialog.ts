@@ -1,10 +1,12 @@
+import { narrativeActor, spokenActor } from "./narrative-text";
+
 export interface PortraitScene {
   actor: string;
   text: string;
   tileIndex?: number;
   input?: "yes-no" | "offer";
   choices?: "yn" | "ynq";
-  oracleDocument?: boolean;
+  document?: boolean;
   conversation?: boolean;
 }
 
@@ -118,12 +120,15 @@ export class RuntimePortraitDialogs {
 
   document(lines: readonly string[]) {
     if (!this.enabled || this.pending) return;
-    const heading = lines.find(line => line.trim())?.trim();
-    if (!heading || !oracleDocumentHeading.test(heading)) return;
-    this.speaker = "oracle";
+    const text = lines.join("\n");
+    const heading = lines.find(line => line.trim())?.trim() ?? "";
+    const actor = oracleDocumentHeading.test(heading) ? "oracle"
+      : narrativeActor(text, this.chatTile) ?? spokenActor(text) ?? "narration";
+    if (actor !== "oracle") this.endConversation();
+    else this.speaker = actor;
     this.speakerTile = undefined;
     this.chatTile = undefined;
-    return this.page({ actor: "oracle", text: lines.join("\n"), oracleDocument: true }).then(() => 0);
+    return this.page({ actor, text, document: true }).then(() => 0);
   }
 
   message(text: string, readTurn: () => number | null, nearbyTile?: (actor: string) => number | undefined): number | Promise<number> {
@@ -139,6 +144,12 @@ export class RuntimePortraitDialogs {
       const intro = this.oracleRumorIntro;
       this.oracleRumorIntro = undefined;
       return this.page({ actor: "oracle", text: `${intro}\n\n${text}` }).then(() => 0);
+    }
+    const narrative = narrativeActor(text, this.chatTile);
+    if (narrative) {
+      this.endConversation();
+      this.chatTile = undefined;
+      return this.page({ actor: narrative, text }).then(() => 0);
     }
     const chatTile = this.chatTile;
     let tileIndex = chatTile;
@@ -160,7 +171,11 @@ export class RuntimePortraitDialogs {
     else if (tileIndex === null && / (?:whickers|neighs)\.$/i.test(text)) actor = "pony";
     else if (tileIndex !== undefined && (tileIndex !== null || /^"/.test(text))) actor = "chat";
     else if (this.speaker && this.speaker !== "shopkeeper" && (/^"|^(?:The |An? )?(?:succubus|incubus|Baalzebub)\b|^(?:He|She) |^Time stands still while |^You (?:refuse\.|give |seem to have enjoyed)/i.test(text))) actor = this.speaker;
-    else return 0;
+    else {
+      const spoken = spokenActor(text);
+      if (!spoken) return 0;
+      actor = spoken;
+    }
     if (tileIndex == null && (actor === "shopkeeper" || ["dog", "kitten", "pony", "pet"].includes(actor))) {
       tileIndex = (this.speaker === actor ? this.speakerTile : undefined) ?? nearbyTile?.(actor);
     }

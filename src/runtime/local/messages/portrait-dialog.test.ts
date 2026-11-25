@@ -41,6 +41,39 @@ it("keeps the ordinary log when disabled", () => {
   expect(events.map(e => e.type)).not.toContain("portrait_dialog");
 });
 
+it.each([
+  [4, [
+    '"Kafujinho-san, you have learned well and honored your family.',
+    "I require the skills of a Ryoshu in order to defeat Ashikaga Takauji.",
+    "Go and seek out teachers.  Learn what they have learned.  When you",
+    'are ready, return to me."',
+  ], "lord_sato"],
+  [5, ["You step into a darkened chamber.", "", "A bell echoes in the distance."], "narration"],
+])("uses portraits for blocking story windows (%s)", async (type, lines, actor) => {
+  const { events } = setup();
+  const window = runtime.handleUICallback("shim_create_nhwindow", [type]);
+  for (const line of lines) runtime.handleUICallback("shim_putstr", [window, 0, line]);
+  const wait = runtime.handleUICallback("shim_display_nhwindow", [window, true]);
+  expect(events[events.length - 1]).toMatchObject({ type: "portrait_dialog", document: true, actor, text: lines.join("\n") });
+  expect(events.some(event => event.type === "info_menu")).toBe(false);
+  runtime.portraits.dismiss(1);
+  await expect(wait).resolves.toBe(0);
+});
+
+it.each([
+  ["You receive a faint telepathic message from Lord Sato:", "narration"],
+  ["Your help is urgently needed at the Castle of the Taro Clan!", "narration"],
+  ["Here the High Temple of Amaterasu Omikami is located.", "narration"],
+  ['The dwarf says: "Welcome, traveler."', "dwarf"],
+  ['"I have a message for you."', "narration"],
+])("routes short story or spoken lines directly from the message window: %s", async (line, actor) => {
+  const { events, say } = setup();
+  const wait = say(line);
+  expect(events[events.length - 1]).toMatchObject({ type: "portrait_dialog", actor, text: line });
+  runtime.portraits.dismiss(1);
+  await expect(wait).resolves.toBe(0);
+});
+
 const minorConsultation = '"Wilt thou settle for a minor consultation?" (50 zorkmids)';
 const majorConsultation = '"Then dost thou desire a major one?" (550 zorkmids)';
 
@@ -64,7 +97,7 @@ it("keeps both Oracle questions and the full major consultation in one portrait 
   const window = runtime.handleUICallback("shim_create_nhwindow", [5]);
   for (const line of lines) runtime.handleUICallback("shim_putstr", [window, 0, line]);
   const consultation = runtime.handleUICallback("shim_display_nhwindow", [window, true]);
-  expect(events[events.length - 1]).toMatchObject({ actor: "oracle", oracleDocument: true, text: lines.join("\n") });
+  expect(events[events.length - 1]).toMatchObject({ actor: "oracle", document: true, text: lines.join("\n") });
   expect(events.some(event => ["question", "info_menu", "portrait_conversation_end"].includes(event.type))).toBe(false);
   runtime.portraits.dismiss(3);
   await expect(consultation).resolves.toBe(0);

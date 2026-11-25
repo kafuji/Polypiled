@@ -1276,8 +1276,14 @@ class Nethack3DEngine implements Nethack3DEngineController {
           session.dismissPortrait(id, data.choices === "ynq" ? "q" : data.input === "yes-no" ? "n" : data.input === "offer" ? "0" : undefined);
           break;
         }
+        if (data.document && typeof data.text === "string") {
+          this.systems.promptDialogs.lastMessageInfoMenu = {
+            title: "NetHack Message",
+            lines: data.text.split("\n"),
+          };
+        }
         setPortrait({ actor: String(data.actor), text: String(data.text), tileIndex: data.tileIndex, input: data.input,
-          choices: data.choices, oracleDocument: data.oracleDocument,
+          choices: data.choices, document: data.document,
           preview: data.tileIndex != null ? this.systems.menuPreviews.resolveMenuItemTilePreviewDataUrl({ tileIndex: data.tileIndex }) : null,
           acknowledge: (answer) => {
             // A conversation page stays up to frame the next line; acknowledging

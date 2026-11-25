@@ -309,7 +309,8 @@ class LocalNetHackRuntime {
         return this.systems.menuCapture.handleShimEndMenu(args);
       case "shim_display_nhwindow":
         return this.systems.windowText.handleShimDisplayNhwindow(args, lines => {
-          const dialogue = this.systems.gameOver.gameOverSequenceActive ? undefined : this.portraits.document(lines);
+          const dialogue = this.systems.gameOver.gameOverSequenceActive || this.systems.contextualLook.isContextualInfoQuiet()
+            ? undefined : this.portraits.document(lines);
           if (!dialogue) this.portraits.endConversation();
           return dialogue;
         });
@@ -355,7 +356,8 @@ class LocalNetHackRuntime {
         this.systems.messages.handleShimRawPrintBold(args);
         return this.presentPortraitMessage(args[0]);
       case "shim_message_menu":
-        return this.systems.messages.handleShimMessageMenu(args);
+        this.systems.messages.handleShimMessageMenu(args);
+        return this.presentPortraitMessage(args[2]);
       case "shim_update_inventory":
         return this.systems.menuCapture.handleShimUpdateInventory();
       case "shim_wait_synch":
