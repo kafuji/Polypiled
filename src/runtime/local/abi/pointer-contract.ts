@@ -91,6 +91,7 @@ export class RuntimePointerContract {
         shim_combat_feedback: [4],
         shim_knowledge_frame: [1],
         shim_floor_here: [1],
+        shim_monster_glance: [1],
         shim_inventory: [1],
         shim_status_update: [6],
       },

@@ -1407,6 +1407,12 @@ dochat(void)
               xresponse);
         return ECMD_OK;
     }
+    /* Polypiled: a pet hears you out and takes an order */
+    if (mtmp->mtame && has_edog(mtmp) && !mtmp->isminion
+        && mtmp != u.usteed && canspotmon(mtmp)) {
+        (void) domonnoise(mtmp);
+        return pet_orders(mtmp) ? ECMD_TIME : ECMD_OK;
+    }
     return domonnoise(mtmp);
 }
 

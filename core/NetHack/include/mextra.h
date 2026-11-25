@@ -181,7 +181,15 @@ struct edog {
     int revivals;             /* count pet deaths */
     int mhpmax_penalty;       /* while starving, points reduced */
     Bitfield(killed_by_u, 1); /* you attempted to kill him */
+    /* Polypiled: orders given through #chat; spare bits of the same word,
+       so the save layout is unchanged */
+    Bitfield(petcmd, 2);      /* PETCMD_FREE, PETCMD_STAY, PETCMD_FOLLOW */
+    Bitfield(fetch, 1);       /* told to fetch things */
 };
+
+#define PETCMD_FREE 0
+#define PETCMD_STAY 1
+#define PETCMD_FOLLOW 2
 
 /***
  **     extension tracking a player's remnant monster (ghost, mummy etc.)

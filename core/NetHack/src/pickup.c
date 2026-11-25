@@ -30,6 +30,7 @@ staticfn long carry_count(struct obj *, struct obj *, long, boolean, int *,
 staticfn int lift_object(struct obj *, struct obj *, long *, boolean);
 staticfn void pickup_prinv(struct obj *, long, const char *);
 staticfn boolean mbag_explodes(struct obj *, int);
+staticfn boolean mbag_danger_known(struct obj *);
 staticfn boolean is_boh_item_gone(void);
 staticfn void do_boh_explosion(struct obj *, boolean);
 staticfn long boh_loss(struct obj *, boolean);
@@ -2558,6 +2559,26 @@ boh_loss(struct obj *container, boolean held)
     return 0;
 }
 
+/* Polypiled: whether the hero can tell that putting obj into a bag of
+   holding would blow the bag up: obj is, or visibly holds, a bag of holding
+   or a charged wand of cancellation or bag of tricks the hero recognizes */
+staticfn boolean
+mbag_danger_known(struct obj *obj)
+{
+    struct obj *otmp;
+
+    if ((obj->otyp == BAG_OF_HOLDING
+         || ((obj->otyp == WAN_CANCELLATION || obj->otyp == BAG_OF_TRICKS)
+             && (obj->spe > 0 || !obj->known)))
+        && obj->dknown && objects[obj->otyp].oc_name_known)
+        return TRUE;
+    if (Has_contents(obj) && obj->cknown)
+        for (otmp = obj->cobj; otmp; otmp = otmp->nobj)
+            if (mbag_danger_known(otmp))
+                return TRUE;
+    return FALSE;
+}
+
 /* Returns: -1 to stop, 1 item was inserted, 0 item was not inserted. */
 staticfn int
 in_container(struct obj *obj)
@@ -2616,6 +2637,19 @@ in_container(struct obj *obj)
 
     if (fatal_corpse_mistake(obj, FALSE))
         return -1;
+
+    /* Polypiled: ask before an explosion the hero can see coming */
+    if (Is_mbag(gc.current_container) && gc.current_container->dknown
+        && objects[gc.current_container->otyp].oc_name_known
+        && mbag_danger_known(obj)) {
+        char qbuf[QBUFSZ];
+
+        Snprintf(qbuf, sizeof qbuf,
+                 "Putting that inside will blow up %s.  Do it anyway?",
+                 the(xname(gc.current_container)));
+        if (y_n(qbuf) != 'y')
+            return 0;
+    }
 
     /* boxes, boulders, and big statues can't fit into any container */
     if (obj->otyp == ICE_BOX || Is_box(obj) || obj->otyp == BOULDER

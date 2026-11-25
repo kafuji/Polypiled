@@ -11,6 +11,7 @@
 
 staticfn boolean histemple_at(struct monst *, coordxy, coordxy);
 staticfn boolean has_shrine(struct monst *);
+staticfn boolean priest_reads_blessings(struct monst *);
 
 void
 newepri(struct monst *mtmp)
@@ -554,6 +555,40 @@ forget_temple_entry(struct monst *priest)
         epri_p->hostile_time = 0L;
 }
 
+/* Polypiled: for an offering, a temple priest tells which of the hero's
+   things are blessed or cursed, as dropping them on an altar would.
+   Returns TRUE when the hero took the offer (the chat ends there). */
+staticfn boolean
+priest_reads_blessings(struct monst *priest)
+{
+    struct obj *otmp;
+    long fee, count = 0L;
+    char qbuf[QBUFSZ];
+
+    for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (!otmp->bknown && otmp->oclass != COIN_CLASS)
+            count++;
+    if (!count)
+        return FALSE;
+    fee = max(50L, 20L * count);
+    if (money_cnt(gi.invent) < fee)
+        return FALSE;
+    Snprintf(qbuf, sizeof qbuf,
+             "%s offers to read the blessings upon your possessions"
+             " for %ld %s.  Accept?",
+             Monnam(priest), fee, currency(fee));
+    if (y_n(qbuf) != 'y')
+        return FALSE;
+    money2mon(priest, fee);
+    disp.botl = TRUE;
+    pline("%s lays hands upon your possessions.", Monnam(priest));
+    for (otmp = gi.invent; otmp; otmp = otmp->nobj)
+        if (otmp->oclass != COIN_CLASS)
+            set_bknown(otmp, 1);
+    update_inventory();
+    return TRUE;
+}
+
 void
 priest_talk(struct monst *priest)
 {
@@ -626,6 +661,8 @@ priest_talk(struct monst *priest)
         } else
             pline("%s is not interested.", Monnam(priest));
         return;
+    } else if (priest_reads_blessings(priest)) {
+        return; /* Polypiled */
     } else {
         /* there's now some randomization in how much you need to donate, but
            you are given suggested donation values that will guarantee

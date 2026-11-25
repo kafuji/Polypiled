@@ -23,6 +23,7 @@ import type { RenderPipeline } from "../rendering/render-pipeline";
 import type { TerminalRendering } from "../rendering/terminal-rendering";
 import type { TileContextActions } from "../ui/tile-context-actions";
 import type { TileRendering } from "../rendering/tile-rendering";
+import { setGlancePointer } from "../../../plus/monster-glance/store";
 
 export interface MouseInputDependencies {
   readonly heldWeapon: Pick<HeldWeapon, "findHeldWeaponInventoryItem">;
@@ -119,6 +120,7 @@ export interface MouseInputDependencies {
     PointerTargeting,
     "getClickedTilePosition"
     | "getGridPositionFromClientCoordinates"
+    | "getTilePositionFromClientCoordinates"
     | "resolveTileContextTargetFromClientCoordinates"
     | "shouldSearchAdjacentTerminalVoid"
   >;
@@ -586,7 +588,25 @@ export class MouseInput {
     }
   }
 
+  /** Polypiled: tell the monster hover label which map square the pointer rests on. */
+  private updateMonsterGlancePointer(event: MouseEvent | null): void {
+    if (!event || event.target !== this.dependencies.renderPipeline.renderer.domElement) {
+      setGlancePointer(null);
+      return;
+    }
+    const tile = this.dependencies.pointerTargeting.getTilePositionFromClientCoordinates(event.clientX, event.clientY);
+    setGlancePointer(tile ? { tileX: tile.x, tileY: tile.y, clientX: event.clientX, clientY: event.clientY } : null);
+  }
+
   handleMouseMove(event: MouseEvent): void {
+    this.updateMonsterGlancePointer(
+      this.dependencies.promptDialogs.isMapInputBlocked() ||
+        this.dependencies.movementInput.isFpsMode() ||
+        this.isMiddleMouseDown ||
+        this.isRightMouseDown
+        ? null
+        : event,
+    );
     if (isQuestBrowser() && this.dependencies.movementInput.isFpsMode()) return;
     if (this.dependencies.promptDialogs.isMapInputBlocked()) {
       event.preventDefault();

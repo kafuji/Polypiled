@@ -626,17 +626,21 @@ doengrave_sfx_item_WAN(struct _doengrave_ctx *de)
     case WAN_STRIKING:
         Strcpy(de->post_engr_text,
                "The wand unsuccessfully fights your attempt to write!");
+        /* Polypiled: an effect no other wand has names the wand */
+        de->doknown = TRUE;
         break;
     case WAN_SLOW_MONSTER:
         if (!Blind) {
             Sprintf(de->post_engr_text, "The bugs on the %s slow down!",
                     surface(u.ux, u.uy));
+            de->doknown = TRUE; /* Polypiled */
         }
         break;
     case WAN_SPEED_MONSTER:
         if (!Blind) {
             Sprintf(de->post_engr_text, "The bugs on the %s speed up!",
                     surface(u.ux, u.uy));
+            de->doknown = TRUE; /* Polypiled */
         }
         break;
     case WAN_POLYMORPH:
@@ -644,6 +648,7 @@ doengrave_sfx_item_WAN(struct _doengrave_ctx *de)
             if (!Blind) {
                 de->type = (xint16) 0; /* random */
                 (void) random_engraving(de->buf, de->ebuf);
+                de->doknown = TRUE; /* Polypiled: only it rewrites one */
             } else {
                 /* keep the same type so that feels don't
                    change and only the text is altered,
@@ -669,6 +674,7 @@ doengrave_sfx_item_WAN(struct _doengrave_ctx *de)
             Sprintf(de->post_engr_text,
                     "The %s is riddled by bullet holes!",
                     surface(u.ux, u.uy));
+            de->doknown = TRUE; /* Polypiled */
         }
         break;
         /* can't tell sleep from death - Eric Backus */
@@ -680,9 +686,11 @@ doengrave_sfx_item_WAN(struct _doengrave_ctx *de)
         }
         break;
     case WAN_COLD:
-        if (!Blind)
+        if (!Blind) {
             Strcpy(de->post_engr_text,
                    "A few ice cubes drop from the wand.");
+            de->doknown = TRUE; /* Polypiled */
+        }
         if (!de->oep || (de->oep->engr_type != BURN))
             break;
         FALLTHROUGH;

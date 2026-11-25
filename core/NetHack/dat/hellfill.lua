@@ -428,7 +428,15 @@ hells = {
 
 };
 
-local hellno = math.random(1, #hells);
+-- Polypiled: half the filler levels are open caverns (1 and 7); the
+-- other half are one of the five maze styles
+local hellno;
+if (percent(50)) then
+   local caverns = { 1, 7 };
+   hellno = caverns[math.random(1, #caverns)];
+else
+   hellno = math.random(2, 6);
+end
 hells[hellno]();
 
 --

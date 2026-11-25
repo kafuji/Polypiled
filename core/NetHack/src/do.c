@@ -1558,7 +1558,9 @@ goto_level(
      * gradually but substantially.  The drop off is greater when hero is
      * sent down farther so benefits lawfuls more than chaotics this time.
      */
-    if (Inhell && up && u.uhave.amulet && !newdungeon && !portal
+    /* Polypiled: no mysterious force; climbing out with the Amulet only
+       lengthened the run without asking anything of the player */
+    if (FALSE && Inhell && up && u.uhave.amulet && !newdungeon && !portal
         && (dunlev(&u.uz) < dunlevs_in_dungeon(&u.uz) - 3)) {
         if (!rn2(4 + svc.context.mysteryforce)) {
             int odds = 3 + (int) u.ualign.type,   /* 2..4 */
@@ -1899,6 +1901,15 @@ goto_level(
 
     if (familiar)
         familiar_level_msg();
+
+    /* Polypiled: Gehennom's filler mazes are learned as soon as the hero
+       arrives; wandering them blind was only busywork.  Traps, objects and
+       monsters stay unknown. */
+    if (new && Inhell && !Is_special(&u.uz) && svl.level.flags.is_maze_lev
+        && !Hallucination) {
+        You("take in the lay of this level at a glance.");
+        do_mapping();
+    }
 
     /* special location arrival messages/events */
     if (In_endgame(&u.uz)) {

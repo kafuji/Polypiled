@@ -307,3 +307,238 @@ Some core changes serve Polypiled's own interface.
 - **Inventory screen.** It can drop several objects in one action, ready an
   object as the alternate weapon, and sort, giving the letters out again in
   the new order. (`win/shim/nh3d_knowledge.c`)
+
+## Overeating
+
+Choking to death on food is gone. Eating past full (2,000 nutrition) puts
+the hero into a food coma, helpless for 10 to 20 turns with no early waking.
+The meal stops there, and what is left stays partly eaten. Breathless
+heroes, and heroes with the Hunger property, still vomit instead, as
+before. Swallowing an amulet of strangulation still chokes. (`choke()` in
+`eat.c`)
+
+## No mysterious force
+
+Climbing out of Gehennom with the Amulet no longer sends the hero back down
+at random. (`goto_level()` in `do.c`)
+
+## Power regeneration
+
+Pw comes back about half again as fast at low level, and about the same at
+the top. A point returns every (38 - XL) x 4 / 12 + 3 turns, or
+(38 - XL) x 3 / 12 + 3 for Wizards:
+
+| XL | Polypiled | Vanilla | Wizard, Polypiled | Wizard, vanilla |
+|---|---|---|---|---|
+| 1 | 15 | 24 | 12 | 18 |
+| 14 | 11 | 16 | 9 | 12 |
+| 30 | 5 | 5 | 5 | 4 |
+
+The amount restored each time is unchanged. (`regen_pw()` in `allmain.c`)
+
+## Spell memory
+
+Spells are no longer forgotten with time, so there is no rereading a book
+every 20,000 turns. Amnesia still wipes them. (`age_spells()` in `spell.c`)
+
+## Item destruction
+
+Fire, cold and lightning destroy about half as much of what the hero or a
+monster carries:
+
+- one stack at risk per 10 HP of the attack's damage (vanilla: 5)
+- 1 in 6 of each stack lost (vanilla: 1 in 3)
+
+(`destroy_items()` and `maybe_destroy_item()` in `zap.c`)
+
+## Bag of holding safety
+
+Putting something into a bag of holding asks first when the hero can tell
+that it would blow the bag up. Both the bag and the item must be
+identified. The item can be:
+
+- a bag of holding
+- a wand of cancellation or bag of tricks that may have charges
+- a container the hero has looked into that holds one of these
+
+Unknown items still blow the bag up without asking. (`mbag_danger_known()`
+in `pickup.c`)
+
+## Monsters at a glance
+
+The game shows what anyone can tell by looking at a monster:
+
+- **Farlook.** Farlook says how hurt a monster the hero actually sees looks:
+  - uninjured
+  - wounded: at least half its HP
+  - badly wounded: at least 15%
+  - nearly dead
+
+  (`mon_looks_hurt()` in `pager.c`)
+- **Hover label.** When the pointer rests on such a monster on the map, the
+  shell shows its name and the same health word. The core sends the list
+  of monsters the hero sees as the notification `shim_monster_glance`
+  (`nh3d_knowledge.c`). The label is in `src/plus/monster-glance/`.
+
+Some monsters are not described: those sensed by telepathy, warning or
+detection, disguised mimics, hiders, and anything seen while hallucinating.
+A stethoscope still gives exact figures.
+
+## Identification by obvious effect
+
+- **Engraving.** Engraving with a wand identifies it when no other wand has
+  the same effect (`engrave.c`):
+  - striking ("fights your attempt to write")
+  - slow monster and speed monster
+  - magic missile and cold
+  - polymorph, when it rewrites an existing engraving
+- **See invisible.** A potion of see invisible is identified when it shows
+  the hero an invisible monster in view. (`peffect_see_invisible()` in
+  `potion.c`)
+
+## Priests read blessings
+
+Chat with a peaceful temple priest while carrying items whose blessed or
+cursed state is unknown, and the priest offers to read them all. The fee
+is 20 zorkmids per such item (a stack counts once), at least 50. Accepting
+tells the blessed/cursed state of everything carried, but not of container
+contents. Declining goes on to the usual donation.
+(`priest_reads_blessings()` in `priest.c`)
+
+## Gehennom
+
+- **Fewer mazes.** Half the filler levels are one of the two open cavern
+  styles; the other half are one of the five maze styles. Vanilla picked
+  among all seven equally. (`hellfill.lua`)
+- **Mapped on arrival.** The first time the hero arrives at a filler level,
+  they take in its layout at a glance, as magic mapping would. Traps,
+  objects and monsters stay unknown. (`goto_level()` in `do.c`)
+
+## Polypiling
+
+A polymorph zap (wand or spell) changes the objects on a square together.
+Coins, boulders, statues, containers and objects that resist polymorph get
+the usual handling. (`polypile_mix()` in `zap.c`)
+
+### Mixing piles
+
+- **One object alone** changes at random, as in vanilla.
+- **Two or more objects**, counting a stack's quantity, mix:
+  - **Golems.** First the pile may rise as a golem of its main material.
+    The chance is mass / 40 percent, at most 50%.
+    - The golem is the heaviest one of that material the mass can make, so
+      a bigger pile makes a stronger golem.
+    - The golem takes its weight out of the pile; the rest is left
+      unchanged.
+  - **Taking shape.** Otherwise the class with the most objects takes shape,
+    if it makes up at least half the pile. Every three objects of it become
+    one, rounded up. Each new object is the dearest of several draws from
+    the class:
+    - 1 draw, plus one more for every doubling of the class's count
+    - two more if it is all the same kind, or one more if it is all the
+      same material
+    - at most 9 draws
+
+    A big pile of one kind can turn out far more valuable than it went in.
+  - **Junk.** Objects of the other classes fall to junk, or the whole pile
+    does when no class is half of it. So does the mass the class loses in
+    fusing. Junk is rocks (80% of its mass, one rock per 10 weight) and
+    worthless glass (the rest, one per weight).
+- **Dead ends.** Rocks and worthless glass no longer polymorph. They mark a
+  pile that has been polypiled to the end.
+
+### Containers
+
+A container with something in it is polymorphed on its own:
+
+- **It becomes another container.** It keeps its contents.
+- **It becomes anything else.** It trembles for a while, then bursts. The
+  delay depends on the blessed/cursed state of the wand or of the potion
+  dipped into; a spell counts as uncursed:
+
+  | Source | Hero's turns before it bursts |
+  |---|---|
+  | Cursed | 0 to 1 |
+  | Uncursed | 1 to 2 |
+  | Blessed | 2 to 3 |
+
+  Taking the contents out in time disarms it. A pet may also pick it up
+  and bring it over.
+
+When it bursts, the contents are ground to dust and the container becomes
+something else of its class. The contents' real mass counts, so a packed
+bag of holding makes a far bigger blast than its weight suggests. Half the
+mass becomes the blast and half becomes fragments.
+
+#### The blast
+
+- **Spread.** The force starts on the square of the burst and the adjacent
+  squares, then halves at each ring outward until nothing is left. With
+  contents of 100 it is 50, 25, 12, 6, 3 and 1.
+- **Damage.** Each creature it reaches takes the force as physical damage,
+  so half physical damage halves it.
+- **Fragile things.** A force of 10 or more breaks exposed fragile things:
+  ones on the floor or carried, but not worn and not in containers. That
+  covers potions, eggs, mirrors and crystal balls, but not glass wands or
+  gems.
+- **Obstacles.** Closed doors break at 10, boulders at 20 (into rocks), and
+  diggable walls and rock at 30. Breaking one uses up that much force, and
+  the rest goes on, halving as usual. An obstacle that holds stops the
+  blast behind it; undiggable walls and trees always hold.
+- **Crowds.** A creature passes on only half of what it would have, so a
+  crowd shields what is behind it.
+
+#### The fragments
+
+- **Number.** 80% of the fragment mass flies out as rocks, one per 10
+  weight; the rest flies out as glass shards, one per weight. Each goes in
+  a random direction.
+- **Damage.** A rock starts at 50 damage and a shard at 10. Each loses 1
+  for every square it flies and drops when it reaches 0. A rock can cross
+  most of the map; shards act as buckshot near the blast.
+- **Hitting.** A fragment rolls to hit against AC like a thrown rock: it
+  hits if 1d25 is under 15 + AC. A worn shield blocks one in four fragments
+  that reach the hero.
+- **Passing through.** A fragment passes through the first creature it
+  hits. It stops in the second, which takes half damage.
+- **Obstacles.** Walls, closed doors and boulders stop fragments without
+  breaking.
+- **Landing.** Fragments drop as worthless rocks and glass where they stop.
+
+#### Responsibility
+
+The hero answers for everything a burst does:
+
+- kills, and the alignment and luck that follow from them
+- angering peacefuls, shopkeepers and priests included
+- shop walls and doors, billed as for digging
+- shop goods destroyed inside a container on the shop floor
+
+The burst is handled by `container_burst()`, a new object timer
+(`CONTAINER_BURST`).
+
+## Pet orders
+
+Chat with a pet the hero can see, and after its usual noise a menu of
+orders opens (`pet_orders()` in `dog.c`). The orders are kept in spare bits
+of `struct edog`, so the save layout is unchanged.
+
+- **Stay here.** The pet holds its square and still fights whatever comes
+  next to it. It is left behind when the hero changes level.
+- **Follow me.** The pet keeps close. When the hero changes level, it comes
+  along from anywhere on the level, not only from beside the hero, if it
+  finds the way:
+  - dogs always
+  - cats half the time
+  - horses and other u-class monsters 40% of the time
+  - other pets 75% of the time
+
+  Trapped or eating pets still stay behind.
+- **Do as you please.** The pet goes back to its usual behavior.
+- **Fetch things for me / Stop fetching things.** While fetching, the pet
+  picks things up and brings them to the hero as a well-trained pet does. It
+  counts as having an apport of at least 12.
+- **Take this.** This is offered only for pets that have hands and are
+  neither animals nor mindless. The hero hands over an item. The pet puts
+  it on if it can wear it; otherwise it keeps it and may wield it on its
+  own turn. Worn items must be taken off first.

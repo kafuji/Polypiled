@@ -286,6 +286,20 @@ choke(struct obj *food)
         You("stuff yourself and then vomit voluminously.");
         morehungry(Hunger ? (u.uhunger - 60) : 1000); /* just got very sick! */
         vomit();
+    } else if (!food || food->otyp != AMULET_OF_STRANGULATION) {
+        /* Polypiled: overeating no longer kills; the hero passes out in a
+           food coma instead, helpless for a while.  Only swallowing an
+           amulet of strangulation still chokes. */
+        int nap = rn1(11, 10); /* 10..20 turns */
+
+        You("stuff yourself until you can't move.");
+        You("pass out from overeating.");
+        stop_occupation();
+        /* the meal stops here: no second coma on the next bite */
+        svc.context.victual.canchoke = 0;
+        nomul(-nap);
+        gm.multi_reason = "in a food coma";
+        gn.nomovemsg = "You come out of your food coma.";
     } else {
         svk.killer.format = KILLED_BY_AN;
         /*
@@ -3194,7 +3208,8 @@ bite(void)
 
     if (svc.context.victual.canchoke && u.uhunger >= 2000) {
         choke(svc.context.victual.piece);
-        return 1;
+        return 1; /* stop eating; after a food coma the rest stays partly
+                     eaten */
     }
     if (svc.context.victual.doreset) {
         do_reset_eat();

@@ -10,6 +10,10 @@ staticfn struct permonst * pick_familiar_pm(struct obj *, boolean);
 staticfn void set_mon_lastmove(struct monst *);
 staticfn int mon_leave(struct monst *) NONNULLARG1;
 staticfn boolean keep_mon_accessible(struct monst *);
+staticfn boolean pet_follows_far(struct monst *);
+staticfn boolean pet_takes_items(struct monst *);
+staticfn int pet_give_ok(struct obj *);
+staticfn void pet_take_item(struct monst *);
 
 enum arrival {
     Before_you =  0, /* monsters kept on migrating_mons for accessibility;
@@ -811,7 +815,12 @@ keepdogs(
             mtmp->mfrozen = 0;
             mtmp->mcanmove = 1;
         }
-        if (((monnear(mtmp, u.ux, u.uy) && levl_follower(mtmp))
+        if (((monnear(mtmp, u.ux, u.uy) && levl_follower(mtmp)
+              /* Polypiled: a pet told to stay doesn't come along */
+              && (pets_only || mtmp == u.usteed || !has_edog(mtmp)
+                  || EDOG(mtmp)->petcmd != PETCMD_STAY))
+             /* Polypiled: one told to follow comes from farther off */
+             || (!pets_only && pet_follows_far(mtmp))
              /* the wiz will level t-port from anywhere to chase
                 the amulet; if you don't have it, will chase you
                 only if in range. -3. */
@@ -1401,6 +1410,153 @@ abuse_dog(struct monst *mtmp)
             }
         }
     }
+}
+
+/*
+ * Polypiled: orders a pet takes through #chat.
+ */
+
+/* a pet told to follow comes along across stairs from anywhere on the
+   level, if it can find the way: dogs always do, cats and horses often
+   lose track of the hero */
+staticfn boolean
+pet_follows_far(struct monst *mtmp)
+{
+    int pct;
+
+    if (!mtmp->mtame || !has_edog(mtmp) || mtmp == u.usteed
+        || EDOG(mtmp)->petcmd != PETCMD_FOLLOW || !levl_follower(mtmp)
+        || monnear(mtmp, u.ux, u.uy))
+        return FALSE;
+    pct = (mtmp->data->mlet == S_DOG) ? 100
+          : (mtmp->data->mlet == S_FELINE) ? 50
+            : (mtmp->data->mlet == S_UNICORN) ? 40
+              : 75;
+    return (boolean) (rn2(100) < pct);
+}
+
+/* whether a pet can be handed things to wear or wield */
+staticfn boolean
+pet_takes_items(struct monst *mtmp)
+{
+    return (boolean) (!nohands(mtmp->data) && !is_animal(mtmp->data)
+                      && !mindless(mtmp->data));
+}
+
+staticfn int
+pet_give_ok(struct obj *obj)
+{
+    if (obj->oclass == COIN_CLASS)
+        return GETOBJ_EXCLUDE;
+    if ((obj->owornmask & (W_ARMOR | W_ACCESSORY)) != 0L
+        || (obj == uwep && welded(obj)))
+        return GETOBJ_EXCLUDE_INACCESS;
+    return GETOBJ_SUGGEST;
+}
+
+/* hand mtmp something to wear or wield */
+staticfn void
+pet_take_item(struct monst *mtmp)
+{
+    struct obj *obj = getobj("give", pet_give_ok, GETOBJ_NOFLAGS);
+    char objname[BUFSZ];
+
+    if (!obj || obj == &hands_obj)
+        return;
+    if ((obj->owornmask & (W_ARMOR | W_ACCESSORY)) != 0L) {
+        You("can't give away something you are wearing.");
+        return;
+    }
+    if (obj == uwep && welded(obj)) {
+        weldmsg(obj);
+        return;
+    }
+    if (!can_carry(mtmp, obj)) {
+        pline("%s can't carry that.", Monnam(mtmp));
+        return;
+    }
+    if (obj == uwep)
+        setuwep((struct obj *) 0);
+    else if (obj == uswapwep)
+        setuswapwep((struct obj *) 0);
+    else if (obj == uquiver)
+        setuqwep((struct obj *) 0);
+    Strcpy(objname, doname(obj));
+    freeinv(obj);
+    pline("%s takes %s.", Monnam(mtmp), objname);
+    (void) mpickobj(mtmp, obj);
+    m_dowear(mtmp, FALSE);
+    /* it picks the weapon to wield on its own turn */
+    mtmp->weapon_check = NEED_WEAPON;
+}
+
+/* #chat with a pet: give it an order.  Returns 1 if an order was given,
+   0 if the hero thought better of it. */
+int
+pet_orders(struct monst *mtmp)
+{
+    struct edog *edog = EDOG(mtmp);
+    winid win;
+    anything any;
+    menu_item *pick = (menu_item *) 0;
+    char prompt[QBUFSZ];
+    int n, choice;
+
+    win = create_nhwindow(NHW_MENU);
+    start_menu(win, MENU_BEHAVE_STANDARD);
+    any = cg.zeroany;
+    any.a_int = 1;
+    add_menu(win, &nul_glyphinfo, &any, 's', 0, ATR_NONE, NO_COLOR,
+             "Stay here.", MENU_ITEMFLAGS_NONE);
+    any.a_int = 2;
+    add_menu(win, &nul_glyphinfo, &any, 'f', 0, ATR_NONE, NO_COLOR,
+             "Follow me.", MENU_ITEMFLAGS_NONE);
+    any.a_int = 3;
+    add_menu(win, &nul_glyphinfo, &any, 'p', 0, ATR_NONE, NO_COLOR,
+             "Do as you please.", MENU_ITEMFLAGS_NONE);
+    any.a_int = 4;
+    add_menu(win, &nul_glyphinfo, &any, 'g', 0, ATR_NONE, NO_COLOR,
+             edog->fetch ? "Stop fetching things." : "Fetch things for me.",
+             MENU_ITEMFLAGS_NONE);
+    if (pet_takes_items(mtmp)) {
+        any.a_int = 5;
+        add_menu(win, &nul_glyphinfo, &any, 't', 0, ATR_NONE, NO_COLOR,
+                 "Take this.", MENU_ITEMFLAGS_NONE);
+    }
+    Snprintf(prompt, sizeof prompt, "What do you tell %s?", mon_nam(mtmp));
+    end_menu(win, prompt);
+    n = select_menu(win, PICK_ONE, &pick);
+    destroy_nhwindow(win);
+    if (n <= 0)
+        return 0;
+    choice = pick[0].item.a_int;
+    free((genericptr_t) pick);
+
+    switch (choice) {
+    case 1:
+        edog->petcmd = PETCMD_STAY;
+        pline("%s stays put.", Monnam(mtmp));
+        break;
+    case 2:
+        edog->petcmd = PETCMD_FOLLOW;
+        pline("%s looks ready to follow you.", Monnam(mtmp));
+        break;
+    case 3:
+        edog->petcmd = PETCMD_FREE;
+        pline("%s relaxes.", Monnam(mtmp));
+        break;
+    case 4:
+        edog->fetch = !edog->fetch;
+        if (edog->fetch)
+            pline("%s perks up, ready to fetch.", Monnam(mtmp));
+        else
+            pline("%s stops fetching things.", Monnam(mtmp));
+        break;
+    case 5:
+        pet_take_item(mtmp);
+        break;
+    }
+    return 1;
 }
 
 /*dog.c*/

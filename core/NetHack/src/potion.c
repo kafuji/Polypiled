@@ -842,6 +842,8 @@ peffect_see_invisible(struct obj *otmp)
 {
     int msg = Invisible && !Blind;
     int permchance = 10 - (HInvis ? 3 : 0) - (HSee_invisible ? 6 : 0);
+    int unseen_before = 0, seen_after = 0; /* Polypiled */
+    struct monst *mtmp;
 
     gp.potion_unkn++;
     if (otmp->cursed)
@@ -864,6 +866,11 @@ peffect_see_invisible(struct obj *otmp)
          */
         make_blinded(0L, TRUE);
     }
+    /* Polypiled: an invisible monster in view that the hero can't see yet */
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon)
+        if (!DEADMONSTER(mtmp) && mtmp->minvis && !canseemon(mtmp)
+            && cansee(mtmp->mx, mtmp->my))
+            unseen_before++;
     if (otmp->blessed && !rn2(permchance))
         HSee_invisible |= FROMOUTSIDE;
     else
@@ -874,6 +881,15 @@ peffect_see_invisible(struct obj *otmp)
     if (msg && !Blind) {  /* Blind possible if polymorphed */
         You("can see through yourself, but you are visible!");
         gp.potion_unkn--;
+    } else if (unseen_before && !Blind) {
+        /* Polypiled: seeing what was invisible tells what the potion was */
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon)
+            if (!DEADMONSTER(mtmp) && mtmp->minvis && canseemon(mtmp))
+                seen_after++;
+        if (seen_after) {
+            You("can now see what was invisible!");
+            gp.potion_unkn--;
+        }
     }
 }
 
@@ -2477,6 +2493,16 @@ potion_dip(struct obj *obj, struct obj *potion)
                 livelog_printf(LL_CONDUCT, "polymorphed %s first item",
                                uhis());
 
+            /* Polypiled: a container with something in it changes, or
+               trembles and bursts */
+            if (obj->otyp != POT_POLYMORPH && Is_container(obj)
+                && Has_contents(obj)) {
+                obj = polypile_container(obj, bcsign(potion));
+                makeknown(POT_POLYMORPH);
+                useup(potion);
+                prinv((char *) 0, obj, 0L);
+                return ECMD_TIME;
+            }
             obj = poly_obj(obj, STRANGE_OBJECT);
 
             /*

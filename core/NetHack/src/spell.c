@@ -675,6 +675,10 @@ age_spells(void)
      * The hero's speed, rest status, conscious status etc.
      * does not alter the loss of memory.
      */
+    /* Polypiled: spells are not forgotten with time; rereading the book
+       every 20000 turns was only busywork.  Amnesia still wipes them. */
+    if (TRUE)
+        return;
     for (i = 0; i < MAXSPELL && spellid(i) != NO_SPELL; i++)
         if (spellknow(i))
             decrnknow(i);

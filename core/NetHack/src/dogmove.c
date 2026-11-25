@@ -398,6 +398,10 @@ dog_hunger(struct monst *mtmp, struct edog *edog)
 /* do something with object (drop, pick up, eat) at current position
  * returns 1 if object eaten (since that counts as dog's move), 2 if died
  */
+/* Polypiled: a pet told to fetch acts as a well trained one */
+#define PET_APPORT(edog) \
+    ((edog)->fetch ? max((edog)->apport, 12) : (edog)->apport)
+
 staticfn int
 dog_invent(struct monst *mtmp, struct edog *edog, int udist)
 {
@@ -417,8 +421,8 @@ dog_invent(struct monst *mtmp, struct edog *edog, int udist)
      */
     if (droppables(mtmp)) {
         assert(edog->apport > 0);
-        if (!rn2(udist + 1) || !rn2(edog->apport))
-            if (rn2(10) < edog->apport) {
+        if (!rn2(udist + 1) || !rn2(PET_APPORT(edog)))
+            if (rn2(10) < PET_APPORT(edog)) {
                 relobj(mtmp, (int) mtmp->minvis, TRUE);
                 if (edog->apport > 1)
                     edog->apport--;
@@ -448,8 +452,8 @@ dog_invent(struct monst *mtmp, struct edog *edog, int udist)
             carryamt = can_carry(mtmp, obj);
             if (carryamt > 0 && !obj->cursed
                 && could_reach_item(mtmp, obj->ox, obj->oy)) {
-                if (rn2(20) < edog->apport + 3) {
-                    if (rn2(udist) || !rn2(edog->apport)) {
+                if (rn2(20) < PET_APPORT(edog) + 3) {
+                    if (rn2(udist) || !rn2(PET_APPORT(edog))) {
                         otmp = obj;
                         if (carryamt != obj->quan)
                             otmp = splitobj(obj, carryamt);
@@ -566,7 +570,7 @@ dog_goal(
                            && !dog_has_minvent
                            && (!levl[omx][omy].lit || levl[u.ux][u.uy].lit)
                            && (otyp == MANFOOD || m_cansee(mtmp, nx, ny))
-                           && edog->apport > rn2(8)
+                           && PET_APPORT(edog) > rn2(8)
                            && can_carry(mtmp, obj) > 0) {
                     gg.gx = nx;
                     gg.gy = ny;
@@ -588,7 +592,7 @@ dog_goal(
         appr = (udist >= 9) ? 1 : (mtmp->mflee) ? -1 : 0;
         if (udist > 1) {
             if (!IS_ROOM(levl[u.ux][u.uy].typ) || !rn2(4) || whappr
-                || (dog_has_minvent && rn2(edog->apport)))
+                || (dog_has_minvent && rn2(PET_APPORT(edog))))
                 appr = 1;
         }
         /* if you have dog food it'll follow you more closely; if you are
@@ -619,6 +623,10 @@ dog_goal(
         }
     } else
         appr = 1; /* gtyp != UNDEF */
+    /* Polypiled: a pet told to follow keeps close */
+    if (edog && edog->petcmd == PETCMD_FOLLOW && u_at(gg.gx, gg.gy)
+        && !mtmp->mflee)
+        appr = 1;
     if (mtmp->mconf)
         appr = 0;
 
@@ -1195,6 +1203,10 @@ dog_move(
                 return MMOVE_DIED;
             return MMOVE_NOTHING;
         }
+
+        /* Polypiled: a pet told to stay only fights from where it is */
+        if (edog && edog->petcmd == PETCMD_STAY && !mtmp->mleashed)
+            continue;
 
         /* avoid a location hero just kicked */
         if (m_avoid_kicked_loc(mtmp, nx, ny))
