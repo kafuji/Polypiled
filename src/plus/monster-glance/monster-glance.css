@@ -2,8 +2,7 @@
   position: fixed;
   z-index: 99000;
   display: flex;
-  gap: 8px;
-  align-items: baseline;
+  flex-direction: column;
   padding: 3px 8px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 6px;
@@ -16,22 +15,33 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
+.nh3d-monster-glance-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.nh3d-monster-glance-row.is-ground {
+  color: #a8adb8;
+  font-size: 0.9em;
+}
+
 .nh3d-monster-glance-health {
   font-size: 0.9em;
 }
 
-.nh3d-monster-glance.is-uninjured .nh3d-monster-glance-health {
+.nh3d-monster-glance-row.is-uninjured .nh3d-monster-glance-health {
   color: #9fd89f;
 }
 
-.nh3d-monster-glance.is-wounded .nh3d-monster-glance-health {
+.nh3d-monster-glance-row.is-wounded .nh3d-monster-glance-health {
   color: #e8d27a;
 }
 
-.nh3d-monster-glance.is-badly-wounded .nh3d-monster-glance-health {
+.nh3d-monster-glance-row.is-badly-wounded .nh3d-monster-glance-health {
   color: #f0a060;
 }
 
-.nh3d-monster-glance.is-nearly-dead .nh3d-monster-glance-health {
+.nh3d-monster-glance-row.is-nearly-dead .nh3d-monster-glance-health {
   color: #ff6b6b;
 }

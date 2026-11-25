@@ -807,6 +807,275 @@ nh3d_publish_monster_glance(boolean force)
 }
 
 /*
+ * Polypiled: what the hero knows about each map square, for the same hover
+ * label: the ground, a dungeon feature standing on it (stairs, altar,
+ * fountain...), a trap the hero has found, and the top object the hero
+ * remembers there.  Sent as a JSON string (notification
+ * "shim_square_glance") whenever it changes:
+ *   {"v":1,"squares":[[x,y,ground,feature,trap,object],...],"names":[...]}
+ * ground, feature and trap index "names" (-1 for none); object is the
+ * object's name or null.  Only what the hero has seen or mapped is told;
+ * looking here never teaches the hero anything (no dknown, no discovery).
+ */
+#define NH3D_SQUARE_BUFSZ 131072
+#define NH3D_SQUARE_MAXNAMES 96
+
+static char nh3d_square_json[NH3D_SQUARE_BUFSZ];
+static char nh3d_square_prev[NH3D_SQUARE_BUFSZ];
+static const char *nh3d_square_names[NH3D_SQUARE_MAXNAMES];
+static int nh3d_square_nnames;
+
+static int
+nh3d_square_name(const char *name)
+{
+    int i;
+
+    if (!name || !*name)
+        return -1;
+    for (i = 0; i < nh3d_square_nnames; i++)
+        if (!strcmp(nh3d_square_names[i], name))
+            return i;
+    if (nh3d_square_nnames >= NH3D_SQUARE_MAXNAMES)
+        return -1;
+    nh3d_square_names[nh3d_square_nnames] = name;
+    return nh3d_square_nnames++;
+}
+
+/* The ground and feature named by a map symbol (both may be null). */
+static void
+nh3d_square_terrain(int cmap, const char **ground, const char **feature)
+{
+    *ground = *feature = (const char *) 0;
+    switch (cmap) {
+    case S_vwall: case S_hwall: case S_tlcorn: case S_trcorn:
+    case S_blcorn: case S_brcorn: case S_crwall: case S_tuwall:
+    case S_tdwall: case S_tlwall: case S_trwall:
+        *ground = "wall";
+        break;
+    case S_ndoor:
+        *ground = "doorway";
+        break;
+    case S_vodoor: case S_hodoor:
+        *ground = "open door";
+        break;
+    case S_vcdoor: case S_hcdoor:
+        *ground = "closed door";
+        break;
+    case S_bars:
+        *ground = "iron bars";
+        break;
+    case S_tree:
+        *ground = "tree";
+        break;
+    case S_room: case S_darkroom: case S_engroom:
+        *ground = "floor of a room";
+        break;
+    case S_corr: case S_litcorr: case S_engrcorr:
+        *ground = "corridor";
+        break;
+    case S_upstair: case S_brupstair:
+        *ground = "floor of a room", *feature = "staircase up";
+        break;
+    case S_dnstair: case S_brdnstair:
+        *ground = "floor of a room", *feature = "staircase down";
+        break;
+    case S_upladder: case S_brupladder:
+        *ground = "floor of a room", *feature = "ladder up";
+        break;
+    case S_dnladder: case S_brdnladder:
+        *ground = "floor of a room", *feature = "ladder down";
+        break;
+    case S_altar:
+        *ground = "floor of a room", *feature = "altar";
+        break;
+    case S_grave:
+        *ground = "floor of a room", *feature = "grave";
+        break;
+    case S_throne:
+        *ground = "floor of a room", *feature = "throne";
+        break;
+    case S_sink:
+        *ground = "floor of a room", *feature = "sink";
+        break;
+    case S_fountain:
+        *ground = "floor of a room", *feature = "fountain";
+        break;
+    case S_pool:
+        *ground = "water";
+        break;
+    case S_water:
+        *ground = "water";
+        break;
+    case S_ice:
+        *ground = "ice";
+        break;
+    case S_lava: case S_lavawall:
+        *ground = "lava";
+        break;
+    case S_vodbridge: case S_hodbridge:
+        *ground = "lowered drawbridge";
+        break;
+    case S_vcdbridge: case S_hcdbridge:
+        *ground = "raised drawbridge";
+        break;
+    case S_air:
+        *ground = "air";
+        break;
+    case S_cloud:
+        *ground = "cloud";
+        break;
+    default:
+        break;
+    }
+}
+
+/* The name of the object the hero remembers on top at x,y, as farlook
+   would give it, but without the hero learning anything by it. */
+static void
+nh3d_square_object(char *buf, coordxy x, coordxy y, int glyph)
+{
+    struct obj *otmp = 0;
+    boolean fakeobj;
+    int save_terrainmode = iflags.terrainmode;
+
+    buf[0] = '\0';
+    iflags.terrainmode = 1; /* object_from_map(): don't observe_object() */
+    fakeobj = object_from_map(glyph, x, y, &otmp);
+    iflags.terrainmode = save_terrainmode;
+    if (!otmp)
+        return;
+    if (otmp->otyp != STRANGE_OBJECT) {
+        ++gd.distantname; /* no dknown, no artifact discovery */
+        Strcpy(buf, otmp->dknown ? doname_with_price(otmp)
+                                 : doname_vague_quan(otmp));
+        --gd.distantname;
+    } else {
+        Strcpy(buf, obj_descr[STRANGE_OBJECT].oc_name);
+    }
+    if (fakeobj) {
+        otmp->where = OBJ_FREE; /* object_from_map set it to OBJ_FLOOR */
+        dealloc_obj(otmp);
+    }
+}
+
+static const char *
+nh3d_altar_name(int amsk)
+{
+    if (amsk & AM_SANCTUM)
+        return "high altar";
+    switch (Amask2align(amsk & AM_MASK)) {
+    case A_LAWFUL:
+        return "lawful altar";
+    case A_NEUTRAL:
+        return "neutral altar";
+    case A_CHAOTIC:
+        return "chaotic altar";
+    default:
+        return "unaligned altar";
+    }
+}
+
+static void
+nh3d_build_square_glance(struct nh3d_json *js)
+{
+    coordxy x, y;
+    boolean first = TRUE;
+    char objbuf[BUFSZ];
+    int i;
+
+    nh3d_square_nnames = 0;
+    nh3d_json_raw(js, "{\"v\":1,\"squares\":[");
+    for (y = 0; y < ROWNO; y++)
+        for (x = 1; x < COLNO; x++) {
+            struct rm *lev = &levl[x][y];
+            int glyph = lev->glyph, cmap = -1, g, f, t;
+            const char *ground, *feature, *trap = (const char *) 0;
+            struct trap *ttmp;
+            boolean object = FALSE;
+
+            if (glyph_is_cmap(glyph) && !glyph_is_trap(glyph)
+                && glyph_to_cmap(glyph) != S_stone)
+                cmap = glyph_to_cmap(glyph);
+            else if (lev->seenv)
+                cmap = glyph_to_cmap(back_to_glyph(x, y));
+            nh3d_square_terrain(cmap, &ground, &feature);
+            if (cmap == S_altar) /* farlook tells the alignment too */
+                feature = nh3d_altar_name(altarmask_at(x, y));
+            if (!Hallucination) {
+                if (glyph_is_trap(glyph))
+                    trap = trapname(glyph_to_trap(glyph), FALSE);
+                else if ((ttmp = t_at(x, y)) != 0 && ttmp->tseen)
+                    trap = trapname(ttmp->ttyp, FALSE);
+                object = glyph_is_object(glyph);
+            }
+            if (!ground && !feature && !trap && !object)
+                continue;
+            g = nh3d_square_name(ground);
+            f = nh3d_square_name(feature);
+            t = nh3d_square_name(trap);
+            if (!first)
+                nh3d_json_raw(js, ",");
+            first = FALSE;
+            nh3d_json_raw(js, "[");
+            nh3d_json_int(js, x);
+            nh3d_json_raw(js, ",");
+            nh3d_json_int(js, y);
+            nh3d_json_raw(js, ",");
+            nh3d_json_int(js, g);
+            nh3d_json_raw(js, ",");
+            nh3d_json_int(js, f);
+            nh3d_json_raw(js, ",");
+            nh3d_json_int(js, t);
+            nh3d_json_raw(js, ",");
+            if (object) {
+                nh3d_square_object(objbuf, x, y, glyph);
+                if (objbuf[0])
+                    nh3d_json_string(js, objbuf);
+                else
+                    nh3d_json_raw(js, "null");
+            } else {
+                nh3d_json_raw(js, "null");
+            }
+            nh3d_json_raw(js, "]");
+        }
+    nh3d_json_raw(js, "],\"names\":[");
+    for (i = 0; i < nh3d_square_nnames; i++) {
+        if (i)
+            nh3d_json_raw(js, ",");
+        nh3d_json_string(js, nh3d_square_names[i]);
+    }
+    nh3d_json_raw(js, "]}");
+}
+
+static void
+nh3d_publish_square_glance(boolean force)
+{
+    struct nh3d_json js;
+
+    js.buf = nh3d_square_json;
+    js.len = 0;
+    js.cap = sizeof nh3d_square_json;
+    js.overflow = FALSE;
+    nh3d_square_json[0] = '\0';
+    nh3d_build_square_glance(&js);
+    if (js.overflow)
+        return;
+    if (!force && !strcmp(nh3d_square_json, nh3d_square_prev))
+        return;
+    Strcpy(nh3d_square_prev, nh3d_square_json);
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_square_glance",
+            UTF8ToString($0),
+        ]);
+    }, nh3d_square_json);
+}
+
+/*
  * The hero's inventory, for the shell's inventory screen: every carried
  * object with what doname() would tell about it, split into fields, and the
  * contents of containers whose contents the hero knows.  Sent as a JSON
@@ -1442,6 +1711,7 @@ nh3d_knowledge_publish(void)
     nh3d_publish_floor_here(complete);
     nh3d_publish_inventory(complete);
     nh3d_publish_monster_glance(complete); /* Polypiled */
+    nh3d_publish_square_glance(complete);  /* Polypiled */
 
     nh3d_fill_hero(hero);
     nh3d_fill_level(level);
