@@ -295,6 +295,8 @@ choke(struct obj *food)
         You("stuff yourself until you can't move.");
         You("pass out from overeating.");
         stop_occupation();
+        /* the meal stops here: no second coma on the next bite */
+        svc.context.victual.canchoke = 0;
         nomul(-nap);
         gm.multi_reason = "in a food coma";
         gn.nomovemsg = "You come out of your food coma.";
@@ -3206,9 +3208,8 @@ bite(void)
 
     if (svc.context.victual.canchoke && u.uhunger >= 2000) {
         choke(svc.context.victual.piece);
-        /* Polypiled: a food coma stops the meal; the rest stays partly
-           eaten (choke() used to end the game or empty the stomach) */
-        return (u.uhunger >= 2000) ? 0 : 1;
+        return 1; /* stop eating; after a food coma the rest stays partly
+                     eaten */
     }
     if (svc.context.victual.doreset) {
         do_reset_eat();

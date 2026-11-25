@@ -1902,6 +1902,15 @@ goto_level(
     if (familiar)
         familiar_level_msg();
 
+    /* Polypiled: Gehennom's filler mazes are learned as soon as the hero
+       arrives; wandering them blind was only busywork.  Traps, objects and
+       monsters stay unknown. */
+    if (new && Inhell && !Is_special(&u.uz) && svl.level.flags.is_maze_lev
+        && !Hallucination) {
+        You("take in the lay of this level at a glance.");
+        do_mapping();
+    }
+
     /* special location arrival messages/events */
     if (In_endgame(&u.uz)) {
         if (newdungeon)

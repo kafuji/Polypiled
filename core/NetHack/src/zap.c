@@ -17,6 +17,7 @@ staticfn void probe_objchain(struct obj *) NO_NNARGS;
 staticfn boolean zombie_can_dig(coordxy x, coordxy y);
 staticfn void polyuse(struct obj *, int, int) NO_NNARGS;
 staticfn void create_polymon(struct obj *, int) NO_NNARGS;
+staticfn int polypile_mix(coordxy, coordxy);
 staticfn int stone_to_flesh_obj(struct obj *) NONNULLARG1;
 staticfn boolean zap_updown(struct obj *) NONNULLARG1;
 staticfn void zhitu(int, int, const char *, coordxy, coordxy) NO_NNARGS;
@@ -1693,6 +1694,8 @@ obj_unpolyable(struct obj *obj)
 {
     return (unpolyable(obj)
             || obj == uball || obj == uskin
+            /* Polypiled: rocks and worthless glass are the dead end */
+            || polypile_dead_end(obj->otyp)
             || obj_resists(obj, 5, 95));
 }
 
@@ -2217,6 +2220,13 @@ bhito(struct obj *obj, struct obj *otmp)
             if (Is_box(obj))
                 (void) boxlock(obj, otmp);
 
+            /* Polypiled: a container with something in it changes, or
+               trembles and bursts */
+            if (Is_container(obj) && Has_contents(obj)) {
+                obj = polypile_container(obj, bcsign(otmp));
+                newsym(obj->ox, obj->oy);
+                break;
+            }
             if (obj_shudders(obj)) {
                 boolean cover = ((obj == svl.level.objects[u.ux][u.uy])
                                  && u.uundetected
@@ -2477,8 +2487,14 @@ bhitpile(
     }
 
     gp.poly_zapped = -1;
+    /* Polypiled: objects sharing the square change together */
+    if ((obj->otyp == WAN_POLYMORPH || obj->otyp == SPE_POLYMORPH)
+        && !hidingunder)
+        hitanything += polypile_mix(tx, ty);
     for (otmp = svl.level.objects[tx][ty]; otmp; otmp = next_obj) {
         next_obj = otmp->nexthere;
+        if (svc.context.bypasses && otmp->bypass)
+            continue; /* Polypiled: changed with the pile already */
         if (hidingunder) {
             if (first) {
                 first = FALSE; /* reset for next item */
@@ -6458,6 +6474,664 @@ flash_str(
         Strcpy(fltxt, flash_types[typ]);
     }
     return fltxt;
+}
+
+/*
+ * Polypiled: polypiling reworked.
+ *
+ * Objects sharing a square are confused with each other by a polymorph zap
+ * and change together.  A pile of one class takes shape as fewer, dearer
+ * objects (the bigger and more alike the pile, the better the odds); what
+ * is unrelated can't take shape and falls to rocks and glass shards, which
+ * polymorph no further.  A large mass may rise as a golem.  A container
+ * that turns into something else leaves its contents nowhere to go: it
+ * trembles for a few turns, then bursts in a blast and a spray of
+ * fragments (docs/rule-changes.md, "Polypiling").
+ */
+
+#define POLYPILE_ROCK_DMG 50   /* a rock fragment's damage at the start */
+#define POLYPILE_SHARD_DMG 10  /* a glass shard's */
+#define POLYPILE_DOOR_FORCE 10 /* blast that breaks a closed door */
+#define POLYPILE_BOULDER_FORCE 20
+#define POLYPILE_WALL_FORCE 30
+#define POLYPILE_FRAGILE_FORCE 10 /* blast that breaks exposed fragile things */
+#define POLYPILE_SHARD WORTHLESS_PIECE_OF_WHITE_GLASS
+#define POLYPILE_NMAT (MINERAL + 1)
+
+/* containers that hold things (a bag of tricks doesn't) */
+staticfn boolean
+polypile_holds(int otyp)
+{
+    return (boolean) (otyp >= LARGE_BOX && otyp <= BAG_OF_HOLDING);
+}
+
+/* rocks and worthless glass: the dead end of polymorph */
+boolean
+polypile_dead_end(int otyp)
+{
+    return (boolean) (otyp == ROCK
+                      || (objects[otyp].oc_class == GEM_CLASS
+                          && objects[otyp].oc_material == GLASS));
+}
+
+/* the kind of object a polymorph of obj could turn it into, as poly_obj()
+   would choose it */
+staticfn int
+polypile_candidate(struct obj *obj)
+{
+    struct obj *otmp = (struct obj *) 0;
+    unsigned magic_obj = objects[obj->otyp].oc_magic;
+    int try_limit = 3, otyp;
+
+    do {
+        if (otmp)
+            obfree(otmp, (struct obj *) 0);
+        otmp = mkobj(obj->oclass, FALSE);
+    } while (--try_limit > 0 && objects[otmp->otyp].oc_magic != magic_obj);
+    otyp = otmp->otyp;
+    obfree(otmp, (struct obj *) 0);
+    return otyp;
+}
+
+/* what a candidate counts for when the pile picks the dearest */
+staticfn long
+polypile_value(int otyp)
+{
+    switch (otyp) {
+    case WAN_WISHING:
+    case WAN_POLYMORPH:
+    case POT_POLYMORPH:
+    case SPE_POLYMORPH:
+    case MAGIC_LAMP:
+        return 0L; /* poly_obj() won't make these anyway */
+    }
+    return (long) objects[otyp].oc_cost;
+}
+
+/* put the shop's loss of obj on the bill, as do_osshock() does */
+staticfn void
+polypile_bill(struct obj *obj)
+{
+    if (costly_spot(obj->ox, obj->oy)) {
+        if (*u.ushops)
+            addtobill(obj, FALSE, FALSE, FALSE);
+        else
+            (void) stolen_value(obj, obj->ox, obj->oy, FALSE, FALSE);
+    }
+}
+
+/* leave mass worth of rocks and glass shards at x,y: 80% of it in rocks of
+   weight 10, the rest in shards of weight 1 */
+staticfn void
+polypile_junk(coordxy x, coordxy y, long mass)
+{
+    long rocks = (mass * 8L / 10L) / 10L, shards = mass - rocks * 10L;
+    struct obj *otmp;
+
+    if (rocks > 0L) {
+        otmp = mksobj(ROCK, FALSE, FALSE);
+        otmp->quan = rocks;
+        otmp->owt = weight(otmp);
+        otmp->bypass = 1;
+        place_object(otmp, x, y);
+    }
+    if (shards > 0L) {
+        otmp = mksobj(POLYPILE_SHARD, FALSE, FALSE);
+        otmp->quan = shards;
+        otmp->owt = weight(otmp);
+        otmp->bypass = 1;
+        place_object(otmp, x, y);
+    }
+    svc.context.bypasses = TRUE;
+}
+
+/* the golem a pile of mass (of material mat, mostly) can rise as */
+staticfn int
+polypile_golem(int mat, long mass)
+{
+    static const struct golem_choice {
+        int mat, pm;
+    } choices[] = {
+        { IRON, PM_IRON_GOLEM }, { METAL, PM_IRON_GOLEM },
+        { MITHRIL, PM_IRON_GOLEM },
+        { MINERAL, PM_STONE_GOLEM }, { MINERAL, PM_CLAY_GOLEM },
+        { GEMSTONE, PM_STONE_GOLEM }, { COPPER, PM_CLAY_GOLEM },
+        { SILVER, PM_CLAY_GOLEM }, { PLATINUM, PM_STONE_GOLEM },
+        { FLESH, PM_FLESH_GOLEM },
+        { VEGGY, PM_STRAW_GOLEM }, { WOOD, PM_WOOD_GOLEM },
+        { LEATHER, PM_LEATHER_GOLEM }, { CLOTH, PM_ROPE_GOLEM },
+        { BONE, PM_SKELETON }, { GOLD, PM_GOLD_GOLEM },
+        { GLASS, PM_GLASS_GOLEM }, { PAPER, PM_PAPER_GOLEM },
+    };
+    int i, best = NON_PM;
+
+    /* the heaviest golem of this material that the mass can make */
+    for (i = 0; i < SIZE(choices); i++)
+        if (choices[i].mat == mat
+            && (long) mons[choices[i].pm].cwt <= mass
+            && !(svm.mvitals[choices[i].pm].mvflags & G_GENOD)
+            && (best == NON_PM || mons[choices[i].pm].cwt > mons[best].cwt))
+            best = choices[i].pm;
+    if (best == NON_PM && mass >= (long) mons[PM_STRAW_GOLEM].cwt
+        && !(svm.mvitals[PM_STRAW_GOLEM].mvflags & G_GENOD))
+        best = PM_STRAW_GOLEM;
+    return best;
+}
+
+/* whether otmp takes part in mixing a pile */
+staticfn boolean
+polypile_mixes(struct obj *otmp, coordxy x, coordxy y)
+{
+    return (boolean) (otmp->where == OBJ_FLOOR && otmp->ox == x
+                      && otmp->oy == y
+                      && !(svc.context.bypasses && otmp->bypass)
+                      && otmp->oclass != COIN_CLASS
+                      && otmp->oclass != ROCK_CLASS && !Is_container(otmp)
+                      && !obj_unpolyable(otmp));
+}
+
+/*
+ * Polymorph the pile at x,y as one: called by bhitpile() before it zaps
+ * the objects there one by one.  Does nothing (returns 0) when fewer than
+ * two objects would mix; otherwise changes them all and marks the result
+ * bypassed so bhitpile() leaves it alone.
+ */
+staticfn int
+polypile_mix(coordxy x, coordxy y)
+{
+    struct obj *otmp, *next, *src;
+    long quan = 0L, mass = 0L, cls_quan[MAXOCLASSES], cls_mass[MAXOCLASSES],
+         mat_mass[POLYPILE_NMAT], junk_mass = 0L, out_mass = 0L, k, n;
+    int i, cls = 0, mat = 0, otyp0 = -1, mat0 = -1, draws, j, pm;
+    boolean same_kind = TRUE, same_mat = TRUE, seen = cansee(x, y);
+    struct monst *mtmp;
+
+    (void) memset(cls_quan, 0, sizeof cls_quan);
+    (void) memset(cls_mass, 0, sizeof cls_mass);
+    (void) memset(mat_mass, 0, sizeof mat_mass);
+    for (otmp = svl.level.objects[x][y]; otmp; otmp = otmp->nexthere) {
+        if (!polypile_mixes(otmp, x, y))
+            continue;
+        quan += otmp->quan;
+        mass += otmp->owt;
+        cls_quan[(int) otmp->oclass] += otmp->quan;
+        cls_mass[(int) otmp->oclass] += otmp->owt;
+        mat_mass[objects[otmp->otyp].oc_material] += otmp->owt;
+    }
+    if (quan < 2L)
+        return 0;
+
+    if (!u.uconduct.polypiles++)
+        livelog_printf(LL_CONDUCT, "polymorphed %s first object", uhis());
+
+    /* a big pile may rise as a golem of its main material */
+    for (i = 0; i < POLYPILE_NMAT; i++)
+        if (mat_mass[i] > mat_mass[mat])
+            mat = i;
+    if (rn2(100) < (int) min(50L, mass / 40L)
+        && (pm = polypile_golem(mat, mass)) != NON_PM) {
+        long need = (long) mons[pm].cwt;
+
+        mtmp = makemon(&mons[pm], x, y, MM_NOMSG);
+        if (mtmp) {
+            /* the golem takes its weight out of the pile, its own material
+               first */
+            for (j = 0; j < 2 && need > 0L; j++)
+                for (otmp = svl.level.objects[x][y]; otmp && need > 0L;
+                     otmp = next) {
+                    next = otmp->nexthere;
+                    if (!polypile_mixes(otmp, x, y)
+                        || (j == 0
+                            && (int) objects[otmp->otyp].oc_material != mat))
+                        continue;
+                    need -= otmp->owt;
+                    polypile_bill(otmp);
+                    delobj(otmp);
+                }
+            if (canspotmon(mtmp))
+                pline("The pile melds, and %s arises from it!",
+                      a_monnam(mtmp));
+            newsym(x, y);
+            return 1;
+        }
+    }
+
+    /* the class that makes up most of the pile takes shape; the rest, or
+       all of it when no class is at least half, falls to junk */
+    for (i = 1; i < MAXOCLASSES; i++)
+        if (cls_quan[i] > cls_quan[cls])
+            cls = i;
+    if (cls_quan[cls] * 2L < quan)
+        cls = 0;
+
+    for (otmp = svl.level.objects[x][y]; otmp; otmp = next) {
+        next = otmp->nexthere;
+        if (!polypile_mixes(otmp, x, y))
+            continue;
+        if (cls && (int) otmp->oclass == cls) {
+            if (otyp0 < 0)
+                otyp0 = otmp->otyp, mat0 = objects[otmp->otyp].oc_material;
+            if (otmp->otyp != otyp0)
+                same_kind = FALSE;
+            if ((int) objects[otmp->otyp].oc_material != mat0)
+                same_mat = FALSE;
+            continue;
+        }
+        junk_mass += otmp->owt;
+        polypile_bill(otmp);
+        delobj(otmp);
+    }
+
+    if (cls) {
+        /* fewer, dearer objects: one for every three in the pile, each the
+           dearest of several draws, more for a bigger and more alike pile */
+        n = cls_quan[cls];
+        k = max(1L, (n + 2L) / 3L);
+        draws = 1 + (same_kind ? 2 : same_mat ? 1 : 0);
+        for (i = 2; i <= n && draws < 9; i <<= 1)
+            draws++;
+        for (; k > 0L; k--) {
+            /* the largest stack left in the class is the source */
+            src = (struct obj *) 0;
+            for (otmp = svl.level.objects[x][y]; otmp;
+                 otmp = otmp->nexthere)
+                if (polypile_mixes(otmp, x, y) && (int) otmp->oclass == cls
+                    && (!src || otmp->quan > src->quan))
+                    src = otmp;
+            if (!src)
+                break;
+            if (src->quan > 1L)
+                src = splitobj(src, 1L);
+            {
+                int best = polypile_candidate(src), cand;
+
+                for (j = 1; j < draws; j++) {
+                    cand = polypile_candidate(src);
+                    if (polypile_value(cand) > polypile_value(best))
+                        best = cand;
+                }
+                otmp = poly_obj(src, best);
+            }
+            otmp->bypass = 1;
+            svc.context.bypasses = TRUE;
+            out_mass += otmp->owt;
+        }
+        /* what is left of the class went into them; the rest of its mass
+           falls to junk */
+        for (otmp = svl.level.objects[x][y]; otmp; otmp = next) {
+            next = otmp->nexthere;
+            if (!polypile_mixes(otmp, x, y) || (int) otmp->oclass != cls)
+                continue;
+            polypile_bill(otmp);
+            delobj(otmp);
+        }
+        junk_mass += max(0L, cls_mass[cls] - out_mass);
+    }
+    if (junk_mass > 0L)
+        polypile_junk(x, y, junk_mass);
+
+    if (seen) {
+        if (!cls)
+            pline_The("pile collapses into worthless rubble!");
+        else if (junk_mass > 0L)
+            pline_The("pile shimmers and fuses, shedding rubble!");
+        else
+            pline_The("pile shimmers and fuses!");
+    }
+    newsym(x, y);
+    return 1;
+}
+
+/* the real mass of a container's contents: a bag of holding hides it */
+staticfn long
+polypile_contents_mass(struct obj *box)
+{
+    struct obj *otmp;
+    long mass = 0L;
+
+    for (otmp = box->cobj; otmp; otmp = otmp->nobj)
+        mass += Has_contents(otmp)
+                    ? ((long) objects[otmp->otyp].oc_weight
+                       + polypile_contents_mass(otmp))
+                    : (long) weight(otmp);
+    return mass;
+}
+
+/* a kind of object of box's class that isn't a container */
+staticfn int
+polypile_non_container(struct obj *box)
+{
+    int tries, otyp;
+
+    for (tries = 0; tries < 50; tries++) {
+        otyp = polypile_candidate(box);
+        if (!polypile_holds(otyp))
+            return otyp;
+    }
+    return BLINDFOLD;
+}
+
+/*
+ * A polymorph zap (wand or spell; bcsign of the wand, or of a potion of
+ * polymorph dipped into) hits a container with something in it.  A new
+ * container keeps the contents; anything else leaves them nowhere to go,
+ * and the container trembles until it bursts.  Returns the object now in
+ * box's place (box itself while it trembles).
+ */
+struct obj *
+polypile_container(struct obj *box, int bcsign)
+{
+    int otyp = polypile_candidate(box), grace;
+    struct obj *contents, *otmp;
+    coordxy x, y;
+
+    if (polypile_holds(otyp)) {
+        /* the contents move into the new container */
+        contents = box->cobj;
+        box->cobj = (struct obj *) 0;
+        otmp = poly_obj(box, otyp);
+        if (Has_contents(otmp))
+            delete_contents(otmp);
+        otmp->cobj = contents;
+        for (; contents; contents = contents->nobj)
+            contents->ocontainer = otmp;
+        otmp->owt = weight(otmp);
+        if (otmp->where == OBJ_INVENT)
+            update_inventory();
+        return otmp;
+    }
+    if (box->timed && peek_timer(CONTAINER_BURST, obj_to_any(box)) != 0L)
+        return box; /* already trembling */
+    /* hero's turns of grace: cursed 0-1, uncursed 1-2, blessed 2-3; the
+       timer runs out the turn after */
+    grace = (bcsign < 0) ? rn2(2) : (bcsign > 0) ? 2 + rn2(2) : 1 + rn2(2);
+    (void) start_timer((long) grace + 1L, TIMER_OBJECT, CONTAINER_BURST,
+                       obj_to_any(box));
+    if (get_obj_location(box, &x, &y, CONTAINED_TOO)
+        && (carried(box) || cansee(x, y)))
+        pline("%s %s to tremble!", Yname2(box), otense(box, "begin"));
+    return box;
+}
+
+/* blast and fragment state for one burst */
+static struct polypile_burst {
+    coordxy x, y;           /* where it burst */
+    int dmg;                /* the flying fragment's damage left */
+    int hits;               /* creatures it has hit */
+    boolean rock;           /* rock (or glass shard) */
+    coordxy lastx, lasty;   /* last open square on its path */
+    boolean shopwall;       /* a shop wall was broken */
+} gpb;
+
+/* damage a creature at x,y takes from the burst (what: 0 the blast, 1 a
+   rock, 2 a glass shard); kills are the hero's */
+staticfn void
+polypile_hurt(coordxy x, coordxy y, int dmg, int what)
+{
+    struct monst *mtmp;
+
+    if (dmg <= 0)
+        return;
+    if (u_at(x, y)) {
+        if (what == 0)
+            You("are caught in the blast!");
+        else if (what == 1)
+            You("are hit by a flying rock!");
+        else
+            You("are hit by a shard of glass!");
+        losehp(Maybe_Half_Phys(dmg), "polymorphed container's explosion",
+               KILLED_BY_AN);
+        return;
+    }
+    if (!(mtmp = m_at(x, y)))
+        return;
+    if (canspotmon(mtmp)) {
+        if (what == 0)
+            pline("%s is caught in the blast!", Monnam(mtmp));
+        else if (what == 1)
+            pline("%s is hit by a flying rock!", Monnam(mtmp));
+        else
+            pline("%s is hit by a shard of glass!", Monnam(mtmp));
+    }
+    mtmp->mhp -= dmg;
+    if (DEADMONSTER(mtmp))
+        xkilled(mtmp, XKILL_GIVEMSG);
+    else
+        wakeup(mtmp, TRUE);
+}
+
+/* fragile things the blast can reach at x,y break */
+staticfn void
+polypile_break_fragile(coordxy x, coordxy y)
+{
+    struct obj *otmp, *next;
+    struct monst *mtmp;
+
+    for (otmp = svl.level.objects[x][y]; otmp; otmp = next) {
+        next = otmp->nexthere;
+        if (breaktest(otmp))
+            (void) hero_breaks(otmp, x, y, 0);
+    }
+    if (u_at(x, y)) {
+        for (otmp = gi.invent; otmp; otmp = next) {
+            next = otmp->nobj;
+            if (!otmp->owornmask && !otmp->in_use && breaktest(otmp))
+                (void) hero_breaks(otmp, x, y, BRK_FROM_INV
+                                                   | BRK_KNOWN2BREAK);
+        }
+    } else if ((mtmp = m_at(x, y)) != 0) {
+        for (otmp = mtmp->minvent; otmp; otmp = next) {
+            next = otmp->nobj;
+            if (!otmp->owornmask && breaktest(otmp)) {
+                obj_extract_self(otmp);
+                obfree(otmp, (struct obj *) 0);
+            }
+        }
+    }
+}
+
+/* the blast reaches x,y with force f; returns the force it passes on */
+staticfn int
+polypile_blast_at(coordxy x, coordxy y, int f)
+{
+    struct rm *lev = &levl[x][y];
+    struct obj *boulder;
+    int out = f / 2;
+
+    if (IS_OBSTRUCTED(lev->typ) && !IS_TREE(lev->typ)) {
+        if (f < POLYPILE_WALL_FORCE || !may_dig(x, y))
+            return 0; /* the wall holds and stops the blast */
+        if (IS_WALL(lev->typ) || lev->typ == SDOOR) {
+            if (*in_rooms(x, y, SHOPBASE)) {
+                add_damage(x, y, SHOP_WALL_COST);
+                gpb.shopwall = TRUE;
+            }
+            watch_dig((struct monst *) 0, x, y, TRUE);
+            if (svl.level.flags.is_cavernous_lev && !in_town(x, y))
+                lev->typ = CORR, lev->flags = 0;
+            else
+                lev->typ = DOOR, lev->doormask = D_NODOOR;
+        } else {
+            lev->typ = CORR, lev->flags = 0;
+        }
+        unblock_point(x, y);
+        newsym(x, y);
+        out = (f - POLYPILE_WALL_FORCE) / 2;
+    } else if (IS_TREE(lev->typ)) {
+        return 0;
+    } else if (closed_door(x, y)) {
+        if (f < POLYPILE_DOOR_FORCE)
+            return 0;
+        if (*in_rooms(x, y, SHOPBASE)) {
+            add_damage(x, y, SHOP_DOOR_COST);
+            gpb.shopwall = TRUE;
+        }
+        lev->doormask = D_BROKEN;
+        unblock_point(x, y);
+        newsym(x, y);
+        out = (f - POLYPILE_DOOR_FORCE) / 2;
+    }
+    if ((boulder = sobj_at(BOULDER, x, y)) != 0) {
+        if (f < POLYPILE_BOULDER_FORCE)
+            return 0;
+        while ((boulder = sobj_at(BOULDER, x, y)) != 0)
+            fracture_rock(boulder);
+        out = min(out, (f - POLYPILE_BOULDER_FORCE) / 2);
+    }
+    if (f >= POLYPILE_FRAGILE_FORCE)
+        polypile_break_fragile(x, y);
+    if (u_at(x, y) || m_at(x, y)) {
+        polypile_hurt(x, y, f, 0);
+        out /= 2; /* a creature soaks up part of it */
+    }
+    return out;
+}
+
+/* the blast: force on the square of the burst and the adjacent ones,
+   halving at every ring after that */
+staticfn void
+polypile_blast(coordxy x0, coordxy y0, int force)
+{
+    static int out[COLNO][ROWNO];
+    coordxy x, y, nx, ny;
+    int d, f, best;
+    boolean any;
+
+    (void) memset(out, 0, sizeof out);
+    out[x0][y0] = force; /* the adjacent ring gets the full force too */
+    (void) polypile_blast_at(x0, y0, force);
+    for (d = 1; d < COLNO; d++) {
+        any = FALSE;
+        for (x = x0 - d; x <= x0 + d; x++)
+            for (y = y0 - d; y <= y0 + d; y++) {
+                if (!isok(x, y) || max(abs(x - x0), abs(y - y0)) != d)
+                    continue;
+                best = 0;
+                for (nx = x - 1; nx <= x + 1; nx++)
+                    for (ny = y - 1; ny <= y + 1; ny++)
+                        if (isok(nx, ny)
+                            && max(abs(nx - x0), abs(ny - y0)) == d - 1
+                            && out[nx][ny] > best)
+                            best = out[nx][ny];
+                if ((f = best) < 1)
+                    continue;
+                any = TRUE;
+                out[x][y] = polypile_blast_at(x, y, f);
+            }
+        if (!any)
+            break;
+    }
+}
+
+/* one step of a flying fragment; FALSE once it stops */
+staticfn boolean
+polypile_fragment_step(genericptr_t arg UNUSED, coordxy x, coordxy y)
+{
+    struct monst *mtmp;
+    int ac;
+
+    if (!isok(x, y))
+        return FALSE;
+    if (--gpb.dmg <= 0)
+        return FALSE; /* out of energy: drops where it last was */
+    if (!ZAP_POS(levl[x][y].typ) || closed_door(x, y)
+        || sobj_at(BOULDER, x, y))
+        return FALSE; /* stopped by a wall or boulder, not breaking it */
+    gpb.lastx = x, gpb.lasty = y;
+    mtmp = u_at(x, y) ? &gy.youmonst : m_at(x, y);
+    if (!mtmp)
+        return TRUE;
+    /* rolls to hit against AC, like a thrown rock */
+    ac = (mtmp == &gy.youmonst) ? u.uac : find_mac(mtmp);
+    if (rnd(25) >= 15 + ac)
+        return TRUE; /* misses */
+    if (mtmp == &gy.youmonst && uarms && !rn2(4)) {
+        if (gpb.rock)
+            Your("shield blocks a flying rock.");
+        else
+            Your("shield blocks a shard of glass.");
+        return FALSE;
+    }
+    polypile_hurt(x, y, gpb.hits ? gpb.dmg / 2 : gpb.dmg, gpb.rock ? 1 : 2);
+    /* passes through its first target and stops in the second */
+    return (++gpb.hits < 2);
+}
+
+/* the fragments: one rock per 10 weight of 80% of mass, one shard per 1
+   weight of the rest, flying out in every direction */
+staticfn void
+polypile_fragments(coordxy x0, coordxy y0, long mass)
+{
+    long rocks = (mass * 8L / 10L) / 10L, shards = mass - rocks * 10L, i;
+    coord src, dest;
+    struct obj *otmp;
+    int side, t;
+    const int far = COLNO;
+
+    src.x = x0, src.y = y0;
+    for (i = 0; i < rocks + shards; i++) {
+        gpb.rock = (i < rocks);
+        gpb.dmg = gpb.rock ? POLYPILE_ROCK_DMG : POLYPILE_SHARD_DMG;
+        gpb.hits = 0;
+        gpb.lastx = x0, gpb.lasty = y0;
+        /* a random point far off on a square around the burst */
+        side = rn2(4), t = rn2(2 * far + 1) - far;
+        dest.x = x0 + ((side == 0) ? -far : (side == 1) ? far : t);
+        dest.y = y0 + ((side == 2) ? -far : (side == 3) ? far : t);
+        (void) walk_path(&src, &dest, polypile_fragment_step,
+                         (genericptr_t) 0);
+        otmp = mksobj_at(gpb.rock ? ROCK : POLYPILE_SHARD, gpb.lastx,
+                         gpb.lasty, FALSE, FALSE);
+        if (otmp)
+            stackobj(otmp);
+        newsym(gpb.lastx, gpb.lasty);
+    }
+}
+
+/* the timer has run out: the container turns into something else and its
+   contents burst out */
+void
+container_burst(anything *arg, long timeout UNUSED)
+{
+    struct obj *box = arg->a_obj, *otmp;
+    coordxy x, y;
+    long mass;
+    boolean seen;
+    char boxname[BUFSZ];
+
+    if (!get_obj_location(box, &x, &y, CONTAINED_TOO | BURIED_TOO))
+        return;
+    mass = polypile_contents_mass(box);
+    seen = carried(box) || cansee(x, y);
+    Strcpy(boxname, seen ? yname(box) : "something");
+    if (box->where == OBJ_BURIED) {
+        delete_contents(box); /* crushed under the ground, unnoticed */
+        (void) poly_obj(box, polypile_non_container(box));
+        return;
+    }
+    if (box->where == OBJ_FLOOR && costly_spot(x, y))
+        for (otmp = box->cobj; otmp; otmp = otmp->nobj)
+            if (!otmp->no_charge)
+                (void) stolen_value(otmp, x, y, FALSE, FALSE);
+    delete_contents(box);
+    otmp = poly_obj(box, polypile_non_container(box));
+    if (otmp && otmp->where == OBJ_INVENT)
+        update_inventory();
+    if (mass <= 0L)
+        return;
+    if (seen)
+        pline("%s %s apart in a violent explosion!", upstart(boxname),
+              vtense(boxname, "burst"));
+    else
+        You_hear("a violent explosion!");
+    wake_nearto(x, y, 40 * 40);
+    gpb.x = x, gpb.y = y;
+    gpb.shopwall = FALSE;
+    polypile_blast(x, y, (int) min(mass / 2L, 30000L));
+    polypile_fragments(x, y, mass - mass / 2L);
+    if (gpb.shopwall)
+        pay_for_damage("blow up", FALSE);
+    gv.vision_full_recalc = 1;
 }
 
 /*zap.c*/

@@ -2493,6 +2493,16 @@ potion_dip(struct obj *obj, struct obj *potion)
                 livelog_printf(LL_CONDUCT, "polymorphed %s first item",
                                uhis());
 
+            /* Polypiled: a container with something in it changes, or
+               trembles and bursts */
+            if (obj->otyp != POT_POLYMORPH && Is_container(obj)
+                && Has_contents(obj)) {
+                obj = polypile_container(obj, bcsign(potion));
+                makeknown(POT_POLYMORPH);
+                useup(potion);
+                prinv((char *) 0, obj, 0L);
+                return ECMD_TIME;
+            }
             obj = poly_obj(obj, STRANGE_OBJECT);
 
             /*

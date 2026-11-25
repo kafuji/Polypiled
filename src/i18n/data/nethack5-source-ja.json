@@ -8309,5 +8309,22 @@
 "Putting that inside will blow up %s.  Do it anyway?":"それを入れると{1}が吹き飛びます。それでも入れますか？",
 "You can now see what was invisible!":"見えなかったものが見えるようになった！",
 "%s offers to read the blessings upon your possessions for %ld %s.  Accept?":"{1}は{2}{3}で持ち物の祝福と呪いを見てくれるという。頼みますか？",
-"%s lays hands upon your possessions.":"{1}はあなたの持ち物に手をかざした。"
+"%s lays hands upon your possessions.":"{1}はあなたの持ち物に手をかざした。",
+"You take in the lay of this level at a glance.":"この階の地形が一目で頭に入った。",
+"The pile melds, and %s arises from it!":"山が溶け合い、{1}が立ち上がった！",
+"The pile collapses into worthless rubble!":"山は崩れて価値のない瓦礫になった！",
+"The pile shimmers and fuses, shedding rubble!":"山はきらめいて融合し、瓦礫がこぼれ落ちた！",
+"The pile shimmers and fuses!":"山はきらめいて融合した！",
+"%s %s to tremble!":"{1}が震えはじめた！",
+"%s %s apart in a violent explosion!":"{1}は激しい爆発とともに砕け散った！",
+"You hear a violent explosion!":"激しい爆発音が聞こえた！",
+"You are caught in the blast!":"爆風に巻き込まれた！",
+"You are hit by a flying rock!":"飛んできた石が当たった！",
+"You are hit by a shard of glass!":"ガラスの破片が当たった！",
+"%s is caught in the blast!":"{1}は爆風に巻き込まれた！",
+"%s is hit by a flying rock!":"{1}に飛んできた石が当たった！",
+"%s is hit by a shard of glass!":"{1}にガラスの破片が当たった！",
+"Your shield blocks a flying rock.":"盾が飛んできた石を防いだ。",
+"Your shield blocks a shard of glass.":"盾がガラスの破片を防いだ。",
+"polymorphed container's explosion":"変化した容器の爆発"
 }

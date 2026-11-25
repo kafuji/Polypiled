@@ -44,6 +44,7 @@ enum timeout_types {
     FIG_TRANSFORM,
     SHRINK_GLOB,
     MELT_ICE_AWAY,
+    CONTAINER_BURST, /* Polypiled */
 
     NUM_TIME_FUNCS
 };
@@ -56,7 +57,7 @@ enum timeout_types {
                              || (ttype) == BURN_OBJECT   \
                              || (ttype) == HATCH_EGG     \
                              || (ttype) == FIG_TRANSFORM \
-                             || (ttype) == SHRINK_GLOB)
+                             || (ttype) == SHRINK_GLOB \n                             || (ttype) == CONTAINER_BURST)
 
 /* used in timeout.c */
 typedef struct fe {
