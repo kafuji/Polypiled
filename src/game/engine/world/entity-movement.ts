@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import { TILE_SIZE } from "../../constants";
+
+/** How long the hero's move animation waits at an unconfirmed square. */
+export const PLAYER_MOVE_HOLD_TIMEOUT_MS = 1200;
 import type { TileMaterialKind } from "../../glyphs";
 import type {
   EntityMoveTransitionVisual,
@@ -729,6 +732,16 @@ export class EntityMovement {
       );
     for (const transition of transitions) {
       if (transition.holdAtDestinationUntilConfirmation) {
+        // A step the game never confirmed (refused, or the hero ended up
+        // elsewhere): go to where the hero really is rather than leave a
+        // copy standing on the square.
+        if (
+          transition.id === "player" &&
+          now - (transition.heldSinceMs ?? now) > PLAYER_MOVE_HOLD_TIMEOUT_MS
+        ) {
+          const { x, y } = this.dependencies.playerMovement.playerPos;
+          this.finalizeHeldPlayerMoveTransitionIfConfirmed(x, y);
+        }
         continue;
       }
       const progress = THREE.MathUtils.clamp(
@@ -796,6 +809,7 @@ export class EntityMovement {
             transition.destinationKey
         ) {
           transition.holdAtDestinationUntilConfirmation = true;
+          transition.heldSinceMs = now;
           continue;
         }
         this.finishEntityMoveTransition(transition.id, false);
@@ -803,18 +817,51 @@ export class EntityMovement {
     }
   }
 
+  /**
+   * The game confirmed the hero at (tileX, tileY). A move animation that
+   * ends there finishes; one headed elsewhere - the hero fell into water and
+   * crawled out onto another square, or the step was refused - carries on
+   * to the confirmed square when it is next to where the animation ends, and
+   * is dropped otherwise, so no copy of the hero stays behind.
+   */
   finalizeHeldPlayerMoveTransitionIfConfirmed(
     tileX: number,
     tileY: number,
   ): void {
     const transition = this.activeEntityMoveTransitions.get("player") ?? null;
-    if (!transition || !transition.holdAtDestinationUntilConfirmation) {
+    if (!transition) {
       return;
     }
-    if (transition.destinationKey !== `${tileX},${tileY}`) {
+    const confirmedKey = `${tileX},${tileY}`;
+    if (transition.destinationKey === confirmedKey) {
+      if (transition.holdAtDestinationUntilConfirmation) {
+        this.finishEntityMoveTransition("player", false);
+      }
       return;
     }
-    this.finishEntityMoveTransition("player", false);
+    if (transition.queuedWaypoints.some((waypoint) => waypoint.destinationKey === confirmedKey)) {
+      return;
+    }
+    const lastKey =
+      transition.queuedWaypoints[transition.queuedWaypoints.length - 1]?.destinationKey ??
+      transition.destinationKey;
+    const last = this.dependencies.levelTerrainCache.parseTileKey(lastKey);
+    const adjacent =
+      last !== null && Math.max(Math.abs(last.x - tileX), Math.abs(last.y - tileY)) === 1;
+    if (!adjacent) {
+      // Still moving: a later step may yet bring it along (runs, travel).
+      if (transition.holdAtDestinationUntilConfirmation) {
+        this.finishEntityMoveTransition("player", false);
+      }
+      return;
+    }
+    this.beginOrRetargetEntityMoveTransition(
+      "player",
+      confirmedKey,
+      transition.baseDurationMs,
+      null,
+      () => null,
+    );
   }
 
   clearEntityMoveTransitions(): void {

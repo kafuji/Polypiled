@@ -19,9 +19,10 @@ const floor = (overrides: Partial<FloorHere> = {}): FloorHere => ({
   ...overrides,
 });
 
-function render(locale: "ja" | "en" = "ja", visible = true): string {
+function render(locale: "ja" | "en" = "ja", visible = true, statusText = ""): string {
   const panel = createElement(FloorPanelView, {
     visible,
+    statusText,
     floorHere: useGameStore.getState().floorHere,
     renderTilePreview: (tile: number | null) => (tile === null ? null : createElement("img", { "data-tile": tile, alt: "" })),
   });
@@ -39,6 +40,17 @@ describe("FloorPanel", () => {
     expect(render()).toBe("");
     useGameStore.getState().setFloorHere(floor());
     expect(render("ja", false)).toBe("");
+  });
+
+  it("puts the player position on the same line as the terrain", () => {
+    expect(render("ja", true, "Player at (58, 16)")).toContain("プレイヤー位置 (58, 16)");
+    useGameStore.getState().setFloorHere(floor({ trap: "bear trap" }));
+    const html = render("ja", true, "Player at (58, 16)");
+    const line = html.slice(html.indexOf("nh3d-floor-panel-feature"));
+    expect(line).toContain("プレイヤー位置 (58, 16)");
+    expect(line).toContain("下り階段");
+    expect(line).toContain("トラバサミ");
+    expect(html).not.toContain("Polypiled");
   });
 
   it("shows only the terrain when nothing lies here", () => {

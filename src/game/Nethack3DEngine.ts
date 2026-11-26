@@ -1027,6 +1027,25 @@ class Nethack3DEngine implements Nethack3DEngineController {
         break;
       }
 
+      case "hero_blow": {
+        this.systems.combatAttribution.playPlayerWeaponSwingForBlow({
+          x: data.x,
+          y: data.y,
+          hand: data.hand === "off" ? "off" : "main",
+          hit: data.hit === true,
+        });
+        break;
+      }
+
+      case "water_fall": {
+        this.systems.entityGrounding.noteWaterFall(
+          typeof data.monsterId === "number" ? data.monsterId : null,
+          data.x,
+          data.y,
+        );
+        break;
+      }
+
       case "combat_feedback": {
         this.systems.combatAttribution.showCombatFeedback(
           data.kind,
@@ -1210,7 +1229,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
         console.log(
           `🎯 Player position changed from (${oldPos.x}, ${oldPos.y}) to (${data.x}, ${data.y})`,
         );
-        this.systems.promptDialogs.updateStatus(`Player at (${data.x}, ${data.y}) - Polypiled`);
+        this.systems.promptDialogs.updateStatus(`Player at (${data.x}, ${data.y})`);
         if (this.systems.tileUpdates.pendingPlayerTileRefreshOnNextPosition) {
           this.systems.tileUpdates.pendingPlayerTileRefreshOnNextPosition = false;
           this.systems.tileUpdates.requestPlayerTileRefresh("player-position-sync");
@@ -1954,6 +1973,8 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.entityBillboards.fpsPitchLockedBillboardGeometry.dispose();
     this.systems.heldWeapon.fpsHeldWeaponGeometry.dispose();
     this.systems.playerWeaponOverlay.dispose();
+    this.systems.entityGrounding.dispose();
+    this.systems.waterSplash.dispose();
     Object.values(this.systems.tileMaterials.materials).forEach((material) => material.dispose());
   }
 
@@ -1998,7 +2019,10 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.promptDialogs.maybeRequestQueuedSilentInventoryRefresh();
     this.systems.heldWeapon.syncFpsHeldWeaponSprite(deltaSeconds);
     this.systems.entityBillboards.updateMonsterBillboardPitchLockState();
-    // After movement transitions so the weapons follow the animated player.
+    // After movement transitions: seat sprites on the ground (floating,
+    // sinking, riding, shadows), then hang the weapons on the posed hero.
+    this.systems.entityGrounding.update();
+    this.systems.waterSplash.update(deltaSeconds);
     this.systems.playerWeaponOverlay.sync();
     this.systems.directionPrompts.syncDirectionPromptOverlayVisibility();
     this.systems.directionPrompts.directionPromptOverlay?.update(

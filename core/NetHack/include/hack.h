@@ -567,6 +567,15 @@ enum hmon_atkmode_types {
 extern void nh3d_hero_hit(struct monst *, int, boolean);
 extern void nh3d_hero_missed(struct monst *, boolean);
 extern void nh3d_hero_dodged(void);
+/* Polypiled: each melee blow the hero strikes, with the hand it came from
+   (off_hand: the second blow of two-weapon combat or a double punch) and
+   whether it connected, so the shell can swing the right weapon */
+extern void nh3d_hero_blow(coordxy, coordxy, boolean off_hand,
+                           boolean hit);
+/* Polypiled: the hero (mon == 0) or a monster the hero sees falls into
+   water; drowned is set when a monster goes under for good */
+extern void nh3d_fell_into_water(struct monst *, coordxy, coordxy,
+                                 boolean drowned);
 /* Polypiled: the hero attacked something (by_hero) or something attacked
    the hero; counted for the shell's music (win/shim/nh3d_knowledge.c) */
 extern void nh3d_note_engagement(boolean by_hero);

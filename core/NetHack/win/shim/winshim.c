@@ -183,6 +183,23 @@ nh3d_hero_missed(struct monst *mon, boolean contact)
 }
 
 void
+nh3d_hero_blow(coordxy x, coordxy y, boolean off_hand, boolean hit)
+{
+    nh3d_queue_shim_notification("shim_hero_blow", off_hand ? 2 : 1, x, y,
+                                 hit ? 1 : 0);
+}
+
+void
+nh3d_fell_into_water(struct monst *mon, coordxy x, coordxy y,
+                     boolean drowned)
+{
+    int who = mon ? (int) mon->m_id : NH3D_TRACKED_PLAYER_ID;
+
+    nh3d_queue_shim_notification("shim_water_fall", who, x, y,
+                                 drowned ? 1 : 0);
+}
+
+void
 nh3d_hero_dodged(void)
 {
     nh3d_note_engagement(FALSE); /* a monster's blow misses the hero */

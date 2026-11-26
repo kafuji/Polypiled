@@ -5087,6 +5087,8 @@ drown(void)
     }
 
     if (!u.uinwater) {
+        nh3d_fell_into_water((struct monst *) 0, u.ux, u.uy,
+                             FALSE); /* Polypiled */
         You("%s into the %s%c", is_solid ? "plunge" : "fall",
             waterbody_name(u.ux, u.uy),
             (Amphibious || Swimming || Breathless) ? '.' : '!');

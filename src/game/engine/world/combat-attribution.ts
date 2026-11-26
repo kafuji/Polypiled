@@ -20,7 +20,7 @@ import type { Minimap } from "../ui/minimap";
 import type { MovementInput } from "../input/movement-input";
 import type { PlayerMovement } from "./player-movement";
 import type { PlayerWeaponOverlay } from "../rendering/player-weapon-overlay";
-import { isPlayerWeaponSwingMessage } from "../rendering/player-weapon-swing";
+import { isPlayerWeaponThinAirMessage } from "../rendering/player-weapon-swing";
 import type { RuntimeEntityTracking } from "./runtime-entity-tracking";
 import type { TileRendering } from "../rendering/tile-rendering";
 import type { WorldClassification } from "./world-classification";
@@ -403,42 +403,45 @@ export class CombatAttribution {
   }
 
   /**
-   * Swing the overhead weapon sprite for the hero's own melee blows. The
-   * target comes from the attack input (pointer or direction); blows aimed
-   * further than an adjacent tile (thrown or fired kills) do not swing.
+   * Swing the overhead weapon sprite for one of the hero's melee blows, as
+   * the core reports it (shim_hero_blow): the square struck, the hand that
+   * struck and whether it connected.
+   */
+  playPlayerWeaponSwingForBlow(blow: {
+    readonly x: number;
+    readonly y: number;
+    readonly hand: "main" | "off";
+    readonly hit: boolean;
+  }): void {
+    if (this.dependencies.movementInput.isFpsMode() || !this.dependencies.playerWeaponOverlay.isActive()) {
+      return;
+    }
+    const origin = this.dependencies.playerMovement.playerPos;
+    const delta = { dx: blow.x - origin.x, dy: blow.y - origin.y };
+    const reach = Math.max(Math.abs(delta.dx), Math.abs(delta.dy));
+    this.dependencies.playerWeaponOverlay.playSwing({
+      delta: reach === 1 ? delta : null,
+      hand: blow.hand,
+      outcome: blow.hit ? "hit" : "miss",
+    });
+  }
+
+  /**
+   * A forced fight at empty air has no target, so the core sends no blow;
+   * swing at the direction the hero attacked in.
    */
   capturePlayerWeaponSwingFromCombatMessage(messageLike: unknown): void {
     if (
       typeof messageLike !== "string" ||
       this.dependencies.movementInput.isFpsMode() ||
       !this.dependencies.playerWeaponOverlay.isActive() ||
-      !isPlayerWeaponSwingMessage(messageLike)
+      !isPlayerWeaponThinAirMessage(messageLike)
     ) {
       return;
     }
-    const nowMs = Date.now();
-    const origin = this.dependencies.playerMovement.playerPos;
-    let delta: { dx: number; dy: number } | null = null;
-    const pointerTarget = this.getRecentPointerAttackTarget(nowMs);
-    if (pointerTarget) {
-      delta = { dx: pointerTarget.x - origin.x, dy: pointerTarget.y - origin.y };
-    } else {
-      const context = this.getRecentDirectionalAttackContext(nowMs);
-      if (context) {
-        const target = this.findDirectionalMonsterTarget(context);
-        if (
-          target &&
-          Math.max(Math.abs(target.x - context.originX), Math.abs(target.y - context.originY)) > 1
-        ) {
-          return;
-        }
-        delta = { dx: context.dx, dy: context.dy };
-      }
-    }
-    if (delta && Math.max(Math.abs(delta.dx), Math.abs(delta.dy)) > 1) {
-      return;
-    }
-    this.dependencies.playerWeaponOverlay.playSwing(delta);
+    const context = this.getRecentDirectionalAttackContext(Date.now());
+    const delta = context ? { dx: context.dx, dy: context.dy } : null;
+    this.dependencies.playerWeaponOverlay.playSwing({ delta, hand: null, outcome: "miss" });
   }
 
   consumeFpsHeldWeaponMissedAttackMessageSoundSuppression(

@@ -76,4 +76,9 @@ describe("game prompt presentation", () => {
     expect(translateMenuItemText("Just picked up: a platinum wand", "ja")).toBe("直前に拾った物：白金の杖");
     expect(translateMenuItemText("Items you just picked up", "ja")).toBe("直前に拾った物");
   });
+
+  it("asks before a map click wades into water", () => {
+    expect(translateGamePrompt("Really step into the water? [yn] (n)", "ja")).toMatch(/^本当に.+に入りますか？ \[yn\] \(n\)$/);
+    expect(translateGamePrompt("Really swim into the moat? [yn] (n)", "ja")).toMatch(/^本当に.+に入りますか？/);
+  });
 });

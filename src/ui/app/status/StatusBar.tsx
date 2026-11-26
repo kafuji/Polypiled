@@ -15,6 +15,8 @@ import { useI18n } from "../../../i18n";
 import { translateGameLocation } from "../../../i18n/game-location";
 import { translatePlayerTitle } from "../../../i18n/player-title";
 import { translateStatusBadgeLabel } from "../../../i18n/status-text";
+import { resolveExperienceProgress } from "../../../game/experience";
+import { StatMeter } from "./StatMeter";
 
 export interface StatusBarProps {
   startup: boolean;
@@ -45,6 +47,7 @@ export function StatusBar({
   isCharacterSheetVisible,
 }: StatusBarProps) {
   const { locale } = useI18n();
+  const experience = resolveExperienceProgress(playerStats.level, playerStats.experience);
   const handleClick = (): void => {
     if (!isCharacterSheetVisible) {
       openCharacterDialog();
@@ -66,33 +69,32 @@ export function StatusBar({
             ({locale === "ja" ? "レベル" : "Lvl"} {playerStats.level})
           </span>
         </div>
-        <div className="nh3d-stats-meter">
-          <div className="nh3d-stats-meter-label nh3d-stats-meter-label-hp">
-            HP: {playerStats.hp}/{playerStats.maxHp}
-          </div>
-          <div className="nh3d-stats-meter-track">
-            <div
-              className="nh3d-stats-meter-fill"
-              style={{
-                width: `${hpPercentage}%`,
-                backgroundColor: hpColor,
-              }}
-            />
-          </div>
-        </div>
+        <StatMeter
+          labelClassName="nh3d-stats-meter-label-hp"
+          label={<>HP: {playerStats.hp}/{playerStats.maxHp}</>}
+          fraction={hpPercentage / 100}
+          fillStyle={{ backgroundColor: hpColor }}
+        />
         {playerStats.maxPower > 0 ? (
-          <div className="nh3d-stats-meter">
-            <div className="nh3d-stats-meter-label nh3d-stats-meter-label-pw">
-              {locale === "ja" ? "魔力" : "Pw"}: {playerStats.power}/{playerStats.maxPower}
-            </div>
-            <div className="nh3d-stats-meter-track">
-              <div
-                className="nh3d-stats-meter-fill nh3d-stats-meter-fill-pw"
-                style={{ width: `${powerPercentage}%` }}
-              />
-            </div>
-          </div>
+          <StatMeter
+            labelClassName="nh3d-stats-meter-label-pw"
+            label={<>{locale === "ja" ? "魔力" : "Pw"}: {playerStats.power}/{playerStats.maxPower}</>}
+            fraction={powerPercentage / 100}
+            fillClassName="nh3d-stats-meter-fill-pw"
+          />
         ) : null}
+        <StatMeter
+          labelClassName="nh3d-stats-meter-label-exp"
+          label={
+            <>
+              {locale === "ja" ? "経験" : "Exp"}: {playerStats.experience}
+              {experience.next !== null ? `/${experience.next}` : ""}
+            </>
+          }
+          fraction={experience.fraction}
+          fillClassName="nh3d-stats-meter-fill-exp"
+          cycle={playerStats.level}
+        />
         <div className="nh3d-stats-group nh3d-stats-group-core">
           <div className="nh3d-stats-core-row nh3d-stats-core-row-primary">
             <div
@@ -145,9 +147,6 @@ export function StatusBar({
             >
               AC:{playerStats.armor}
             </div>
-            <div className="nh3d-stats-secondary-exp nh3d-stats-mobile-inline-secondary">
-              {locale === "ja" ? "経験" : "Exp"}:{playerStats.experience}
-            </div>
             <div className="nh3d-stats-secondary-time nh3d-stats-mobile-inline-secondary">
               {locale === "ja" ? "ターン" : "T"}:{playerStats.time}
             </div>
@@ -162,9 +161,6 @@ export function StatusBar({
             style={resolveCoreStatStyle("armor")}
           >
             AC:{playerStats.armor}
-          </div>
-          <div className="nh3d-stats-secondary-exp nh3d-stats-desktop-secondary">
-            {locale === "ja" ? "経験" : "Exp"}:{playerStats.experience}
           </div>
           <div className="nh3d-stats-secondary-gold nh3d-stats-desktop-secondary">
             {locale === "ja" ? "金" : "$"}:{playerStats.gold}

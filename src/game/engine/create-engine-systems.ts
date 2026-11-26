@@ -41,6 +41,9 @@ import { TerminalRendering } from "./rendering/terminal-rendering";
 import { TileRendering } from "./rendering/tile-rendering";
 import { HeldWeapon } from "./rendering/held-weapon";
 import { PlayerWeaponOverlay } from "./rendering/player-weapon-overlay";
+import { EntityGrounding } from "./rendering/entity-grounding";
+import { WaterSplash } from "./effects/water-splash";
+import { useGameStore } from "../../state/gameStore";
 import { Camera } from "./camera/camera";
 import { PositionSelection } from "./input/position-selection";
 import { InputCommands } from "./input/input-commands";
@@ -110,6 +113,8 @@ export interface EngineSystems {
   readonly tileRendering: TileRendering;
   readonly heldWeapon: HeldWeapon;
   readonly playerWeaponOverlay: PlayerWeaponOverlay;
+  readonly entityGrounding: EntityGrounding;
+  readonly waterSplash: WaterSplash;
   readonly camera: Camera;
   readonly positionSelection: PositionSelection;
   readonly inputCommands: InputCommands;
@@ -515,10 +520,28 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get worldClassification() { return worldClassification; },
     get darkWallOverrides() { return darkWallOverrides; },
   });
+  const waterSplash: WaterSplash = new WaterSplash({
+    get renderPipeline() { return renderPipeline; },
+  });
+  const entityGrounding: EntityGrounding = new EntityGrounding({
+    get camera() { return camera; },
+    get engineState() { return engineState; },
+    get entityBillboards() { return entityBillboards; },
+    get lighting() { return lighting; },
+    get movementInput() { return movementInput; },
+    get playerMovement() { return playerMovement; },
+    get renderPipeline() { return renderPipeline; },
+    get tilesetAssets() { return tilesetAssets; },
+    get waterSplash() { return waterSplash; },
+    get entityMovement() { return entityMovement; },
+    readConditionMask: () => playerStatus.statusConditionMask,
+    readTrapHere: () => useGameStore.getState().floorHere?.trap ?? null,
+  });
   const playerWeaponOverlay: PlayerWeaponOverlay = new PlayerWeaponOverlay({
     get camera() { return camera; },
     get engineState() { return engineState; },
     get entityBillboards() { return entityBillboards; },
+    get entityGrounding() { return entityGrounding; },
     get glyphTextures() { return glyphTextures; },
     get lighting() { return lighting; },
     get menuPreviews() { return menuPreviews; },
@@ -981,6 +1004,8 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     tileRendering,
     heldWeapon,
     playerWeaponOverlay,
+    entityGrounding,
+    waterSplash,
     camera,
     positionSelection,
     inputCommands,
