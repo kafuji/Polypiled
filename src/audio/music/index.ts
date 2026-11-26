@@ -1,5 +1,5 @@
 export { BackgroundMusic } from "./background-music";
-export type { BackgroundMusicSettings, BackgroundMusicStats } from "./background-music";
+export type { BackgroundMusicKnowledge, BackgroundMusicSettings, BackgroundMusicStats } from "./background-music";
 export { TitleMusic } from "./title-music";
 export { MusicDirector } from "./music-director";
 export type { MusicMood } from "./music-director";

@@ -567,6 +567,9 @@ enum hmon_atkmode_types {
 extern void nh3d_hero_hit(struct monst *, int, boolean);
 extern void nh3d_hero_missed(struct monst *, boolean);
 extern void nh3d_hero_dodged(void);
+/* Polypiled: the hero attacked something (by_hero) or something attacked
+   the hero; counted for the shell's music (win/shim/nh3d_knowledge.c) */
+extern void nh3d_note_engagement(boolean by_hero);
 
 /* hunger states - see hu_stat in eat.c */
 enum hunger_state_types {

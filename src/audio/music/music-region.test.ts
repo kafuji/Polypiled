@@ -1,76 +1,44 @@
 import { describe, expect, it } from "vitest";
-import {
-  MEDUSA_MIN_WATER_TILES,
-  couldBeMedusaLevel,
-  resolveMusicRegion,
-  resolveMusicSpecialLevel,
-} from "./music-region";
+import type { KnowledgeSpecialLevel } from "../../runtime/knowledge";
+import { resolveMusicRegion, type MusicLevel } from "./music-region";
+
+const doom: MusicLevel = {
+  mines: false,
+  sokoban: false,
+  gehennom: false,
+  quest: false,
+  endgame: false,
+  specialLevel: null,
+};
 
 describe("resolveMusicRegion", () => {
   it.each([
-    ["Dungeons of Doom", "dungeon"],
-    ["The Dungeons of Doom", "dungeon"],
-    ["The Gnomish Mines", "mines"],
-    ["Gnomish Mines", "mines"],
-    ["Sokoban", "sokoban"],
-    ["The Quest", "quest"],
-    ["Fort Ludios", "ludios"],
-    ["Gehennom", "gehennom"],
-    ["Vlad's Tower", "gehennom"],
-    ["The Elemental Planes", "endgame"],
-    ["Astral Plane", "endgame"],
-    ["", "dungeon"],
-  ])("%s -> %s", (name, region) => {
-    expect(resolveMusicRegion(name)).toBe(region);
+    [{}, "dungeon"],
+    [{ mines: true }, "mines"],
+    [{ sokoban: true }, "sokoban"],
+    [{ quest: true }, "quest"],
+    [{ gehennom: true }, "gehennom"],
+    [{ endgame: true }, "endgame"],
+  ] as const)("branch %o -> %s", (flags, region) => {
+    expect(resolveMusicRegion({ ...doom, ...flags })).toBe(region);
   });
 
-  it("prefers a special level over the branch name", () => {
-    expect(resolveMusicRegion("The Dungeons of Doom", "medusa")).toBe("medusa");
-    expect(resolveMusicRegion("The Dungeons of Doom", "castle")).toBe("castle");
-    expect(resolveMusicRegion("The Dungeons of Doom", null)).toBe("dungeon");
-  });
-});
-
-describe("resolveMusicSpecialLevel", () => {
-  const doom = { dnum: 0, mainDungeonLevelCount: 27 };
-  const water = MEDUSA_MIN_WATER_TILES;
-
-  it("trusts an exact special level from the runtime", () => {
-    expect(resolveMusicSpecialLevel({ dnum: 0, dlevel: 21, specialLevel: "medusa" })).toBe("medusa");
-    expect(resolveMusicSpecialLevel({ dnum: 0, dlevel: 25, specialLevel: "castle" })).toBe("castle");
-  });
-
-  it("finds the Castle at the bottom of the Dungeons of Doom", () => {
-    expect(resolveMusicSpecialLevel({ ...doom, dlevel: 27 })).toBe("castle");
-    expect(resolveMusicSpecialLevel({ ...doom, dlevel: 26 })).toBeNull();
-    // Gehennom's first level is not the Castle even with the same dlevel.
-    expect(resolveMusicSpecialLevel({ ...doom, dnum: 1, dlevel: 27 })).toBeNull();
+  it.each([
+    ["medusa", "medusa"],
+    ["castle", "castle"],
+    ["ludios", "ludios"],
+    ["sanctum", "sanctum"],
+    ["valley", "gehennom"],
+    ["vlad-tower", "gehennom"],
+    ["wizard-tower", "gehennom"],
+    ["quest-home", "quest"],
+    ["earth", "endgame"],
+    ["astral", "endgame"],
+  ] as const)("special level %s -> %s", (special: KnowledgeSpecialLevel, region) => {
+    expect(resolveMusicRegion({ ...doom, specialLevel: special })).toBe(region);
   });
 
-  it("finds Medusa's level among the four above the Castle once open water is seen", () => {
-    for (const dlevel of [23, 24, 25, 26]) {
-      expect(couldBeMedusaLevel({ ...doom, dlevel })).toBe(true);
-      expect(resolveMusicSpecialLevel({ ...doom, dlevel, knownWaterTiles: water })).toBe("medusa");
-      expect(resolveMusicSpecialLevel({ ...doom, dlevel, knownWaterTiles: water - 1 })).toBeNull();
-    }
-    expect(couldBeMedusaLevel({ ...doom, dlevel: 22 })).toBe(false);
-    expect(resolveMusicSpecialLevel({ ...doom, dlevel: 22, knownWaterTiles: 500 })).toBeNull();
-    expect(resolveMusicSpecialLevel({ ...doom, dnum: 2, dlevel: 25, knownWaterTiles: 500 })).toBeNull();
-  });
-
-  it("finds Moloch's Sanctum at the bottom of Gehennom", () => {
-    const gehennom = { dnum: 1, dungeonName: "Gehennom", dungeonLevelCount: 22, mainDungeonLevelCount: 27 };
-    expect(resolveMusicSpecialLevel({ ...gehennom, dlevel: 22 })).toBe("sanctum");
-    expect(resolveMusicSpecialLevel({ ...gehennom, dlevel: 21 })).toBeNull();
-    // The bottom of another dungeon is not the Sanctum, nor is a level whose count is unknown.
-    expect(resolveMusicSpecialLevel({ ...gehennom, dungeonName: "The Gnomish Mines", dnum: 2, dlevel: 22 })).toBeNull();
-    expect(resolveMusicSpecialLevel({ ...gehennom, dungeonLevelCount: null, dlevel: 22 })).toBeNull();
-    expect(resolveMusicRegion("Gehennom", "sanctum")).toBe("sanctum");
-  });
-
-  it("falls back to none without the level count", () => {
-    expect(resolveMusicSpecialLevel({ dnum: 0, dlevel: 27, mainDungeonLevelCount: null })).toBeNull();
-    expect(resolveMusicSpecialLevel({ dnum: 0, dlevel: 25, knownWaterTiles: 500 })).toBeNull();
-    expect(resolveMusicSpecialLevel(null)).toBeNull();
+  it("prefers the special level over the branch", () => {
+    expect(resolveMusicRegion({ ...doom, gehennom: true, specialLevel: "sanctum" })).toBe("sanctum");
   });
 });

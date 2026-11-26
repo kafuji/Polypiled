@@ -1,6 +1,7 @@
 /**
  * Decides which background music mood should be playing from the player's
- * situation. Pure logic (no audio), so it can be unit tested.
+ * situation, as the game core reports it (attacks by and on the hero,
+ * hostiles in view). Pure logic (no audio), so it can be unit tested.
  *
  * Escalation (calm -> combat -> danger) is immediate; de-escalation waits for
  * hysteresis thresholds and a minimum dwell time so the music does not flap.
@@ -21,6 +22,18 @@ export type MusicDirectorInput = {
   turn: number;
   /** A "danger" severity status is active (stoning, sliming, Weak, ...). */
   dangerCondition: boolean;
+  /** Hero experience level; 0 / non-finite when unknown. */
+  experienceLevel?: number;
+  /** Hostile monsters in view (knowledge frames); omitted when unknown. */
+  hostiles?: MusicHostiles | null;
+};
+
+export type MusicHostiles = {
+  count: number;
+  /** Highest difficulty of what they look like; 0 when the hero cannot tell. */
+  maxDifficulty: number;
+  /** Distance to the nearest; null with none in view. */
+  nearestDistance: number | null;
 };
 
 export type MusicDirectorTuning = {
@@ -34,6 +47,10 @@ export type MusicDirectorTuning = {
   combatHoldMs: number;
   /** Minimum time a mood plays before the director may de-escalate. */
   minDwellMs: number;
+  /** A hostile this close (in squares) counts as a fight. */
+  hostileCombatDistance: number;
+  /** A hostile at least this much tougher than the hero's level means danger. */
+  dangerDifficultyMargin: number;
 };
 
 export const defaultMusicDirectorTuning: MusicDirectorTuning = {
@@ -42,6 +59,8 @@ export const defaultMusicDirectorTuning: MusicDirectorTuning = {
   combatHoldTurns: 3,
   combatHoldMs: 2500,
   minDwellMs: 1500,
+  hostileCombatDistance: 2,
+  dangerDifficultyMargin: 6,
 };
 
 export class MusicDirector {
@@ -51,8 +70,6 @@ export class MusicDirector {
   private lowHpLatched = false;
   private lastCombatMs = Number.NEGATIVE_INFINITY;
   private lastCombatTurn = Number.NEGATIVE_INFINITY;
-  private previousHp: number | null = null;
-  private previousMaxHp: number | null = null;
 
   constructor(tuning: Partial<MusicDirectorTuning> = {}) {
     this.tuning = { ...defaultMusicDirectorTuning, ...tuning };
@@ -68,11 +85,9 @@ export class MusicDirector {
     this.lowHpLatched = false;
     this.lastCombatMs = Number.NEGATIVE_INFINITY;
     this.lastCombatTurn = Number.NEGATIVE_INFINITY;
-    this.previousHp = null;
-    this.previousMaxHp = null;
   }
 
-  /** The player hit, missed, killed, or was hurt by something. */
+  /** The hero attacked something or something attacked the hero. */
   notifyCombat(nowMs: number, turn: number): void {
     this.lastCombatMs = nowMs;
     this.lastCombatTurn = isKnownTurn(turn) ? turn : Number.NEGATIVE_INFINITY;
@@ -82,18 +97,11 @@ export class MusicDirector {
     const { nowMs } = input;
     const hasHp = Number.isFinite(input.hp) && Number.isFinite(input.maxHp) && input.maxHp > 0;
 
-    // Losing HP (same max HP, so not level drain bookkeeping) counts as combat.
-    if (
-      hasHp &&
-      this.previousHp !== null &&
-      this.previousMaxHp === input.maxHp &&
-      input.hp < this.previousHp
-    ) {
+    // A hostile next to the hero is a fight about to happen; the combat hold
+    // then runs from the last moment one was this close.
+    const nearest = input.hostiles?.nearestDistance;
+    if (typeof nearest === "number" && nearest <= this.tuning.hostileCombatDistance) {
       this.notifyCombat(nowMs, input.turn);
-    }
-    if (hasHp) {
-      this.previousHp = input.hp;
-      this.previousMaxHp = input.maxHp;
     }
 
     if (hasHp && input.hp > 0) {
@@ -118,10 +126,19 @@ export class MusicDirector {
   }
 
   private resolveTarget(input: MusicDirectorInput): MusicMood {
-    if (this.lowHpLatched || input.dangerCondition) {
+    if (this.lowHpLatched || input.dangerCondition || this.isOutmatched(input)) {
       return "danger";
     }
     return this.isCombatActive(input) ? "combat" : "calm";
+  }
+
+  /** Something in view is far tougher than the hero. */
+  private isOutmatched(input: MusicDirectorInput): boolean {
+    const hostiles = input.hostiles;
+    const level = input.experienceLevel;
+    if (!hostiles || hostiles.count <= 0 || hostiles.maxDifficulty <= 0) return false;
+    if (typeof level !== "number" || !Number.isFinite(level) || level <= 0) return false;
+    return hostiles.maxDifficulty >= level + this.tuning.dangerDifficultyMargin;
   }
 
   private isCombatActive(input: MusicDirectorInput): boolean {

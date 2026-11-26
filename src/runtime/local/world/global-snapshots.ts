@@ -297,47 +297,6 @@ export class RuntimeGlobalSnapshots {
    * Ledger numbers are assigned dungeon by dungeon, so the Dungeons of Doom
    * (dungeon 0) has as many levels as dungeon 1's ledger starts after it.
    */
-  resolveMainDungeonLevelCount(dungeons) {
-    return this.resolveDungeonLevelCount(dungeons, 0);
-  }
-
-  /**
-   * Levels in a dungeon: ledger numbers run on from one dungeon to the next,
-   * so it is the gap to the next dungeon's ledger start.
-   */
-  resolveDungeonLevelCount(dungeons, dnum) {
-    const dungeon = this.resolveDungeonByIndex(dungeons, dnum);
-    const next = this.resolveDungeonByIndex(dungeons, dnum + 1);
-    if (!dungeon || typeof dungeon !== "object" || !next || typeof next !== "object") {
-      return null;
-    }
-    const start = this.deps.memory.normalizeRuntimeInteger(dungeon.ledger_start);
-    const nextStart = this.deps.memory.normalizeRuntimeInteger(next.ledger_start);
-    if (start === null || nextStart === null || nextStart <= start) {
-      return null;
-    }
-    return Math.trunc(nextStart - start);
-  }
-
-  /** Exact Medusa / Castle match, for runtimes that export those topology levels. */
-  resolveRuntimeSpecialLevel(dnum, dlevel, topology) {
-    if (!topology || typeof topology !== "object") {
-      return null;
-    }
-    const matches = (level) =>
-      level &&
-      typeof level === "object" &&
-      this.deps.memory.normalizeRuntimeInteger(level.dnum) === dnum &&
-      this.deps.memory.normalizeRuntimeInteger(level.dlevel) === dlevel;
-    if (matches(topology.d_medusa_level)) {
-      return "medusa";
-    }
-    if (matches(topology.d_stronghold_level)) {
-      return "castle";
-    }
-    return null;
-  }
-
   resolveRuntimeLevelIdentity() {
     const globals =
       globalThis.nethackGlobal &&
@@ -404,9 +363,6 @@ export class RuntimeGlobalSnapshots {
         depth,
         dungeonName,
         branchTag,
-        mainDungeonLevelCount: this.resolveMainDungeonLevelCount(dungeons),
-        dungeonLevelCount: this.resolveDungeonLevelCount(dungeons, dnum),
-        specialLevel: this.resolveRuntimeSpecialLevel(dnum, dlevel, topology),
       };
     } catch (error) {
       console.log("Failed to resolve runtime level identity:", error);

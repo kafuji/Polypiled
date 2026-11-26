@@ -549,6 +549,7 @@ mattacku(struct monst *mtmp)
             return !!(mattackm(u.usteed, mtmp) & M_ATTK_DEF_DIED);
         }
     }
+    nh3d_note_engagement(FALSE); /* Polypiled */
 
     if (u.uundetected && !range2 && foundyou && !u.uswallow) {
         if (!canspotmon(mtmp))

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { BackgroundMusic } from "./background-music";
+import { BackgroundMusic, type BackgroundMusicKnowledge } from "./background-music";
 import type { BackgroundMusicPlayer } from "./procedural-music-player";
 import type { MusicMood } from "./music-director";
-import type { TrackPreference } from "./music-region";
+import type { MusicRegion, TrackPreference } from "./music-region";
 import type { MusicStinger } from "./stingers";
 import type { MusicStatusEffect } from "./status-effects";
 
@@ -42,6 +42,17 @@ class FakePlayer implements BackgroundMusicPlayer {
 
 const on = { soundEnabled: true, musicPack: "takachiho", musicVolume: 0.5 };
 
+function knowledge(region: MusicRegion, overrides: Partial<BackgroundMusicKnowledge> = {}): BackgroundMusicKnowledge {
+  return {
+    region,
+    heroAttacks: 0,
+    foeAttacks: 0,
+    hostiles: { count: 0, maxDifficulty: 0, nearestDistance: null },
+    wizardInView: false,
+    ...overrides,
+  };
+}
+
 describe("BackgroundMusic", () => {
   it("stays silent until stats arrive, then plays calm", () => {
     const player = new FakePlayer();
@@ -54,14 +65,29 @@ describe("BackgroundMusic", () => {
     music.dispose();
   });
 
-  it("goes combat on combat activity and silent on game over", () => {
+  it("goes combat when the core counts an attack, and silent on game over", () => {
     const player = new FakePlayer();
     const music = new BackgroundMusic(() => player, () => 1000);
     music.setSettings(on);
     music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1 }, false);
-    music.notifyCombatActivity();
+    // The first frame only sets the baseline, whatever the counters say.
+    music.notifyKnowledge(knowledge("dungeon", { heroAttacks: 41, foeAttacks: 9 }));
+    expect(player.moods).toEqual([null, "calm"]);
+    music.notifyKnowledge(knowledge("dungeon", { heroAttacks: 41, foeAttacks: 10 }));
     music.setGameOver(true);
     expect(player.moods).toEqual([null, "calm", "combat", null]);
+    music.dispose();
+  });
+
+  it("goes combat when a hostile is close, danger when one outmatches the hero", () => {
+    const player = new FakePlayer();
+    const music = new BackgroundMusic(() => player, () => 0);
+    music.setSettings(on);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1, level: 3 }, false);
+    music.notifyKnowledge(knowledge("dungeon", { hostiles: { count: 1, maxDifficulty: 2, nearestDistance: 1 } }));
+    expect(player.moods[player.moods.length - 1]).toBe("combat");
+    music.notifyKnowledge(knowledge("dungeon", { hostiles: { count: 2, maxDifficulty: 12, nearestDistance: 6 } }));
+    expect(player.moods[player.moods.length - 1]).toBe("danger");
     music.dispose();
   });
 
@@ -88,7 +114,8 @@ describe("BackgroundMusic", () => {
       return player;
     }, () => 0);
     music.setSettings({ ...on, musicPack: "none" });
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1, dungeon: "The Gnomish Mines" }, false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1 }, false);
+    music.notifyKnowledge(knowledge("mines"));
     expect(made).toEqual([]);
     expect(music.getMusicPack()).toBeNull();
     music.setSettings(on);
@@ -110,10 +137,11 @@ describe("BackgroundMusic", () => {
     const player = new FakePlayer();
     const music = new BackgroundMusic(() => player, () => 0);
     music.setSettings(on);
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1, dungeon: "The Dungeons of Doom" }, false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1 }, false);
+    music.notifyKnowledge(knowledge("dungeon"));
     expect(music.getCurrentRegion()).toBe("dungeon");
     expect(player.stingers).toEqual([]);
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 50, dungeon: "The Gnomish Mines" }, false);
+    music.notifyKnowledge(knowledge("mines"));
     expect(music.getCurrentRegion()).toBe("mines");
     expect(player.preferences[player.preferences.length - 1]?.calm?.[0]).toBe("mines");
     expect(player.stingers).toEqual(["region-enter"]);
@@ -124,17 +152,17 @@ describe("BackgroundMusic", () => {
     const player = new FakePlayer();
     const music = new BackgroundMusic(() => player, () => 0);
     music.setSettings(on);
-    const doom = { hp: 10, maxHp: 10, dungeon: "The Dungeons of Doom" };
-    music.notifyPlayerStats({ ...doom, time: 1 }, false);
-    music.notifyPlayerStats({ ...doom, time: 2, specialLevel: "medusa" }, false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1 }, false);
+    music.notifyKnowledge(knowledge("dungeon"));
+    music.notifyKnowledge(knowledge("medusa"));
     expect(music.getCurrentRegion()).toBe("medusa");
     expect(player.preferences[player.preferences.length - 1]?.calm).toEqual(["medusa"]);
-    music.notifyPlayerStats({ ...doom, time: 3, specialLevel: "castle" }, false);
+    music.notifyKnowledge(knowledge("castle"));
     expect(music.getCurrentRegion()).toBe("castle");
     expect(player.preferences[player.preferences.length - 1]?.combat).toEqual(["combat-boss"]);
     expect(player.stingers).toEqual(["region-enter", "region-enter"]);
     // Climbing back to an ordinary level returns to the dungeon without a cue.
-    music.notifyPlayerStats({ ...doom, time: 4, specialLevel: null }, false);
+    music.notifyKnowledge(knowledge("dungeon"));
     expect(music.getCurrentRegion()).toBe("dungeon");
     expect(player.stingers).toEqual(["region-enter", "region-enter"]);
     music.dispose();
@@ -183,23 +211,24 @@ describe("BackgroundMusic", () => {
     let now = 0;
     const music = new BackgroundMusic(() => player, () => now);
     music.setSettings(on);
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1, dungeon: "The Dungeons of Doom" }, false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1 }, false);
+    music.notifyKnowledge(knowledge("dungeon"));
     expect(player.moods).toEqual([null, "calm"]);
-    music.notifyWizardPresence(true);
+    music.notifyKnowledge(knowledge("dungeon", { wizardInView: true }));
     expect(music.isWizardPanic()).toBe(true);
     expect(player.moods[player.moods.length - 1]).toBe("combat");
     expect(player.preferences[player.preferences.length - 1]).toEqual({ calm: ["dungeon"], combat: ["wizard"] });
     // Low health does not take over from him.
-    music.notifyPlayerStats({ hp: 1, maxHp: 10, time: 2, dungeon: "The Dungeons of Doom" }, true);
+    music.notifyPlayerStats({ hp: 1, maxHp: 10, time: 2 }, true);
     expect(player.moods[player.moods.length - 1]).toBe("combat");
     // He teleports away: the panic lingers, then the usual music returns.
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 3, dungeon: "The Dungeons of Doom" }, false);
-    music.notifyWizardPresence(false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 3 }, false);
+    music.notifyKnowledge(knowledge("dungeon"));
     now += 5000;
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 4, dungeon: "The Dungeons of Doom" }, false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 4 }, false);
     expect(music.isWizardPanic()).toBe(true);
     now += 4000;
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 5, dungeon: "The Dungeons of Doom" }, false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 5 }, false);
     expect(music.isWizardPanic()).toBe(false);
     expect(player.preferences[player.preferences.length - 1]).toEqual({ calm: ["dungeon"], combat: ["combat"] });
     music.dispose();
@@ -210,7 +239,8 @@ describe("BackgroundMusic", () => {
     const music = new BackgroundMusic(() => player, () => 0);
     music.setSettings(on);
     music.notifyWizardPresence(true);
-    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1, dungeon: "Gehennom" }, false);
+    music.notifyPlayerStats({ hp: 10, maxHp: 10, time: 1 }, false);
+    music.notifyKnowledge(knowledge("gehennom", { wizardInView: true }));
     expect(player.preferences[player.preferences.length - 1]).toEqual({ calm: ["gehennom"], combat: ["wizard"] });
     music.reset();
     expect(music.isWizardPanic()).toBe(false);

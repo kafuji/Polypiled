@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GLYPH_CATALOG } from "../../glyphs";
-import { isWizardOfYendorGlyph, WizardPresenceTracker } from "./wizard-presence";
+import { isWizardOfYendorGlyph, isWizardOfYendorInView } from "./wizard-presence";
 
 describe("isWizardOfYendorGlyph", () => {
   it("finds him seen, tame, sensed and ridden", () => {
@@ -17,30 +17,17 @@ describe("isWizardOfYendorGlyph", () => {
   });
 });
 
-describe("WizardPresenceTracker", () => {
-  const tracker = () => new WizardPresenceTracker((glyph) => glyph === 7);
+describe("isWizardOfYendorInView", () => {
+  const isWizard = (glyph: unknown) => glyph === 7;
+  const monster = (glyph: number | null, hero = false) => ({ glyph, hero });
 
-  it("is present while any cell shows him, including his double", () => {
-    const presence = tracker();
-    expect(presence.update({ x: 1, y: 1, glyph: 7 })).toBe(true);
-    expect(presence.update({ x: 5, y: 2, glyph: 7 })).toBe(false);
-    expect(presence.update({ x: 1, y: 1, glyph: 0 })).toBe(false);
-    expect(presence.present).toBe(true);
-    expect(presence.update({ x: 5, y: 2, glyph: 0 })).toBe(true);
-    expect(presence.present).toBe(false);
+  it("finds him among the monsters shown, his double included", () => {
+    expect(isWizardOfYendorInView([monster(3), monster(7)], isWizard)).toBe(true);
+    expect(isWizardOfYendorInView([monster(3), monster(null)], isWizard)).toBe(false);
+    expect(isWizardOfYendorInView([], isWizard)).toBe(false);
   });
 
-  it("forgets him when the level changes", () => {
-    const presence = tracker();
-    presence.update({ x: 1, y: 1, glyph: 7 });
-    expect(presence.clear()).toBe(true);
-    expect(presence.present).toBe(false);
-    expect(presence.clear()).toBe(false);
-  });
-
-  it("ignores tiles without a position", () => {
-    const presence = tracker();
-    expect(presence.update({ glyph: 7 })).toBe(false);
-    expect(presence.update(null)).toBe(false);
+  it("ignores the hero polymorphed into him", () => {
+    expect(isWizardOfYendorInView([monster(7, true)], isWizard)).toBe(false);
   });
 });

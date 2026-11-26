@@ -48,7 +48,17 @@ export interface FixtureFrame {
   complete?: boolean;
   turn?: number;
   hero?: { x: number; y: number; dx?: number; dy?: number; flags?: number; tile?: number | null; glyph?: number; steedId?: number; swallowerId?: number };
-  level?: { dnum?: number; dlevel?: number; depth?: number; flags?: number };
+  level?: {
+    dnum?: number;
+    dlevel?: number;
+    depth?: number;
+    flags?: number;
+    /** nh3d_special_level code. */
+    special?: number;
+    heroAttacks?: number;
+    foeAttacks?: number;
+    hostiles?: { count: number; maxDifficulty?: number; nearestDistance?: number };
+  };
   cells?: FixtureCell[];
   monsters?: FixtureMonster[];
   lights?: FixtureLight[];
@@ -79,7 +89,20 @@ export function encodeKnowledgeFrame(frame: FixtureFrame): Int32Array {
     hero.swallowerId ?? -1,
   );
   const level = frame.level ?? {};
-  words.push(level.dnum ?? 0, level.dlevel ?? 1, level.depth ?? 1, level.flags ?? 0, 0, 0, 0, 0);
+  const hostiles = level.hostiles;
+  words.push(
+    level.dnum ?? 0,
+    level.dlevel ?? 1,
+    level.depth ?? 1,
+    level.flags ?? 0,
+    level.special ?? 0,
+    ((level.heroAttacks ?? 0) & 0xffff) | (((level.foeAttacks ?? 0) & 0xffff) << 16),
+    hostiles
+      ? (hostiles.count & 0xff) | (((hostiles.maxDifficulty ?? 0) & 0xff) << 8) |
+          (((hostiles.nearestDistance ?? 255) & 0xff) << 16)
+      : 255 << 16,
+    0,
+  );
   for (const cell of frame.cells ?? []) {
     words.push(
       (cell.x & 0xff) | ((cell.y & 0xff) << 8) | (((cell.vision ?? 0) & 0xff) << 16) | (((cell.seenFrom ?? 0) & 0xff) << 24),
