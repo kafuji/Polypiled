@@ -4386,6 +4386,9 @@ wakeup(struct monst *mtmp, boolean via_attack)
     if (via_attack) {
         boolean was_peaceful = mtmp->mpeaceful;
 
+        if (!svc.context.mon_moving)
+            nh3d_note_engagement(TRUE); /* Polypiled */
+
         if (was_sleeping)
             growl(mtmp);
         setmangry(mtmp, TRUE);

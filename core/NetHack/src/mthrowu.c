@@ -685,6 +685,7 @@ m_throw(
             if (ohitmon(mtmp, singleobj, range, TRUE))
                 break;
         } else if (u_at(gb.bhitpos.x, gb.bhitpos.y)) {
+            nh3d_note_engagement(FALSE); /* Polypiled: missile at hero */
             if (gm.multi)
                 nomul(0);
 
@@ -1235,6 +1236,7 @@ thrwmu(struct monst *mtmp)
         if (dam < 1)
             dam = 1;
 
+        nh3d_note_engagement(FALSE); /* Polypiled: a polearm thrust */
         (void) thitu(hitv, Maybe_Half_Phys(dam), &otmp, (char *) 0);
         stop_occupation();
         return;

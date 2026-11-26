@@ -1,9 +1,9 @@
-import { MusicDirector, type MusicMood } from "./music-director";
+import { MusicDirector, type MusicHostiles, type MusicMood } from "./music-director";
 import { FileMusicPlayer } from "./file-music-player";
 import type { MusicLibrary } from "./music-library";
 import { resolveMusicPack, type MusicPack } from "./music-pack";
 import { ProceduralMusicPlayer, type BackgroundMusicPlayer } from "./procedural-music-player";
-import { resolveMusicRegion, type MusicRegion, type MusicSpecialLevel } from "./music-region";
+import type { MusicRegion } from "./music-region";
 import type { MusicStatusEffect } from "./status-effects";
 
 export type BackgroundMusicSettings = {
@@ -17,10 +17,19 @@ export type BackgroundMusicStats = {
   hp: number;
   maxHp: number;
   time: number;
-  /** Dungeon branch name from the status line (selects regional tracks). */
-  dungeon?: string;
-  /** Medusa's level or the Castle, which report the Dungeons of Doom as their branch. */
-  specialLevel?: MusicSpecialLevel | null;
+  /** Experience level, to tell how outmatched the hero is. */
+  level?: number;
+};
+
+/** What the game core reports with each knowledge frame (src/runtime/knowledge.ts). */
+export type BackgroundMusicKnowledge = {
+  region: MusicRegion;
+  /** Wrapping counters; an increase means a fight is on. */
+  heroAttacks: number;
+  foeAttacks: number;
+  hostiles: MusicHostiles;
+  /** The Wizard of Yendor is on the map. */
+  wizardInView: boolean;
 };
 
 const EVALUATE_INTERVAL_MS = 250;
@@ -74,6 +83,8 @@ export class BackgroundMusic {
   private wizardLastSeenAt = Number.NEGATIVE_INFINITY;
   private wizardPanic = false;
   private statusEffects: MusicStatusEffect[] = [];
+  private hostiles: MusicHostiles | null = null;
+  private attackCounters: { hero: number; foe: number } | null = null;
   private evaluateTimer: ReturnType<typeof setInterval> | null = null;
   private disposed = false;
 
@@ -120,10 +131,23 @@ export class BackgroundMusic {
     this.stats = { ...stats };
     this.dangerCondition = dangerCondition;
     this.setStatusEffects(statusEffects);
-    if (stats.dungeon !== undefined) {
-      this.updateRegion(resolveMusicRegion(stats.dungeon, stats.specialLevel ?? null));
-    }
     this.evaluate();
+  }
+
+  /** A knowledge frame: the region, fights and hostiles in view. */
+  notifyKnowledge(knowledge: BackgroundMusicKnowledge): void {
+    this.updateRegion(knowledge.region);
+    this.hostiles = { ...knowledge.hostiles };
+    const previous = this.attackCounters;
+    this.attackCounters = { hero: knowledge.heroAttacks, foe: knowledge.foeAttacks };
+    if (previous && (previous.hero !== knowledge.heroAttacks || previous.foe !== knowledge.foeAttacks)) {
+      this.director.notifyCombat(this.now(), this.stats?.time ?? 0);
+    }
+    if (knowledge.wizardInView !== this.wizardInView) {
+      this.notifyWizardPresence(knowledge.wizardInView);
+    } else {
+      this.evaluate();
+    }
   }
 
   /** Confusion, hallucination, ... color the music (see status-effects.ts). */
@@ -192,12 +216,6 @@ export class BackgroundMusic {
     if (track && this.isEnabled()) this.player?.playOnce?.(track);
   }
 
-  /** The player attacked, missed, or killed something. */
-  notifyCombatActivity(): void {
-    this.director.notifyCombat(this.now(), this.stats?.time ?? 0);
-    this.evaluate();
-  }
-
   setGameOver(active: boolean): void {
     const ended = active && !this.gameOver;
     this.gameOver = active;
@@ -221,6 +239,8 @@ export class BackgroundMusic {
     this.wizardInView = false;
     this.wizardLastSeenAt = Number.NEGATIVE_INFINITY;
     this.wizardPanic = false;
+    this.hostiles = null;
+    this.attackCounters = null;
     this.setStatusEffects([]);
     this.player?.setMood(null);
   }
@@ -276,6 +296,8 @@ export class BackgroundMusic {
       maxHp: this.stats.maxHp,
       turn: this.stats.time,
       dangerCondition: this.dangerCondition,
+      experienceLevel: this.stats.level,
+      hostiles: this.hostiles,
     });
     // The Wizard's track rides on the combat channel and outranks every mood.
     this.updateWizardPanic();

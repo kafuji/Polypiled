@@ -520,6 +520,7 @@ do_attack(struct monst *mtmp)
     gn.notonhead = (gb.bhitpos.x != mtmp->mx || gb.bhitpos.y != mtmp->my);
     if (attack_checks(mtmp, uwep))
         return TRUE;
+    nh3d_note_engagement(TRUE); /* Polypiled */
 
     if (Upolyd && noattacks(gy.youmonst.data)) {
         /* certain "pacifist" monsters don't attack */

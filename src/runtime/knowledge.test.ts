@@ -51,8 +51,33 @@ describe("knowledge frames", () => {
     ]);
   });
 
+  it("decodes the special level, attack counters and hostiles in view", () => {
+    const frame = decodeKnowledgeFrame(encodeKnowledgeFrame({
+      level: { special: 2, heroAttacks: 65535, foeAttacks: 7, hostiles: { count: 3, maxDifficulty: 21, nearestDistance: 2 } },
+    }));
+    expect(frame!.level).toMatchObject({
+      specialLevel: "castle",
+      heroAttacks: 65535,
+      foeAttacks: 7,
+      hostiles: { count: 3, maxDifficulty: 21, nearestDistance: 2 },
+    });
+  });
+
+  it("reads version 1 frames, whose reserved level words are zero", () => {
+    const words = encodeKnowledgeFrame({ version: 1 });
+    words.fill(0, 8 + 8 + 4, 8 + 8 + 8);
+    const frame = decodeKnowledgeFrame(words);
+    expect(frame!.level).toMatchObject({
+      specialLevel: null,
+      heroAttacks: 0,
+      foeAttacks: 0,
+      hostiles: { count: 0, maxDifficulty: 0, nearestDistance: null },
+    });
+  });
+
   it("refuses frames of another format or with a wrong length", () => {
-    expect(decodeKnowledgeFrame(encodeKnowledgeFrame({ version: 2 }))).toBeNull();
+    expect(decodeKnowledgeFrame(encodeKnowledgeFrame({ version: 3 }))).toBeNull();
+    expect(decodeKnowledgeFrame(encodeKnowledgeFrame({ version: 0 }))).toBeNull();
     const words = encodeKnowledgeFrame({ cells: [{ x: 1, y: 1 }] });
     expect(decodeKnowledgeFrame(words.slice(0, words.length - 1))).toBeNull();
     expect(decodeKnowledgeFrame([1, 2, 3])).toBeNull();

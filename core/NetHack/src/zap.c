@@ -4985,6 +4985,8 @@ dobuzz(
                     miss(flash_str(fltyp, FALSE), mon);
             }
         } else if (u_at(sx, sy) && range >= 0) {
+            if (type < 0) /* Polypiled: a monster's ray reaches the hero */
+                nh3d_note_engagement(FALSE);
             nomul(0);
             if (u.usteed && !rn2(3) && !mon_reflects(u.usteed, (char *) 0)) {
                 mon = u.usteed;
