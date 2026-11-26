@@ -871,9 +871,10 @@ export const zhCnOverrides = {
           label: "动画移动",
           description: "在瓦片和 3D ASCII 模式下，为玩家和其他生物在格子之间的移动添加动画。真正的终端模式始终立即更新。",
         },
-        disableAnimatedTransitions: {
-          label: "禁用动画过渡",
-          description: "关闭界面的淡入、移动和过渡动画，让界面切换更干脆。",
+        uiAnimations: {
+          label: "界面动画",
+          description:
+            "播放界面的淡入、移动和过渡动画。关闭后界面切换更干脆。",
         },
         uiTileBackgroundRemoval: {
           label: "移除界面中的瓦片背景",

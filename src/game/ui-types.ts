@@ -325,7 +325,7 @@ export type Nh3dClientOptions = {
   invertTouchPanningDirection: boolean;
   desktopTouchInterfaceMode: Nh3dDesktopTouchInterfaceMode;
   animatedMovement: boolean;
-  disableAnimatedTransitions: boolean;
+  uiAnimations: boolean;
   uiTileBackgroundRemoval: boolean;
   minimap: boolean;
   minimapColorMode: Nh3dMinimapColorMode;
@@ -502,7 +502,7 @@ export const defaultNh3dClientOptions: Nh3dClientOptions = {
   invertTouchPanningDirection: false,
   desktopTouchInterfaceMode: "off",
   animatedMovement: true,
-  disableAnimatedTransitions: false,
+  uiAnimations: true,
   uiTileBackgroundRemoval: true,
   minimap: true,
   minimapColorMode: "nethack-3d",
@@ -821,13 +821,16 @@ function normalizeTilesetWeaponSpriteFlipXByTileset(
 export function normalizeNh3dClientOptions(
   overrides?: Partial<Nh3dClientOptions> | null,
 ): Nh3dClientOptions {
-  const legacyBloodOverrides = overrides as
-    | (Partial<Nh3dClientOptions> & { blood?: unknown })
+  const legacyOverrides = overrides as
+    | (Partial<Nh3dClientOptions> & {
+        blood?: unknown;
+        disableAnimatedTransitions?: unknown;
+      })
     | null
     | undefined;
   const legacyBloodEnabled =
-    typeof legacyBloodOverrides?.blood === "boolean"
-      ? legacyBloodOverrides.blood
+    typeof legacyOverrides?.blood === "boolean"
+      ? legacyOverrides.blood
       : undefined;
   const locale =
     resolveSupportedLocale(overrides?.locale) ?? getCurrentLocale();
@@ -1279,10 +1282,12 @@ export function normalizeNh3dClientOptions(
       typeof overrides?.animatedMovement === "boolean"
         ? overrides.animatedMovement
         : defaultNh3dClientOptions.animatedMovement,
-    disableAnimatedTransitions:
-      typeof overrides?.disableAnimatedTransitions === "boolean"
-        ? overrides.disableAnimatedTransitions
-        : defaultNh3dClientOptions.disableAnimatedTransitions,
+    uiAnimations:
+      typeof overrides?.uiAnimations === "boolean"
+        ? overrides.uiAnimations
+        : typeof legacyOverrides?.disableAnimatedTransitions === "boolean"
+          ? !legacyOverrides.disableAnimatedTransitions
+          : defaultNh3dClientOptions.uiAnimations,
     uiTileBackgroundRemoval:
       typeof overrides?.uiTileBackgroundRemoval === "boolean"
         ? overrides.uiTileBackgroundRemoval

@@ -119,11 +119,11 @@ export function useClientOptionsCssEffects(dependencies: UseClientOptionsCssEffe
     const root = document.documentElement;
     root.classList.toggle(
       "nh3d-disable-animated-transitions",
-      clientOptions.disableAnimatedTransitions,
+      !clientOptions.uiAnimations,
     );
     return () => {
       root.classList.remove("nh3d-disable-animated-transitions");
     };
-  }, [clientOptions.disableAnimatedTransitions]);
+  }, [clientOptions.uiAnimations]);
 
 }

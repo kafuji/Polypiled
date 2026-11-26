@@ -754,7 +754,7 @@ export class Minimap {
         minimapPlayerTile.y,
       );
       if (this.dependencies.engineState.clientOptions.minimapColorMode === "nethack-3d") {
-        const pulseAmount = this.dependencies.engineState.clientOptions.disableAnimatedTransitions
+        const pulseAmount = this.dependencies.engineState.clientOptions.uiAnimations === false
           ? 1
           : (Math.sin(
                 (timeMs / MINIMAP_PLAYER_PULSE_PERIOD_MS) * Math.PI * 2,

@@ -9,7 +9,7 @@ it("repaints the FPS minimap only when its visible inputs change, including afte
   const camera = { camera: new THREE.PerspectiveCamera(75, 1), cameraYaw: 0 };
   let fps = true, player = { x: 4, y: 5 };
   const minimap = new Minimap({ camera, movementInput: { isFpsMode: () => fps },
-    engineState: { clientOptions: { minimapColorMode: "nethack-3d", disableAnimatedTransitions: false } },
+    engineState: { clientOptions: { minimapColorMode: "nethack-3d", uiAnimations: true } },
   } as MinimapDependencies);
   minimap.minimapViewportContext = context;
   minimap.computeMinimapViewportRect = () => ({ minX: 0, minY: 0, width: 20, height: 15 });

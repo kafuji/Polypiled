@@ -947,10 +947,10 @@ export const fiOverrides: LocaleOverrides<TranslationDictionary> = {
           description:
             "Skaalaa kaikkien pelin käyttöliittymäfonttien kokoa oletusarvoista.",
         },
-        disableAnimatedTransitions: {
-          label: "Poista animoidut siirtymät käytöstä",
+        uiAnimations: {
+          label: "Käyttöliittymän animaatiot",
           description:
-            "Poista käyttöliittymän häivytys-, liike- ja siirtymäanimaatiot käytöstä nopeampia muutoksia varten.",
+            "Toistaa käyttöliittymän häivytys-, liike- ja siirtymäanimaatiot. Poista käytöstä nopeampia muutoksia varten.",
         },
         uiTileBackgroundRemoval: {
           label: "Poista ruutujen taustat käyttöliittymässä",

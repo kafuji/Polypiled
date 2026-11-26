@@ -1107,10 +1107,10 @@ export const ko = {
           label: "움직임 애니메이션",
           description: "타일 및 3D 문자 모드에서 플레이어와 다른 생물이 칸 사이를 이동하는 모습을 애니메이션으로 표시합니다. 실제 터미널 모드는 항상 즉시 갱신됩니다.",
         },
-        disableAnimatedTransitions: {
-          label: "애니메이션 전환 끄기",
+        uiAnimations: {
+          label: "UI 애니메이션",
           description:
-            "더 즉각적인 UI 변경을 위해 인터페이스 페이드, 모션, 전환 애니메이션을 끕니다.",
+            "인터페이스 페이드, 모션, 전환 애니메이션을 재생합니다. 끄면 UI 변경이 더 즉각적입니다.",
         },
         uiTileBackgroundRemoval: {
           label: "UI에서 타일 배경 제거",

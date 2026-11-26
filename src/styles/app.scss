@@ -183,10 +183,14 @@
   }
 }
 
+// The title screen's logo wave and glyph rain are scenery, not transitions,
+// so they keep animating when the option is on.
+$nh3d-title-scenery: ".logo-container, .logo-container *, .nh3d-startup-background-rain, .nh3d-startup-background-rain *";
+
 :root.nh3d-disable-animated-transitions,
-:root.nh3d-disable-animated-transitions *,
-:root.nh3d-disable-animated-transitions *::before,
-:root.nh3d-disable-animated-transitions *::after {
+:root.nh3d-disable-animated-transitions *:not(:where(#{$nh3d-title-scenery})),
+:root.nh3d-disable-animated-transitions *:not(:where(#{$nh3d-title-scenery}))::before,
+:root.nh3d-disable-animated-transitions *:not(:where(#{$nh3d-title-scenery}))::after {
   animation-duration: 0ms !important;
   animation-delay: 0ms !important;
   transition-duration: 0ms !important;

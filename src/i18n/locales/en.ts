@@ -1121,10 +1121,10 @@ export const en = {
           description:
             "Animate the player and other creatures between cells in Tiles and 3D ASCII modes. True Terminal mode always updates immediately.",
         },
-        disableAnimatedTransitions: {
-          label: "Disable animated transitions",
+        uiAnimations: {
+          label: "UI animations",
           description:
-            "Turn off interface fade, motion, and transition animations for snappier UI changes.",
+            "Play interface fade, motion, and transition animations. Turn off for snappier UI changes.",
         },
         uiTileBackgroundRemoval: {
           label: "Remove tile backgrounds in UI",

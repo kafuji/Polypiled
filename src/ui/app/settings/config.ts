@@ -349,9 +349,9 @@ export const clientOptionsConfig: ClientOption[] = [
     type: "boolean",
   },
   {
-    key: "disableAnimatedTransitions",
-    label: t.clientOptions.config.disableAnimatedTransitions.label,
-    description: t.clientOptions.config.disableAnimatedTransitions.description,
+    key: "uiAnimations",
+    label: t.clientOptions.config.uiAnimations.label,
+    description: t.clientOptions.config.uiAnimations.description,
     type: "boolean",
   },
   {

@@ -1079,10 +1079,10 @@ export const jaOverrides: LocaleOverrides<TranslationDictionary> = {
           label: "UI フォント倍率",
           description: "ゲーム UI のフォントサイズ全体を既定値から拡大縮小します。",
         },
-        disableAnimatedTransitions: {
-          label: "アニメーション遷移を無効化",
+        uiAnimations: {
+          label: "UIアニメーション",
           description:
-            "UI のフェード、移動、遷移アニメーションを無効化し、より素早い表示切替にします。",
+            "UI のフェード、移動、遷移アニメーションを再生します。オフにすると表示が素早く切り替わります。",
         },
         uiTileBackgroundRemoval: {
           label: "UI のタイル背景を除去",

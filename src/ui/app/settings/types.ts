@@ -143,7 +143,7 @@ export type ClientOptionToggleKey =
   | "snapCameraYawToNearest45"
   | "invertTouchPanningDirection"
   | "animatedMovement"
-  | "disableAnimatedTransitions"
+  | "uiAnimations"
   | "uiTileBackgroundRemoval"
   | "tilesetUseTileAspectRatio"
   | "tilesetUseHiResTiles"

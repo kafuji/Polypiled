@@ -1064,9 +1064,10 @@ export const esOverrides = {
                     label: "Movimiento animado",
                     description: "Anima al jugador y a otras criaturas entre celdas en los modos Mosaicos y ASCII 3D. El modo Terminal verdadero siempre se actualiza inmediatamente.",
                 },
-                disableAnimatedTransitions: {
-                    label: "Deshabilitar transiciones animadas",
-                    description: "Desactive las animaciones de transici\u00F3n, movimiento y desvanecimiento de la interfaz para obtener cambios m\u00E1s \u00E1giles en la interfaz de usuario.",
+                uiAnimations: {
+                  label: "Animaciones de la interfaz",
+                  description:
+                    "Reproduce las animaciones de desvanecimiento, movimiento y transici\u00F3n de la interfaz. Desact\u00EDvalas para cambios m\u00E1s \u00E1giles.",
                 },
                 uiTileBackgroundRemoval: {
                     label: "Eliminar fondos de mosaicos en la interfaz de usuario",

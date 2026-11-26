@@ -1136,10 +1136,10 @@ export const fr = {
           label: "Mouvement animé",
           description: "Anime le joueur et les autres créatures entre les cases dans les modes Tuiles et ASCII 3D. Le véritable mode Terminal se met toujours à jour immédiatement.",
         },
-        disableAnimatedTransitions: {
-          label: "Desactiver les transitions animees",
+        uiAnimations: {
+          label: "Animations de l'interface",
           description:
-            "Desactive les animations de fondu, de mouvement et de transition de l'interface pour des changements plus rapides.",
+            "Joue les animations de fondu, de mouvement et de transition de l'interface. Desactivez-les pour des changements plus rapides.",
         },
         uiTileBackgroundRemoval: {
           label: "Retirer les fonds des tuiles dans l'interface",

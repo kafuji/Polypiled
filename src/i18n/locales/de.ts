@@ -942,10 +942,10 @@ export const deOverrides: LocaleOverrides<TranslationDictionary> = {
           description:
             "Skaliert alle UI-Schriftgr\u00f6\u00dfen ausgehend von ihren Standardwerten.",
         },
-        disableAnimatedTransitions: {
-          label: "Animierte \u00dcberg\u00e4nge deaktivieren",
+        uiAnimations: {
+          label: "UI-Animationen",
           description:
-            "Deaktiviert Ausblenden, Bewegung und \u00dcbergangsanimationen der Oberfl\u00e4che f\u00fcr direktere UI-\u00c4nderungen.",
+            "Spielt Ausblend-, Bewegungs- und \u00dcbergangsanimationen der Oberfl\u00e4che ab. Ausschalten f\u00fcr direktere UI-\u00c4nderungen.",
         },
         uiTileBackgroundRemoval: {
           label: "Tile-Hintergr\u00fcnde in der UI entfernen",

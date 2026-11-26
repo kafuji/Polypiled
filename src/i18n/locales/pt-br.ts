@@ -1127,10 +1127,10 @@ export const ptBrOverrides = {
           label: "Movimento animado",
           description: "Anima o jogador e outras criaturas entre células nos modos Tiles e ASCII 3D. O modo Terminal verdadeiro sempre atualiza imediatamente.",
         },
-        disableAnimatedTransitions: {
-          label: "Desativar transições animadas",
+        uiAnimations: {
+          label: "Animações da interface",
           description:
-            "Desativa animações de fade, movimento e transição da interface para mudanças mais rápidas.",
+            "Reproduz animações de fade, movimento e transição da interface. Desative para mudanças mais rápidas.",
         },
         uiTileBackgroundRemoval: {
           label: "Remover fundos de tiles na interface",
