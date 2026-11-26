@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  isPlayerWeaponSwingMessage,
+  isPlayerWeaponThinAirMessage,
   resolveScreenSide,
   samplePlayerWeaponSwing,
 } from "./player-weapon-swing";
@@ -35,18 +35,21 @@ describe("player weapon swing", () => {
     expect(resolveScreenSide(0)).toBeNull();
   });
 
-  it("only swings for the hero's own weapon blows", () => {
-    expect(isPlayerWeaponSwingMessage("You hit the newt.")).toBe(true);
-    expect(isPlayerWeaponSwingMessage("You miss the jackal.")).toBe(true);
-    expect(isPlayerWeaponSwingMessage("You just miss the jackal.")).toBe(true);
-    expect(isPlayerWeaponSwingMessage("You kill the grid bug!")).toBe(true);
-    expect(isPlayerWeaponSwingMessage("You smite the zombie!")).toBe(true);
-    expect(isPlayerWeaponSwingMessage("You attack thin air.")).toBe(true);
-    expect(isPlayerWeaponSwingMessage("You harmlessly attack thin air.")).toBe(true);
-    expect(isPlayerWeaponSwingMessage("You kick the newt.")).toBe(false);
-    expect(isPlayerWeaponSwingMessage("You bite the newt.")).toBe(false);
-    expect(isPlayerWeaponSwingMessage("The jackal bites!")).toBe(false);
-    expect(isPlayerWeaponSwingMessage("The ya hits the newt.")).toBe(false);
-    expect(isPlayerWeaponSwingMessage("You shoot 2 ya.")).toBe(false);
+  it("stops a landed blow short and carries a miss through", () => {
+    const hit = samplePlayerWeaponSwing(0.55, 1, { x: 1, y: 0 }, "hit");
+    const miss = samplePlayerWeaponSwing(0.5, 1, { x: 1, y: 0 }, "miss");
+    const plain = samplePlayerWeaponSwing(0.5, 1, { x: 1, y: 0 });
+    expect(hit.angle).toBeGreaterThan(plain.angle);
+    expect(hit.angle).toBeLessThan(-0.9);
+    expect(miss.angle).toBeLessThan(plain.angle);
+    expect(miss.offsetX).toBeGreaterThan(plain.offsetX);
+    expect(samplePlayerWeaponSwing(1, 1, null, "hit")).toEqual({ angle: 0, offsetX: 0, offsetY: 0 });
+  });
+
+  it("recognizes only a swing at empty air from messages", () => {
+    expect(isPlayerWeaponThinAirMessage("You attack thin air.")).toBe(true);
+    expect(isPlayerWeaponThinAirMessage("You harmlessly attack thin air.")).toBe(true);
+    expect(isPlayerWeaponThinAirMessage("You hit the newt.")).toBe(false);
+    expect(isPlayerWeaponThinAirMessage("You miss the jackal.")).toBe(false);
   });
 });

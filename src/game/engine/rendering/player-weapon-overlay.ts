@@ -3,6 +3,7 @@ import { TILE_SIZE } from "../../constants";
 import type { Camera } from "../camera/camera";
 import type { EngineState } from "../runtime/engine-state";
 import type { EntityBillboards } from "./entity-billboards";
+import type { EntityGrounding } from "./entity-grounding";
 import type { GlyphTextures } from "./glyph-textures";
 import type { Lighting } from "./lighting";
 import type { MenuPreviews } from "../ui/menu-previews";
@@ -26,6 +27,7 @@ import {
   PLAYER_WEAPON_SWING_DURATION_MS,
   resolveScreenSide,
   samplePlayerWeaponSwing,
+  type PlayerWeaponSwingOutcome,
   type ScreenSide,
 } from "./player-weapon-swing";
 
@@ -33,6 +35,7 @@ export interface PlayerWeaponOverlayDependencies {
   readonly camera: Pick<Camera, "getActiveCamera">;
   readonly engineState: Pick<EngineState, "clientOptions">;
   readonly entityBillboards: Pick<EntityBillboards, "monsterBillboards">;
+  readonly entityGrounding: Pick<EntityGrounding, "heroSprite" | "noteHeroStumble">;
   readonly glyphTextures: Pick<GlyphTextures, "createTileTexture">;
   readonly lighting: Pick<Lighting, "patchMaterialForVignette">;
   readonly menuPreviews: Pick<MenuPreviews, "currentInventoryState">;
@@ -55,6 +58,14 @@ interface WeaponSwing {
   readonly startMs: number;
   readonly side: ScreenSide;
   readonly lunge: { x: number; y: number } | null;
+  readonly outcome: PlayerWeaponSwingOutcome;
+}
+
+/** One blow to animate: which hand struck (null when unknown) and how it went. */
+export interface PlayerWeaponSwingRequest {
+  readonly delta: { dx: number; dy: number } | null;
+  readonly hand: "main" | "off" | null;
+  readonly outcome: PlayerWeaponSwingOutcome;
 }
 
 interface WeaponVisual {
@@ -127,10 +138,11 @@ export class PlayerWeaponOverlay {
 
   /**
    * Swing a wielded weapon at a target `delta` tiles away (null when the
-   * direction is unknown). Back-to-back blows of a two-weapon attack alternate
-   * hands, the off hand trailing slightly behind.
+   * direction is unknown). The core says which hand struck each blow of a
+   * two-weapon attack; the off hand trails the main hand slightly. A blow
+   * from a hand that holds no weapon draws nothing.
    */
-  playSwing(delta: { dx: number; dy: number } | null, nowMs: number = performance.now()): void {
+  playSwing(request: PlayerWeaponSwingRequest, nowMs: number = performance.now()): void {
     if (!this.isActive()) {
       return;
     }
@@ -139,26 +151,35 @@ export class PlayerWeaponOverlay {
     if (available.length === 0) {
       return;
     }
+    const { delta, hand, outcome } = request;
     const screen = delta ? this.projectTileDeltaToScreen(delta.dx, delta.dy) : null;
     const targetSide = screen ? resolveScreenSide(screen.x) : null;
-    let slot: WeaponSlot = available[0];
-    let startMs = nowMs;
     const previous = this.lastSwing;
-    if (
-      available.length === 2 &&
-      previous &&
-      nowMs - previous.startMs < PLAYER_WEAPON_SWING_DURATION_MS
-    ) {
-      slot = previous.slot === "primary" ? "secondary" : "primary";
-      startMs = Math.max(nowMs, previous.startMs + PLAYER_WEAPON_OFF_HAND_SWING_DELAY_MS);
+    const recent = previous !== null && nowMs - previous.startMs < PLAYER_WEAPON_SWING_DURATION_MS;
+    let slot: WeaponSlot;
+    if (hand === "main" || hand === "off") {
+      slot = hand === "main" ? "primary" : "secondary";
+      if (!weapons[slot]) {
+        return;
+      }
+    } else if (available.length === 2 && recent) {
+      slot = previous!.slot === "primary" ? "secondary" : "primary";
     } else if (available.length === 2 && targetSide !== null) {
       slot = targetSide === REST_SIDE.primary ? "primary" : "secondary";
+    } else {
+      slot = available[0];
+    }
+    let startMs = nowMs;
+    if (recent && previous!.slot !== slot) {
+      startMs = Math.max(nowMs, previous!.startMs + PLAYER_WEAPON_OFF_HAND_SWING_DELAY_MS);
     }
     const length = screen ? Math.hypot(screen.x, screen.y) : 0;
+    const lunge = length > 1e-6 ? { x: screen!.x / length, y: screen!.y / length } : null;
     const swing: WeaponSwing = {
       startMs,
       side: targetSide ?? REST_SIDE[slot],
-      lunge: length > 1e-6 ? { x: screen!.x / length, y: screen!.y / length } : null,
+      lunge,
+      outcome,
     };
     this.lastSwing = { slot, startMs };
     const visual = this.visuals[slot];
@@ -166,6 +187,9 @@ export class PlayerWeaponOverlay {
       visual.swing = swing;
     } else {
       this.pendingSwings[slot] = swing;
+    }
+    if (outcome === "miss" && lunge) {
+      this.dependencies.entityGrounding.noteHeroStumble(lunge, startMs + PLAYER_WEAPON_SWING_DURATION_MS * 0.35);
     }
   }
 
@@ -203,8 +227,7 @@ export class PlayerWeaponOverlay {
   }
 
   private resolvePlayerSprite(): THREE.Sprite | null {
-    const { x, y } = this.dependencies.playerMovement.playerPos;
-    return this.dependencies.entityBillboards.monsterBillboards.get(`${x},${y}`) ?? null;
+    return this.dependencies.entityGrounding.heroSprite();
   }
 
   private hide(slot: WeaponSlot): void {
@@ -316,7 +339,12 @@ export class PlayerWeaponOverlay {
     const swinging = swing !== null && progress > 0 && progress < 1;
     const restSide = REST_SIDE[slot];
     const side = swinging ? swing.side : restSide;
-    const pose = samplePlayerWeaponSwing(swinging ? progress : 0, side, swing?.lunge ?? null);
+    const pose = samplePlayerWeaponSwing(
+      swinging ? progress : 0,
+      side,
+      swing?.lunge ?? null,
+      swing?.outcome ?? null,
+    );
 
     // Slide the hand across when the target is on the other side.
     const crossBlend = !swinging || side === restSide

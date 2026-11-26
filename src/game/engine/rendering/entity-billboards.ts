@@ -1247,6 +1247,7 @@ export class EntityBillboards {
     sprite.position.set(x * TILE_SIZE, -y * TILE_SIZE, newZ);
     sprite.userData.elevatedZ = newZ;
     sprite.userData.floorZ = floorZ;
+    sprite.userData.contentWidth = contentWidth;
     sprite.userData.tileX = x;
     sprite.userData.tileY = y;
     sprite.userData.billboardKey = key;

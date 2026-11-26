@@ -338,6 +338,12 @@ class LocalNetHackRuntime {
       case "shim_combat_feedback":
         return this.systems.mapCallbacks.handleShimCombatFeedback(args);
 
+      case "shim_hero_blow":
+        return this.systems.mapCallbacks.handleShimHeroBlow(args);
+
+      case "shim_water_fall":
+        return this.systems.mapCallbacks.handleShimWaterFall(args);
+
       case "shim_knowledge_frame":
         return this.systems.mapCallbacks.handleShimKnowledgeFrame(args);
 

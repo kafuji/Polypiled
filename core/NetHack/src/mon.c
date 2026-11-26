@@ -1088,6 +1088,8 @@ minliquid_core(struct monst *mtmp)
                     return 0;
             }
             if (cansee(mtmp->mx, mtmp->my)) {
+                nh3d_fell_into_water(mtmp, mtmp->mx, mtmp->my,
+                                     TRUE); /* Polypiled */
                 if (svc.context.mon_moving)
                     pline_mon(mtmp, "%s drowns.", Monnam(mtmp));
                 else

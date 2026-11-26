@@ -11,8 +11,6 @@ import type {
   Nh3dClientOptions
 } from "../../../game/ui-types";
 import type * as React from "react";
-import { useI18n } from "../../../i18n";
-import { translateRuntimeText } from "../../../i18n/runtime-text";
 import { GameMessageText } from "./GameMessageText";
 import {
   t
@@ -97,7 +95,6 @@ export interface UseMessageLogViewDependencies {
 
 /** Floating log text/timing and desktop/mobile log rendering */
 export function useMessageLogView(dependencies: UseMessageLogViewDependencies) {
-  const { locale } = useI18n();
   const {
     clientOptions,
     terminalDesktopGutterVisible,
@@ -108,7 +105,6 @@ export function useMessageLogView(dependencies: UseMessageLogViewDependencies) {
     gameMessages,
     isMobileViewport,
     isDesktopGameRunning,
-    statusText,
   } = dependencies;
 
   const gameMessageTurns = useGameStore((state) => state.gameMessageTurns);
@@ -143,15 +139,9 @@ export function useMessageLogView(dependencies: UseMessageLogViewDependencies) {
       </ResizableDesktopLogPanel>
     ) : null;
 
-  // The player-position line sits at the very bottom of the screen, apart from the log.
-  const desktopStatusLine =
-    !isMobileViewport && isDesktopGameRunning && statusText.trim() ? (
-      <div id="game-status">{translateRuntimeText(statusText, locale)}</div>
-    ) : null;
   return {
     gameMessageLog,
     desktopGameMessageLog,
-    desktopStatusLine,
   } as const;
 }
 
