@@ -114,6 +114,10 @@ One line each, grouped by theme; `rule-changes.md` has the details.
 - The inventory screen supports dropping several items at once, readying
   the alternate weapon, and sorting with letters given out again.
 - Portrait conversations, including the shopkeeper's speech.
+- The core reports each melee blow of the hero with the hand that struck and
+  whether it hit (`nh3d_hero_blow`), and a fall into water by the hero or a
+  seen monster (`nh3d_fell_into_water`), for the weapon swing and splash
+  animations.
 
 ### Added from the candidate list
 

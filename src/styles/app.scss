@@ -757,30 +757,6 @@ canvas {
   }
 }
 
-// Player position / dungeon line, at the bottom center of the screen.
-#game-status {
-  position: fixed;
-  left: 50%;
-  bottom: calc(10px + var(--nh3d-safe-area-bottom));
-  transform: translateX(-50%);
-  z-index: 1000;
-  max-width: calc(100vw - 2 * 260px);
-  padding: 3px 14px;
-  box-sizing: border-box;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  background: rgba(6, 16, 30, var(--nh3d-desktop-log-bg-opacity, 0.92));
-  border: 1px solid var(--nh3d-ui-border);
-  border-radius: 999px;
-  box-shadow: var(--nh3d-ui-shadow);
-  color: var(--nh3d-ui-accent-soft);
-  font-size: nh3d-scale-font(13px);
-  font-weight: bold;
-  letter-spacing: 0.02em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
-}
 
 // Message log lines: a right-aligned turn column, then the text with a hanging indent.
 .nh3d-message-log-line {
@@ -1147,21 +1123,57 @@ canvas {
     color: #6666ff;
   }
 
+  .nh3d-stats-meter-label-exp {
+    color: #ffbb66;
+  }
+
   .nh3d-stats-meter-track {
+    position: relative;
+    overflow: hidden;
     background: rgba(0, 0, 0, 0.45);
     height: 8px;
     border-radius: 4px;
     border: 1px solid var(--nh3d-ui-button-border);
   }
 
-  .nh3d-stats-meter-fill {
+  // Layers: the loss marker (trail) under the fill, the gain glow above it.
+  .nh3d-stats-meter-trail,
+  .nh3d-stats-meter-fill,
+  .nh3d-stats-meter-gain {
+    position: absolute;
+    top: 0;
+    left: 0;
     height: 100%;
     border-radius: 3px;
+  }
+
+  .nh3d-stats-meter-trail {
+    background: rgba(255, 255, 255, 0.82);
+    transition: width 0.4s ease-in;
+  }
+
+  .nh3d-stats-meter-fill {
     transition: width 0.3s ease;
   }
 
   .nh3d-stats-meter-fill-pw {
     background: #6666ff;
+  }
+
+  .nh3d-stats-meter-fill-exp {
+    background: linear-gradient(90deg, #c98a2e 0%, #ffbb66 100%);
+  }
+
+  .nh3d-stats-meter-gain {
+    background: rgba(255, 250, 220, 0.95);
+    box-shadow: 0 0 6px rgba(255, 240, 180, 0.9);
+    opacity: 0;
+    pointer-events: none;
+    animation: nh3d-stats-meter-gain-flash ease-out forwards;
+  }
+
+  .nh3d-stats-meter-track.is-instant > * {
+    transition: none !important;
   }
 
   .nh3d-stats-group {
@@ -1188,10 +1200,6 @@ canvas {
 
   .nh3d-stats-secondary-ac {
     color: #aaaaff;
-  }
-
-  .nh3d-stats-secondary-exp {
-    color: #ffbb66;
   }
 
   .nh3d-stats-secondary-gold {
@@ -9653,23 +9661,28 @@ button.nh3d-technique-row {
   }
 }
 
-/* What lies under the hero (FloorPanel): bottom right, above the local MCP chip. */
+/* Where the hero stands and what lies there (FloorPanel): bottom center.
+   The position, terrain and trap share the bottom line; an engraving and
+   the objects here stack above it. */
 .nh3d-floor-panel {
   position: fixed;
-  right: calc(10px + env(safe-area-inset-right));
-  bottom: calc(44px + var(--nh3d-safe-area-bottom));
+  left: 50%;
+  bottom: calc(10px + var(--nh3d-safe-area-bottom));
+  transform: translateX(-50%);
   z-index: 1900;
-  width: min(320px, 36vw);
+  width: max-content;
+  max-width: min(560px, calc(100vw - 2 * 260px));
   box-sizing: border-box;
-  padding: 8px 10px;
-  border: 1px solid #4b6a9b;
-  border-radius: 7px;
-  background: var(--nh3d-ui-panel-bg);
+  padding: 4px 14px;
+  border: 1px solid var(--nh3d-ui-border);
+  border-radius: 12px;
+  background: rgba(6, 16, 30, var(--nh3d-desktop-log-bg-opacity, 0.92));
   color: #d5e7ff;
   font-family: var(--nh3d-ui-font-family, "Courier New", monospace);
   font-size: nh3d-scale-font(13px);
   line-height: 1.35;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--nh3d-ui-shadow);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
   pointer-events: none;
 
   @media (pointer: coarse) {
@@ -9677,17 +9690,31 @@ button.nh3d-technique-row {
   }
 }
 
+.nh3d-floor-panel-details {
+  margin-bottom: 4px;
+  padding: 2px 0 5px;
+  border-bottom: 1px solid rgba(75, 106, 155, 0.55);
+}
+
 .nh3d-floor-panel-feature {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+
+  > span + span::before {
+    content: "·";
+    margin-right: 10px;
+    color: #5f7fae;
+  }
 }
 
-.nh3d-floor-panel-label {
-  color: #8fb3e6;
-  font-size: 0.85em;
+.nh3d-floor-panel-position {
+  color: var(--nh3d-ui-accent-soft);
   font-weight: bold;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .nh3d-floor-panel-terrain {
@@ -9717,7 +9744,7 @@ button.nh3d-technique-row {
 }
 
 .nh3d-floor-panel-objects {
-  margin: 6px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -10724,3 +10751,30 @@ button.nh3d-technique-row {
 .nh3d-desktop-bottom-actions { flex-wrap: wrap; max-height: 60vh; overflow-y: auto; }
 
 .nh3d-action-label { display: block; min-width: 0; white-space: normal; word-break: normal; overflow-wrap: normal; }
+
+@keyframes nh3d-stats-meter-gain-flash {
+  0% {
+    opacity: 0.95;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+:root.nh3d-disable-animated-transitions {
+  .nh3d-stats-meter-fill {
+    transition: none !important;
+  }
+
+  .nh3d-stats-meter-trail,
+  .nh3d-stats-meter-gain {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nh3d-stats-meter-gain {
+    display: none;
+  }
+}

@@ -520,6 +520,41 @@ export class RuntimeMapCallbacks {
     return 0;
   }
 
+  // Polypiled: one melee blow of the hero (winshim.c nh3d_hero_blow()):
+  // hand 1 = main hand, 2 = off hand; hit 1 when it connected.
+  handleShimHeroBlow(args) {
+    const [rawHand, rawX, rawY, rawHit] = args as number[];
+    if (!Number.isFinite(rawX) || !Number.isFinite(rawY) || !this.deps.coordinator.eventHandler) {
+      return 0;
+    }
+    this.deps.coordinator.emit({
+      type: "hero_blow",
+      hand: Math.trunc(Number(rawHand)) === 2 ? "off" : "main",
+      x: Math.trunc(rawX),
+      y: Math.trunc(rawY),
+      hit: Math.trunc(Number(rawHit)) === 1,
+    });
+    return 0;
+  }
+
+  // Polypiled: the hero (id 0) or a seen monster falls into water
+  // (winshim.c nh3d_fell_into_water()); drowned 1 when it goes under for good.
+  handleShimWaterFall(args) {
+    const [rawWho, rawX, rawY, rawDrowned] = args as number[];
+    if (!Number.isFinite(rawX) || !Number.isFinite(rawY) || !this.deps.coordinator.eventHandler) {
+      return 0;
+    }
+    const who = Math.trunc(Number(rawWho));
+    this.deps.coordinator.emit({
+      type: "water_fall",
+      monsterId: who > 0 ? who : null,
+      x: Math.trunc(rawX),
+      y: Math.trunc(rawY),
+      drowned: Math.trunc(Number(rawDrowned)) === 1,
+    });
+    return 0;
+  }
+
   handleShimCliparound(args) {
     const [clipX, clipY] = args;
     this.deps.coordinator.logRoutine(
