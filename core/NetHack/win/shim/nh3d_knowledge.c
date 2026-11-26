@@ -1553,6 +1553,243 @@ nh3d_invop_slot_ok(char c)
                       || c == GOLD_SYM);
 }
 
+/*
+ * Polypiled: the whole truth about the level, for tests.  Only in debug
+ * (wizard) mode, where ^F and ^I already reveal as much, and only when the
+ * shell asks (the "reveal" operation below).  Everything is read straight
+ * from the level and the hero without any function that draws on the random
+ * number generators, so asking does not change the game.
+ *
+ *   {"v":1,"turn":..,"level":{"dnum":..,"dlevel":..},
+ *    "terrain":[ROWNO strings of COLNO characters, x = column],
+ *    "monsters":[{"id","x","y","name","peaceful","tame","hp","hpmax",
+ *                 "asleep","invisible","hidden","mimic"}],
+ *    "objects":[{"id","x","y","name","quan","buc","spe"}],
+ *    "traps":[{"x","y","name","seen"}],
+ *    "hero":{"luck","alignment","prayerTimeout","godAnger","nutrition"}}
+ *
+ * Terrain letters: ' ' rock, '|' '-' walls, '#' corridor/tree/bars/sink,
+ * '.' floor/doorway/ice, '+' closed door, '\'' open door, 'S' secret door,
+ * 'C' secret corridor, '<' '>' stairs and ladders, '{' fountain,
+ * '\\' throne, '|' grave, '_' altar, '}' water, 'L' lava, '~' air/cloud.
+ * Sent as the "shim_reveal" notification.
+ */
+
+#define NH3D_REVEAL_BUFSZ 262144
+#define NH3D_REVEAL_MAX_MONSTERS 400
+#define NH3D_REVEAL_MAX_OBJECTS 800
+
+static char nh3d_reveal_json[NH3D_REVEAL_BUFSZ];
+
+static char
+nh3d_reveal_terrain(coordxy x, coordxy y)
+{
+    struct rm *lev = &levl[x][y];
+    stairway *stway;
+
+    switch (lev->typ) {
+    case STONE:
+        return ' ';
+    case VWALL:
+        return '|';
+    case HWALL: case TLCORNER: case TRCORNER: case BLCORNER: case BRCORNER:
+    case CROSSWALL: case TUWALL: case TDWALL: case TLWALL: case TRWALL:
+        return '-';
+    case DBWALL: case TREE: case IRONBARS: case CORR: case SINK:
+        return '#';
+    case SDOOR:
+        return 'S';
+    case SCORR:
+        return 'C';
+    case POOL: case MOAT: case WATER: case DRAWBRIDGE_UP:
+        return '}';
+    case LAVAPOOL: case LAVAWALL:
+        return 'L';
+    case DOOR:
+        if (lev->doormask & (D_CLOSED | D_LOCKED))
+            return '+';
+        return (lev->doormask & D_ISOPEN) ? '\'' : '.';
+    case STAIRS: case LADDER:
+        stway = stairway_at(x, y);
+        return (stway && stway->up) ? '<' : '>';
+    case FOUNTAIN:
+        return '{';
+    case THRONE:
+        return '\\';
+    case GRAVE:
+        return '|';
+    case ALTAR:
+        return '_';
+    case AIR: case CLOUD:
+        return '~';
+    default:
+        return '.'; /* ROOM, ICE, DRAWBRIDGE_DOWN */
+    }
+}
+
+static void
+nh3d_publish_reveal(void)
+{
+    struct nh3d_json js;
+    struct monst *mtmp;
+    struct obj *otmp;
+    struct trap *ttmp;
+    char row[COLNO + 1];
+    coordxy x, y;
+    int n;
+
+    js.buf = nh3d_reveal_json;
+    js.len = 0;
+    js.cap = sizeof nh3d_reveal_json;
+    js.overflow = FALSE;
+    nh3d_reveal_json[0] = '\0';
+
+    nh3d_json_raw(&js, "{\"v\":1,\"turn\":");
+    nh3d_json_int(&js, (long) svm.moves);
+    nh3d_json_raw(&js, ",\"level\":{\"dnum\":");
+    nh3d_json_int(&js, (long) u.uz.dnum);
+    nh3d_json_raw(&js, ",\"dlevel\":");
+    nh3d_json_int(&js, (long) u.uz.dlevel);
+    nh3d_json_raw(&js, "},\"terrain\":[");
+    for (y = 0; y < ROWNO; y++) {
+        for (x = 0; x < COLNO; x++)
+            row[x] = x ? nh3d_reveal_terrain(x, y) : ' ';
+        row[COLNO] = '\0';
+        if (y)
+            nh3d_json_raw(&js, ",");
+        nh3d_json_string(&js, row);
+    }
+
+    nh3d_json_raw(&js, "],\"monsters\":[");
+    n = 0;
+    for (mtmp = fmon; mtmp && n < NH3D_REVEAL_MAX_MONSTERS; mtmp = mtmp->nmon) {
+        if (DEADMONSTER(mtmp))
+            continue;
+        if (n++)
+            nh3d_json_raw(&js, ",");
+        nh3d_json_raw(&js, "{\"id\":");
+        nh3d_json_int(&js, (long) mtmp->m_id);
+        nh3d_json_raw(&js, ",\"x\":");
+        nh3d_json_int(&js, (long) mtmp->mx);
+        nh3d_json_raw(&js, ",\"y\":");
+        nh3d_json_int(&js, (long) mtmp->my);
+        nh3d_json_raw(&js, ",\"name\":");
+        nh3d_json_string(&js, pmname(mtmp->data, Mgender(mtmp)));
+        nh3d_json_raw(&js, mtmp->mpeaceful ? ",\"peaceful\":true"
+                                           : ",\"peaceful\":false");
+        nh3d_json_raw(&js, mtmp->mtame ? ",\"tame\":true" : ",\"tame\":false");
+        nh3d_json_raw(&js, ",\"hp\":");
+        nh3d_json_int(&js, (long) mtmp->mhp);
+        nh3d_json_raw(&js, ",\"hpmax\":");
+        nh3d_json_int(&js, (long) mtmp->mhpmax);
+        nh3d_json_raw(&js, (mtmp->msleeping || !mtmp->mcanmove)
+                               ? ",\"asleep\":true" : ",\"asleep\":false");
+        nh3d_json_raw(&js, mtmp->minvis ? ",\"invisible\":true"
+                                        : ",\"invisible\":false");
+        nh3d_json_raw(&js, mtmp->mundetected ? ",\"hidden\":true"
+                                             : ",\"hidden\":false");
+        nh3d_json_raw(&js, M_AP_TYPE(mtmp) != M_AP_NOTHING
+                               ? ",\"mimic\":true}" : ",\"mimic\":false}");
+    }
+
+    nh3d_json_raw(&js, "],\"objects\":[");
+    n = 0;
+    for (otmp = fobj; otmp && n < NH3D_REVEAL_MAX_OBJECTS; otmp = otmp->nobj) {
+        const char *name = OBJ_NAME(objects[otmp->otyp]);
+
+        if (n++)
+            nh3d_json_raw(&js, ",");
+        nh3d_json_raw(&js, "{\"id\":");
+        nh3d_json_int(&js, (long) otmp->o_id);
+        nh3d_json_raw(&js, ",\"x\":");
+        nh3d_json_int(&js, (long) otmp->ox);
+        nh3d_json_raw(&js, ",\"y\":");
+        nh3d_json_int(&js, (long) otmp->oy);
+        nh3d_json_raw(&js, ",\"name\":");
+        if ((otmp->otyp == CORPSE || otmp->otyp == STATUE
+             || otmp->otyp == FIGURINE || otmp->otyp == EGG)
+            && ismnum(otmp->corpsenm)) {
+            char buf[BUFSZ];
+
+            Snprintf(buf, sizeof buf, "%s %s", name ? name : "object",
+                     mons[otmp->corpsenm].pmnames[NEUTRAL]);
+            nh3d_json_string(&js, buf);
+        } else {
+            nh3d_json_string(&js, name ? name : "object");
+        }
+        nh3d_json_raw(&js, ",\"quan\":");
+        nh3d_json_int(&js, otmp->quan);
+        nh3d_json_raw(&js, ",\"buc\":");
+        nh3d_json_string(&js, otmp->blessed ? "blessed"
+                              : otmp->cursed ? "cursed" : "uncursed");
+        nh3d_json_raw(&js, ",\"spe\":");
+        nh3d_json_int(&js, (long) otmp->spe);
+        nh3d_json_raw(&js, "}");
+    }
+
+    nh3d_json_raw(&js, "],\"traps\":[");
+    n = 0;
+    for (ttmp = gf.ftrap; ttmp; ttmp = ttmp->ntrap) {
+        if (n++)
+            nh3d_json_raw(&js, ",");
+        nh3d_json_raw(&js, "{\"x\":");
+        nh3d_json_int(&js, (long) ttmp->tx);
+        nh3d_json_raw(&js, ",\"y\":");
+        nh3d_json_int(&js, (long) ttmp->ty);
+        nh3d_json_raw(&js, ",\"name\":");
+        nh3d_json_string(&js,
+                         defsyms[trap_to_defsym(ttmp->ttyp)].explanation);
+        nh3d_json_raw(&js, ttmp->tseen ? ",\"seen\":true}" : ",\"seen\":false}");
+    }
+
+    nh3d_json_raw(&js, "],\"hero\":{\"luck\":");
+    nh3d_json_int(&js, (long) Luck);
+    nh3d_json_raw(&js, ",\"alignment\":");
+    nh3d_json_int(&js, (long) u.ualign.record);
+    nh3d_json_raw(&js, ",\"prayerTimeout\":");
+    nh3d_json_int(&js, (long) u.ublesscnt);
+    nh3d_json_raw(&js, ",\"godAnger\":");
+    nh3d_json_int(&js, (long) u.ugangr);
+    nh3d_json_raw(&js, ",\"nutrition\":");
+    nh3d_json_int(&js, (long) u.uhunger);
+    nh3d_json_raw(&js, "}}");
+    if (js.overflow)
+        Strcpy(nh3d_reveal_json, "{\"v\":1,\"overflow\":true}");
+
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_reveal",
+            UTF8ToString($0),
+        ]);
+    }, nh3d_reveal_json);
+}
+
+/*
+ * Polypiled: the game is about to read a new command (parse() calls this
+ * after flushing the screen).  Delivered just before the key request, so
+ * the shell can tell a command prompt from any other key the game reads,
+ * with the turn counter even when nothing on the map changed.
+ */
+void nh3d_note_command_ready(void);
+
+void
+nh3d_note_command_ready(void)
+{
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_command_ready", $0, $1, $2,
+        ]);
+    }, (int) svm.moves, (int) u.ux, (int) u.uy);
+}
+
 int
 nh3d_inventory_command(void)
 {
@@ -1582,6 +1819,12 @@ nh3d_inventory_command(void)
        trial-and-error save slots; takes no time and changes nothing */
     if (!strcmp(args[0], "checkpoint") && nargs == 1) {
         do_idlecheckpoint();
+        return ECMD_OK;
+    }
+    /* reveal: the level as it really is, debug mode only; takes no time */
+    if (!strcmp(args[0], "reveal") && nargs == 1) {
+        if (wizard)
+            nh3d_publish_reveal();
         return ECMD_OK;
     }
     /* pickup:<ids>  drop:<ids>  loot:<container>:<out ids>:<in ids> */

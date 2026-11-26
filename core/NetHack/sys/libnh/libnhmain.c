@@ -751,6 +751,23 @@ sys_random_seed(void)
     unsigned long seed = 0L;
     unsigned long pid = (unsigned long) getpid();
     boolean no_seed = TRUE;
+#ifdef __EMSCRIPTEN__
+    /* Polypiled: a seed chosen by the shell (headless games and tests set
+       globalThis.nh3dHeadless.seed).  It is not a strong seed, so
+       reseed_random() leaves it alone and the game stays reproducible. */
+    {
+        double chosen = EM_ASM_DOUBLE({
+            const h = globalThis.nh3dHeadless;
+            return h && Number.isSafeInteger(h.seed) && h.seed >= 0
+                       && h.seed <= 0xffffffff ? h.seed : -1;
+        });
+
+        if (chosen >= 0) {
+            has_strong_rngseed = FALSE;
+            return (unsigned long) chosen;
+        }
+    }
+#endif
 #ifdef DEV_RANDOM
     FILE *fptr;
 
