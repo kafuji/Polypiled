@@ -74,7 +74,12 @@
       ) /
       2
   );
-  --nh3d-startup-logo-top: calc(1vh + var(--nh3d-stats-bar-height, 0px));
+  // Logo (240px) + gap + main menu (~300px) sit as one block slightly above
+  // centre on tall windows; short windows fall back to hugging the top.
+  --nh3d-startup-logo-top: max(
+    calc(1vh + var(--nh3d-stats-bar-height, 0px)),
+    calc((var(--nh3d-mobile-visible-height, 100vh) - 555px) * 0.33)
+  );
   --nh3d-startup-logo-bottom: calc(var(--nh3d-startup-logo-top) + 240px);
   --nh3d-startup-modal-frame-logo-gap: 15px;
   --nh3d-startup-modal-frame-preferred-min-height: 420px;

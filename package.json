@@ -64,7 +64,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Polypiled: a NetHack variant",
+  "description": "Polypiled: a random NetHack variant",
   "build": {
     "appId": "io.github.kafuji.polypiled",
     "productName": "Polypiled",

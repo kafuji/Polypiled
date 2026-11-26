@@ -1,4 +1,4 @@
-# Polypiled: a NetHack variant
+# Polypiled: a random NetHack variant
 
 > Polypiled grew out of [NetHack 3D](https://github.com/JamesIV4/nethack-3d) by James Pound and is maintained by [kafuji](https://github.com/kafuji). It was developed until now as the fork "NetHack 3D Plus". The game core is NetHack 5.0, built from the source in [core/](core/README.md). Upstream features are documented below; fork-specific changes are listed in [Fork Changes](#fork-changes).
 

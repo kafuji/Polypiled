@@ -22,7 +22,7 @@ xX$&&&&&&XXX$&&$Xx+:                          .X&&&&$                           
 `;
 const logoLayers = [logoArt, logoArt];
 // Part of the title, so it stays English in every locale.
-const logoSubtitle = "a NetHack variant";
+const logoSubtitle = "a random NetHack variant";
 
 // Preserve desktop's original spacing, but give VR the visible art's bounds.
 const logoLayouts = logoLayers.map(logo => {
