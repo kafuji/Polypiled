@@ -180,3 +180,16 @@ test('reveal and the scene tools need debug mode', async t => {
   await assert.rejects(game.reveal(), /debug mode/);
   await assert.rejects(game.wish('a wand of wishing'), /debug mode/);
 });
+
+test('the game ends with game_over and the tombstone after the last death question', async t => {
+  const { game } = await start(t, { seed: 7, ...valkyrie });
+  let result = await game.act({ extended: 'quit' });
+  assert.equal(result.prompt.text, 'Really quit without saving?');
+  result = await game.act({ answer: 'y' });
+  for (let i = 0; i < 10 && result.prompt.kind === 'yn'; i++) result = await game.act({ answer: 'n' });
+  assert.equal(result.settled, true);
+  assert.equal(result.prompt.kind, 'game_over');
+  assert.equal(result.gameOver.complete, true);
+  assert.ok(result.gameOver.lines.some(line => /REST/.test(line)));
+  await assert.rejects(game.act({ keys: ['s'] }), /The game has ended/);
+});

@@ -91,7 +91,8 @@ export interface AgentObservation {
 }
 
 export interface AgentMap { x0: number; y0: number; ruler: string; rows: string[] }
-export interface AgentGameOver { over: boolean; score: number | null; lines: string[] }
+/** over from the first death question; complete once the tombstone is out and the game has ended. */
+export interface AgentGameOver { over: boolean; complete: boolean; score: number | null; deathMessage: string | null; lines: string[] }
 
 export interface AgentActResult {
   settled: boolean;
@@ -252,13 +253,21 @@ export class AgentSession {
         if (Array.isArray(event.tiles)) for (const tile of event.tiles) this.observeGlyph(tile as RuntimeEvent);
         break;
       case "game_over_started":
-        this.gameOver = { over: true, score: this.gameOver?.score ?? null, lines: this.gameOver?.lines ?? [] };
+        this.gameOver = { ...this.gameOverBase(), over: true };
         break;
       case "game_over_score":
-        this.gameOver = { over: true, score: typeof event.points === "number" ? event.points : null, lines: this.gameOver?.lines ?? [] };
+        this.gameOver = { ...this.gameOverBase(), over: true, score: typeof event.points === "number" ? event.points : null };
         break;
       case "outrip":
-        if (this.gameOver && Array.isArray(event.lines)) this.gameOver.lines = event.lines.map(String);
+        if (Array.isArray(event.lines)) this.gameOver = { ...this.gameOverBase(), over: true, lines: event.lines.map(String) };
+        break;
+      case "game_over_complete":
+        // The core asks nothing more after this: the game has ended.
+        this.gameOver = {
+          ...this.gameOverBase(), over: true, complete: true,
+          deathMessage: typeof event.deathMessage === "string" ? event.deathMessage : null,
+          ...(Array.isArray(event.tombstoneLines) ? { lines: event.tombstoneLines.map(String) } : {}),
+        };
         break;
       case "runtime_terminated":
         this.terminated = true;
@@ -274,6 +283,10 @@ export class AgentSession {
       }
     }
     if (this.settleWaiters.length) this.scheduleSettleCheck();
+  }
+
+  private gameOverBase(): AgentGameOver {
+    return this.gameOver ?? { over: false, complete: false, score: null, deathMessage: null, lines: [] };
   }
 
   private addMessage(text: unknown): void {
@@ -330,7 +343,9 @@ export class AgentSession {
     return latest;
   }
 
-  get isSettled(): boolean { return this.terminated || this.openWait() !== null; }
+  private get ended(): boolean { return this.terminated || this.gameOver?.complete === true; }
+
+  get isSettled(): boolean { return this.ended || this.openWait() !== null; }
 
   /** Resolves when the game waits for input and two event-loop turns pass without new events. */
   settle(timeoutMs = 15_000): Promise<boolean> {
@@ -357,9 +372,8 @@ export class AgentSession {
   }
 
   prompt(): AgentPrompt {
-    if (this.gameOver?.over && this.terminated) return { kind: "game_over" };
     const wait = this.openWait();
-    if (!wait) return { kind: "none" };
+    if (!wait) return this.ended && this.gameOver?.over ? { kind: "game_over" } : { kind: "none" };
     const event = this.promptByWait.get(wait.id);
     if (event) {
       const text = String(event.text ?? "");
@@ -474,7 +488,7 @@ export class AgentSession {
   /** Send one action against the open wait, then wait for the game to settle. */
   async act(action: AgentAction, timeoutMs = 15_000): Promise<AgentActResult> {
     if (!this.port) throw new Error("Session is not attached to a runtime");
-    if (this.terminated) throw new Error("The game has ended");
+    if (this.ended) throw new Error("The game has ended");
     if (!(await this.settle(timeoutMs))) throw new Error("The game is still busy; observe and try again");
     const wait = this.openWait()!;
     const prompt = this.prompt();
@@ -501,7 +515,7 @@ export class AgentSession {
       const poll = () => {
         if (expired) return;
         if (this.eventCount !== lastCount) { lastCount = this.eventCount; quietSince = performance.now(); }
-        const answered = !this.waits.has(wait.id) || this.terminated
+        const answered = !this.waits.has(wait.id) || this.ended
           || (this.consumedTokens(identity.commandId) >= inputs.length && this.eventCount === lastCount && performance.now() - quietSince > 5)
           || performance.now() - quietSince > 250;
         if (!answered) { setTimeout(poll, 1); return; }
