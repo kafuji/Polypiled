@@ -108,35 +108,46 @@ export interface HeroPose {
   /** Target float above the floor, in sprite heights (before bobbing). */
   readonly lift: number;
   readonly bob: number;
-  /** How deep the sprite sinks into the floor, in sprite heights. */
+  /** How deep the sprite sinks into the floor, in sprite heights; the part
+   * below the floor line is masked away. */
   readonly sink: number;
   /** Multiplied into the sprite colour, or null for none. */
   readonly tint: readonly [number, number, number] | null;
   /** Sideways sway amplitude, in sprite widths. */
   readonly sway: number;
   readonly shadowVisible: boolean;
+  /** The hero is drawn elsewhere for now (going under where it fell in). */
+  readonly hidden: boolean;
 }
 
-/** Sink in, hold under, then climb out (ms). */
-export const WATER_FALL_SINK_MS = 520;
-export const WATER_FALL_HOLD_MS = 260;
-export const WATER_FALL_RISE_MS = 560;
+/**
+ * A fall into water: a stand-in sinks out of sight where the hero fell in
+ * and stays under for a moment, while the hero is hidden on the square it
+ * crawled out onto; then the hero hops up there, still wet (ms).
+ */
+export const WATER_FALL_SINK_MS = 620;
+export const WATER_FALL_HOLD_MS = 240;
+export const WATER_FALL_RISE_MS = 420;
 export const WATER_FALL_TOTAL_MS = WATER_FALL_SINK_MS + WATER_FALL_HOLD_MS + WATER_FALL_RISE_MS;
-const WATER_FALL_DEPTH = 0.55;
+/** Deep enough to take the whole picture under, in sprite heights. */
+const WATER_FALL_DEPTH = 1.05;
+const WATER_FALL_HOP = 0.1;
 
 const WATER_TINT: readonly [number, number, number] = [0.55, 0.74, 1];
 const LAVA_TINT: readonly [number, number, number] = [1, 0.62, 0.4];
 
-/** Depth of the water-fall dip at `elapsedMs` (0 = on the surface). */
+/** How deep the stand-in has gone under at `elapsedMs` (0 = at the surface). */
 export function sampleWaterFallDepth(elapsedMs: number): number {
-  if (!(elapsedMs >= 0) || elapsedMs >= WATER_FALL_TOTAL_MS) return 0;
-  if (elapsedMs < WATER_FALL_SINK_MS) {
-    const t = elapsedMs / WATER_FALL_SINK_MS;
-    return WATER_FALL_DEPTH * (1 - (1 - t) ** 2);
-  }
-  if (elapsedMs < WATER_FALL_SINK_MS + WATER_FALL_HOLD_MS) return WATER_FALL_DEPTH;
-  const t = (elapsedMs - WATER_FALL_SINK_MS - WATER_FALL_HOLD_MS) / WATER_FALL_RISE_MS;
-  return WATER_FALL_DEPTH * (1 - t * t * (3 - 2 * t));
+  if (!(elapsedMs >= 0)) return 0;
+  if (elapsedMs >= WATER_FALL_SINK_MS) return WATER_FALL_DEPTH;
+  const t = elapsedMs / WATER_FALL_SINK_MS;
+  // A short bob at the surface, then down.
+  return WATER_FALL_DEPTH * t * t * (3 - 2 * t);
+}
+
+/** Whether the stand-in is still showing where the hero fell in. */
+export function isWaterFallUnder(elapsedMs: number): boolean {
+  return elapsedMs >= 0 && elapsedMs < WATER_FALL_SINK_MS + WATER_FALL_HOLD_MS;
 }
 
 export function isPitTrap(trapName: string | null): boolean {
@@ -159,6 +170,7 @@ export function resolveHeroPose(input: HeroPoseInput): HeroPose {
   let tint: HeroPose["tint"] = null;
   let sway = 0;
   let shadowVisible = true;
+  let hidden = false;
   if (mask & CONDITION_MASK.inLava) {
     sink = 0.3;
     tint = LAVA_TINT;
@@ -172,14 +184,17 @@ export function resolveHeroPose(input: HeroPoseInput): HeroPose {
     sink = 0.34;
   }
   if (input.waterFallAtMs !== null) {
-    const depth = sampleWaterFallDepth(input.nowMs - input.waterFallAtMs);
-    if (depth > 0) {
-      sink = Math.max(sink, depth);
-      tint = WATER_TINT;
+    const elapsed = input.nowMs - input.waterFallAtMs;
+    if (isWaterFallUnder(elapsed)) {
+      hidden = true;
       shadowVisible = false;
-      lift = 0;
+    } else if (elapsed < WATER_FALL_TOTAL_MS) {
+      // Up onto the bank: a little hop, dripping.
+      const t = (elapsed - WATER_FALL_SINK_MS - WATER_FALL_HOLD_MS) / WATER_FALL_RISE_MS;
+      lift = Math.max(lift, WATER_FALL_HOP * Math.sin(Math.PI * t));
       bob = 0;
+      tint = WATER_TINT;
     }
   }
-  return { lift, bob, sink, tint, sway, shadowVisible };
+  return { lift, bob, sink, tint, sway, shadowVisible, hidden };
 }

@@ -533,6 +533,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get renderPipeline() { return renderPipeline; },
     get tilesetAssets() { return tilesetAssets; },
     get waterSplash() { return waterSplash; },
+    get entityMovement() { return entityMovement; },
     readConditionMask: () => playerStatus.statusConditionMask,
     readTrapHere: () => useGameStore.getState().floorHere?.trap ?? null,
   });

@@ -5,8 +5,11 @@ import {
   CONDITION_MASK,
   HERO_FLIGHT,
   HERO_LEVITATION,
+  WATER_FALL_HOLD_MS,
+  WATER_FALL_RISE_MS,
   WATER_FALL_SINK_MS,
   WATER_FALL_TOTAL_MS,
+  isWaterFallUnder,
   resolveGroundingProfile,
   resolveHeroPose,
   sampleWaterFallDepth,
@@ -64,12 +67,22 @@ describe("hero pose", () => {
     expect(at(CONDITION_MASK.submerged).tint).not.toBeNull();
   });
 
-  it("dips under and climbs back out after a fall into water", () => {
+  it("goes under where it fell in, then hops up where it crawled out", () => {
     expect(sampleWaterFallDepth(0)).toBe(0);
-    expect(sampleWaterFallDepth(WATER_FALL_SINK_MS)).toBeGreaterThan(0.4);
-    expect(sampleWaterFallDepth(WATER_FALL_TOTAL_MS)).toBe(0);
-    const falling = at(CONDITION_MASK.levitation, { waterFallAtMs: 1000 - WATER_FALL_SINK_MS });
-    expect(falling).toMatchObject({ lift: 0, shadowVisible: false });
-    expect(falling.sink).toBeGreaterThan(0.4);
+    expect(sampleWaterFallDepth(WATER_FALL_SINK_MS / 2)).toBeGreaterThan(0.3);
+    // Deep enough for the whole picture to be under the waterline.
+    expect(sampleWaterFallDepth(WATER_FALL_SINK_MS)).toBeGreaterThanOrEqual(1);
+    expect(isWaterFallUnder(WATER_FALL_SINK_MS)).toBe(true);
+    expect(isWaterFallUnder(WATER_FALL_SINK_MS + WATER_FALL_HOLD_MS)).toBe(false);
+
+    // While the stand-in sinks, the hero on the bank is hidden, not sunk.
+    const under = at(0, { waterFallAtMs: 1000 - WATER_FALL_SINK_MS / 2 });
+    expect(under).toMatchObject({ hidden: true, sink: 0, shadowVisible: false });
+    const rising = at(0, {
+      waterFallAtMs: 1000 - (WATER_FALL_SINK_MS + WATER_FALL_HOLD_MS + WATER_FALL_RISE_MS / 2),
+    });
+    expect(rising).toMatchObject({ hidden: false, sink: 0 });
+    expect(rising.lift).toBeGreaterThan(0);
+    expect(at(0, { waterFallAtMs: 1000 - WATER_FALL_TOTAL_MS })).toMatchObject({ hidden: false, lift: 0, tint: null });
   });
 });

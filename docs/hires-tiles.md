@@ -84,8 +84,16 @@ the same treatment:
   outline laid down behind it.
 - **none**: monsters that give off light, beams and explosions.
 
+Sprites face the camera, so they lean back as the camera looks down and
+their feet show on the floor wherever the view ray through them lands.
+Each frame `entity-grounding.ts` slides every sprite (by its anchor, not its
+position) so that its feet land a quarter square towards the viewer from the
+square's centre, and a lying object's middle lands on the centre, at any
+camera pitch; the shadow goes on that same floor point.
+
 The hero uses the same machinery: it floats while levitating or flying and
-sinks into pits, lava and water. Other tile modes keep the round blob shadow.
+sinks into pits, lava and water. Other tile modes keep the round blob
+shadow, set under the feet in the same way.
 
 ## Current limits
 

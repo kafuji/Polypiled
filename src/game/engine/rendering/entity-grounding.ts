@@ -5,14 +5,19 @@ import type { WaterSplash } from "../effects/water-splash";
 import type { MovementInput } from "../input/movement-input";
 import type { EngineState } from "../runtime/engine-state";
 import type { PlayerMovement } from "../world/player-movement";
+import type { EntityMovement } from "../world/entity-movement";
+import { TILE_SIZE } from "../../constants";
 import type { EntityBillboards } from "./entity-billboards";
 import {
+  FEET_PROFILE,
   HOVER_BOB_PERIOD_MS,
   WATER_FALL_HOLD_MS,
   WATER_FALL_SINK_MS,
   WATER_FALL_TOTAL_MS,
+  isWaterFallUnder,
   resolveGroundingProfile,
   resolveHeroPose,
+  sampleWaterFallDepth,
   type GroundingProfile,
 } from "./grounding-profiles";
 import type { Lighting } from "./lighting";
@@ -38,8 +43,9 @@ export interface EntityGroundingDependencies {
   readonly lighting: Pick<Lighting, "patchMaterialForVignette">;
   readonly movementInput: Pick<MovementInput, "isFpsMode">;
   readonly playerMovement: Pick<PlayerMovement, "hasSeenPlayerPosition" | "playerPos">;
-  readonly renderPipeline: Pick<RenderPipeline, "scene">;
-  readonly tilesetAssets: Pick<TilesetAssets, "isHiResTilesActive">;
+  readonly renderPipeline: Pick<RenderPipeline, "scene" | "renderer">;
+  readonly entityMovement: Pick<EntityMovement, "finishEntityMoveTransition">;
+  readonly tilesetAssets: Pick<TilesetAssets, "isHiResTilesActive" | "shouldUseVultureTiles">;
   readonly waterSplash: Pick<WaterSplash, "splash" | "drip">;
   /** Status condition bits (BL_MASK_*). */
   readonly readConditionMask: () => number;
@@ -62,6 +68,29 @@ const SHADOW_PLANE_SIZE = 0.8;
 const RIDER_RISE = 0.36;
 const STUMBLE_MS = 320;
 const EASE_RATE = 7;
+/** Where feet stand: this far from the square's centre towards the viewer. */
+const FEET_SPOT_TOWARD_VIEWER = 0.25;
+/** Largest anchor correction, in world units, before it is not trusted. */
+const MAX_ANCHOR_SHIFT = 1.5;
+
+/** Where a sprite meets the floor, worked out for the current camera. */
+interface GroundAnchor {
+  /** Slide the picture this far along the camera's right and up (world units). */
+  readonly shiftRight: number;
+  readonly shiftUp: number;
+  /** The floor point the anchor lands on (world). */
+  readonly groundX: number;
+  readonly groundY: number;
+  /** Floor displacement per world unit moved along the camera's right / up. */
+  readonly floorPerRight: THREE.Vector2;
+  readonly floorPerUp: THREE.Vector2;
+  /** Picture size in world units. */
+  readonly width: number;
+  readonly height: number;
+  /** The anchor inside the picture (u right, v up). */
+  readonly anchorU: number;
+  readonly anchorV: number;
+}
 
 /**
  * Seats every entity sprite on the ground each frame: floating sprites bob
@@ -107,6 +136,23 @@ export class EntityGrounding {
 
   private readonly cameraRight = new THREE.Vector3();
 
+  /** Masks the hero below the floor line while it is in a pit, lava or water. */
+  private readonly waterlinePlane = new THREE.Plane();
+
+  private waterlineMaterial: THREE.SpriteMaterial | null = null;
+
+  private readonly standInPlane = new THREE.Plane();
+
+  private standIn: { sprite: THREE.Sprite; textureKey: string; startMs: number } | null = null;
+
+  private readonly cameraRight3 = new THREE.Vector3();
+
+  private readonly cameraUp3 = new THREE.Vector3();
+
+  private readonly cameraPosition = new THREE.Vector3();
+
+  private readonly scratch = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+
   private measureCanvas: HTMLCanvasElement | null = null;
 
   /** The sprite that shows the hero: the rider while mounted. */
@@ -116,16 +162,23 @@ export class EntityGrounding {
     return this.dependencies.entityBillboards.monsterBillboards.get(`${x},${y}`) ?? null;
   }
 
-  /** The hero (monsterId null) or a seen monster fell into water at (x, y). */
+  /**
+   * The hero (monsterId null) or a seen monster fell into water at (x, y).
+   * The game has already moved the hero out onto the bank, so a stand-in
+   * goes under at (x, y) while the hero waits hidden on the bank.
+   */
   noteWaterFall(monsterId: number | null, x: number, y: number, nowMs: number = performance.now()): void {
     if (this.dependencies.engineState.clientOptions.tilesetMode === "terminal") return;
-    if (monsterId === null) {
-      this.heroWaterFallAtMs = nowMs;
-      this.heroDripped = false;
-      this.dependencies.waterSplash.splash(x, y, 1);
-    } else {
+    if (monsterId !== null) {
       this.dependencies.waterSplash.splash(x, y, 0.8);
+      return;
     }
+    this.heroWaterFallAtMs = nowMs;
+    this.heroDripped = false;
+    this.dependencies.waterSplash.splash(x, y, 1);
+    this.startStandIn(x, y, nowMs);
+    // The walk into the water would carry a copy of the hero on to the bank.
+    this.dependencies.entityMovement.finishEntityMoveTransition("player", true);
   }
 
   /** A missed blow carries the hero a little towards (x, y) on screen. */
@@ -161,16 +214,37 @@ export class EntityGrounding {
     }
     if (waterFallElapsed >= WATER_FALL_TOTAL_MS) this.heroWaterFallAtMs = null;
     const ease = Math.min(1, deltaSeconds * EASE_RATE);
-    this.heroLift += (heroPose.lift - this.heroLift) * ease;
-    this.heroSink = waterFallElapsed < WATER_FALL_TOTAL_MS
-      ? heroPose.sink
-      : this.heroSink + (heroPose.sink - this.heroSink) * ease;
+    if (waterFallElapsed < WATER_FALL_TOTAL_MS) {
+      // The hop out of the water follows its own curve.
+      this.heroLift = heroPose.lift;
+      this.heroSink = heroPose.sink;
+    } else {
+      this.heroLift += (heroPose.lift - this.heroLift) * ease;
+      this.heroSink += (heroPose.sink - this.heroSink) * ease;
+    }
 
+    if (heroPose.hidden) {
+      // No copy of the hero walks out of the water to the bank meanwhile;
+      // its square still gets the update the walk was holding back.
+      this.dependencies.entityMovement.finishEntityMoveTransition("player", true);
+    }
+    // Vulture tiles stand on their own bottom-centre anchor.
+    const anchoring = !this.dependencies.tilesetAssets.shouldUseVultureTiles();
     let heroSprite: THREE.Sprite | null = null;
     for (const [key, sprite] of this.dependencies.entityBillboards.monsterBillboards) {
       const isHero = key === heroKey;
       if (isHero) heroSprite = sprite;
       const profile = this.profileFor(sprite);
+      if (isHero && heroPose.hidden) {
+        // Shown going under where it fell in; weapons and shadow hide too.
+        sprite.visible = false;
+        const shadow = this.dependencies.entityBillboards.entityBlobShadows.get(key);
+        if (shadow) {
+          this.groundedShadows.add(shadow);
+          shadow.visible = false;
+        }
+        continue;
+      }
       let lift = 0;
       let bob = 0;
       let sink = 0;
@@ -188,11 +262,18 @@ export class EntityGrounding {
         lift = profile.lift;
         bob = profile.bob;
       }
+      const texture = sprite.material instanceof THREE.SpriteMaterial ? sprite.material.map : null;
+      const metrics = texture ? this.metricsFor(texture) : EMPTY_SPRITE_ALPHA_METRICS;
+      const anchor = anchoring && sprite.visible ? this.solveGroundAnchor(sprite, metrics, profile) : null;
       const phase = (sprite.id * 0.618) % 1;
       const bobOffset = bob * Math.sin(((nowMs / HOVER_BOB_PERIOD_MS) + phase) * Math.PI * 2);
       const height = lift + bobOffset - sink;
       let shiftX = sway * Math.sin(nowMs * 0.004);
       let shiftY = height;
+      if (anchor) {
+        shiftX += anchor.shiftRight / anchor.width;
+        shiftY += anchor.shiftUp / anchor.height;
+      }
       if (isHero && this.stumble) {
         const t = (nowMs - this.stumble.startMs) / STUMBLE_MS;
         if (t >= 1) {
@@ -204,17 +285,26 @@ export class EntityGrounding {
         }
       }
       this.applyPose(sprite, shiftX, shiftY, tint);
+      if (isHero) {
+        // Below the floor line the picture is masked: it goes into the pit,
+        // the lava or the water rather than sliding down the screen.
+        this.setWaterline(sprite, anchor && sink > 0.002 ? anchor : null, sprite.userData.floorZ);
+      }
       const shadow = this.dependencies.entityBillboards.entityBlobShadows.get(key);
       if (shadow) {
-        this.placeShadow(shadow, sprite, hiRes ? profile : null, Math.max(0, lift + bobOffset), shadowVisible, isHero);
+        this.placeShadow(shadow, sprite, metrics, anchor, hiRes ? profile : null, Math.max(0, lift + bobOffset), shadowVisible);
       }
     }
+    if (!heroSprite || heroPose.hidden) this.setWaterline(null, null, 0);
     this.syncRider(heroSprite);
+    this.updateStandIn(nowMs);
   }
 
   dispose(): void {
     this.restorePoses();
     this.restoreAllShadows();
+    this.setWaterline(null, null, 0);
+    this.removeStandIn();
     if (this.rider) {
       this.dependencies.renderPipeline.scene.remove(this.rider);
       this.rider.material.dispose();
@@ -226,6 +316,99 @@ export class EntityGrounding {
     }
     this.contactTexture?.dispose();
     this.contactTexture = null;
+  }
+
+  /**
+   * Mask `sprite` below the floor line under its anchor (null: no mask).
+   * One sprite at a time carries the hero's waterline.
+   */
+  private setWaterline(sprite: THREE.Sprite | null, anchor: GroundAnchor | null, floorZ: unknown): void {
+    const material = sprite?.material instanceof THREE.SpriteMaterial ? sprite.material : null;
+    const target = material && anchor ? material : null;
+    if (this.waterlineMaterial && this.waterlineMaterial !== target) {
+      this.waterlineMaterial.clippingPlanes = null;
+      this.waterlineMaterial.needsUpdate = true;
+      this.waterlineMaterial = null;
+    }
+    if (!target || !anchor) return;
+    this.placeWaterline(this.waterlinePlane, anchor, floorZ);
+    if (this.waterlineMaterial !== target) {
+      this.dependencies.renderPipeline.renderer.localClippingEnabled = true;
+      target.clippingPlanes = [this.waterlinePlane];
+      target.needsUpdate = true;
+      this.waterlineMaterial = target;
+    }
+  }
+
+  /** A plane along the screen's horizontal through the anchor's floor point; above it is kept. */
+  private placeWaterline(plane: THREE.Plane, anchor: GroundAnchor, floorZ: unknown): void {
+    const z = typeof floorZ === "number" ? floorZ : 0.028;
+    plane.setFromNormalAndCoplanarPoint(this.cameraUp3, this.scratch[0].set(anchor.groundX, anchor.groundY, z));
+  }
+
+  /** A copy of the hero that goes under where the hero fell in. */
+  private startStandIn(x: number, y: number, nowMs: number): void {
+    this.removeStandIn();
+    const hero = this.heroSprite();
+    const heroMaterial = hero?.material;
+    const textureKey = typeof hero?.userData.textureKey === "string" ? hero.userData.textureKey : "";
+    if (!hero || !(heroMaterial instanceof THREE.SpriteMaterial) || !heroMaterial.map || !textureKey) return;
+    const map = heroMaterial.map;
+    // Keep the picture alive while the stand-in shows it.
+    this.dependencies.entityBillboards.acquireMonsterBillboardTexture(textureKey, () => map as THREE.CanvasTexture);
+    const material = new THREE.SpriteMaterial({
+      map,
+      transparent: true,
+      depthWrite: false,
+      depthTest: heroMaterial.depthTest,
+      alphaTest: heroMaterial.alphaTest,
+      toneMapped: false,
+    });
+    this.dependencies.lighting.patchMaterialForVignette(material, { entity: true });
+    material.color.setRGB(0.55, 0.74, 1);
+    this.dependencies.renderPipeline.renderer.localClippingEnabled = true;
+    material.clippingPlanes = [this.standInPlane];
+    const sprite = new THREE.Sprite(material);
+    sprite.name = "player-water-stand-in";
+    sprite.scale.copy(hero.scale);
+    sprite.renderOrder = hero.renderOrder;
+    const floorZ = typeof hero.userData.floorZ === "number" ? hero.userData.floorZ : 0.028;
+    const elevatedZ = typeof hero.userData.elevatedZ === "number" ? hero.userData.elevatedZ : hero.position.z;
+    sprite.position.set(x * TILE_SIZE, -y * TILE_SIZE, elevatedZ);
+    sprite.userData.floorZ = floorZ;
+    this.dependencies.renderPipeline.scene.add(sprite);
+    this.standIn = { sprite, textureKey, startMs: nowMs };
+  }
+
+  private updateStandIn(nowMs: number): void {
+    const standIn = this.standIn;
+    if (!standIn) return;
+    const elapsed = nowMs - standIn.startMs;
+    if (!isWaterFallUnder(elapsed) || this.dependencies.movementInput.isFpsMode()) {
+      this.removeStandIn();
+      return;
+    }
+    const { sprite } = standIn;
+    const texture = sprite.material.map;
+    const metrics = texture ? this.metricsFor(texture) : EMPTY_SPRITE_ALPHA_METRICS;
+    sprite.center.set(0.5, 0.5);
+    const anchor = this.solveGroundAnchor(sprite, metrics, FEET_PROFILE);
+    const depth = sampleWaterFallDepth(elapsed) * (metrics.bottomV - metrics.topV);
+    sprite.center.set(
+      0.5 - (anchor ? anchor.shiftRight / anchor.width : 0),
+      0.5 - (anchor ? anchor.shiftUp / anchor.height : 0) + depth,
+    );
+    if (anchor) this.placeWaterline(this.standInPlane, anchor, sprite.userData.floorZ);
+    sprite.visible = true;
+  }
+
+  private removeStandIn(): void {
+    const standIn = this.standIn;
+    if (!standIn) return;
+    this.standIn = null;
+    this.dependencies.renderPipeline.scene.remove(standIn.sprite);
+    standIn.sprite.material.dispose();
+    this.dependencies.entityBillboards.releaseMonsterBillboardTexture(standIn.textureKey);
   }
 
   private profileFor(sprite: THREE.Sprite): GroundingProfile {
@@ -295,93 +478,189 @@ export class EntityGrounding {
   private updateCameraAxes(): void {
     const camera = this.dependencies.camera.getActiveCamera();
     camera.updateMatrixWorld();
-    this.cameraRight.setFromMatrixColumn(camera.matrixWorld, 0);
+    this.cameraRight3.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+    this.cameraUp3.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+    this.cameraPosition.setFromMatrixPosition(camera.matrixWorld);
+    this.cameraRight.copy(this.cameraRight3);
     this.cameraRight.z = 0;
     if (this.cameraRight.lengthSq() < 1e-8) this.cameraRight.set(1, 0, 0);
     this.cameraRight.normalize();
   }
 
+  /** Where the view ray through `point` meets the floor at height `floorZ`. */
+  private floorHit(point: THREE.Vector3, floorZ: number, out: THREE.Vector3): boolean {
+    const dz = point.z - this.cameraPosition.z;
+    if (dz > -1e-6) return false;
+    const t = (floorZ - this.cameraPosition.z) / dz;
+    if (!(t > 0)) return false;
+    out.copy(point).sub(this.cameraPosition).multiplyScalar(t).add(this.cameraPosition);
+    return true;
+  }
+
+  /**
+   * A camera-facing sprite leans back with the camera, so its foot shows on
+   * the floor wherever the view ray through it lands, not under the sprite's
+   * position. Work out how far to slide the picture along the camera's right
+   * and up for its anchor - the feet, or the middle of a lying object - to
+   * land on its spot: a little towards the viewer from the square's centre
+   * for what stands, the centre itself for what lies. This holds at any
+   * camera pitch.
+   */
+  private solveGroundAnchor(
+    sprite: THREE.Sprite,
+    metrics: SpriteAlphaMetrics,
+    profile: GroundingProfile,
+  ): GroundAnchor | null {
+    const [world, point, alongRight, alongUp] = this.scratch;
+    world.copy(sprite.position);
+    let parentScaleX = 1;
+    let parentScaleY = 1;
+    const parent = sprite.parent;
+    if (parent) {
+      world.applyMatrix4(parent.matrixWorld);
+      parentScaleX = point.setFromMatrixColumn(parent.matrixWorld, 0).length() || 1;
+      parentScaleY = point.setFromMatrixColumn(parent.matrixWorld, 1).length() || 1;
+    }
+    const width = Math.abs(sprite.scale.x) * parentScaleX;
+    const height = Math.abs(sprite.scale.y) * parentScaleY;
+    if (!(width > 0) || !(height > 0)) return null;
+    const lying = profile.kind === "silhouette";
+    const anchorU = lying ? (metrics.minU + metrics.maxU) / 2 : (metrics.contactMinU + metrics.contactMaxU) / 2;
+    const anchorV = lying ? 1 - (metrics.topV + metrics.bottomV) / 2 : 1 - metrics.bottomV;
+    const floorZ = typeof sprite.userData.floorZ === "number" ? sprite.userData.floorZ : 0.028;
+    point
+      .copy(world)
+      .addScaledVector(this.cameraRight3, (anchorU - sprite.center.x) * width)
+      .addScaledVector(this.cameraUp3, (anchorV - sprite.center.y) * height);
+    const ground = new THREE.Vector3();
+    const step = 0.01;
+    if (
+      !this.floorHit(point, floorZ, ground) ||
+      !this.floorHit(alongRight.copy(point).addScaledVector(this.cameraRight3, step), floorZ, alongRight) ||
+      !this.floorHit(alongUp.copy(point).addScaledVector(this.cameraUp3, step), floorZ, alongUp)
+    ) {
+      return null;
+    }
+    const floorPerRight = new THREE.Vector2((alongRight.x - ground.x) / step, (alongRight.y - ground.y) / step);
+    const floorPerUp = new THREE.Vector2((alongUp.x - ground.x) / step, (alongUp.y - ground.y) / step);
+    // Towards the viewer along the floor: camera right turned a quarter clockwise.
+    const spot = lying ? 0 : FEET_SPOT_TOWARD_VIEWER;
+    const groundX = world.x + this.cameraRight.y * spot;
+    const groundY = world.y - this.cameraRight.x * spot;
+    const dx = groundX - ground.x;
+    const dy = groundY - ground.y;
+    const det = floorPerRight.x * floorPerUp.y - floorPerUp.x * floorPerRight.y;
+    if (Math.abs(det) < 1e-6) return null;
+    const shiftRight = (dx * floorPerUp.y - dy * floorPerUp.x) / det;
+    const shiftUp = (floorPerRight.x * dy - floorPerRight.y * dx) / det;
+    if (Math.abs(shiftRight) > MAX_ANCHOR_SHIFT || Math.abs(shiftUp) > MAX_ANCHOR_SHIFT) return null;
+    return { shiftRight, shiftUp, groundX, groundY, floorPerRight, floorPerUp, width, height, anchorU, anchorV };
+  }
+
+  /** Put a shadow's centre on a world floor point. */
+  private setShadowWorldPosition(shadow: THREE.Mesh, x: number, y: number): void {
+    const local = this.scratch[0].set(x, y, 0);
+    if (shadow.parent) shadow.parent.worldToLocal(local);
+    shadow.position.x = local.x;
+    shadow.position.y = local.y;
+  }
+
   private placeShadow(
     shadow: THREE.Mesh,
     sprite: THREE.Sprite,
+    metrics: SpriteAlphaMetrics,
+    anchor: GroundAnchor | null,
     profile: GroundingProfile | null,
     heightAbove: number,
     visible: boolean,
-    isHero: boolean,
   ): void {
     const material = shadow.material as THREE.MeshBasicMaterial;
     const rx = this.cameraRight.x;
     const ry = this.cameraRight.y;
-    // Away from the viewer along the floor.
-    const fx = -ry;
-    const fy = rx;
     const scaleX = Math.abs(sprite.scale.x);
-    const scaleY = Math.abs(sprite.scale.y);
     const shrink = 1 / (1 + heightAbove * 3);
-
-    if (!profile) {
-      // Legacy blob: only the hero's shadow reacts, to floating or sinking.
-      if (!isHero || (heightAbove <= 1e-4 && visible)) {
-        if (this.groundedShadows.has(shadow)) this.restoreShadow(shadow, sprite);
-        return;
-      }
-      this.groundedShadows.add(shadow);
-      const contentWidth = typeof sprite.userData.contentWidth === "number" ? sprite.userData.contentWidth : 1;
-      const legacy = (scaleX * contentWidth * 1.25) / SHADOW_PLANE_SIZE;
-      shadow.visible = visible;
-      material.opacity = LEGACY_SHADOW_OPACITY * shrink;
-      shadow.scale.set(legacy * shrink, legacy * 0.82 * shrink, 1);
-      shadow.position.x = sprite.position.x;
-      shadow.position.y = sprite.position.y;
+    this.groundedShadows.add(shadow);
+    if (!sprite.visible) {
+      // Drawn by a flat stand-in (dungeon features): keep the stock shadow.
+      this.restoreShadow(shadow, sprite);
       return;
     }
-
-    this.groundedShadows.add(shadow);
-    if (profile.kind === "none" || !visible) {
+    if (!visible || profile?.kind === "none") {
       shadow.visible = false;
       return;
     }
+    shadow.visible = true;
+    const placeAtGround = () => {
+      if (anchor) {
+        this.setShadowWorldPosition(shadow, anchor.groundX, anchor.groundY);
+      } else {
+        shadow.position.x = sprite.position.x;
+        shadow.position.y = sprite.position.y;
+      }
+    };
+
+    if (!profile) {
+      // Other tile modes keep the round blob, now under the feet.
+      const blob = this.dependencies.entityBillboards.ensureEntityBlobShadowTexture();
+      if (material.map !== blob) {
+        material.map = blob;
+        material.needsUpdate = true;
+      }
+      const contentWidth = typeof sprite.userData.contentWidth === "number" ? sprite.userData.contentWidth : 1;
+      const legacy = (scaleX * contentWidth * 1.25) / SHADOW_PLANE_SIZE;
+      shadow.rotation.z = 0;
+      material.opacity = LEGACY_SHADOW_OPACITY * shrink;
+      shadow.scale.set(legacy * shrink, legacy * 0.82 * shrink, 1);
+      placeAtGround();
+      return;
+    }
+
     const texture = sprite.material instanceof THREE.SpriteMaterial ? sprite.material.map : null;
-    const metrics = texture ? this.metricsFor(texture) : EMPTY_SPRITE_ALPHA_METRICS;
-    shadow.visible = sprite.visible;
     shadow.rotation.z = Math.atan2(ry, rx);
-    let centerX = sprite.position.x;
-    let centerY = sprite.position.y;
     if (profile.kind === "silhouette" && texture) {
+      // A lying object: its own outline laid under it, dropped a little down
+      // and to the right on screen as if lit from the upper left.
       const map = this.silhouetteFor(texture);
       if (material.map !== map) {
         material.map = map;
         material.needsUpdate = true;
       }
-      const depth = scaleY * 0.38;
-      const back = depth / 2 - (1 - metrics.bottomV) * depth;
-      centerX += fx * back;
-      centerY += fy * back;
-      shadow.scale.set(scaleX / SHADOW_PLANE_SIZE, depth / SHADOW_PLANE_SIZE, 1);
-      material.opacity = 0.5;
-    } else {
-      const contact = this.ensureContactTexture();
-      const map = profile.kind === "hover" ? this.dependencies.entityBillboards.ensureEntityBlobShadowTexture() : contact;
-      if (material.map !== map) {
-        material.map = map;
-        material.needsUpdate = true;
+      if (!anchor) {
+        shadow.scale.set(scaleX / SHADOW_PLANE_SIZE, (Math.abs(sprite.scale.y) * 0.5) / SHADOW_PLANE_SIZE, 1);
+        material.opacity = 0.42;
+        placeAtGround();
+        return;
       }
-      if (profile.kind === "hover") {
-        const width = Math.max(0.2, metrics.maxU - metrics.minU) * scaleX * 0.8 * shrink;
-        shadow.scale.set(width / SHADOW_PLANE_SIZE, (width * 0.6) / SHADOW_PLANE_SIZE, 1);
-        material.opacity = 0.5 * shrink;
-      } else {
-        const contactU = (metrics.contactMinU + metrics.contactMaxU) / 2;
-        const width = Math.max(0.22, (metrics.contactMaxU - metrics.contactMinU) * 1.2) * scaleX * shrink;
-        const shift = (contactU - sprite.center.x) * scaleX;
-        centerX += rx * shift;
-        centerY += ry * shift;
-        shadow.scale.set(width / SHADOW_PLANE_SIZE, (width * 0.42) / SHADOW_PLANE_SIZE, 1);
-        material.opacity = 0.66 * shrink;
-      }
+      const width = anchor.floorPerRight.length() * anchor.width;
+      const depth = anchor.floorPerUp.length() * anchor.height;
+      // From the anchor (the middle of the solid part) to the picture's middle.
+      const du = (0.5 - anchor.anchorU) * anchor.width;
+      const dv = (0.5 - anchor.anchorV) * anchor.height;
+      const drop = Math.min(width, depth) * 0.07;
+      const x = anchor.groundX + anchor.floorPerRight.x * du + anchor.floorPerUp.x * dv + (rx + ry) * drop;
+      const y = anchor.groundY + anchor.floorPerRight.y * du + anchor.floorPerUp.y * dv + (ry - rx) * drop;
+      shadow.scale.set(width / SHADOW_PLANE_SIZE, depth / SHADOW_PLANE_SIZE, 1);
+      material.opacity = 0.42;
+      this.setShadowWorldPosition(shadow, x, y);
+      return;
     }
-    shadow.position.x = centerX;
-    shadow.position.y = centerY;
+    const map = profile.kind === "hover"
+      ? this.dependencies.entityBillboards.ensureEntityBlobShadowTexture()
+      : this.ensureContactTexture();
+    if (material.map !== map) {
+      material.map = map;
+      material.needsUpdate = true;
+    }
+    if (profile.kind === "hover") {
+      const width = Math.max(0.2, metrics.maxU - metrics.minU) * scaleX * 0.8 * shrink;
+      shadow.scale.set(width / SHADOW_PLANE_SIZE, (width * 0.6) / SHADOW_PLANE_SIZE, 1);
+      material.opacity = 0.5 * shrink;
+    } else {
+      const width = Math.max(0.22, (metrics.contactMaxU - metrics.contactMinU) * 1.2) * scaleX * shrink;
+      shadow.scale.set(width / SHADOW_PLANE_SIZE, (width * 0.42) / SHADOW_PLANE_SIZE, 1);
+      material.opacity = 0.66 * shrink;
+    }
+    placeAtGround();
   }
 
   private restoreShadow(shadow: THREE.Mesh, sprite: THREE.Sprite | null): void {
