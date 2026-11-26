@@ -10,7 +10,13 @@
  * docs/player-knowledge-interface.md.
  */
 
-export const KNOWLEDGE_FORMAT_VERSION = 1;
+export const KNOWLEDGE_FORMAT_VERSION = 2;
+
+/**
+ * Version 1 had the last four level words reserved (always 0), which decode
+ * as no special level, no attacks and no hostiles in view.
+ */
+const OLDEST_READABLE_FORMAT_VERSION = 1;
 
 /** Map size the frame covers; column 0 is never used by NetHack. */
 export const KNOWLEDGE_COLUMNS = 80;
@@ -151,6 +157,36 @@ export interface KnowledgeHero {
   readonly swallowerId: number | null;
 }
 
+/** Special levels the core reports (version 2); see nh3d_special_level(). */
+export type KnowledgeSpecialLevel =
+  | "medusa"
+  | "castle"
+  | "valley"
+  | "sanctum"
+  | "ludios"
+  | "vlad-tower"
+  | "wizard-tower"
+  | "quest-home"
+  | "earth"
+  | "air"
+  | "fire"
+  | "water"
+  | "astral";
+
+const SPECIAL_LEVELS: readonly (KnowledgeSpecialLevel | null)[] = [
+  null, "medusa", "castle", "valley", "sanctum", "ludios", "vlad-tower", "wizard-tower",
+  "quest-home", "earth", "air", "fire", "water", "astral",
+];
+
+/** Hostile monsters the hero can spot that the map shows as monsters. */
+export interface KnowledgeHostiles {
+  readonly count: number;
+  /** Highest difficulty of what they look like; 0 while hallucinating. */
+  readonly maxDifficulty: number;
+  /** Chebyshev distance to the nearest; null with none in view. */
+  readonly nearestDistance: number | null;
+}
+
 export interface KnowledgeLevel {
   readonly dnum: number;
   readonly dlevel: number;
@@ -163,6 +199,15 @@ export interface KnowledgeLevel {
   readonly endgame: boolean;
   readonly inShop: boolean;
   readonly inTemple: boolean;
+  /** The special level the hero is on, as far as they can tell. */
+  readonly specialLevel: KnowledgeSpecialLevel | null;
+  /**
+   * Counters (0-65535, wrapping) of attacks the hero made and attacks made on
+   * the hero, ranged ones and misses included. Readers watch for changes.
+   */
+  readonly heroAttacks: number;
+  readonly foeAttacks: number;
+  readonly hostiles: KnowledgeHostiles;
 }
 
 export interface KnowledgeMonster {
@@ -283,6 +328,7 @@ function decodeHero(words: Int32Array, base: number): KnowledgeHero {
 
 function decodeLevel(words: Int32Array, base: number): KnowledgeLevel {
   const flags = words[base + 3];
+  const hostiles = words[base + 6];
   return {
     dnum: words[base],
     dlevel: words[base + 1],
@@ -294,6 +340,14 @@ function decodeLevel(words: Int32Array, base: number): KnowledgeLevel {
     endgame: (flags & 0x10) !== 0,
     inShop: (flags & 0x20) !== 0,
     inTemple: (flags & 0x40) !== 0,
+    specialLevel: SPECIAL_LEVELS[words[base + 4]] ?? null,
+    heroAttacks: words[base + 5] & 0xffff,
+    foeAttacks: (words[base + 5] >>> 16) & 0xffff,
+    hostiles: {
+      count: hostiles & 0xff,
+      maxDifficulty: (hostiles >>> 8) & 0xff,
+      nearestDistance: (hostiles & 0xff) > 0 ? (hostiles >>> 16) & 0xff : null,
+    },
   };
 }
 
@@ -341,7 +395,7 @@ function decodeLight(words: Int32Array, base: number): KnowledgeLight {
 export function decodeKnowledgeFrame(raw: unknown): KnowledgeFrame | null {
   if (!(raw instanceof Int32Array) || raw.length < FIXED_WORDS) return null;
   const words = raw;
-  if (words[0] !== KNOWLEDGE_FORMAT_VERSION) return null;
+  if (words[0] < OLDEST_READABLE_FORMAT_VERSION || words[0] > KNOWLEDGE_FORMAT_VERSION) return null;
   const cellCount = words[3], monsterCount = words[4], lightCount = words[5];
   if (cellCount < 0 || monsterCount < 0 || lightCount < 0) return null;
   const cellsEnd = FIXED_WORDS + cellCount * KNOWLEDGE_CELL_WORDS;

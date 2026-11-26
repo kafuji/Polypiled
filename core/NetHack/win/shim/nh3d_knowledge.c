@@ -29,7 +29,7 @@
 #if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
 #include <emscripten/emscripten.h>
 
-#define NH3D_KNOWLEDGE_VERSION 1
+#define NH3D_KNOWLEDGE_VERSION 2
 
 #define NH3D_HEADER_WORDS 8
 #define NH3D_HERO_WORDS 8
@@ -119,6 +119,34 @@ enum nh3d_light_kind {
 #define NH3D_LEVEL_ENDGAME 0x10
 #define NH3D_LEVEL_IN_SHOP 0x20
 #define NH3D_LEVEL_IN_TEMPLE 0x40
+
+/* special levels the hero is on (version 2); only levels the hero can tell
+   apart: on arrival, Medusa's and the Castle once their water is seen
+   (nh3d_water_level_recognized), the Wizard's Tower only from inside it */
+enum nh3d_special_level {
+    NH3D_SPECIAL_NONE = 0,
+    NH3D_SPECIAL_MEDUSA = 1,
+    NH3D_SPECIAL_CASTLE = 2,
+    NH3D_SPECIAL_VALLEY = 3,
+    NH3D_SPECIAL_SANCTUM = 4,
+    NH3D_SPECIAL_LUDIOS = 5,
+    NH3D_SPECIAL_VLAD_TOWER = 6,
+    NH3D_SPECIAL_WIZARD_TOWER = 7,
+    NH3D_SPECIAL_QUEST_HOME = 8,
+    NH3D_SPECIAL_EARTH = 9,
+    NH3D_SPECIAL_AIR = 10,
+    NH3D_SPECIAL_FIRE = 11,
+    NH3D_SPECIAL_WATER = 12,
+    NH3D_SPECIAL_ASTRAL = 13
+};
+
+/* Medusa's island and the Castle's moat are told by their water: the hero
+   recognizes the level once they have seen this many water squares on it */
+#define NH3D_RECOGNIZE_WATER_SQUARES 20
+
+/* hostiles are counted up to this many, and distances capped at this */
+#define NH3D_HOSTILE_COUNT_MAX 255
+#define NH3D_HOSTILE_DISTANCE_MAX 255
 
 /* light.c keeps this private; it marks a source that lights its area */
 #ifndef LSF_SHOW
@@ -259,6 +287,18 @@ static int nh3d_prev_monsters = -1, nh3d_prev_lights = -1;
 static boolean nh3d_have_prev = FALSE;
 static d_level nh3d_prev_level;
 static int nh3d_frame_seq = 0;
+
+/* attacks by and on the hero, wrapping; the shell watches for increases */
+static int nh3d_hero_attacks = 0, nh3d_foe_attacks = 0;
+
+void
+nh3d_note_engagement(boolean by_hero)
+{
+    if (by_hero)
+        nh3d_hero_attacks = (nh3d_hero_attacks + 1) & 0xffff;
+    else
+        nh3d_foe_attacks = (nh3d_foe_attacks + 1) & 0xffff;
+}
 
 static int
 nh3d_tile(int glyph)
@@ -517,6 +557,104 @@ nh3d_fill_hero(int *out)
     out[7] = (u.uswallow && u.ustuck) ? (int) u.ustuck->m_id : -1;
 }
 
+/*
+ * Whether the hero has seen enough of the level's water to tell Medusa's
+ * level or the Castle apart from an ordinary one.  Nothing announces either
+ * on arrival, so a hero arriving blind or in the dark does not know yet.
+ * Remembered terrain only grows during a visit, so once true it stays true
+ * until the hero leaves.
+ */
+static boolean
+nh3d_water_level_recognized(void)
+{
+    static d_level checked;
+    static boolean recognized = FALSE;
+    coordxy x, y;
+    int water = 0;
+
+    if (!on_level(&u.uz, &checked)) {
+        checked = u.uz;
+        recognized = FALSE;
+    }
+    if (recognized)
+        return TRUE;
+    for (y = 0; y < ROWNO; y++)
+        for (x = 1; x < COLNO; x++)
+            if (IS_POOL(svl.lastseentyp[x][y])
+                && ++water >= NH3D_RECOGNIZE_WATER_SQUARES)
+                return recognized = TRUE;
+    return FALSE;
+}
+
+static int
+nh3d_special_level(void)
+{
+    if (Is_medusa_level(&u.uz))
+        return nh3d_water_level_recognized() ? NH3D_SPECIAL_MEDUSA
+                                             : NH3D_SPECIAL_NONE;
+    if (Is_stronghold(&u.uz))
+        return nh3d_water_level_recognized() ? NH3D_SPECIAL_CASTLE
+                                             : NH3D_SPECIAL_NONE;
+    if (Is_valley(&u.uz))
+        return NH3D_SPECIAL_VALLEY;
+    if (Is_sanctum(&u.uz))
+        return NH3D_SPECIAL_SANCTUM;
+    if (Is_knox(&u.uz))
+        return NH3D_SPECIAL_LUDIOS;
+    if (In_V_tower(&u.uz))
+        return NH3D_SPECIAL_VLAD_TOWER;
+    if (In_W_tower(u.ux, u.uy, &u.uz))
+        return NH3D_SPECIAL_WIZARD_TOWER;
+    if (Is_qstart(&u.uz))
+        return NH3D_SPECIAL_QUEST_HOME;
+    if (Is_earthlevel(&u.uz))
+        return NH3D_SPECIAL_EARTH;
+    if (Is_airlevel(&u.uz))
+        return NH3D_SPECIAL_AIR;
+    if (Is_firelevel(&u.uz))
+        return NH3D_SPECIAL_FIRE;
+    if (Is_waterlevel(&u.uz))
+        return NH3D_SPECIAL_WATER;
+    if (Is_astralevel(&u.uz))
+        return NH3D_SPECIAL_ASTRAL;
+    return NH3D_SPECIAL_NONE;
+}
+
+/*
+ * Hostile monsters the hero can spot and that the map shows as a monster
+ * (a mimic posing as furniture is not counted): how many, the highest
+ * difficulty of what they look like (0 while hallucinating, when the hero
+ * cannot tell), and the distance to the nearest.
+ */
+static int
+nh3d_hostiles_in_view(void)
+{
+    struct monst *mtmp;
+    int count = 0, difficulty = 0, nearest = NH3D_HOSTILE_DISTANCE_MAX;
+
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        int glyph, dist;
+
+        if (DEADMONSTER(mtmp) || mtmp->mtame || mtmp->mpeaceful
+            || mtmp == u.usteed || !canspotmon(mtmp))
+            continue;
+        glyph = gg.gbuf[mtmp->my][mtmp->mx].glyphinfo.glyph;
+        if (!glyph_is_monster(glyph))
+            continue;
+        if (count < NH3D_HOSTILE_COUNT_MAX)
+            count++;
+        if (!Hallucination
+            && (int) mons[glyph_to_mon(glyph)].difficulty > difficulty)
+            difficulty = (int) mons[glyph_to_mon(glyph)].difficulty;
+        dist = distmin(u.ux, u.uy, mtmp->mx, mtmp->my);
+        if (dist < nearest)
+            nearest = dist;
+    }
+    return (int) ((unsigned) (count & 0xff)
+                  | ((unsigned) (difficulty & 0xff) << 8)
+                  | ((unsigned) (nearest & 0xff) << 16));
+}
+
 static void
 nh3d_fill_level(int *out)
 {
@@ -541,7 +679,11 @@ nh3d_fill_level(int *out)
     out[1] = u.uz.dlevel;
     out[2] = observable_depth(&u.uz); /* as the status line shows it */
     out[3] = bits;
-    out[4] = out[5] = out[6] = out[7] = 0;
+    out[4] = nh3d_special_level();
+    out[5] = (int) ((unsigned) nh3d_hero_attacks
+                    | ((unsigned) nh3d_foe_attacks << 16));
+    out[6] = nh3d_hostiles_in_view();
+    out[7] = 0;
 }
 
 /*

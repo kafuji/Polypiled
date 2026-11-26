@@ -18,8 +18,6 @@ import {
 
 type MessageSoundHooksOptions = {
   isSoundEnabled: () => boolean;
-  /** Called when the player attacks, misses, or kills (drives background music). */
-  onCombatActivity?: () => void;
   debounceMs?: number;
   soundPackCacheTtlMs?: number;
 };
@@ -32,7 +30,6 @@ type WebAudioPlaybackResult =
 
 export class MessageSoundHooks {
   private readonly isSoundEnabled: () => boolean;
-  private readonly onCombatActivity: (() => void) | null;
   private readonly debounceMs: number;
   private readonly soundPackCacheTtlMs: number;
   private readonly audioContextRecoveryIntervalMs: number = 1250;
@@ -87,7 +84,6 @@ export class MessageSoundHooks {
 
   constructor(options: MessageSoundHooksOptions) {
     this.isSoundEnabled = options.isSoundEnabled;
-    this.onCombatActivity = options.onCombatActivity ?? null;
     this.debounceMs = Math.max(1, Math.round(options.debounceMs ?? 120));
     this.soundPackCacheTtlMs = Math.max(
       250,
@@ -96,7 +92,6 @@ export class MessageSoundHooks {
   }
 
   public playDamageEffectSound(variant: "hit" | "defeat"): void {
-    this.onCombatActivity?.();
     if (variant === "defeat") {
       void this.playSoundEffect("monster-killed");
       return;
@@ -130,7 +125,6 @@ export class MessageSoundHooks {
   }
 
   public playMissedAttackSound(): void {
-    this.onCombatActivity?.();
     void this.playSoundEffect("missed-attack");
   }
 

@@ -16,31 +16,21 @@ export function isWizardOfYendorGlyph(glyph: unknown): boolean {
   return WIZARD_TILE_KEY.test(NH5_TILE_KEYS[entry.tileIndex] ?? "");
 }
 
-/** Tracks the map cells currently showing the Wizard (he may have doubles). */
-export class WizardPresenceTracker {
-  private readonly cells = new Set<string>();
+const wizardGlyphCache = new Map<number, boolean>();
 
-  constructor(private readonly isWizard: (glyph: unknown) => boolean = isWizardOfYendorGlyph) {}
-
-  get present(): boolean {
-    return this.cells.size > 0;
+/** Whether the knowledge frame's monsters include the Wizard (he may have doubles). */
+export function isWizardOfYendorInView(
+  monsters: readonly { readonly glyph: number | null; readonly hero: boolean }[],
+  isWizard: (glyph: unknown) => boolean = isWizardOfYendorGlyph,
+): boolean {
+  for (const monster of monsters) {
+    if (monster.hero || monster.glyph === null) continue;
+    let wizard = isWizard === isWizardOfYendorGlyph ? wizardGlyphCache.get(monster.glyph) : undefined;
+    if (wizard === undefined) {
+      wizard = isWizard(monster.glyph);
+      if (isWizard === isWizardOfYendorGlyph) wizardGlyphCache.set(monster.glyph, wizard);
+    }
+    if (wizard) return true;
   }
-
-  /** A map_glyph tile; returns whether presence changed. */
-  update(event: unknown): boolean {
-    const tile = event as { x?: unknown; y?: unknown; glyph?: unknown } | null | undefined;
-    if (!tile || typeof tile.x !== "number" || typeof tile.y !== "number") return false;
-    const before = this.present;
-    const key = `${Math.trunc(tile.x)},${Math.trunc(tile.y)}`;
-    if (this.isWizard(tile.glyph)) this.cells.add(key);
-    else this.cells.delete(key);
-    return this.present !== before;
-  }
-
-  /** Level change: the old map is gone. Returns whether presence changed. */
-  clear(): boolean {
-    const before = this.present;
-    this.cells.clear();
-    return before;
-  }
+  return false;
 }

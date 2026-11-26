@@ -21,44 +21,11 @@ describe("RuntimeGlobalSnapshots level identity", () => {
     delete (globalThis as any).nethackGlobal;
   });
 
-  it("derives the Dungeons of Doom level count from the next ledger start", () => {
-    const identity = snapshotsWithGlobals({
-      u: { uz: { dnum: 0, dlevel: 27 } },
-      dungeons,
-      dungeon_topology: { d_mines_dnum: 2 },
-    }).resolveRuntimeLevelIdentity();
-    expect(identity?.mainDungeonLevelCount).toBe(27);
-    expect(identity?.specialLevel).toBeNull();
-  });
-
-  it("matches exported Medusa and Castle levels exactly", () => {
-    const topology = {
-      d_medusa_level: { dnum: 0, dlevel: 24 },
-      d_stronghold_level: { dnum: 0, dlevel: 27 },
-    };
-    const at = (dlevel: number) =>
-      snapshotsWithGlobals({ u: { uz: { dnum: 0, dlevel } }, dungeons, dungeon_topology: topology })
-        .resolveRuntimeLevelIdentity()?.specialLevel;
-    expect(at(24)).toBe("medusa");
-    expect(at(27)).toBe("castle");
-    expect(at(25)).toBeNull();
-  });
-
-  it("counts the levels of the current dungeon, such as Gehennom", () => {
+  it("names the current dungeon and its depth from the exported dungeons", () => {
     const identity = snapshotsWithGlobals({
       u: { uz: { dnum: 1, dlevel: 22 } },
-      dungeons: [...dungeons, { dname: "The Gnomish Mines", ledger_start: 49, depth_start: 3 }],
+      dungeons,
     }).resolveRuntimeLevelIdentity();
-    expect(identity?.dungeonName).toBe("Gehennom");
-    expect(identity?.dungeonLevelCount).toBe(22);
-    expect(identity?.mainDungeonLevelCount).toBe(27);
-  });
-
-  it("leaves the count unknown when only one dungeon is exported", () => {
-    const identity = snapshotsWithGlobals({
-      u: { uz: { dnum: 0, dlevel: 3 } },
-      dungeons: [dungeons[0]],
-    }).resolveRuntimeLevelIdentity();
-    expect(identity?.mainDungeonLevelCount).toBeNull();
+    expect(identity).toMatchObject({ dnum: 1, dlevel: 22, dungeonName: "Gehennom", ledgerNo: 49, depth: 49 });
   });
 });

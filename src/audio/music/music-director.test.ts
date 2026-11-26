@@ -20,10 +20,29 @@ describe("MusicDirector", () => {
     expect(d.update({ ...base, nowMs: 61000, turn: 103 })).toBe("calm");
   });
 
-  it("treats HP loss as combat", () => {
+  it("does not guess a fight from HP loss alone (traps, hunger)", () => {
     const d = new MusicDirector();
     d.update({ ...base, nowMs: 0 });
-    expect(d.update({ ...base, hp: 17, nowMs: 100 })).toBe("combat");
+    expect(d.update({ ...base, hp: 17, nowMs: 100 })).toBe("calm");
+  });
+
+  it("fights when a hostile comes close, and holds after it leaves", () => {
+    const d = new MusicDirector();
+    const far = { count: 1, maxDifficulty: 1, nearestDistance: 5 };
+    expect(d.update({ ...base, hostiles: far, nowMs: 0 })).toBe("calm");
+    expect(d.update({ ...base, hostiles: { ...far, nearestDistance: 2 }, nowMs: 100 })).toBe("combat");
+    expect(d.update({ ...base, hostiles: null, nowMs: 1000, turn: 101 })).toBe("combat");
+    expect(d.update({ ...base, hostiles: null, nowMs: 5000, turn: 110 })).toBe("calm");
+  });
+
+  it("enters danger when something in view far outmatches the hero", () => {
+    const d = new MusicDirector();
+    const dragon = { count: 1, maxDifficulty: 20, nearestDistance: 8 };
+    expect(d.update({ ...base, experienceLevel: 14, hostiles: dragon, nowMs: 0 })).toBe("danger");
+    // A seasoned hero is not daunted, nor is one who cannot tell (hallucinating: 0).
+    const e = new MusicDirector();
+    expect(e.update({ ...base, experienceLevel: 15, hostiles: dragon, nowMs: 0 })).toBe("calm");
+    expect(e.update({ ...base, experienceLevel: 1, hostiles: { ...dragon, maxDifficulty: 0 }, nowMs: 0 })).toBe("calm");
   });
 
   it("enters danger below 1/3 HP and needs 45% to leave", () => {
