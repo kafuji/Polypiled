@@ -163,6 +163,7 @@ nh3d_hero_hit(struct monst *mon, int dmg, boolean contact)
 {
     if (!mon || (!contact && !canseemon(mon)))
         return;
+    nh3d_note_engagement(TRUE);
     nh3d_queue_shim_notification("shim_combat_feedback",
                                  NH3D_COMBAT_HERO_HIT, mon->mx, mon->my,
                                  max(dmg, 0));
@@ -173,6 +174,9 @@ nh3d_hero_missed(struct monst *mon, boolean contact)
 {
     if (!mon || (!contact && !canseemon(mon)))
         return;
+    /* a missed shot only sometimes wakes its target (tmiss), so count the
+       attack here as well as in wakeup() */
+    nh3d_note_engagement(TRUE);
     nh3d_queue_shim_notification("shim_combat_feedback",
                                  NH3D_COMBAT_HERO_MISSED, mon->mx, mon->my,
                                  0);
@@ -181,6 +185,7 @@ nh3d_hero_missed(struct monst *mon, boolean contact)
 void
 nh3d_hero_dodged(void)
 {
+    nh3d_note_engagement(FALSE); /* a monster's blow misses the hero */
     nh3d_queue_shim_notification("shim_combat_feedback",
                                  NH3D_COMBAT_HERO_DODGED, u.ux, u.uy, 0);
 }

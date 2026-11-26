@@ -549,7 +549,6 @@ mattacku(struct monst *mtmp)
             return !!(mattackm(u.usteed, mtmp) & M_ATTK_DEF_DIED);
         }
     }
-    nh3d_note_engagement(FALSE); /* Polypiled */
 
     if (u.uundetected && !range2 && foundyou && !u.uswallow) {
         if (!canspotmon(mtmp))
@@ -927,10 +926,13 @@ mattacku(struct monst *mtmp)
             }
             break;
         case AT_MAGC:
-            if (range2)
+            if (range2) {
                 sum[i] = buzzmu(mtmp, mattk);
-            else
+            } else {
+                /* Polypiled: a caster next to the hero is fighting them */
+                nh3d_note_engagement(FALSE);
                 sum[i] = castmu(mtmp, mattk, TRUE, foundyou);
+            }
             break;
 
         default: /* no attack */
@@ -1150,6 +1152,8 @@ hitmu(struct monst *mtmp, struct attack *mattk)
     struct permonst *olduasmon = gy.youmonst.data;
     int res;
     struct mhitm_data mhm;
+
+    nh3d_note_engagement(FALSE); /* Polypiled: a blow lands on the hero */
     mhm.hitflags = M_ATTK_MISS;
     mhm.permdmg = 0;
     mhm.specialdmg = 0;
@@ -1295,6 +1299,8 @@ gulpmu(struct monst *mtmp, struct attack *mattk)
     int tmp = d((int) mattk->damn, (int) mattk->damd);
     int tim_tmp;
     struct obj *otmp2, *nextobj;
+
+    nh3d_note_engagement(FALSE); /* Polypiled: engulfed */
     int i;
     boolean physical_damage = FALSE;
 
@@ -1602,6 +1608,7 @@ explmu(
 
     if (mtmp->mcan)
         return M_ATTK_MISS;
+    nh3d_note_engagement(FALSE); /* Polypiled: it explodes at the hero */
 
     tmp = d((int) mattk->damn, (int) mattk->damd);
     not_affected = defended(mtmp, (int) mattk->adtyp);

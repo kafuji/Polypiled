@@ -121,7 +121,8 @@ enum nh3d_light_kind {
 #define NH3D_LEVEL_IN_TEMPLE 0x40
 
 /* special levels the hero is on (version 2); only levels the hero can tell
-   apart on arrival, and the Wizard's Tower only from inside it */
+   apart: on arrival, Medusa's and the Castle once their water is seen
+   (nh3d_water_level_recognized), the Wizard's Tower only from inside it */
 enum nh3d_special_level {
     NH3D_SPECIAL_NONE = 0,
     NH3D_SPECIAL_MEDUSA = 1,
@@ -138,6 +139,10 @@ enum nh3d_special_level {
     NH3D_SPECIAL_WATER = 12,
     NH3D_SPECIAL_ASTRAL = 13
 };
+
+/* Medusa's island and the Castle's moat are told by their water: the hero
+   recognizes the level once they have seen this many water squares on it */
+#define NH3D_RECOGNIZE_WATER_SQUARES 20
 
 /* hostiles are counted up to this many, and distances capped at this */
 #define NH3D_HOSTILE_COUNT_MAX 255
@@ -552,13 +557,44 @@ nh3d_fill_hero(int *out)
     out[7] = (u.uswallow && u.ustuck) ? (int) u.ustuck->m_id : -1;
 }
 
+/*
+ * Whether the hero has seen enough of the level's water to tell Medusa's
+ * level or the Castle apart from an ordinary one.  Nothing announces either
+ * on arrival, so a hero arriving blind or in the dark does not know yet.
+ * Remembered terrain only grows during a visit, so once true it stays true
+ * until the hero leaves.
+ */
+static boolean
+nh3d_water_level_recognized(void)
+{
+    static d_level checked;
+    static boolean recognized = FALSE;
+    coordxy x, y;
+    int water = 0;
+
+    if (!on_level(&u.uz, &checked)) {
+        checked = u.uz;
+        recognized = FALSE;
+    }
+    if (recognized)
+        return TRUE;
+    for (y = 0; y < ROWNO; y++)
+        for (x = 1; x < COLNO; x++)
+            if (IS_POOL(svl.lastseentyp[x][y])
+                && ++water >= NH3D_RECOGNIZE_WATER_SQUARES)
+                return recognized = TRUE;
+    return FALSE;
+}
+
 static int
 nh3d_special_level(void)
 {
     if (Is_medusa_level(&u.uz))
-        return NH3D_SPECIAL_MEDUSA;
+        return nh3d_water_level_recognized() ? NH3D_SPECIAL_MEDUSA
+                                             : NH3D_SPECIAL_NONE;
     if (Is_stronghold(&u.uz))
-        return NH3D_SPECIAL_CASTLE;
+        return nh3d_water_level_recognized() ? NH3D_SPECIAL_CASTLE
+                                             : NH3D_SPECIAL_NONE;
     if (Is_valley(&u.uz))
         return NH3D_SPECIAL_VALLEY;
     if (Is_sanctum(&u.uz))
@@ -614,8 +650,9 @@ nh3d_hostiles_in_view(void)
         if (dist < nearest)
             nearest = dist;
     }
-    return (count & 0xff) | ((difficulty & 0xff) << 8)
-           | ((nearest & 0xff) << 16);
+    return (int) ((unsigned) (count & 0xff)
+                  | ((unsigned) (difficulty & 0xff) << 8)
+                  | ((unsigned) (nearest & 0xff) << 16));
 }
 
 static void
@@ -643,7 +680,8 @@ nh3d_fill_level(int *out)
     out[2] = observable_depth(&u.uz); /* as the status line shows it */
     out[3] = bits;
     out[4] = nh3d_special_level();
-    out[5] = nh3d_hero_attacks | (nh3d_foe_attacks << 16);
+    out[5] = (int) ((unsigned) nh3d_hero_attacks
+                    | ((unsigned) nh3d_foe_attacks << 16));
     out[6] = nh3d_hostiles_in_view();
     out[7] = 0;
 }
