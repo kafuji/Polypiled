@@ -1,5 +1,7 @@
 # Polypiled MCP prototype
 
+For automated play and tests without a browser, use the headless server instead: [mcp-headless.md](mcp-headless.md).
+
 This experimental local bridge lets an MCP client control a game in a development browser tab. It exposes the app and game state, observed map and inventory, command keys and extended commands, questions, text input, menu selections and position selection. It connects to the same session as the visible game and can be enabled from the title screen or during play.
 
 ## Manual smoke test on Windows

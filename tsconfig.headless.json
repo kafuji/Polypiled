@@ -1,0 +1,12 @@
+{
+  // The headless runner (src/headless) runs in Node but imports the browser
+  // runtime, so it is checked with Node's types on top of the app's libs.
+  // The app itself (tsconfig.json) never sees Node globals.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src/headless/**/*"],
+  "exclude": []
+}

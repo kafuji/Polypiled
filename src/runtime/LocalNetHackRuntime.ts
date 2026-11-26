@@ -122,6 +122,11 @@ class LocalNetHackRuntime {
     }
   }
 
+  /** True while the open menu takes several selections and a confirming Enter (pickup, drop, loot). */
+  isMultiSelectMenuActive(): boolean {
+    return this.systems.menuSelection.isInMultiPickup === true;
+  }
+
   requestTileUpdate(x: number, y: number): void {
     this.systems.tileRefresh.handleTileUpdateRequest(x, y);
   }
