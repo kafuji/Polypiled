@@ -643,6 +643,8 @@ known_hitum(
                 cutworm(mon, gb.bhitpos.x, gb.bhitpos.y, slice_or_chop);
         }
     }
+    /* Polypiled: tell the shell which hand struck and whether it hit */
+    nh3d_hero_blow(gb.bhitpos.x, gb.bhitpos.y, gt.twohits == 2, *mhit != 0);
     return malive;
 }
 
