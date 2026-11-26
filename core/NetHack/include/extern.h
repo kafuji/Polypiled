@@ -1219,6 +1219,8 @@ extern void maybe_shuffle_customizations(void);
 
 /* ### hack.c ### */
 
+/* Polypiled: the next step was chosen by a map click */
+extern void nh3d_note_click_step(void);
 extern boolean is_valid_travelpt(coordxy, coordxy);
 extern anything *uint_to_any(unsigned);
 extern anything *long_to_any(long);

@@ -5063,6 +5063,7 @@ domouseaction(void)
             cmdq_add_ec(CQ_CANNED, move_funcs[dir][MV_WALK]);
             return ECMD_OK;
         }
+        nh3d_note_click_step(); /* Polypiled: may wade in after asking */
     } else {
         /* convert without using floating point, allowing sloppy clicking */
         if (x > 2 * abs(y))

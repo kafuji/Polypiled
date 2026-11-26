@@ -109,6 +109,9 @@ One line each, grouped by theme; `rule-changes.md` has the details.
 
 - A plain left click always moves or attacks, and travels when the target is
   farther away.
+- A click onto known water next to the hero asks "Really step into the
+  water?" instead of refusing, since a click cannot carry the 'm' prefix.
+  Identified water walking needs no question, as before.
 - Stepping onto visible objects says nothing; the floor panel shows them
   instead.
 - The inventory screen supports dropping several items at once, readying
