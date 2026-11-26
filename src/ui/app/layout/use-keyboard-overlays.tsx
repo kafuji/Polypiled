@@ -203,7 +203,6 @@ export function useKeyboardOverlays(dependencies: UseKeyboardOverlaysDependencie
     };
 
     const handleInteractionKey = (event: KeyboardEvent): void => {
-      if ((event.target as HTMLElement | null)?.closest?.("[data-local-mcp-control]")) return;
       if (
         event.key !== "Enter" &&
         event.key !== "NumpadEnter" &&

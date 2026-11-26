@@ -9653,7 +9653,7 @@ button.nh3d-technique-row {
   }
 }
 
-/* What lies under the hero (FloorPanel): bottom right, above the local MCP chip. */
+/* What lies under the hero (FloorPanel): bottom right. */
 .nh3d-floor-panel {
   position: fixed;
   right: calc(10px + env(safe-area-inset-right));
