@@ -352,6 +352,24 @@ class LocalNetHackRuntime {
       case "shim_inventory":
         return this.systems.mapCallbacks.handleShimInventory(args);
 
+      // Polypiled: the core is about to read a new command (cmd.c parse()).
+      case "shim_command_ready":
+        this.emit({ type: "command_ready", turn: args[0], x: args[1], y: args[2] });
+        return 0;
+
+      // Polypiled: getpos() begins (1) or ends (0), with the cursor's square (getpos.c).
+      case "shim_getpos":
+        this.emit({ type: "getpos", active: args[0] === 1, x: args[1], y: args[2] });
+        return 0;
+
+      // Polypiled: debug-mode "reveal" inventory operation (nh3d_knowledge.c).
+      case "shim_reveal": {
+        let reveal: unknown = null;
+        try { reveal = JSON.parse(String(args[0])); } catch { /* malformed: report null */ }
+        this.emit({ type: "reveal", reveal });
+        return 0;
+      }
+
       case "shim_player_selection":
         console.log("NetHack player selection started");
         // TO-DO: Is it OK we ignore this?

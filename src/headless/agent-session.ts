@@ -2,6 +2,7 @@ import type { RuntimeEvent } from "../runtime/types";
 import type { RuntimeCommandIdentity, RuntimeInputPurpose } from "../runtime/protocol/types";
 import type { KnowledgeFrame, KnowledgeHero, KnowledgeLevel, KnowledgeMonster } from "../runtime/knowledge";
 import type { InventoryObject, InventoryState } from "../runtime/inventory-state";
+import { encodeInventoryOperation, inventoryOperationInputPrefix, type InventoryOperation } from "../runtime/input/inventory-operation";
 
 /**
  * An agent's view of one game, built straight from runtime events (no UI).
@@ -13,6 +14,11 @@ import type { InventoryObject, InventoryState } from "../runtime/inventory-state
  *
  * Everything here is what the hero can know; it comes from the core's
  * knowledge frame, glances, structured inventory and the displayed map.
+ * The one exception is reveal(), which only works in debug (wizard) mode.
+ *
+ * Cores that send "command_ready" (cmd.c parse()) tell a command prompt
+ * apart from any other key the game reads; older cores are treated as if
+ * every key request outside a prompt were a command prompt.
  */
 
 export interface AgentRuntimePort {
@@ -32,7 +38,15 @@ export type AgentAction =
   | { answer: string }
   | { select: Array<{ index: number; count?: number }> }
   | { text: string }
-  | { dismiss: true };
+  | { dismiss: true }
+  /** Move the cursor of a position prompt to x, y and pick it. */
+  | { position: { x: number; y: number } }
+  /** A whole inventory action by letter or object id, answered by the core itself (wear, wield, pickup, drop, loot ...). */
+  | { inventory: AgentInventoryOperation }
+  /** Debug mode only: publish the level as it really is; takes no time. */
+  | { reveal: true };
+
+export type AgentInventoryOperation = Exclude<InventoryOperation, { op: "checkpoint" } | { op: "reveal" }>;
 
 export interface AgentMenuItem {
   index: number;
@@ -44,6 +58,8 @@ export interface AgentMenuItem {
 
 export type AgentPrompt =
   | { kind: "command" }
+  /** The game reads one key outside a prompt (after a prefix key, inside a count, a "--More--" without a window). */
+  | { kind: "key"; text: string | null }
   | { kind: "more"; text: string | null }
   | { kind: "yn"; text: string; choices: string; default: string }
   | { kind: "direction"; text: string }
@@ -138,6 +154,17 @@ export class AgentSession {
   private readonly consumed = new Map<number, number>();
   private consumedTokens(commandId: number): number { return this.consumed.get(commandId) ?? 0; }
   private readonly settleWaiters: Array<() => void> = [];
+  /** The core sends command_ready (newer cores); then only waits it marks are command prompts. */
+  private coreMarksCommands = false;
+  private commandReadyPending = false;
+  private readonly commandWaits = new Set<number>();
+  private coreTurn: number | null = null;
+  private lastReveal: unknown = undefined;
+  /** The core sends getpos begin/end (newer cores); then that, not the runtime's guess, says a position is being chosen. */
+  private coreMarksPositions = false;
+  private corePositionActive = false;
+  private positionPromptText: string | null = null;
+  private movingCursor = false;
 
   attach(port: AgentRuntimePort): void { this.port = port; }
 
@@ -152,12 +179,31 @@ export class AgentSession {
         const id = event.requestId as number;
         if (event.state === "waiting") {
           this.waits.set(id, { id, purpose: event.purpose as RuntimeInputPurpose, callback: String(event.callback) });
+          if (this.commandReadyPending && event.purpose === "command-or-position") {
+            this.commandWaits.add(id);
+            this.commandReadyPending = false;
+          }
         } else {
           this.waits.delete(id);
           this.promptByWait.delete(id);
+          this.commandWaits.delete(id);
         }
         break;
       }
+      case "command_ready":
+        this.coreMarksCommands = true;
+        this.commandReadyPending = true;
+        if (Number.isSafeInteger(event.turn)) this.coreTurn = event.turn as number;
+        break;
+      case "reveal":
+        this.lastReveal = event.reveal ?? null;
+        break;
+      case "getpos":
+        this.coreMarksPositions = true;
+        this.corePositionActive = event.active === true;
+        this.positionPromptText = this.corePositionActive ? this.lastMessageText : null;
+        if (Number.isSafeInteger(event.x) && Number.isSafeInteger(event.y)) this.positionCursor = { x: event.x as number, y: event.y as number };
+        break;
       case "command_result":
         if (event.status === "rejected") this.rejected.add(event.commandId as number);
         break;
@@ -168,8 +214,14 @@ export class AgentSession {
         this.positionActive = event.active === true;
         if (!this.positionActive) this.positionCursor = null;
         break;
+      case "map_cursor":
+        // getpos() puts the cursor on the square it describes before each key.
+        if (this.corePositionActive && Number.isSafeInteger(event.x) && Number.isSafeInteger(event.y)) {
+          this.positionCursor = { x: event.x as number, y: event.y as number };
+        }
+        break;
       case "position_cursor":
-        if (Number.isSafeInteger(event.x) && Number.isSafeInteger(event.y)) this.positionCursor = { x: event.x as number, y: event.y as number };
+        if (!this.coreMarksPositions && Number.isSafeInteger(event.x) && Number.isSafeInteger(event.y)) this.positionCursor = { x: event.x as number, y: event.y as number };
         break;
       case "text":
       case "raw_print":
@@ -226,6 +278,9 @@ export class AgentSession {
 
   private addMessage(text: unknown): void {
     if (typeof text !== "string") return;
+    // While a position action moves the cursor, the game describes each
+    // square it passes (autodescribe); those are not news.
+    if (this.movingCursor && this.corePositionActive) return;
     const trimmed = text.replace(/\s+$/, "");
     if (!trimmed) return;
     this.lastMessageText = trimmed;
@@ -236,7 +291,7 @@ export class AgentSession {
   /** The status line's turn counter (the time option is always on); the knowledge frame only arrives when the map changes. */
   private currentTurn(): number | null {
     const time = Number.parseInt(this.status.time ?? "", 10);
-    return Number.isSafeInteger(time) ? time : this.frame?.turn ?? null;
+    return Number.isSafeInteger(time) ? time : this.coreTurn ?? this.frame?.turn ?? null;
   }
 
   private observeStatus(event: RuntimeEvent): void {
@@ -330,7 +385,10 @@ export class AgentSession {
       }
     }
     if (wait.purpose === "command-or-position") {
-      return this.positionActive ? { kind: "position", text: "", cursor: this.positionCursor } : { kind: "command" };
+      const choosing = this.coreMarksPositions ? this.corePositionActive : this.positionActive;
+      if (choosing) return { kind: "position", text: this.positionPromptText ?? "", cursor: this.positionCursor };
+      if (!this.coreMarksCommands || this.commandWaits.has(wait.id)) return { kind: "command" };
+      return { kind: "key", text: this.lastMessageText };
     }
     if (wait.purpose === "text") return { kind: "text", text: "" };
     return { kind: "more", text: this.lastMessageText };
@@ -350,7 +408,8 @@ export class AgentSession {
     return unread;
   }
 
-  observe(options: { map?: boolean } = {}): AgentObservation {
+  /** The state without reading the messages. */
+  peek(): Pick<AgentObservation, "turn" | "prompt" | "hero" | "level" | "status"> {
     const level = this.frame?.level;
     const levelFlags = level ? (["mines", "sokoban", "gehennom", "quest", "endgame", "inShop", "inTemple"] as const).filter(name => level[name]) : [];
     return {
@@ -359,6 +418,12 @@ export class AgentSession {
       hero: this.heroView(),
       level: level ? { dnum: level.dnum, dlevel: level.dlevel, depth: level.depth, flags: [...levelFlags] } : null,
       status: { ...this.status },
+    };
+  }
+
+  observe(options: { map?: boolean } = {}): AgentObservation {
+    return {
+      ...this.peek(),
       messages: this.unreadMessages(),
       monsters: this.monsterView(),
       here: this.here,
@@ -417,9 +482,13 @@ export class AgentSession {
     const turnBefore = this.currentTurn();
     const statusBefore = { ...this.status };
     const identity: RuntimeCommandIdentity = { sessionId: this.sessionId, commandId: ++this.nextCommandId, lastProcessedSequence: 0, requestId: wait.id };
+    this.movingCursor = "position" in action;
     if (inputs.length === 1) this.port.sendInput(inputs[0], identity);
     else this.port.sendInputSequence(inputs, identity);
-    if (this.rejected.has(identity.commandId)) throw new Error("The input request closed before the action was sent; observe and try again");
+    if (this.rejected.has(identity.commandId)) {
+      this.movingCursor = false;
+      throw new Error("The input request closed before the action was sent; observe and try again");
+    }
     // Done once the wait we answered closes, or once the game has read every
     // key we sent and gone quiet (a key that only toggles a menu entry leaves
     // the menu, and its wait, open). The quiet fallback covers keys the
@@ -442,6 +511,7 @@ export class AgentSession {
       poll();
     });
     this.consumed.delete(identity.commandId);
+    this.movingCursor = false;
     const statusChanges: AgentActResult["statusChanges"] = {};
     for (const [key, value] of Object.entries(this.status)) {
       if (statusBefore[key] !== value) statusChanges[key] = { from: statusBefore[key] ?? null, to: value };
@@ -461,7 +531,23 @@ export class AgentSession {
   private inputsFor(action: AgentAction, prompt: AgentPrompt): string[] {
     const fields = Object.keys(action);
     if (fields.length === 0 || (fields.length > 1 && !("move" in action && fields.every(f => f === "move" || f === "count")))) {
-      throw new Error("Give exactly one of keys, move, extended, answer, select, text or dismiss");
+      throw new Error("Give exactly one of keys, move, extended, answer, select, text, dismiss, position, inventory or reveal");
+    }
+    if ("position" in action) {
+      if (prompt.kind !== "position") throw new Error(`No position prompt is open (prompt: ${prompt.kind})`);
+      return this.cursorKeysTo(action.position);
+    }
+    if ("inventory" in action) {
+      if (prompt.kind !== "command") throw new Error(`The game is not waiting for a command (prompt: ${prompt.kind})`);
+      const operation = action.inventory as InventoryOperation;
+      if (!operation || operation.op === "checkpoint" || operation.op === "reveal") throw new Error("Unknown inventory operation");
+      const request = encodeInventoryOperation(operation);
+      if (!request) throw new Error("The inventory operation is not valid (letters a-zA-Z$, object ids from inventory())");
+      return [`${inventoryOperationInputPrefix}${request}`];
+    }
+    if ("reveal" in action) {
+      if (prompt.kind !== "command") throw new Error(`The game is not waiting for a command (prompt: ${prompt.kind})`);
+      return [`${inventoryOperationInputPrefix}reveal`];
     }
     if ("keys" in action) {
       if (!Array.isArray(action.keys) || action.keys.length === 0 || action.keys.length > 64) throw new Error("keys must list 1 to 64 keys");
@@ -521,6 +607,41 @@ export class AgentSession {
       }
     }
     throw new Error("Unknown action");
+  }
+
+  /**
+   * Keys that move a position prompt's cursor to the target and pick it:
+   * hjklyubn move one square, HJKLYUBN eight (number_pad is off in headless
+   * games), from where getpos() last put the cursor.
+   */
+  private cursorKeysTo(target: { x: number; y: number }): string[] {
+    if (!target || !Number.isSafeInteger(target.x) || !Number.isSafeInteger(target.y) || target.x < 1 || target.x > 79 || target.y < 0 || target.y > 20) {
+      throw new Error("position needs x from 1 to 79 and y from 0 to 20");
+    }
+    // The cursor as getpos() last placed it (it starts where the core said).
+    // Not '@' (to the hero): farlook treats it as picking the spot.
+    const hero = this.frame?.hero;
+    const from = this.positionCursor ?? (hero ? { x: hero.x, y: hero.y } : null);
+    if (!from) throw new Error("The cursor position is unknown");
+    const keys: string[] = [];
+    let dx = target.x - from.x, dy = target.y - from.y;
+    const step: Record<string, string> = { "-1,-1": "y", "0,-1": "k", "1,-1": "u", "-1,0": "h", "1,0": "l", "-1,1": "b", "0,1": "j", "1,1": "n" };
+    while (dx !== 0 || dy !== 0) {
+      const sx = Math.sign(dx), sy = Math.sign(dy);
+      const far = (sx === 0 || Math.abs(dx) >= 8) && (sy === 0 || Math.abs(dy) >= 8);
+      const n = far ? 8 : 1;
+      keys.push(far ? step[`${sx},${sy}`].toUpperCase() : step[`${sx},${sy}`]);
+      dx -= sx * n; dy -= sy * n;
+    }
+    keys.push(".");
+    return keys;
+  }
+
+  /** What the last reveal action published; null when the core refused (not debug mode). */
+  takeReveal(): unknown {
+    const reveal = this.lastReveal;
+    this.lastReveal = undefined;
+    return reveal === undefined ? null : reveal;
   }
 
   private menuItemsForWait(): Array<Record<string, unknown>> {

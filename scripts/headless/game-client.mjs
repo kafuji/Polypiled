@@ -51,10 +51,10 @@ export function bundleHeadlessWorker() {
 }
 
 /**
- * Start one game. Options: seed (0-35999), name, role/race/gender/align
+ * Start one game. Options: seed (0 to 4294967295), name, role/race/gender/align
  * (all four, or none for random), playmode (normal|explore|debug), options
- * (NetHack option tokens), publicDir. Resolves after the game first waits
- * for input, with { game, observation }.
+ * (NetHack option tokens), snapshot (replay one instead), publicDir.
+ * Resolves after the game first waits for input, with { game, observation }.
  */
 export async function startHeadlessGame(options = {}) {
   const workerPath = await bundleHeadlessWorker();
@@ -92,6 +92,17 @@ export async function startHeadlessGame(options = {}) {
     observe: (params = {}) => call("observe", params),
     act: (action, timeoutMs) => call("act", { action, timeoutMs }),
     inventory: () => call("inventory", {}),
+    /** { format, version, setup, actions, turn, fingerprint }: pass as options.snapshot to start a copy. */
+    snapshot: () => call("snapshot", {}),
+    // Debug mode (playmode "debug") only:
+    reveal: () => call("reveal", {}),
+    wish: text => call("wish", { text }),
+    createMonster: text => call("create_monster", { text }),
+    teleport: (x, y) => call("teleport", { x, y }),
+    levelTeleport: level => call("level_teleport", { level: String(level) }),
+    mapLevel: () => call("map", {}),
+    // Any mode:
+    travel: (x, y) => call("travel", { x, y }),
     close: async () => { failure ??= new Error("The game was closed"); await worker.terminate(); },
   };
   try {

@@ -16,19 +16,19 @@ import type { RuntimeEvent, RuntimeStartupOptions } from "../runtime/types";
  */
 
 /**
- * The core seeds its random number generator from the clock (the WASM build
- * has no DEV_RANDOM, so sys_random_seed() uses time() * getpid(), and getpid()
- * is constant). A seed therefore picks a second on a fixed, ordinary day: not
- * a full or new moon, not Friday the 13th, in daytime, in UTC.
+ * The core takes its random seed from globalThis.nh3dHeadless.seed
+ * (sys/libnh/libnhmain.c). The clock still matters to the game (the moon's
+ * phase, Friday the 13th, night and midnight), so it is frozen on an
+ * ordinary day: not a full or new moon, not a Friday, in daytime, in UTC.
  */
-export const HEADLESS_SEED_MAX = 35_999;
-const HEADLESS_EPOCH_MS = Date.UTC(2026, 0, 10, 8, 0, 0);
+export const HEADLESS_SEED_MAX = 0xffffffff;
+export const HEADLESS_CLOCK_MS = Date.UTC(2026, 0, 10, 8, 0, 0);
 
-export function headlessClockForSeed(seed: number): number {
+export function checkHeadlessSeed(seed: number): number {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > HEADLESS_SEED_MAX) {
     throw new Error(`seed must be an integer from 0 to ${HEADLESS_SEED_MAX}`);
   }
-  return HEADLESS_EPOCH_MS + seed * 1000;
+  return seed;
 }
 
 let patchedPublicDir: string | null = null;
@@ -55,8 +55,10 @@ export interface NodeRuntimeOptions {
   /** Directory holding nethack-5.js and nethack-5.wasm (the app's public/). */
   publicDir: string;
   startupOptions: RuntimeStartupOptions;
-  /** Fixed wall clock for the game (ms since the epoch); see headlessClockForSeed. */
-  clockMs: number;
+  /** The core's random seed; the same seed and the same input give the same game. */
+  seed: number;
+  /** Fixed wall clock for the game (ms since the epoch); default HEADLESS_CLOCK_MS. */
+  clockMs?: number;
   /** Keep the runtime's console output (very verbose). */
   verbose?: boolean;
   onEvent(event: RuntimeEvent): void;
@@ -79,11 +81,14 @@ export async function startNodeRuntime(options: NodeRuntimeOptions): Promise<Nod
   // Freeze the clock the core reads (Emscripten's clock uses Date.now()) and
   // the time zone its localtime() uses, so a seed means the same game anywhere.
   const realNow = Date.now;
-  Date.now = () => options.clockMs;
+  const clockMs = options.clockMs ?? HEADLESS_CLOCK_MS;
+  Date.now = () => clockMs;
   restore.push(() => { Date.now = realNow; });
   const realTz = process.env.TZ;
   process.env.TZ = "UTC";
   restore.push(() => { if (realTz === undefined) delete process.env.TZ; else process.env.TZ = realTz; });
+
+  (globalThis as { nh3dHeadless?: { seed: number } }).nh3dHeadless = { seed: checkHeadlessSeed(options.seed) };
 
   if (!options.verbose) {
     const saved = { log: console.log, info: console.info, debug: console.debug, warn: console.warn };

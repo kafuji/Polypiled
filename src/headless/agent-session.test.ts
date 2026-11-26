@@ -114,6 +114,39 @@ describe("AgentSession", () => {
     expect(sent[sent.length - 1].inputs).toEqual(["__MENU_SELECT__:7:2", "Enter"]);
   });
 
+  it("with a core that marks commands, only the marked key request is a command prompt", () => {
+    const { session } = harness();
+    session.handle({ type: "command_ready", turn: 9, x: 5, y: 5 });
+    session.handle(wait(1, "waiting"));
+    expect(session.prompt()).toEqual({ kind: "command" });
+    session.handle(wait(1, "consumed"));
+    session.handle({ type: "text", text: "Count: 2" });
+    session.handle(wait(2, "waiting"));
+    expect(session.prompt()).toEqual({ kind: "key", text: "Count: 2" });
+  });
+
+  it("follows getpos: a position prompt whose cursor moves are turned into keys", async () => {
+    const { session, sent } = harness({ onSend: (_inputs, s) => { s.handle(wait(7, "consumed")); s.handle({ type: "getpos", active: false, x: 30, y: 4 }); s.handle({ type: "command_ready", turn: 1 }); s.handle(wait(8, "waiting")); } });
+    session.handle({ type: "command_ready", turn: 1 });
+    session.handle({ type: "text", text: "Where do you want to travel to?" });
+    session.handle({ type: "getpos", active: true, x: 10, y: 4 });
+    session.handle({ type: "map_cursor", x: 12, y: 4, window: 3 });
+    session.handle(wait(7, "waiting"));
+    expect(session.prompt()).toEqual({ kind: "position", text: "Where do you want to travel to?", cursor: { x: 12, y: 4 } });
+    const result = await session.act({ position: { x: 30, y: 2 } });
+    // 18 right and 2 up: two diagonal steps, then 8 + 8 right.
+    expect(sent[0].inputs).toEqual(["u", "u", "L", "L", "."]);
+    expect(result.prompt).toEqual({ kind: "command" });
+  });
+
+  it("sends inventory operations and reveal requests at a command prompt", async () => {
+    const { session, sent } = harness({ onSend: (_inputs, s) => { s.handle(wait(1, "consumed")); s.handle(wait(2, "waiting")); } });
+    session.handle(wait(1, "waiting"));
+    await session.act({ inventory: { op: "drop", items: [{ id: 40 }, { id: 44, count: 2 }] } });
+    expect(sent[0].inputs).toEqual(["__NH3D_INVOP__:drop:40,44x2"]);
+    await expect(session.act({ inventory: { op: "wear", item: "!" } } as never)).rejects.toThrow(/not valid/);
+  });
+
   it("refuses actions that do not fit the prompt", async () => {
     const { session } = harness();
     session.handle(wait(1, "waiting"));
