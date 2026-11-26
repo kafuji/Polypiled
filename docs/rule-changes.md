@@ -3,6 +3,12 @@
 Where Polypiled's rules differ from NetHack 5.0. Each change in the C source
 is marked with a `Polypiled:` comment.
 
+Many of them are checked against the real core by
+`scripts/headless/rules.test.mjs` (`npm run test:rules`, also run in CI and on
+every core build): hunger, worn armor weight, overeating, food spoilage, power
+regeneration, identification by engraving, bag of holding safety,
+polypiling, pet orders, Sokoban, the thieves' den and the midway level.
+
 ## Food spoilage
 
 Spoilage no longer comes down to a die roll at the moment of eating, and the

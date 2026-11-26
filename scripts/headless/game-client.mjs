@@ -106,7 +106,10 @@ export async function startHeadlessGame(options = {}) {
     close: async () => { failure ??= new Error("The game was closed"); await worker.terminate(); },
   };
   try {
-    const observation = await call("start", { publicDir: join(root, "public"), ...options });
+    // POLYPILED_CORE_DIR points at another build of the core (nethack-5.js and
+    // nethack-5.wasm), as the core build workflow does to test a fresh build.
+    const publicDir = process.env.POLYPILED_CORE_DIR ? resolve(process.env.POLYPILED_CORE_DIR) : join(root, "public");
+    const observation = await call("start", { publicDir, ...options });
     return { game, observation };
   } catch (error) {
     await worker.terminate();
