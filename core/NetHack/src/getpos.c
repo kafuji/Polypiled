@@ -765,6 +765,25 @@ getpos_refresh(void)
     }
 }
 
+#if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
+/* Polypiled: tell the shell when the player is choosing a position, and
+   where the cursor starts (win/shim/nh3d_knowledge.c) */
+extern void nh3d_note_getpos(int, int, int);
+int getpos_core(coord *, boolean, const char *) NONNULLARG1;
+
+int
+getpos(coord *ccp, boolean force, const char *goal)
+{
+    int result;
+
+    nh3d_note_getpos(1, ccp->x, ccp->y);
+    result = getpos_core(ccp, force, goal);
+    nh3d_note_getpos(0, ccp->x, ccp->y);
+    return result;
+}
+#define getpos getpos_core
+#endif
+
 /* have the player use movement keystrokes to position the cursor at a
    particular map location, then use one of [.,:;] to pick the spot */
 int
@@ -1165,5 +1184,8 @@ getpos(coord *ccp, boolean force, const char *goal)
     u.dx = udx, u.dy = udy, u.dz = udz;
     return result;
 }
+#if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
+#undef getpos
+#endif
 
 /*getpos.c*/

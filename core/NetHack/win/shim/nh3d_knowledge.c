@@ -1790,6 +1790,27 @@ nh3d_note_command_ready(void)
     }, (int) svm.moves, (int) u.ux, (int) u.uy);
 }
 
+/*
+ * Polypiled: getpos() begins (active 1, with the cursor's starting square)
+ * or ends (active 0, with the square picked).  Every key read in between
+ * moves the cursor or picks; nothing else marks that in the window port.
+ */
+void nh3d_note_getpos(int, int, int);
+
+void
+nh3d_note_getpos(int active, int x, int y)
+{
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_getpos", $0, $1, $2,
+        ]);
+    }, active, x, y);
+}
+
 int
 nh3d_inventory_command(void)
 {
