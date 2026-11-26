@@ -12,8 +12,8 @@ describe("runtime diagnostic presentation", () => {
     expect(translateRuntimeText("Failed to start local NetHack runtime: Unexpected failure", "ja"))
       .toBe("NetHack の起動に失敗しました：Unexpected failure");
     expect(translateRuntimeText("An unknown diagnostic", "ja")).toBe("An unknown diagnostic");
-    expect(translateRuntimeText("Player at (58, 16) - Polypiled", "ja"))
-      .toBe("プレイヤー位置 (58, 16) - Polypiled");
+    expect(translateRuntimeText("Player at (58, 16)", "ja"))
+      .toBe("プレイヤー位置 (58, 16)");
     expect(translateRuntimeText('Autosave "A" does not have a recoverable checkpoint file yet.', "ja"))
       .toBe("「A」のオートセーブには、復元可能なチェックポイントファイルがまだありません。");
   });

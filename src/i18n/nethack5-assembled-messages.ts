@@ -931,6 +931,8 @@ export const assembledMessageTemplates: readonly Template[] = [
   [/^'(\S+)' option toggled (on|off)\.$/, (option, state) => `${option} オプションを${state === "on" ? "オン" : "オフ"}にした。`],
   [/^'(\S+)' is still "(.+)"\.$/, (option, value) => `${option} は「${value}」のままだ。`],
   [/^Really step into that (.+)\?$/, (trap) => `本当にその${lookupNethack5SourceExact(trap) ?? arg(trap)}に踏み込みますか？`],
+  // Polypiled: a map click into known water asks first (hack.c swim_move_danger).
+  [/^Really (?:step|walk|crawl|slither|swim|fly|float|hop|roll) into the (.+)\?$/, (what) => `本当に${lookupNethack5SourceExact(what) ?? arg(what)}に入りますか？`],
   [/^Overwrite config file (.+)\? \[yes\|n\] \(n\)$/, (file) => `設定ファイル ${file} を上書きしますか？ [yes|n] (n)`],
   [/^In what direction do you want to chop\? (\[.*\])$/, (keys) => `どの方向に切りますか？ ${keys}`],
   [/^(Shoot|Throw|Dip something into|Quaff \(drink\)|Drop) (one of these|this|them|this item|one of these potions|these|this stack)(?: with your wielded (.+?))?( \(same as 'f'\))?$/, (verb, which, weapon, same) => {

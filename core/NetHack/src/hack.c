@@ -1880,6 +1880,18 @@ handle_tip(int tip)
     return FALSE;
 }
 
+/* Polypiled: set by a map click that walks one step (domouseaction), and
+   cleared once that step has been tried.  A click cannot carry the 'm'
+   prefix that lets a keyboard player wade into known water, so the click
+   asks instead (swim_move_danger). */
+static boolean nh3d_click_step = FALSE;
+
+void
+nh3d_note_click_step(void)
+{
+    nh3d_click_step = TRUE;
+}
+
 /* Is it dangerous for hero to move to x,y due to water or lava? */
 staticfn boolean
 swim_move_danger(coordxy x, coordxy y)
@@ -1906,6 +1918,16 @@ swim_move_danger(coordxy x, coordxy y)
             || liquid_wall) {
             if (svc.context.nopick) {
                 /* moving with m-prefix */
+                svc.context.tips |= (1 << TIP_SWIM);
+                return FALSE;
+            } else if (nh3d_click_step && is_pool(x, y) && !liquid_wall) {
+                /* Polypiled: a click into water asks rather than refuses */
+                char qbuf[QBUFSZ];
+
+                Snprintf(qbuf, sizeof qbuf, "Really %s into the %s?",
+                         u_locomotion("step"), waterbody_name(x, y));
+                if (y_n(qbuf) != 'y')
+                    return TRUE;
                 svc.context.tips |= (1 << TIP_SWIM);
                 return FALSE;
             } else if (ParanoidSwim || liquid_wall) {
@@ -2698,6 +2720,7 @@ domove(void)
 
         gd.domove_succeeded = 0L;
         domove_core();
+        nh3d_click_step = FALSE; /* Polypiled */
         /* gd.domove_succeeded is available to make assessments now */
         if ((gd.domove_succeeded & (DOMOVE_RUSH | DOMOVE_WALK)) != 0) {
             maybe_smudge_engr(ux1, uy1, u.ux, u.uy);

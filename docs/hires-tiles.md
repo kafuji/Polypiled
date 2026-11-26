@@ -69,6 +69,32 @@ Images must carry real alpha. No background colour is removed from pack files.
 - `frames`, `fps` and `loop` (`loop`, `pingpong` or `once`) are read now.
   Playback is not implemented yet: only the first frame is shown.
 
+## Shadows
+
+In high-resolution tile mode every sprite gets a shadow chosen by its kind
+(`src/game/engine/rendering/grounding-profiles.ts`), shaped from the alpha
+of its picture when it is first drawn, so atlas tiles that a pack lacks get
+the same treatment:
+
+- **feet** (people, animals, statues): a tight contact shadow under where the
+  picture touches the ground.
+- **hover** (floating eyes, lights, vortices, ghosts, bats and birds, air
+  elementals): the sprite floats and bobs above a small soft shadow.
+- **silhouette** (objects, corpses, dungeon features): the picture's own
+  outline laid down behind it.
+- **none**: monsters that give off light, beams and explosions.
+
+Sprites face the camera, so they lean back as the camera looks down and
+their feet show on the floor wherever the view ray through them lands.
+Each frame `entity-grounding.ts` slides every sprite (by its anchor, not its
+position) so that its feet land a quarter square towards the viewer from the
+square's centre, and a lying object's middle lands on the centre, at any
+camera pitch; the shadow goes on that same floor point.
+
+The hero uses the same machinery: it floats while levitating or flying and
+sinks into pits, lava and water. Other tile modes keep the round blob
+shadow, set under the feet in the same way.
+
 ## Current limits
 
 - The pack loads all of its files when it is enabled. That is fine for

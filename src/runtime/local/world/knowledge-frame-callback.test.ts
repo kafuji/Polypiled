@@ -90,3 +90,25 @@ describe("combat feedback notifications", () => {
     expect(emit).not.toHaveBeenCalled();
   });
 });
+
+describe("hero blow and water fall notifications", () => {
+  it("tells which hand struck and whether it hit", () => {
+    const { mapCallbacks, emit } = callbacks();
+    expect(mapCallbacks.handleShimHeroBlow([1, 10, 5, 1])).toBe(0);
+    mapCallbacks.handleShimHeroBlow([2, 10, 5, 0]);
+    expect(emit.mock.calls.map(([event]) => event)).toEqual([
+      { type: "hero_blow", hand: "main", x: 10, y: 5, hit: true },
+      { type: "hero_blow", hand: "off", x: 10, y: 5, hit: false },
+    ]);
+  });
+
+  it("tells who fell into water", () => {
+    const { mapCallbacks, emit } = callbacks();
+    mapCallbacks.handleShimWaterFall([0, 3, 4, 0]);
+    mapCallbacks.handleShimWaterFall([42, 6, 7, 1]);
+    expect(emit.mock.calls.map(([event]) => event)).toEqual([
+      { type: "water_fall", monsterId: null, x: 3, y: 4, drowned: false },
+      { type: "water_fall", monsterId: 42, x: 6, y: 7, drowned: true },
+    ]);
+  });
+});
