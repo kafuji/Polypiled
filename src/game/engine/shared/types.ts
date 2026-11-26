@@ -194,6 +194,8 @@ export type EntityMoveTransition = {
   to: THREE.Vector3;
   queuedWaypoints: EntityMoveTransitionWaypoint[];
   holdAtDestinationUntilConfirmation: boolean;
+  /** When the hold began (performance.now()), for giving up on it. */
+  heldSinceMs?: number;
 };
 
 export type DeferredEntityVisualUpdate = {
