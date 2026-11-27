@@ -428,7 +428,7 @@ export function useCommandActionsEffects(dependencies: UseCommandActionsEffectsD
       return;
     }
     const handleEscape = (event: KeyboardEvent): void => {
-      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel]")) return;
+      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel] input, [data-agent-panel] textarea, [data-agent-panel] select")) return;
       if (event.key !== "Escape") {
         return;
       }
@@ -558,7 +558,7 @@ export function useCommandActionsEffects(dependencies: UseCommandActionsEffectsD
       return;
     }
     const handleEscape = (event: KeyboardEvent): void => {
-      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel]")) return;
+      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel] input, [data-agent-panel] textarea, [data-agent-panel] select")) return;
       if (event.key !== "Escape") {
         return;
       }

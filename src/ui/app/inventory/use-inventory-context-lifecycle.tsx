@@ -159,7 +159,7 @@ export function useInventoryContextLifecycleEffects(dependencies: UseInventoryCo
     };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel]")) return;
+      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel] input, [data-agent-panel] textarea, [data-agent-panel] select")) return;
       if (event.key === "Escape") {
         if (inventoryDropTypeMenuPosition) {
           event.preventDefault();

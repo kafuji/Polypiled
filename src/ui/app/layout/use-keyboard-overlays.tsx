@@ -203,7 +203,7 @@ export function useKeyboardOverlays(dependencies: UseKeyboardOverlaysDependencie
     };
 
     const handleInteractionKey = (event: KeyboardEvent): void => {
-      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel]")) return;
+      if ((event.target as HTMLElement | null)?.closest?.("[data-agent-panel] input, [data-agent-panel] textarea, [data-agent-panel] select")) return;
       if (
         event.key !== "Enter" &&
         event.key !== "NumpadEnter" &&

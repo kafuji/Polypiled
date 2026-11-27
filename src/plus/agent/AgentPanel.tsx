@@ -58,6 +58,14 @@ function describeAction(action: AgentAction): string {
 
 type Tab = "play" | "ask" | "settings";
 
+/**
+ * Buttons of the panel must not keep the keyboard focus: the game's own
+ * keys (Esc, i and the rest) would then go to the button instead of the game.
+ */
+const keepFocusOnGame = (event: { target: EventTarget | null; preventDefault(): void }) => {
+  if ((event.target as HTMLElement | null)?.closest?.("button")) event.preventDefault();
+};
+
 export function AgentPanel(): JSX.Element | null {
   const engine = useGameStore(state => state.engineController);
   const { strings, locale } = useI18n();
@@ -201,7 +209,7 @@ export function AgentPanel(): JSX.Element | null {
 
   const button = (
     <button type="button" className="nh3d-agent-button" data-agent-panel title={t.buttonTitle} aria-label={t.buttonTitle}
-      data-control={control} onClick={() => setOpen(value => !value)}>
+      data-control={control} onMouseDown={keepFocusOnGame} onClick={() => setOpen(value => !value)}>
       {t.button}
     </button>
   );
@@ -212,7 +220,7 @@ export function AgentPanel(): JSX.Element | null {
   return createPortal(
     <>
       {button}
-      <aside className="nh3d-agent-panel" data-agent-panel aria-label={t.title}>
+      <aside className="nh3d-agent-panel" data-agent-panel aria-label={t.title} onMouseDown={keepFocusOnGame}>
         <header className="nh3d-agent-header">
           <strong>{t.title}</strong>
           <span className="nh3d-agent-control" data-control={control}>{controlLabel}</span>
