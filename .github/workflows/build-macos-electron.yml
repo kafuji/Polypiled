@@ -42,9 +42,9 @@ jobs:
           cp -a "${src_dir}/." "${GITHUB_WORKSPACE}/"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -94,7 +94,7 @@ jobs:
           fi
 
       - name: Upload macOS workflow artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: polypiled-macos-dmg
           if-no-files-found: error
