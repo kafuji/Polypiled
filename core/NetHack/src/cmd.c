@@ -99,6 +99,7 @@ staticfn void cmdbind_add(uchar, const struct ext_func_tab *, boolean);
 #if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
 extern int nh3d_inventory_command(void); /* win/shim/nh3d_knowledge.c */
 extern void nh3d_note_command_ready(void); /* Polypiled: same file */
+extern int nh3d_askagent(void); /* Polypiled: same file */
 #endif
 staticfn void cmdbind_remove(uchar);
 staticfn void cmdbind_swapkeys(uchar, uchar);
@@ -1687,6 +1688,12 @@ struct ext_func_tab extcmdlist[] = {
               donamelevel, IFBURIED | AUTOCOMPLETE | GENERALCMD | CMD_M_PREFIX, NULL },
     { 'a',    "apply", "apply (use) a tool (pick-axe, key, lamp...)",
               doapply, CMD_M_PREFIX, NULL },
+#if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
+    /* Polypiled: ask the shell's AI agent about the current game
+       (win/shim/nh3d_knowledge.c); takes no time */
+    { ' ',   "askagent", "ask the AI agent for advice about your game",
+              nh3d_askagent, IFBURIED | AUTOCOMPLETE | GENERALCMD, NULL },
+#endif
     { C('x'), "attributes", "show your attributes",
               doattributes, IFBURIED | GENERALCMD, NULL },
     { '@',    "autopickup", "toggle the 'autopickup' option on/off",

@@ -1916,6 +1916,28 @@ nh3d_publish_reveal(void)
  * the shell can tell a command prompt from any other key the game reads,
  * with the turn counter even when nothing on the map changed.
  */
+/*
+ * Polypiled: #askagent, ask the shell's AI agent about the current game.
+ * The shell opens its advice chat and gives the agent what the hero knows;
+ * the game itself does nothing and takes no time.
+ */
+int nh3d_askagent(void);
+
+int
+nh3d_askagent(void)
+{
+    EM_ASM({
+        globalThis.nethackGlobal = globalThis.nethackGlobal || {};
+        if (!Array.isArray(globalThis.nethackGlobal.pendingShimNotifications)) {
+            globalThis.nethackGlobal.pendingShimNotifications = [];
+        }
+        globalThis.nethackGlobal.pendingShimNotifications.push([
+            "shim_ask_agent",
+        ]);
+    });
+    return ECMD_OK;
+}
+
 void nh3d_note_command_ready(void);
 
 void
