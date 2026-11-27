@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.nethack3d.quest"
+    namespace = "io.github.kafuji.polypiled.quest"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.nethack3d.quest.uiproof"
+        applicationId = "io.github.kafuji.polypiled.quest.uiproof"
         minSdk = 34
         targetSdk = 34
         versionCode = 3

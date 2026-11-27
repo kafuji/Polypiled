@@ -10,11 +10,11 @@ const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT ??
 const adb = process.env.ADB ?? (sdk ? path.join(sdk, "platform-tools", process.platform === "win32" ? "adb.exe" : "adb") : "adb");
 const target = process.env.QUEST_SERIAL ? ["-s", process.env.QUEST_SERIAL] : [];
 const run = (...args) => execFileSync(adb, [...target, ...args], { encoding: "utf8", windowsHide: true });
-const pid = run("shell", "pidof", "com.nethack3d.quest.vr").trim().split(/\s+/)[0];
+const pid = run("shell", "pidof", "io.github.kafuji.polypiled.quest").trim().split(/\s+/)[0];
 if (!/^\d+$/.test(pid)) throw new Error("The Quest app is not running.");
 const output = path.resolve(process.argv[3] ?? `quest/build/diagnostics/performance-${Date.now()}`);
 mkdirSync(path.dirname(output), { recursive: true });
-const packageInfo = run("shell", "dumpsys", "package", "com.nethack3d.quest.vr")
+const packageInfo = run("shell", "dumpsys", "package", "io.github.kafuji.polypiled.quest")
   .split(/\r?\n/).filter(line => /versionCode=|versionName=/.test(line)).map(line => line.trim());
 let raw = "", errors = "";
 const capture = spawn(adb, [...target, "logcat", "-v", "threadtime", "-T", "1", `--pid=${pid}`, "VrApi:I", "*:S"], { windowsHide: true });

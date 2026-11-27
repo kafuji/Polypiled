@@ -150,7 +150,7 @@ function buildTracks() {
 
 export const piece = {
   id: "astral-combat",
-  name: "NetHack 3D Astral Plane Combat (sketch)",
+  name: "Polypiled Astral Plane Combat (sketch)",
   bpm: 144,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

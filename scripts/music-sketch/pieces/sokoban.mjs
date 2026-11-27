@@ -110,7 +110,7 @@ function buildTracks() {
 
 export const piece = {
   id: "sokoban",
-  name: "NetHack 3D Sokoban (sketch)",
+  name: "Polypiled Sokoban (sketch)",
   bpm: 92,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

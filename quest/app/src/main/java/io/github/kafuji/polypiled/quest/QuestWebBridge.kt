@@ -1,4 +1,4 @@
-package com.nethack3d.quest
+package io.github.kafuji.polypiled.quest
 
 import android.net.Uri
 import android.webkit.WebView

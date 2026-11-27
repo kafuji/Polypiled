@@ -49,7 +49,7 @@ Start a game in Tiles or 3D ASCII mode, then verify:
 5. Recenter standing and seated. Open the Universal Menu, remove/re-wear the headset, then continue. Test stairs/level changes, save/load and a second game so old scene resources are removed.
 6. Check busy levels for frame time and thermal behavior. Test each intended tileset/runtime and compare textures, sprite orientation and lighting with the normal game.
 
-Native geometry tests are included under `quest/app/src/test/java/com/nethack3d/quest/stereo/`. With the Android SDK configured in your shell or `quest/local.properties`, run `./android/gradlew.bat -p quest :app:testDebugUnitTest` to test clipping, interpolated texture coordinates, transforms and normals.
+Native geometry tests are included under `quest/app/src/test/java/io/github/kafuji/polypiled/quest/stereo/`. With the Android SDK configured in your shell or `quest/local.properties`, run `./android/gradlew.bat -p quest :app:testDebugUnitTest` to test clipping, interpolated texture coordinates, transforms and normals.
 
 ## Implementation
 

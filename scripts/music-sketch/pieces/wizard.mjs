@@ -129,7 +129,7 @@ function buildTracks() {
 
 export const piece = {
   id: "wizard",
-  name: "NetHack 3D Wizard of Yendor (sketch)",
+  name: "Polypiled Wizard of Yendor (sketch)",
   bpm: 320, // eighth notes; 160 quarter notes a minute
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

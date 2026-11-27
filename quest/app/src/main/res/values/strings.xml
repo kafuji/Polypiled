@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NetHack 3D VR</string>
+    <string name="app_name">Polypiled VR</string>
     <string name="probe_button">UI test</string>
     <string name="game_button">Game</string>
     <string name="reload_button">Reload</string>

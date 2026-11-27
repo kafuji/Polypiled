@@ -143,7 +143,7 @@ function buildTracks() {
 
 export const piece = {
   id: "combat",
-  name: "NetHack 3D Combat Theme (sketch)",
+  name: "Polypiled Combat Theme (sketch)",
   bpm: 132,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

@@ -105,7 +105,7 @@ function buildTracks() {
 
 export const piece = {
   id: "mines",
-  name: "NetHack 3D Gnomish Mines (sketch)",
+  name: "Polypiled Gnomish Mines (sketch)",
   bpm: 80,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

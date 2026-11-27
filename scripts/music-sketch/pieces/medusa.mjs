@@ -110,7 +110,7 @@ function buildTracks() {
 
 export const piece = {
   id: "medusa",
-  name: "NetHack 3D Medusa's Island (sketch)",
+  name: "Polypiled Medusa's Island (sketch)",
   bpm: 150, // eighth notes; 50 dotted quarters a minute
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

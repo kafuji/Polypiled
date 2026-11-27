@@ -9,7 +9,7 @@ const valid=`E: manifest (line=1)
   E: uses-permission
     A: android:name(0x01010003)="android.permission.INTERNET"
   E: application
-    A: android:label(0x01010001)="NetHack 3D"
+    A: android:label(0x01010001)="Polypiled"
     A: android:description(0x01010020)=@0x7f120123
     A: android:debuggable(0x0101000f)=(type 0x12)0x0
     A: android:allowBackup(0x01010280)=(type 0x12)0x0
@@ -27,7 +27,7 @@ test('accepts a non-debuggable VR release without sensitive browser permissions'
 for(const permission of excludedStorePermissions) for(const tag of ['uses-permission','uses-permission-sdk-23']) test('rejects '+tag+' '+permission,()=>assert.throws(()=>assertStoreManifest(valid.replace('android.permission.INTERNET',permission).replace('E: uses-permission','E: '+tag)),/Unsupported store permission/));
 test('rejects debuggable, wrong name and detached VR category',()=>{
  assert.throws(()=>assertStoreManifest(valid.replace('android:debuggable(0x0101000f)=(type 0x12)0x0','android:debuggable(0x0101000f)=(type 0x12)0xffffffff')),/debuggable/);
- assert.throws(()=>assertStoreManifest(valid.replace('NetHack 3D','Wolvic')),/app name/);
+ assert.throws(()=>assertStoreManifest(valid.replace('Polypiled','Wolvic')),/app name/);
  assert.throws(()=>assertStoreManifest(valid.replace('        E: category','      E: intent-filter\n        E: category')),/MAIN\/VR/);
 });
 for (const attribute of ['allowBackup','fullBackupContent','usesCleartextTraffic']) test('requires explicit false for '+attribute,()=>{
@@ -73,7 +73,7 @@ test('patch preserves game activity and local properties and is repeatable',()=>
 
 import {geckoConfigResourcePath} from './store-manifest.mjs';
 test('resolves Gecko configuration after release resource path shortening',()=>{
- for(const file of ['res/raw/fxr_config.yaml','res/U6.yaml']) assert.equal(geckoConfigResourcePath(`  resource 0x7f100006 com.nethack3d.quest.vr:raw/fxr_config: t=0x03\n    (string8) "${file}"`),file);
+ for(const file of ['res/raw/fxr_config.yaml','res/U6.yaml']) assert.equal(geckoConfigResourcePath(`  resource 0x7f100006 io.github.kafuji.polypiled.quest:raw/fxr_config: t=0x03\n    (string8) "${file}"`),file);
  assert.throws(()=>geckoConfigResourcePath('spec resource raw/fxr_config'),/Cannot resolve/);
 });
 
@@ -92,7 +92,7 @@ test('packaged policy permits only exact loopback HTTP',()=>{
  for(const tree of [policyTree.replace('127.0.0.1','example.com'),policyTree.replace('cleartextTrafficPermitted=(type 0x12)0x0','cleartextTrafficPermitted=(type 0x12)0xffffffff'),policyTree.replace('includeSubdomains=(type 0x12)0x0','includeSubdomains=(type 0x12)0xffffffff'),policyTree+'  E: domain-config\n',policyTree.replace('    E: domain','  E: domain')]) assert.throws(()=>assertNetworkSecurityPolicy(tree),/deny cleartext/);
 });
 test('resolves optimized network policy and validates its manifest reference',()=>{
- const policy=networkSecurityResource('  resource 0x7f150001 com.nethack3d.quest.vr:xml/nh3d_network_security_config: t=0x03\n    (string8) "res/AB.xml"');
+ const policy=networkSecurityResource('  resource 0x7f150001 io.github.kafuji.polypiled.quest:xml/nh3d_network_security_config: t=0x03\n    (string8) "res/AB.xml"');
  assert.equal(policy.path,'res/AB.xml');
  assert.equal(assertStoreManifest(valid),policy.reference);
  assert.throws(()=>networkSecurityResource(''),/network security/);

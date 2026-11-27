@@ -99,7 +99,7 @@ function buildTracks() {
 
 export const piece = {
   id: "dungeon",
-  name: "NetHack 3D Dungeon Theme - Dungeons of Doom (sketch)",
+  name: "Polypiled Dungeon Theme - Dungeons of Doom (sketch)",
   bpm: 66,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

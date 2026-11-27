@@ -202,7 +202,7 @@ function buildTracks() {
 
 export const piece = {
   id: "ascension",
-  name: "NetHack 3D Ascension (sketch)",
+  name: "Polypiled Ascension (sketch)",
   bpm: 76,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

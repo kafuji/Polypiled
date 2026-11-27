@@ -54,14 +54,14 @@ with tempfile.TemporaryDirectory(prefix="nh3d-gecko-source-") as temporary:
     for name in ["patch-gecko-paint.py", "build-gecko-runtime.sh", "stage-gecko-runtime.py", "package-gecko-source.py"]:
         (package / name).write_bytes((scripts / name).read_bytes())
     (package / "README.md").write_text(
-        "# NetHack 3D patched GeckoView source\n\n"
+        "# Polypiled patched GeckoView source\n\n"
         "Upstream source (all unmodified files and third-party notices):\n"
         f"https://github.com/mozilla-firefox/firefox/tree/{revision}\n\n"
         f"Pinned revision: `{revision}`. The firefox/ directory contains the complete modified files; "
         "gecko.patch contains the corresponding changes. Firefox source retains its original MPL 2.0 "
         "and third-party licenses; see firefox/LICENSE and firefox/toolkit/content/license.html.\n\n"
         "To reconstruct the source, clone the upstream repository, check out the pinned revision, "
-        "then run `git apply /path/to/gecko.patch`. To build from the NetHack 3D checkout, "
+        "then run `git apply /path/to/gecko.patch`. To build from the Polypiled checkout, "
         "run `bash scripts/quest/webxr/build-gecko-runtime.sh` on Linux/WSL. "
         "The included scripts document bootstrap, mozconfig, build, and Maven packaging.\n",
         encoding="utf-8",

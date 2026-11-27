@@ -34,7 +34,7 @@ const sourceName = "gecko/corresponding-source.tar.gz";
 cpSync(path.resolve(options["source-bundle"]), bundleFile(bundle, sourceName));
 files[sourceName] = await fileSha256(bundleFile(bundle, sourceName));
 const noticeName = "OVRPlatformSDK/NETHACK3D-NOTICE.txt";
-const notice = "Copyright © Meta Platform Technologies, LLC and its affiliates. All rights reserved.\n\nThese unmodified SDK headers and ARM64 library are supplied for contributors building NetHack 3D for Meta Quest. They retain their separate Meta SDK license; they are not covered by the application's open-source license.\nhttps://developers.meta.com/horizon/licenses/oculussdk/\nSee LICENSE.txt and THIRD_PARTY_NOTICES.txt.\n";
+const notice = "Copyright © Meta Platform Technologies, LLC and its affiliates. All rights reserved.\n\nThese unmodified SDK headers and ARM64 library are supplied for contributors building Polypiled for Meta Quest. They retain their separate Meta SDK license; they are not covered by the application's open-source license.\nhttps://developers.meta.com/horizon/licenses/oculussdk/\nSee LICENSE.txt and THIRD_PARTY_NOTICES.txt.\n";
 writeFileSync(bundleFile(bundle, noticeName), notice);
 files[noticeName] = sha256(notice);
 writeFileSync(path.join(bundle, "quest-dependencies.json"), JSON.stringify({ ...original, files }, null, 2) + "\n");

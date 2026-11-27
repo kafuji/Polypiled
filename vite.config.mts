@@ -119,7 +119,7 @@ function tilesetManifestPlugin() {
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 // GitHub Pages serves project sites under /<repo>/, so follow the repository name.
-const gitHubPagesBase = `/${process.env.GITHUB_REPOSITORY?.split("/")[1] || "nethack-3d-plus"}/`;
+const gitHubPagesBase = `/${process.env.GITHUB_REPOSITORY?.split("/")[1] || "Polypiled"}/`;
 const isElectronBuild = process.env.BUILD_TARGET === "electron";
 const isQuestBuild = process.env.VITE_DEPLOY_TARGET === "quest";
 const enableCrossOriginIsolation =
