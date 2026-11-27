@@ -1691,7 +1691,7 @@ struct ext_func_tab extcmdlist[] = {
 #if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
     /* Polypiled: ask the shell's AI agent about the current game
        (win/shim/nh3d_knowledge.c); takes no time */
-    { ' ',   "askagent", "ask the AI agent for advice about your game",
+    { '\0',   "askagent", "ask the AI agent for advice about your game",
               nh3d_askagent, IFBURIED | AUTOCOMPLETE | GENERALCMD, NULL },
 #endif
     { C('x'), "attributes", "show your attributes",
