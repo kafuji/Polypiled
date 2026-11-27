@@ -15,6 +15,7 @@ on:
       - scripts/wasm/compare-core-build.mjs
       - scripts/wasm/save-compat-core.mjs
       - scripts/wasm/smoke-core.mjs
+      - scripts/headless/rules.test.mjs
       - .github/workflows/build-core-wasm.yml
 
 permissions:
@@ -87,3 +88,16 @@ jobs:
         run: |
           git status --short
           test -z "$(git status --porcelain)"
+
+      # Polypiled's rule changes (docs/rule-changes.md), checked on this
+      # build before it is shipped to public/. Last, since installing the
+      # dependencies rewrites package-lock.json.
+      - name: Install dependencies for the rule tests
+        run: npm i --ignore-scripts --no-audit --no-fund
+
+      - name: Rule changes hold on the built core
+        run: |
+          mkdir -p "$RUNNER_TEMP/built-core"
+          cp core/build/nethack.js "$RUNNER_TEMP/built-core/nethack-5.js"
+          cp core/build/nethack.wasm "$RUNNER_TEMP/built-core/nethack-5.wasm"
+          POLYPILED_CORE_DIR="$RUNNER_TEMP/built-core" npm run test:rules

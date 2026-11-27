@@ -112,3 +112,4 @@ Start here before making changes.
 - The user will run build and package validation.
 - A safe post-task check is `npm run check:tsc` to catch TS and TSX regressions without formatting noise.
 - Run focused regression tests with `npm test -- <test-file>` as appropriate; input, world-state and rendering-resource tests live alongside the engine subsystems. Use browser checks for rendering and device interaction changes.
+- A rule change in the core (`docs/rule-changes.md`) gets a scenario in `scripts/headless/rules.test.mjs`, written against the real core with the headless runner (`docs/mcp-headless.md`): set the scene in debug mode, act, and check what tells the change from vanilla. Run `npm run test:rules`; the core build workflow runs it on each fresh build before it is shipped.

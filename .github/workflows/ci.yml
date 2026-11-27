@@ -38,6 +38,11 @@ jobs:
       - name: Unit tests
         run: npx vitest run
 
+      # The real core in Node: the headless runner, the MCP server and the
+      # rule changes of docs/rule-changes.md (scripts/headless/rules.test.mjs).
+      - name: Headless game tests
+        run: npm run test:headless
+
       - name: Translation check
         run: npm run i18n:check
 

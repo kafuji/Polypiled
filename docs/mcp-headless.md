@@ -137,6 +137,9 @@ npm run test:headless
 
 `src/headless/agent-session.test.ts` は偽のイベントでの単体テストで、`npm test` に含まれる。
 
+Polypiled のルール変更（[rule-changes.md](rule-changes.md)）の回帰テストは `scripts/headless/rules.test.mjs` にある（`npm run test:rules`、並列で 2 秒ほど）。
+CI のほか、本体のビルド（Build game core (WASM)）でも、できたばかりの本体に対して流す（`POLYPILED_CORE_DIR` で本体の場所を変えられる）。
+
 ルールを変えたときのテストは、`startHeadlessGame()` で（必要ならデバッグモードで）場面を作り、`act()` の結果を確かめる。
 
 ```js
