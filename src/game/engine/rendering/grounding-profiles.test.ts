@@ -47,6 +47,13 @@ describe("grounding profiles", () => {
     const object = GLYPH_CATALOG.find((entry) => entry.kind === "obj");
     expect(resolveGroundingProfile(object!.glyph).kind).toBe("silhouette");
   });
+
+  it("stands upright dungeon features on the floor", () => {
+    for (const key of ["other/fountain", "other/sink", "other/staircase_up"]) {
+      expect(resolveGroundingProfile(glyphOf("cmap", key)).kind, key).toBe("feet");
+    }
+    expect(resolveGroundingProfile(glyphOf("cmap", "other/staircase_down")).kind).toBe("silhouette");
+  });
 });
 
 describe("hero pose", () => {

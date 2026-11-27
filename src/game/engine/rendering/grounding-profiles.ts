@@ -3,7 +3,7 @@
  * high it floats. Renderer-free so it can be unit tested.
  *
  * - feet: stands on the floor; a tight contact shadow under where the
- *   picture touches the ground (people, animals, statues).
+ *   picture touches the ground (people, animals, statues, fountains).
  * - hover: floats a little above the floor and bobs; a small soft shadow
  *   on the floor below (floating eyes, vortices, ghosts, bats and birds).
  * - silhouette: lies on the floor; the shadow is the picture's own outline
@@ -11,6 +11,7 @@
  * - none: casts no shadow (things that give off light, beams, explosions).
  */
 
+import { getTerrainCmapIndex } from "../../glyphs/behavior";
 import { getGlyphCatalogEntry } from "../../glyphs/registry";
 import type { GlyphKind } from "../../glyphs/types";
 import { NH5_TILE_KEYS } from "../../hires-tiles/tile-keys.5.generated";
@@ -55,6 +56,14 @@ function speciesFromTileKey(key: string | undefined): string | null {
   return key.slice(4).replace(/_(?:male|female)$/, "").replace(/\.\d+$/, "");
 }
 
+/**
+ * Dungeon features drawn as upright pictures rather than flat on the floor:
+ * up stairs and ladders (cmap 25, 27, 29, 31), the sink (36) and the
+ * fountain (37). Laid down like objects, the lower half of the picture would
+ * sink below the floor once the camera tilts.
+ */
+const STANDING_FEATURE_CMAP: ReadonlySet<number> = new Set([25, 27, 29, 31, 36, 37]);
+
 /** Profile of the sprite a map glyph is drawn as. */
 export function resolveGroundingProfile(glyph: number | null): GroundingProfile {
   if (glyph === null || !Number.isFinite(glyph)) return FEET_PROFILE;
@@ -70,9 +79,12 @@ export function resolveGroundingProfile(glyph: number | null): GroundingProfile 
   switch (entry.kind) {
     case "statue":
       return FEET_PROFILE;
+    case "cmap": {
+      const cmapIndex = getTerrainCmapIndex(Math.trunc(glyph));
+      return cmapIndex !== null && STANDING_FEATURE_CMAP.has(cmapIndex) ? FEET_PROFILE : SILHOUETTE_PROFILE;
+    }
     case "obj":
     case "body":
-    case "cmap":
       return SILHOUETTE_PROFILE;
     case "invis":
     case "zap":
