@@ -42,6 +42,7 @@ import {
 const portraitPromptEvents = new Set(["question", "direction_question", "text_request", "name_request", "position_request"]);
 
 class Nethack3DEngine implements Nethack3DEngineController {
+  private readonly agentTaps = new Set<(event: RuntimeEvent) => void>();
   private readonly systems: EngineSystems;
   private startupOnly = false;
   private runtimeGeneration = 0;
@@ -883,6 +884,12 @@ class Nethack3DEngine implements Nethack3DEngineController {
       return;
     }
     this.systems.engineState.session = session;
+    // Polypiled AI agent: a new game is a new session for the agent too.
+    for (const tap of this.agentTaps) tap({ type: "agent_runtime_started" });
+    session.addEventTap(event => {
+      if (generation !== this.runtimeGeneration) return;
+      for (const tap of this.agentTaps) tap(event);
+    });
 
     try {
       await session.start();
@@ -2300,6 +2307,55 @@ class Nethack3DEngine implements Nethack3DEngineController {
     options: { keepContextMenuOpen?: boolean; delayMs?: number; requestId?: number } = {},
   ): void {
     return this.systems.inputCommands.sendInput(input, options);
+  }
+
+  /**
+   * Polypiled AI agent (src/plus/agent): see every runtime event of the
+   * current game and of the games after it. A new game starts with an
+   * "agent_runtime_started" event. Returns the remover.
+   */
+  public addAgentTap(tap: (event: RuntimeEvent) => void): () => void {
+    this.agentTaps.add(tap);
+    return () => { this.agentTaps.delete(tap); };
+  }
+
+  /** Polypiled AI agent: send an action's inputs against an input request; the command id, or null. */
+  public sendAgentInputs(inputs: string[], requestId: number): number | null {
+    const session = this.systems.engineState.session;
+    return session instanceof WorkerRuntimeBridge ? session.sendAgentInputs(inputs, requestId) : null;
+  }
+
+  /**
+   * Polypiled AI agent: the agent answered the prompt of this kind, so close
+   * its dialog as the dialog's own controls would. Called when the input
+   * request closes, before the engine sees anything that came after it.
+   */
+  public closeAgentAnsweredPrompt(kind: string): void {
+    const dialogs = this.systems.promptDialogs;
+    switch (kind) {
+      case "yn":
+      case "menu":
+        this.systems.questionMenus.hideQuestion();
+        break;
+      case "direction":
+        this.systems.directionPrompts.hideDirectionQuestion();
+        break;
+      case "text":
+        dialogs.hideTextInputRequest();
+        break;
+      case "info":
+      case "more":
+        dialogs.infoMenuBlockingActive = false;
+        dialogs.hideInfoMenuDialog();
+        break;
+    }
+  }
+
+  /** Polypiled AI agent: close windows that wait for nobody (the inventory, passing information). */
+  public closeAgentTransientDialogs(): void {
+    const dialogs = this.systems.promptDialogs;
+    if (dialogs.isInventoryDialogVisible) dialogs.hideInventoryDialog();
+    if (dialogs.isInfoDialogVisible && !dialogs.infoMenuBlockingActive) dialogs.hideInfoMenuDialog();
   }
 
   public toggleInfoMenuDialog(): void {

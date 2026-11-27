@@ -553,6 +553,8 @@ export class RuntimeMenuCapture {
           choices: "",
           default: "",
           menuItems: this.deps.menuSelection.currentMenuItems,
+          // Polypiled: whether the menu takes several selections and Enter.
+          multiSelect: this.deps.menuSelection.isInMultiPickup === true,
         });
       }
 
@@ -590,6 +592,8 @@ export class RuntimeMenuCapture {
           choices: "",
           default: "",
           menuItems: this.deps.menuSelection.currentMenuItems,
+          // Polypiled: whether the menu takes several selections and Enter.
+          multiSelect: this.deps.menuSelection.isInMultiPickup === true,
         });
       }
 

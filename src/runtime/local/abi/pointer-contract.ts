@@ -99,6 +99,7 @@ export class RuntimePointerContract {
         shim_command_ready: [3],
         shim_reveal: [1],
         shim_getpos: [3],
+        shim_ask_agent: [0],
         shim_status_update: [6],
       },
       callbackPointers: {

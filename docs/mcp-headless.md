@@ -107,7 +107,7 @@ claude mcp add polypiled -- node scripts/mcp/headless-server.mjs
 | 場所 | 役割 |
 | --- | --- |
 | [src/headless/node-runtime.ts](../src/headless/node-runtime.ts) | Node で本体を読み込む（`RuntimeAssets` の差し替え）、種、時計と時間帯の固定、1スレッド1局 |
-| [src/headless/agent-session.ts](../src/headless/agent-session.ts) | ランタイムのイベントから観測を組み立てる。プロンプトの判定、行動から入力への変換、一段落までの待ち |
+| [src/agent/agent-session.ts](../src/agent/agent-session.ts) | ランタイムのイベントから観測を組み立てる。プロンプトの判定、行動から入力への変換、一段落までの待ち |
 | [src/headless/headless-game.ts](../src/headless/headless-game.ts) | 1局を始めて操作する（スレッド内）。行動の記録、スナップショットと再生、デバッグ用の補助 |
 | [src/headless/game-worker.ts](../src/headless/game-worker.ts) | ワーカースレッドの入口 |
 | [scripts/headless/game-client.mjs](../scripts/headless/game-client.mjs) | ワーカーを esbuild でまとめ（初回のみ、0.1 秒ほど）、ゲームごとにワーカーを起こす |
@@ -135,7 +135,7 @@ npm run test:headless
 - 死亡（`#quit`）から `game_over` まで
 - MCP サーバー（複数のゲーム、スナップショットのファイル）
 
-`src/headless/agent-session.test.ts` は偽のイベントでの単体テストで、`npm test` に含まれる。
+`src/agent/agent-session.test.ts` は偽のイベントでの単体テストで、`npm test` に含まれる。
 
 Polypiled のルール変更（[rule-changes.md](rule-changes.md)）の回帰テストは `scripts/headless/rules.test.mjs` にある（`npm run test:rules`、並列で 2 秒ほど）。
 CI のほか、本体のビルド（Build game core (WASM)）でも、できたばかりの本体に対して流す（`POLYPILED_CORE_DIR` で本体の場所を変えられる）。

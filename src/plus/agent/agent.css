@@ -1,0 +1,240 @@
+/* Polypiled: the AI agent's button and panel (AgentPanel.tsx). */
+
+.nh3d-agent-button {
+  position: fixed;
+  top: calc(56px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 2600;
+  min-width: 40px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--nh3d-ui-border, rgba(255, 255, 255, 0.3));
+  border-radius: 16px;
+  background: rgba(6, 16, 30, 0.88);
+  color: #d5e7ff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nh3d-agent-button[data-control="agent"] {
+  border-color: #6fd3a0;
+  color: #9ff0c3;
+  box-shadow: 0 0 10px rgba(111, 211, 160, 0.45);
+}
+
+.nh3d-agent-button[data-control="paused"] {
+  border-color: #e3c15f;
+  color: #f4dc8f;
+}
+
+.nh3d-agent-panel {
+  position: fixed;
+  top: calc(96px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 2600;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 140px);
+  border: 1px solid var(--nh3d-ui-border, rgba(255, 255, 255, 0.3));
+  border-radius: 10px;
+  background: rgba(6, 16, 30, 0.94);
+  color: #d5e7ff;
+  font-family: var(--nh3d-ui-font-family, "Courier New", monospace);
+  font-size: 13px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
+.nh3d-agent-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px 4px;
+}
+
+.nh3d-agent-control {
+  margin-left: auto;
+  font-size: 12px;
+  color: #a8b6cc;
+}
+
+.nh3d-agent-control[data-control="agent"] { color: #9ff0c3; }
+.nh3d-agent-control[data-control="paused"] { color: #f4dc8f; }
+
+.nh3d-agent-close {
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nh3d-agent-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.nh3d-agent-tabs button {
+  padding: 4px 10px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #a8b6cc;
+  font: inherit;
+  cursor: pointer;
+}
+
+.nh3d-agent-tabs button.is-active {
+  border-bottom-color: #7fb0ff;
+  color: #e6f0ff;
+}
+
+.nh3d-agent-notice {
+  margin: 8px 10px 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(227, 193, 95, 0.15);
+  color: #f4dc8f;
+}
+
+.nh3d-agent-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.nh3d-agent-body h3 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #a8b6cc;
+}
+
+.nh3d-agent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.nh3d-agent-actions button {
+  padding: 5px 12px;
+  border: 1px solid #4b6a9b;
+  border-radius: 6px;
+  background: #16304f;
+  color: #e6f0ff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.nh3d-agent-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.nh3d-agent-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nh3d-agent-field input,
+.nh3d-agent-field select,
+.nh3d-agent-ask textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #4b6a9b;
+  border-radius: 5px;
+  background: #0c1a2c;
+  color: #e6f0ff;
+  font: inherit;
+}
+
+.nh3d-agent-field input[type="range"] { padding: 0; }
+
+.nh3d-agent-inline {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: auto;
+  font-weight: normal;
+}
+
+.nh3d-agent-cost,
+.nh3d-agent-hint {
+  margin: 0;
+  color: #a8b6cc;
+  font-size: 12px;
+}
+
+.nh3d-agent-notes {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.nh3d-agent-log,
+.nh3d-agent-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nh3d-agent-log li.is-text { color: #e6f0ff; }
+.nh3d-agent-log li.is-action { color: #8fb4e8; font-size: 12px; }
+.nh3d-agent-log li.is-thinking { color: #8c97a8; font-size: 12px; font-style: italic; }
+.nh3d-agent-log li.is-system { color: #f4dc8f; font-size: 12px; }
+
+.nh3d-agent-chat li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nh3d-agent-chat p {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
+.nh3d-agent-chat .is-question {
+  align-self: flex-end;
+  background: #16304f;
+}
+
+.nh3d-agent-chat .is-answer {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nh3d-agent-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nh3d-agent-busy {
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9ff0c3;
+  animation: nh3d-agent-pulse 1s ease-in-out infinite;
+}
+
+@keyframes nh3d-agent-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}

@@ -1,5 +1,5 @@
 import type { RuntimeEvent } from "../runtime/types";
-import type { RuntimeCommandIdentity, RuntimeInputPurpose } from "../runtime/protocol/types";
+import type { RuntimeInputPurpose } from "../runtime/protocol/types";
 import type { KnowledgeFrame, KnowledgeHero, KnowledgeLevel, KnowledgeMonster } from "../runtime/knowledge";
 import type { InventoryObject, InventoryState } from "../runtime/inventory-state";
 import { encodeInventoryOperation, inventoryOperationInputPrefix, type InventoryOperation } from "../runtime/input/inventory-operation";
@@ -21,11 +21,23 @@ import { encodeInventoryOperation, inventoryOperationInputPrefix, type Inventory
  * every key request outside a prompt were a command prompt.
  */
 
+/**
+ * How a session reaches its game: the headless runtime in Node, or the
+ * worker bridge behind the page (src/plus/agent).
+ */
 export interface AgentRuntimePort {
-  sendInput(input: string, identity: RuntimeCommandIdentity): void;
-  sendInputSequence(inputs: string[], identity: RuntimeCommandIdentity): void;
-  isMultiSelectMenuActive(): boolean;
+  /**
+   * Send the inputs of one action targeted at the input request. Returns the
+   * command id that the runtime's input_consumed and command_result events
+   * carry, or null when nothing was sent.
+   */
+  send(inputs: string[], requestId: number, prompt: AgentPrompt): number | null;
+  /** Fallback for cores whose menu questions do not say whether they take several selections. */
+  isMultiSelectMenuActive?(): boolean;
 }
+
+/** The next macrotask, in Node and in browsers alike. */
+const nextTask = (run: () => void) => { setTimeout(run, 0); };
 
 export type AgentDirection = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw" | "up" | "down" | "self";
 export const agentDirections: readonly AgentDirection[] = ["n", "ne", "e", "se", "s", "sw", "w", "nw", "up", "down", "self"];
@@ -133,7 +145,6 @@ export class AgentSession {
   readonly sessionId = `headless-${Math.random().toString(36).slice(2, 10)}`;
   private port: AgentRuntimePort | null = null;
   private eventCount = 0;
-  private nextCommandId = 0;
   private readonly waits = new Map<number, OpenWait>();
   private readonly promptByWait = new Map<number, RuntimeEvent>();
   private positionActive = false;
@@ -356,7 +367,7 @@ export class AgentSession {
         if (finished) return;
         if (!this.isSettled) { this.settleWaiters.push(check); return; }
         const seen = this.eventCount;
-        setImmediate(() => setImmediate(() => {
+        nextTask(() => nextTask(() => {
           if (finished) return;
           if (this.eventCount === seen && this.isSettled) { finished = true; clearTimeout(timer); resolve(true); }
           else check();
@@ -382,7 +393,8 @@ export class AgentSession {
           const items = Array.isArray(event.menuItems) ? event.menuItems as Array<Record<string, unknown>> : [];
           if (items.length === 0) return { kind: "yn", text, choices: String(event.choices ?? ""), default: defaultChoice(event.default) };
           return {
-            kind: "menu", text, multi: this.port?.isMultiSelectMenuActive() ?? false,
+            kind: "menu", text,
+            multi: typeof event.multiSelect === "boolean" ? event.multiSelect : this.port?.isMultiSelectMenuActive?.() ?? false,
             items: items.map((item, index) => ({
               index,
               text: typeof item.text === "string" ? item.text : "",
@@ -432,6 +444,18 @@ export class AgentSession {
       hero: this.heroView(),
       level: level ? { dnum: level.dnum, dlevel: level.dlevel, depth: level.depth, flags: [...levelFlags] } : null,
       status: { ...this.status },
+    };
+  }
+
+  /** The whole observation with the last messages, read or not, and without marking any read (for advice). */
+  snapshot(recentMessages = 20): AgentObservation {
+    return {
+      ...this.peek(),
+      messages: this.messages.slice(-recentMessages),
+      monsters: this.monsterView(),
+      here: this.here,
+      map: this.mapView(),
+      gameOver: this.gameOver,
     };
   }
 
@@ -495,13 +519,16 @@ export class AgentSession {
     const inputs = this.inputsFor(action, prompt);
     const turnBefore = this.currentTurn();
     const statusBefore = { ...this.status };
-    const identity: RuntimeCommandIdentity = { sessionId: this.sessionId, commandId: ++this.nextCommandId, lastProcessedSequence: 0, requestId: wait.id };
     this.movingCursor = "position" in action;
-    if (inputs.length === 1) this.port.sendInput(inputs[0], identity);
-    else this.port.sendInputSequence(inputs, identity);
-    if (this.rejected.has(identity.commandId)) {
+    const commandId = this.port.send(inputs, wait.id, prompt);
+    if (commandId === null) {
       this.movingCursor = false;
-      throw new Error("The input request closed before the action was sent; observe and try again");
+      throw new Error("The game did not take the input; observe and try again");
+    }
+    const rejectedError = () => new Error("The input request closed before the action arrived (someone else answered it); observe and try again");
+    if (this.rejected.has(commandId)) {
+      this.movingCursor = false;
+      throw rejectedError();
     }
     // Done once the wait we answered closes, or once the game has read every
     // key we sent and gone quiet (a key that only toggles a menu entry leaves
@@ -515,8 +542,8 @@ export class AgentSession {
       const poll = () => {
         if (expired) return;
         if (this.eventCount !== lastCount) { lastCount = this.eventCount; quietSince = performance.now(); }
-        const answered = !this.waits.has(wait.id) || this.ended
-          || (this.consumedTokens(identity.commandId) >= inputs.length && this.eventCount === lastCount && performance.now() - quietSince > 5)
+        const answered = this.rejected.has(commandId) || !this.waits.has(wait.id) || this.ended
+          || (this.consumedTokens(commandId) >= inputs.length && this.eventCount === lastCount && performance.now() - quietSince > 5)
           || performance.now() - quietSince > 250;
         if (!answered) { setTimeout(poll, 1); return; }
         clearTimeout(deadline);
@@ -524,8 +551,9 @@ export class AgentSession {
       };
       poll();
     });
-    this.consumed.delete(identity.commandId);
+    this.consumed.delete(commandId);
     this.movingCursor = false;
+    if (this.rejected.delete(commandId)) throw rejectedError();
     const statusChanges: AgentActResult["statusChanges"] = {};
     for (const [key, value] of Object.entries(this.status)) {
       if (statusBefore[key] !== value) statusChanges[key] = { from: statusBefore[key] ?? null, to: value };

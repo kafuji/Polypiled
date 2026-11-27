@@ -1553,6 +1553,11 @@ export interface Nethack3DEngineController {
   runInventoryProcedure(procedure: InventoryProcedure): void;
   cancelInventoryProcedure(): void;
   closeInfoMenuDialog(): void;
+  /** Polypiled AI agent (src/plus/agent); see Nethack3DEngine. */
+  addAgentTap(tap: (event: { type: string; [key: string]: unknown }) => void): () => void;
+  sendAgentInputs(inputs: string[], requestId: number): number | null;
+  closeAgentAnsweredPrompt(kind: string): void;
+  closeAgentTransientDialogs(): void;
 }
 
 export interface Nethack3DEngineOptions {

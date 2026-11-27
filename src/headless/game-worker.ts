@@ -1,6 +1,6 @@
 import { parentPort } from "node:worker_threads";
 import { HeadlessGame, type HeadlessGameOptions } from "./headless-game";
-import type { AgentAction } from "./agent-session";
+import type { AgentAction } from "../agent/agent-session";
 
 /**
  * Worker-thread entry: one game per worker. Bundled by
