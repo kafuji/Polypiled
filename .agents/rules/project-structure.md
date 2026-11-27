@@ -161,7 +161,7 @@ This is a living steering doc. Update it whenever architecture, file ownership, 
 
 - Pointer contracts and validation live in `src/runtime/local/abi/`; callback bodies live with their domain owners. `LocalNetHackRuntime.handleUICallback` validates the contract before dispatch. Subsystem boundaries do not change WASM pointers, callback signatures, or command identifiers.
 - NetHack 5.0 is the only runtime. `NethackRuntimeVersion` in `src/runtime/types.ts` is the single literal `"5.0"`; it stays in save metadata, handshakes and function signatures. NetHack 3.6.7 and Slash'EM were removed: a stored or requested value naming them is treated as unknown (save metadata, imports) or starts NetHack 5.0 (`RuntimeAssets.normalizeRuntimeVersion`). Saves made with them stay in their own IndexedDB databases and are not opened.
-- The pointer ABI tag is defined by `vite.config.ts`: `VITE_NH3D_WASM_5_POINTER_ABI_TAG`.
+- The pointer ABI tag is defined by `vite.config.mts`: `VITE_NH3D_WASM_5_POINTER_ABI_TAG`.
 - Use the callback/struct layout contract and validate shapes before reading memory. Do not scan arbitrary heap memory or silently replace unresolved command identifiers with guessed indices.
 - The tracked map extension uses `monsterId=0` for the player; positive ids identify monsters. Preserve that identity through engine tile/entity presentation.
 - See [pointer ABI troubleshooting](../../docs/pointer-abi-troubleshooting.md) for callback formats and command-table diagnostics, and [world/runtime flows](../../docs/engine-world-runtime.md) for the engine receivers.

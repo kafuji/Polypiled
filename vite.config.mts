@@ -393,6 +393,13 @@ export default defineConfig({
     "import.meta.env.VITE_NH3D_WASM_5_HAS_CHECKPOINT_RESUME_BRIDGE":
       JSON.stringify(wasm5HasCheckpointResumeBridge),
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: "modern-compiler",
+      },
+    },
+  },
   base: isQuestBuild ? "/" : isElectronBuild ? "./" : isGitHubActions ? gitHubPagesBase : "/",
   server: {
     allowedHosts: true,

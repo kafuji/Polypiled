@@ -157,7 +157,7 @@ try {
   const { createServer } = await import("vite");
   vite = await createServer({
     root,
-    configFile: path.join(root, "vite.config.ts"),
+    configFile: path.join(root, "vite.config.mts"),
     clearScreen: false,
     plugins: [{
       name: "quest-wired-development-host",
