@@ -32,12 +32,12 @@ const details = execFileSync(aapt, ["dump", "badging", apk], {
   encoding: "utf8",
   windowsHide: true,
 });
-if (!details.includes("package: name='com.nethack3d.quest.vr'"))
+if (!details.includes("package: name='io.github.kafuji.polypiled.quest'"))
   throw new Error("Incorrect Quest VR package identity.");
 const packagedVersion = details.match(/^package: .*\bversionCode='(\d+)' versionName='([^']+)'/m);
 if (!packagedVersion) throw new Error("APK package metadata is missing its version.");
 const [, versionCode, versionName] = packagedVersion;
-if (!details.includes("application-label:'NetHack 3D'")) throw new Error("Incorrect Quest launcher name.");
+if (!details.includes("application-label:'Polypiled'")) throw new Error("Incorrect Quest launcher name.");
 for (const permission of ["WAKE_LOCK", "FOREGROUND_SERVICE"]) {
   if (!details.includes("name='android.permission." + permission + "'"))
     throw new Error("Missing Gecko runtime permission: " + permission);
@@ -134,7 +134,7 @@ for (const asset of ["/quest-controllers/prebaked.json", "/quest-controllers/met
 }
 const output = path.join(
   root,
-  "quest/build/outputs/apk/nethack3d-vr.apk",
+  "quest/build/outputs/apk/polypiled-quest.apk",
 );
 if (!Buffer.from(inspected["assets/vr_splash.png"] ?? []).equals(readFileSync(path.join(root, "public/NetHack3D-splash.png")))) {
   throw new Error("Quest launcher splash does not match NetHack3D-splash.png.");
@@ -142,7 +142,7 @@ if (!Buffer.from(inspected["assets/vr_splash.png"] ?? []).equals(readFileSync(pa
 mkdirSync(path.dirname(output), { recursive: true });
 copyFileSync(apk, output);
 // Keep the stable sideloading path while also producing a desktop-style release artifact.
-copyFileSync(apk, path.join(path.dirname(output), "nethack3d-webxr.apk"));
+copyFileSync(apk, path.join(path.dirname(output), "polypiled-webxr.apk"));
 const versionedOutput = path.join(root, "release", `Polypiled ${versionName} Quest${debug ? " Debug" : ""}.apk`);
 mkdirSync(path.dirname(versionedOutput), { recursive: true });
 copyFileSync(apk, versionedOutput);

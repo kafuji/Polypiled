@@ -4,7 +4,7 @@
 
 This isolated Android application hosts the bundled game in a WebView on a native immersive compositor panel. Start with [the implementation plan and headset acceptance checklist](../docs/quest-vr-plan.md). The game now opens first. The toolbar switches between Windowed MR and Immersive VR while preserving the running game. See [stereo modes and validation](../docs/quest-stereo-vr.md); the original UI probe remains available under UI test.
 
-The app is `com.nethack3d.quest.uiproof`, labeled **NetHack 3D VR**. Its game assets come only from `app/build/generated/gameAssets/game/`, populated by the repository's Quest staging script. The manifest removes the Internet permission, and both normal WebView requests and service-worker requests resolve against the APK through `BundledGameContent`. Its HTTPS asset origin is virtual; there is no HTTP server or remote game host.
+The app is `io.github.kafuji.polypiled.quest.uiproof`, labeled **Polypiled VR**. Its game assets come only from `app/build/generated/gameAssets/game/`, populated by the repository's Quest staging script. The manifest removes the Internet permission, and both normal WebView requests and service-worker requests resolve against the APK through `BundledGameContent`. Its HTTPS asset origin is virtual; there is no HTTP server or remote game host.
 
 The user confirmed the original UI APK works on the headset. Native stereo geometry, transparent panel composition, mode switching and performance are new and require a fresh build/device check. The package identity and app data remain unchanged.
 
@@ -16,7 +16,7 @@ On Windows, from the repository root:
 npm.cmd run quest:apk
 ```
 
-You can also run `./BuildQuestApk.bat`. It builds the web assets, stages them and assembles the debug APK. On success, sideload `quest/app/build/outputs/apk/debug/app-debug.apk` using Meta Quest Developer Hub, then launch **NetHack 3D VR**. This builds the standalone native stereo app; the wired PCVR UI development host is separate.
+You can also run `./BuildQuestApk.bat`. It builds the web assets, stages them and assembles the debug APK. On success, sideload `quest/app/build/outputs/apk/debug/app-debug.apk` using Meta Quest Developer Hub, then launch **Polypiled VR**. This builds the standalone native stereo app; the wired PCVR UI development host is separate.
 
 You need installed npm dependencies, a compatible JDK (Java 17 or newer), and Android SDK Platform 34. Configure `ANDROID_HOME` or `quest/local.properties`; the script also detects Android Studio's default SDK under `%LOCALAPPDATA%/Android/Sdk`. Developer Hub handles sideloading; it does not replace the Android build toolchain. `npm.cmd run quest:apk -- --help` prints usage without building. macOS/Linux users can use the two commands in the implementation plan.
 

@@ -9,7 +9,7 @@ SELECT (SELECT count(*) FROM perf_sample) AS perf_samples,
 CREATE PERFETTO TABLE nh3d_threads AS
 SELECT t.utid,t.tid,t.name,p.name AS process
 FROM thread t JOIN process p USING(upid)
-WHERE p.name GLOB 'com.nethack3d.quest.vr*';
+WHERE p.name GLOB 'io.github.kafuji.polypiled.quest*';
 
 SELECT t.process,t.tid,t.name,round(sum(s.dur)/1e9,3) AS cpu_seconds
 FROM sched s JOIN nh3d_threads t USING(utid)

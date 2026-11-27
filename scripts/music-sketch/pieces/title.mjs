@@ -138,7 +138,7 @@ function buildTracks() {
 
 export const piece = {
   id: "title",
-  name: "NetHack 3D Title Theme - The Descent (sketch)",
+  name: "Polypiled Title Theme - The Descent (sketch)",
   bpm: 84,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

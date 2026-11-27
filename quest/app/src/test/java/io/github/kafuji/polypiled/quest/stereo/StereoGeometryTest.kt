@@ -1,4 +1,4 @@
-package com.nethack3d.quest.stereo
+package io.github.kafuji.polypiled.quest.stereo
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

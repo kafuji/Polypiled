@@ -8,7 +8,7 @@ JSON.stringify((() => {
     return previous.result;
   }
   const engine = window.nethackGame, systems = engine?.systems;
-  if (!systems) return { error: "Select the active NetHack 3D page." };
+  if (!systems) return { error: "Select the active Polypiled page." };
   const renderer = systems.renderPipeline.renderer, values = {}, restorers = [], intervals = [], calls = [];
   const phases = {}, longTasks = [], startPlayer = { ...systems.playerMovement.playerPos };
   let previousFrame = 0, previousPhase = "", frameDrawCalls = 0, positionEvents = 0;

@@ -94,7 +94,7 @@ function buildTracks() {
 
 export const piece = {
   id: "astral",
-  name: "NetHack 3D Astral Plane (sketch)",
+  name: "Polypiled Astral Plane (sketch)",
   bpm: 66,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

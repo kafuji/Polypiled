@@ -137,7 +137,7 @@ function buildTracks() {
 
 export const piece = {
   id: "sanctum",
-  name: "NetHack 3D Moloch's Sanctum (sketch)",
+  name: "Polypiled Moloch's Sanctum (sketch)",
   bpm: 50,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

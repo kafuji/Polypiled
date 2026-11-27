@@ -76,7 +76,7 @@ function buildTracks() {
 
 export const piece = {
   id: "danger",
-  name: "NetHack 3D Danger Theme (sketch)",
+  name: "Polypiled Danger Theme (sketch)",
   bpm: 112,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

@@ -116,7 +116,7 @@ function buildTracks() {
 
 export const piece = {
   id: "quest",
-  name: "NetHack 3D Quest (sketch)",
+  name: "Polypiled Quest (sketch)",
   bpm: 72,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

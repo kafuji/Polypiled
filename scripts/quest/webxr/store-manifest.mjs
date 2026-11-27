@@ -47,7 +47,7 @@ export function assertStoreManifest(tree) {
   const permissions=nodes.filter(n=>n.name.startsWith('uses-permission')).map(n=>n.attributes.name);
   for(const p of excludedStorePermissions) if(permissions.includes(p)) throw new Error('Unsupported store permission: '+p);
   if(!nodes.some(n=>n.name==='intent-filter'&&n.children.some(c=>c.name==='action'&&c.attributes.name==='android.intent.action.MAIN')&&n.children.some(c=>c.name==='category'&&c.attributes.name==='com.oculus.intent.category.VR'))) throw new Error('Missing MAIN/VR launch intent filter.');
-  if(app.attributes.label!=='NetHack 3D') throw new Error('Incorrect app name in store manifest.');
+  if(app.attributes.label!=='Polypiled') throw new Error('Incorrect app name in store manifest.');
   if(!app.attributes.description) throw new Error('Missing Android app description.');
   return app.attributes.networkSecurityConfig;
 }

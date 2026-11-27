@@ -96,7 +96,7 @@ function buildTracks() {
 
 export const piece = {
   id: "gehennom",
-  name: "NetHack 3D Gehennom (sketch)",
+  name: "Polypiled Gehennom (sketch)",
   bpm: 60,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

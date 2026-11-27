@@ -144,7 +144,7 @@ function buildTracks() {
 
 export const piece = {
   id: "castle",
-  name: "NetHack 3D Castle (sketch)",
+  name: "Polypiled Castle (sketch)",
   bpm: 88,
   beatsPerBar: BEATS_PER_BAR,
   bars: BARS,

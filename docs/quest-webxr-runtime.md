@@ -35,11 +35,11 @@ npm run quest:webxr:apk -- --debug
 
 Install Node 24, Git, JDK 21, and the Android SDK command-line tools first. Configure `JAVA_HOME` and `ANDROID_HOME`, and accept Android SDK licenses with `sdkmanager --licenses`. Gradle installs its required Android platform, NDK, and CMake packages as needed. Use a short checkout path on Windows to avoid native-build path limits. The debug command uses the generated Android debug key; a signed store build uses `npm run quest:webxr:apk` and requires your own local signing configuration.
 
-Sideload `quest/build/outputs/apk/nethack3d-vr.apk` with Meta Quest Developer Hub. The build verifies its package ID, version, bundled NetHack runtimes, required Gecko permissions, and the custom HTML painting code and preference before copying it to that location. `quest:apk` still builds the earlier Meta Spatial experiment. Both commands use `scripts/quest/build-apk.mjs`; the `.bat` files are optional Windows shortcuts with no build logic. The Node runner invokes the pinned Gradle wrapper through Java directly, without a platform-specific shell.
+Sideload `quest/build/outputs/apk/polypiled-quest.apk` with Meta Quest Developer Hub. The build verifies its package ID, version, bundled NetHack runtimes, required Gecko permissions, and the custom HTML painting code and preference before copying it to that location. `quest:apk` still builds the earlier Meta Spatial experiment. Both commands use `scripts/quest/build-apk.mjs`; the `.bat` files are optional Windows shortcuts with no build logic. The Node runner invokes the pinned Gradle wrapper through Java directly, without a platform-specific shell.
 
 The build also produces a versioned copy in `quest/build/outputs/apk/`. The publisher verifies that `libxul.so` matches the staged custom Gecko binary byte for byte and prints the APK's SHA256 on every build. Sideload this copy with Meta Quest Developer Hub.
 
-The launcher name is **NetHack 3D**, including debug builds. The package ID is `com.nethack3d.quest.vr`; its private data directory is separate from the old WebXR Proof package, with no save migration. `package.json` supplies `versionName`; signed release builds automatically reserve a higher `versionCode` (see below). The publisher verifies both. The host serves only its bundled assets at `http://127.0.0.1:18973`. It does not depend on Quest Browser or a remote game server. A cold launch and game creation in airplane mode remain acceptance checks.
+The launcher name is **Polypiled**, including debug builds. The package ID is `io.github.kafuji.polypiled.quest`; its private data directory is separate from the earlier `com.nethack3d.quest.vr` and WebXR Proof packages, with no save migration. `package.json` supplies `versionName`; signed release builds automatically reserve a higher `versionCode` (see below). The publisher verifies both. The host serves only its bundled assets at `http://127.0.0.1:18973`. It does not depend on Quest Browser or a remote game server. A cold launch and game creation in airplane mode remain acceptance checks.
 
 The app opens its main menu in VR. The dedicated offline Gecko host disables `dom.vr.require-gesture` so launch can request the session immediately; other hosts retain a normal Enter VR button. The front end creates the renderer without starting a NetHack worker, and starting/resuming a game or returning to the menu keeps that renderer and XR session. Explicit Exit VR is respected.
 
@@ -79,7 +79,7 @@ The bundle contains the Meta SDK (including its notices), the selected patched G
 
 If staged files and the external cache are absent, setup fetches the public release URL in `scripts/quest/webxr/dependencies.lock.json`. It checks the pinned size and SHA256 before extraction, rejects archive links and unsafe paths, and validates every bundled file before installing it. A failed download never becomes a valid cache entry. Existing local overrides and `--from` still support offline use.
 
-The public bundle includes only the Meta SDK headers and ARM64 library needed by NetHack 3D, plus the original license/notices and a separate Meta attribution. These retain the [Meta SDK license](https://developers.meta.com/horizon/licenses/oculussdk/). Gecko's `corresponding-source.tar.gz` supplies the complete modified source files, a patch, upstream source revision, notices, and rebuild scripts. The dependency release does not replace the game's latest release.
+The public bundle includes only the Meta SDK headers and ARM64 library needed by Polypiled, plus the original license/notices and a separate Meta attribution. These retain the [Meta SDK license](https://developers.meta.com/horizon/licenses/oculussdk/). Gecko's `corresponding-source.tar.gz` supplies the complete modified source files, a patch, upstream source revision, notices, and rebuild scripts. The dependency release does not replace the game's latest release.
 
 Node packages, JDK, Android SDK/NDK, Wolvic source/submodules, and Gradle dependencies remain separate build prerequisites. The first native build needs network access. The `Quest clean debug build` GitHub workflow starts with an empty runtime cache, downloads the public bundle, and builds without private signing credentials.
 
@@ -360,9 +360,9 @@ offline startup/gameplay check on Quest to confirm the embedded Gecko runtime
 and native local-server clients work with the restricted policy. No claim is
 made that the Android policy filters every raw/native network socket.
 
-The launcher name is **NetHack 3D**. Android's application description is:
+The launcher name is **Polypiled**. Android's application description is:
 
-> Explore the dungeons of NetHack in immersive 3D and virtual reality, with classic roguelike gameplay, tabletop and first-person views, and multiple supported game variants.
+> Polypiled is a NetHack variant you can explore in immersive 3D and virtual reality, with tabletop and first-person views.
 
 This description is packaged as an Android string resource. The Meta store
 listing title and description are separate dashboard fields; use the same text

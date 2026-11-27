@@ -1,4 +1,4 @@
-package com.nethack3d.app;
+package io.github.kafuji.polypiled;
 
 import android.content.Context;
 import android.content.SharedPreferences;

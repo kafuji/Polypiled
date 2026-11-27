@@ -68,8 +68,8 @@ if (!existsSync(marker)) {
   for (const [key, file] of Object.entries(runtimePaths)) writeFileSync(path.join(checkout, file), patched[key]);
   const gradle = path.join(checkout, "app/build.gradle");
   let config = readFileSync(gradle, "utf8")
-    .replace('applicationId "com.igalia.wolvic"', 'applicationId "com.nethack3d.quest.vr"')
-    .replace('resValue "string", "app_name", "Wolvic Chromium"', 'resValue "string", "app_name", "NetHack 3D VR"');
+    .replace('applicationId "com.igalia.wolvic"', 'applicationId "io.github.kafuji.polypiled.quest"')
+    .replace('resValue "string", "app_name", "Wolvic Chromium"', 'resValue "string", "app_name", "Polypiled VR"');
   const assetRoot = path.join(root, "quest/app/build/generated/gameAssets").replaceAll("\\", "/").replaceAll("'", "\\'");
   config += `\n// Dedicated NetHack WebXR proof host.\nandroid.defaultConfig { buildConfigField "boolean", "NH3D_GAME_HOST", "true" }\nandroid.sourceSets.main.assets.srcDir('${assetRoot}')\n`;
   writeFileSync(gradle, config);

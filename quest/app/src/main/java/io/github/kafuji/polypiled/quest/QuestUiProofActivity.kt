@@ -1,4 +1,4 @@
-package com.nethack3d.quest
+package io.github.kafuji.polypiled.quest
 
 import android.annotation.SuppressLint
 import android.graphics.Color
@@ -39,7 +39,7 @@ import com.meta.spatial.toolkit.UIPanelRenderOptions
 import com.meta.spatial.toolkit.UIPanelSettings
 import com.meta.spatial.vr.LocomotionSystem
 import com.meta.spatial.vr.VRFeature
-import com.nethack3d.quest.stereo.QuestStereoScene
+import io.github.kafuji.polypiled.quest.stereo.QuestStereoScene
 import org.json.JSONObject
 
 /** Shared HTML UI and runtime with native stereo windowed/MR and immersive views. */

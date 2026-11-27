@@ -89,9 +89,9 @@ if (!existsSync(marker)) {
   writeFileSync(path.join(checkout, "app/src/main/cpp/moz_external_vr.h"), header);
   const gradlePath = path.join(checkout, "app/build.gradle");
   let gradle = readFileSync(gradlePath, "utf8")
-    .replace('applicationId "com.igalia.wolvic"', 'applicationId "com.nethack3d.quest.vr"');
+    .replace('applicationId "com.igalia.wolvic"', 'applicationId "io.github.kafuji.polypiled.quest"');
   const assets = path.join(root, "quest/app/build/generated/gameAssets").replaceAll("\\", "/").replaceAll("'", "\\'");
-  gradle += `\nandroid.defaultConfig {\n buildConfigField "boolean", "NH3D_GAME_HOST", "true"\n resValue "string", "app_name", "NetHack 3D VR"\n}\nandroid.sourceSets.main.assets.srcDir('${assets}')\n`;
+  gradle += `\nandroid.defaultConfig {\n buildConfigField "boolean", "NH3D_GAME_HOST", "true"\n resValue "string", "app_name", "Polypiled VR"\n}\nandroid.sourceSets.main.assets.srcDir('${assets}')\n`;
   writeFileSync(gradlePath, gradle);
   const enginePath = path.join(checkout, "app/src/common/shared/com/igalia/wolvic/browser/engine/EngineProvider.kt");
   let engine = readFileSync(enginePath, "utf8").replace(
@@ -115,8 +115,8 @@ if (!appBuild.includes("targets 'native-lib'")) {
   appBuild += "\n// Build the browser and its read-only KTX dependency; skip the unused texture encoder.\nandroid.defaultConfig.externalNativeBuild.cmake { targets 'native-lib' }\n";
   writeFileSync(appBuildPath, appBuild);
 }
-if (!appBuild.includes('applicationId = "com.nethack3d.quest.vr"')) {
-  appBuild += '\nandroid.defaultConfig { applicationId = "com.nethack3d.quest.vr" }\n';
+if (!appBuild.includes('applicationId = "io.github.kafuji.polypiled.quest"')) {
+  appBuild += '\nandroid.defaultConfig { applicationId = "io.github.kafuji.polypiled.quest" }\n';
   writeFileSync(appBuildPath, appBuild);
 }
 const engineDebugPath = path.join(checkout, "app/src/common/shared/com/igalia/wolvic/browser/engine/EngineProvider.kt");
@@ -154,7 +154,7 @@ configurations.configureEach {
     }
 }
 android.defaultConfig {
-    resValue "string", "app_name", "NetHack 3D VR"
+    resValue "string", "app_name", "Polypiled VR"
 }
 `);
 const prefsPath = path.join(checkout, "app/src/main/res/raw/fxr_config.yaml");

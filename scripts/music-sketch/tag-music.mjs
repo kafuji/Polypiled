@@ -25,7 +25,7 @@ for (const track of tracks) {
   const tags = {
     TIT2: track.title,
     TPE1: "Kafuji, using Suno",
-    TALB: "NetHack 3D Sound Track (Kafuji Set)",
+    TALB: "Polypiled Sound Track (Kafuji Set)",
     TCOP: "Kafuji Sato",
   };
   for (const path of [resolve(projectRoot, "public", track.path), sketchCopy(track)]) {
