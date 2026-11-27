@@ -159,7 +159,6 @@ export function useInventoryContextLifecycleEffects(dependencies: UseInventoryCo
     };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if ((event.target as HTMLElement | null)?.closest?.("[data-local-mcp-control]")) return;
       if (event.key === "Escape") {
         if (inventoryDropTypeMenuPosition) {
           event.preventDefault();

@@ -14,7 +14,6 @@ import type {
   RuntimeProtocolHandshake,
   RuntimeRefreshResult,
   RuntimeRefreshOptions,
-  RuntimeObservationScope,
 } from "./protocol/types";
 import { recordDebugSessionLogEvent } from "../debug-session-log";
 import { isLoggingEnabled } from "../logging";
@@ -39,8 +38,6 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
   protocol: RuntimeProtocolHandshake | null = null;
   lastBoundary: { reason: string; sequence: number } | null = null;
   private activeWait: { requestId: number; purpose: string } | null = null;
-  private automationClaimedWait: number | null = null;
-  private automationPending: { requestId: number; commandId: number | null; onConsumed?: () => void } | null = null;
   private visiblePromptRequestId: number | null = null;
   private positionSelectionActive = false;
   private protocolFailed = false;
@@ -141,27 +138,6 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
     });
 
     return this.startPromise;
-  }
-
-  /** The identity of the observation batch currently being delivered. */
-  getAutomationObservationScope(): RuntimeObservationScope {
-    const scope = this.receiver.scope;
-    return { ...scope, level: scope.level ? { ...scope.level } : null };
-  }
-
-  /** A read-only view of the current input boundary for the opt-in local controller. */
-  getAutomationInputWait(): { sessionId: string; requestId: number; purpose: string; isPrompt: boolean } | null {
-    if (this.disposed || this.protocolFailed || !this.activeWait || this.automationClaimedWait !== null) return null;
-    return { sessionId: this.sessionId, ...this.activeWait, isPrompt: this.visiblePromptRequestId === this.activeWait.requestId };
-  }
-
-  /** Reserve a wait synchronously, while still targeting it in the worker. */
-  claimAutomationInput(sessionId: string, requestId: number, onConsumed?: () => void): boolean {
-    if (sessionId !== this.sessionId || this.disposed || this.protocolFailed ||
-        !this.activeWait || this.activeWait.requestId !== requestId || this.automationClaimedWait !== null) return false;
-    this.automationClaimedWait = requestId;
-    this.automationPending = { requestId, commandId: null, onConsumed };
-    return true;
   }
 
   sendInput(input: string, options: RuntimeInputOptions = {}): void {
@@ -288,8 +264,6 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
     this.startPromise = null;
     this.beforeStart.length = 0;
     this.activeWait = null;
-    this.automationPending = null;
-    this.automationClaimedWait = null;
     this.visiblePromptRequestId = null;
     this.cancelPendingRefreshes();
     this.refreshResults.clear();
@@ -324,9 +298,6 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
       ? { ...command, scope: { ...this.receiver.scope } }
       : command;
     const commandId = ++this.nextCommandId;
-    if ((command.type === "send_input" || command.type === "send_input_sequence") && this.automationPending && command.requestId === this.automationPending.requestId && this.automationPending.commandId === null) {
-      this.automationPending.commandId = commandId;
-    }
     this.worker.postMessage({ ...scopedCommand, sessionId: this.sessionId, commandId,
       lastProcessedSequence: this.receiver.lastProcessedSequence });
   }
@@ -355,24 +326,12 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
     }
     if (event.type === "input_wait" && typeof event.requestId === "number") {
       if (event.state === "waiting") {
-        if (this.automationClaimedWait !== event.requestId) this.automationClaimedWait = null;
         this.activeWait = { requestId: event.requestId, purpose: String(event.purpose) };
       }
       else {
         if (this.activeWait?.requestId === event.requestId) this.activeWait = null;
-        if (this.automationClaimedWait === event.requestId) this.automationClaimedWait = null;
-        if (this.automationPending?.requestId === event.requestId) this.automationPending = null;
         if (this.visiblePromptRequestId === event.requestId) this.visiblePromptRequestId = null;
       }
-    }
-    if (event.type === "input_consumed" && this.automationPending && event.commandId === this.automationPending.commandId && event.requestId === this.automationPending.requestId) {
-      const pending = this.automationPending;
-      this.automationPending = null;
-      pending.onConsumed?.();
-    }
-    if (event.type === "command_result" && event.status === "rejected" && event.commandId === this.automationPending?.commandId) {
-      this.automationClaimedWait = null;
-      this.automationPending = null;
     }
     if (typeof event.inputRequestId === "number" && ["question", "direction_question", "info_menu", "text_request", "position_request"].includes(event.type)) {
       this.visiblePromptRequestId = event.inputRequestId;

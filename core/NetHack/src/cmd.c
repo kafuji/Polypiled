@@ -98,6 +98,7 @@ staticfn struct Cmd_bind *cmdbind_get(uchar);
 staticfn void cmdbind_add(uchar, const struct ext_func_tab *, boolean);
 #if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
 extern int nh3d_inventory_command(void); /* win/shim/nh3d_knowledge.c */
+extern void nh3d_note_command_ready(void); /* Polypiled: same file */
 #endif
 staticfn void cmdbind_remove(uchar);
 staticfn void cmdbind_swapkeys(uchar, uchar);
@@ -5187,6 +5188,9 @@ parse(void)
     gc.command_count = 0;
     svc.context.move = TRUE; /* assume next command will take game time */
     flush_screen(1); /* Flush screen buffer. Put the cursor on the hero. */
+#if defined(SHIM_GRAPHICS) && defined(__EMSCRIPTEN__)
+    nh3d_note_command_ready(); /* Polypiled: tell the shell a command is next */
+#endif
 
     /* affects readchar() behavior for ESC iff 'altmeta' option is On;
        is always reset to otherInp by readchar() */

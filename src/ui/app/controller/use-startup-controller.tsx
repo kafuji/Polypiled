@@ -159,7 +159,6 @@ export function useStartupController(dependencies: UseStartupControllerDependenc
         return;
       }
       const target = event.target as HTMLElement | null;
-      if (target?.closest?.("[data-local-mcp-control]")) return;
       if (
         target &&
         (target.tagName === "INPUT" ||

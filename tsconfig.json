@@ -12,5 +12,6 @@
     "esModuleInterop": false,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/headless/**/*"]
 }
