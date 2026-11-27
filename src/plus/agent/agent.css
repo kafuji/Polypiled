@@ -2,7 +2,7 @@
 
 .nh3d-agent-button {
   position: fixed;
-  top: calc(56px + env(safe-area-inset-top));
+  bottom: calc(12px + var(--nh3d-safe-area-bottom, env(safe-area-inset-bottom)));
   right: calc(12px + env(safe-area-inset-right));
   z-index: 2600;
   min-width: 40px;
@@ -30,13 +30,13 @@
 
 .nh3d-agent-panel {
   position: fixed;
-  top: calc(96px + env(safe-area-inset-top));
+  bottom: calc(52px + var(--nh3d-safe-area-bottom, env(safe-area-inset-bottom)));
   right: calc(12px + env(safe-area-inset-right));
   z-index: 2600;
   display: flex;
   flex-direction: column;
   width: min(360px, calc(100vw - 24px));
-  max-height: calc(100vh - 140px);
+  max-height: calc(100vh - 120px);
   border: 1px solid var(--nh3d-ui-border, rgba(255, 255, 255, 0.3));
   border-radius: 10px;
   background: rgba(6, 16, 30, 0.94);
