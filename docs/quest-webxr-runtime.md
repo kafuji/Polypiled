@@ -292,7 +292,7 @@ is reused by default (`android/keystore.properties`); an optional ignored
 (and the existing `NH3D_ANDROID_*` fallback) are supported. See
 `quest/keystore.properties.example`. Keep the same signing key for app updates.
 
-The release output remains `release/NetHack 3D <version> Quest.apk`. For a
+The release output is `release/Polypiled <version> Quest.apk`. For a
 sideloadable development build use `npm run quest:webxr:apk -- --debug`; its
 versioned filename ends in `Quest Debug.apk`. Publishing an existing release
 uses `npm run quest:webxr:publish-apk`; pass `-- --debug` explicitly for debug.

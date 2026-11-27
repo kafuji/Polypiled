@@ -44,7 +44,7 @@ try {
     const apk=path.join(project,"app/build/outputs/apk/debug/app-debug.apk");
     if (!existsSync(apk)) throw new Error("Gradle finished without the expected APK: "+apk);
     const { version } = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
-    const output = path.join(root, "release", `NetHack 3D ${version} Quest Legacy.apk`);
+    const output = path.join(root, "release", `Polypiled ${version} Quest Legacy.apk`);
     mkdirSync(path.dirname(output), { recursive: true });
     copyFileSync(apk, output);
     console.log("APK ready: "+output);

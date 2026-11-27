@@ -8,7 +8,7 @@ minimizing merge conflicts.
 
 | Remote     | URL                                            | Purpose                 |
 | ---------- | ---------------------------------------------- | ----------------------- |
-| `origin`   | `https://github.com/kafuji/nethack-3d-plus`    | This fork (push here)   |
+| `origin`   | `https://github.com/kafuji/Polypiled.git`      | This fork (push here)   |
 | `upstream` | `https://github.com/JamesIV4/nethack-3d.git`   | Original project (read) |
 
 Add the upstream remote once per clone:

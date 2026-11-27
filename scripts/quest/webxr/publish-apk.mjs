@@ -143,7 +143,7 @@ mkdirSync(path.dirname(output), { recursive: true });
 copyFileSync(apk, output);
 // Keep the stable sideloading path while also producing a desktop-style release artifact.
 copyFileSync(apk, path.join(path.dirname(output), "nethack3d-webxr.apk"));
-const versionedOutput = path.join(root, "release", `NetHack 3D ${versionName} Quest${debug ? " Debug" : ""}.apk`);
+const versionedOutput = path.join(root, "release", `Polypiled ${versionName} Quest${debug ? " Debug" : ""}.apk`);
 mkdirSync(path.dirname(versionedOutput), { recursive: true });
 copyFileSync(apk, versionedOutput);
 console.log("Verified standalone APK: " + versionedOutput);
