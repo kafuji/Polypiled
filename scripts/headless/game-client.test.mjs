@@ -193,3 +193,11 @@ test('the game ends with game_over and the tombstone after the last death questi
   assert.ok(result.gameOver.lines.some(line => /REST/.test(line)));
   await assert.rejects(game.act({ keys: ['s'] }), /The game has ended/);
 });
+
+test('#askagent is a command that takes no time', async t => {
+  const { game } = await start(t, { seed: 5, ...valkyrie });
+  const asked = await game.act({ extended: 'askagent' });
+  assert.equal(asked.prompt.kind, 'command');
+  assert.equal(asked.turnsElapsed, 0);
+  assert.ok(!asked.messages.some(message => /Unknown|unknown/.test(message.text)), asked.messages.map(message => message.text).join(' / '));
+});

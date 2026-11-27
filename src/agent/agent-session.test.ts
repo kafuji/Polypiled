@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { AgentSession, conditionNames, toRuntimeKey, type AgentRuntimePort } from "./agent-session";
-import type { RuntimeCommandIdentity } from "../runtime/protocol/types";
 import type { RuntimeEvent } from "../runtime/types";
 
 /** A fake runtime: records what was sent and answers with scripted events. */
 function harness(options: { multi?: boolean; onSend?: (inputs: string[], session: AgentSession) => void } = {}) {
   const session = new AgentSession();
-  const sent: Array<{ inputs: string[]; identity: RuntimeCommandIdentity }> = [];
+  const sent: Array<{ inputs: string[]; identity: { commandId: number; requestId: number } }> = [];
+  let nextCommandId = 0;
   const port: AgentRuntimePort = {
-    sendInput: (input, identity) => { sent.push({ inputs: [input], identity }); options.onSend?.([input], session); },
-    sendInputSequence: (inputs, identity) => { sent.push({ inputs, identity }); options.onSend?.(inputs, session); },
+    send: (inputs, requestId) => {
+      const identity = { commandId: ++nextCommandId, requestId };
+      sent.push({ inputs, identity });
+      options.onSend?.(inputs, session);
+      return identity.commandId;
+    },
     isMultiSelectMenuActive: () => options.multi ?? false,
   };
   session.attach(port);

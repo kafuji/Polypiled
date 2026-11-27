@@ -21,6 +21,7 @@ import { isLoggingEnabled } from "../logging";
 export default class WorkerRuntimeBridge implements RuntimeBridge {
   private readonly worker: Worker;
   private readonly onEvent: RuntimeEventHandler;
+  private readonly eventTaps = new Set<RuntimeEventHandler>();
   private readonly startupOptions: RuntimeStartupOptions | undefined;
   private startPromise: Promise<void> | null = null;
   private startResolve: (() => void) | null = null;
@@ -164,6 +165,27 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
     );
   }
 
+  /**
+   * Polypiled AI agent: every runtime event, protocol bookkeeping included,
+   * in delivery order and before the engine sees it. Returns the remover.
+   */
+  addEventTap(tap: RuntimeEventHandler): () => void {
+    this.eventTaps.add(tap);
+    return () => { this.eventTaps.delete(tap); };
+  }
+
+  /**
+   * Polypiled AI agent: send inputs for one action against the given input
+   * request. Returns the command id the worker reports in input_consumed and
+   * command_result, or null when the command was not sent.
+   */
+  sendAgentInputs(inputs: string[], requestId: number): number | null {
+    if (inputs.length === 0) return null;
+    return this.postCommand(inputs.length === 1
+      ? { type: "send_input", input: inputs[0], requestId }
+      : { type: "send_input_sequence", inputs, requestId });
+  }
+
   sendMouseInput(x: number, y: number, button: number): void {
     this.postCommand({ type: "send_mouse_input", x, y, button, ...this.inputTarget({}) });
   }
@@ -288,18 +310,19 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
     if (error) reject?.(error); else resolve?.();
   }
 
-  private postCommand(command: RuntimeCommand): void {
-    if (this.portraitId !== null && ["send_input", "send_mouse_input", "send_input_sequence"].includes(command.type)) return;
+  private postCommand(command: RuntimeCommand): number | null {
+    if (this.portraitId !== null && ["send_input", "send_mouse_input", "send_input_sequence"].includes(command.type)) return null;
     if (this.disposed || (this.protocolFailed && command.type !== "shutdown")) {
-      return;
+      return null;
     }
-    if (!this.sentStart) { this.beforeStart.push(command); return; }
+    if (!this.sentStart) { this.beforeStart.push(command); return null; }
     const scopedCommand = command.type === "request_cells"
       ? { ...command, scope: { ...this.receiver.scope } }
       : command;
     const commandId = ++this.nextCommandId;
     this.worker.postMessage({ ...scopedCommand, sessionId: this.sessionId, commandId,
       lastProcessedSequence: this.receiver.lastProcessedSequence });
+    return commandId;
   }
 
   private inputTarget(options: RuntimeInputOptions, input = ""): { requestId?: number } {
@@ -312,6 +335,9 @@ export default class WorkerRuntimeBridge implements RuntimeBridge {
   }
 
   private deliverEvent(event: RuntimeEvent): void {
+    for (const tap of this.eventTaps) {
+      try { tap(event); } catch (error) { console.error("Runtime event tap failed:", error); }
+    }
     if (event.type === "portrait_dialog") {
       this.portraitId = Number(event.id);
       this.portraitGeneration++;

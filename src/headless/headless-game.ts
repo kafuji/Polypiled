@@ -1,4 +1,4 @@
-import { AgentSession, type AgentAction, type AgentActResult, type AgentMessage, type AgentObservation } from "./agent-session";
+import { AgentSession, type AgentAction, type AgentActResult, type AgentMessage, type AgentObservation } from "../agent/agent-session";
 import { checkHeadlessSeed, startNodeRuntime, type NodeRuntime } from "./node-runtime";
 import type { RuntimeCharacterCreationConfig } from "../runtime/types";
 
@@ -103,9 +103,14 @@ export class HeadlessGame {
       startupOptions: { runtimeVersion: "5.0", characterCreation: character, initOptions },
       onEvent: event => session.handle(event),
     });
+    let nextCommandId = 0;
     session.attach({
-      sendInput: (input, identity) => node.runtime.sendInput(input, identity),
-      sendInputSequence: (inputs, identity) => node.runtime.sendInputSequence(inputs, identity),
+      send: (inputs, requestId) => {
+        const identity = { sessionId: session.sessionId, commandId: ++nextCommandId, lastProcessedSequence: 0, requestId };
+        if (inputs.length === 1) node.runtime.sendInput(inputs[0], identity);
+        else node.runtime.sendInputSequence(inputs, identity);
+        return identity.commandId;
+      },
       isMultiSelectMenuActive: () => node.runtime.isMultiSelectMenuActive(),
     });
     const game = new HeadlessGame(node, session, setup);

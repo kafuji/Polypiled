@@ -159,6 +159,7 @@ export function useStartupController(dependencies: UseStartupControllerDependenc
         return;
       }
       const target = event.target as HTMLElement | null;
+      if (target?.closest?.("[data-agent-panel] input, [data-agent-panel] textarea, [data-agent-panel] select")) return;
       if (
         target &&
         (target.tagName === "INPUT" ||

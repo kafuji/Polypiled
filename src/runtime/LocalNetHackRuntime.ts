@@ -363,6 +363,11 @@ class LocalNetHackRuntime {
         this.emit({ type: "command_ready", turn: args[0], x: args[1], y: args[2] });
         return 0;
 
+      // Polypiled: the player typed #askagent (nh3d_knowledge.c).
+      case "shim_ask_agent":
+        this.emit({ type: "ask_agent" });
+        return 0;
+
       // Polypiled: getpos() begins (1) or ends (0), with the cursor's square (getpos.c).
       case "shim_getpos":
         this.emit({ type: "getpos", active: args[0] === 1, x: args[1], y: args[2] });
