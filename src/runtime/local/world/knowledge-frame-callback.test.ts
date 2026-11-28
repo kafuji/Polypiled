@@ -111,4 +111,21 @@ describe("hero blow and water fall notifications", () => {
       { type: "water_fall", monsterId: 42, x: 6, y: 7, drowned: true },
     ]);
   });
+
+  it("draws a force bolt's flight and where it lands", () => {
+    const { mapCallbacks, emit } = callbacks();
+    mapCallbacks.handleShimForceBolt([4, 5, 0, 0]);
+    // Flight steps count as effect frames so the output delay after them waits.
+    expect(mapCallbacks.effectGlyphSerial).toBe(1);
+    mapCallbacks.handleShimForceBolt([5, 5, 1, 0]);
+    mapCallbacks.handleShimForceBolt([6, 5, 2, 0]);
+    mapCallbacks.handleShimForceBolt([7, 5, 3, 0]);
+    expect(mapCallbacks.effectGlyphSerial).toBe(1);
+    expect(emit.mock.calls.map(([event]) => event)).toEqual([
+      { type: "force_bolt", x: 4, y: 5, outcome: "flight" },
+      { type: "force_bolt", x: 5, y: 5, outcome: "hit" },
+      { type: "force_bolt", x: 6, y: 5, outcome: "resisted" },
+      { type: "force_bolt", x: 7, y: 5, outcome: "missed" },
+    ]);
+  });
 });

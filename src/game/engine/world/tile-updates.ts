@@ -18,6 +18,7 @@ import type { WorldClassification } from "./world-classification";
 import type { FloorOcclusion } from "../rendering/floor-occlusion";
 import type { WallGeometry } from "../rendering/wall-geometry";
 import type { RenderPipeline } from "../rendering/render-pipeline";
+import type { MapEffects } from "../effects/map-effects";
 
 export interface TileUpdatesDependencies {
   readonly renderPipeline: Pick<RenderPipeline, "renderer">;
@@ -113,6 +114,7 @@ export interface TileUpdatesDependencies {
     | "shouldShowUnderPlayerFeaturesInOverheadTilesMode"
     | "shouldUseRaisedSpecialTileBillboardInTiles"
   >;
+  readonly mapEffects: Pick<MapEffects, "noteGlyph">;
 }
 
 /** Runtime map update batching, deduplication and completion-backed refresh scheduling. */
@@ -234,6 +236,11 @@ export class TileUpdates {
       return;
     }
 
+    // Before coalescing: a beam square drawn and erased within one frame
+    // still leaves its glow.
+    if (typeof tile.glyph === "number") {
+      this.dependencies.mapEffects.noteGlyph(tile.x, tile.y, tile.glyph);
+    }
     const key = `${tile.x},${tile.y}`;
     const pendingTile = this.pendingTileUpdates.get(key);
     if (pendingTile) {

@@ -1044,6 +1044,11 @@ class Nethack3DEngine implements Nethack3DEngineController {
         break;
       }
 
+      case "force_bolt": {
+        this.systems.mapEffects.forceBolt(data.x, data.y, data.outcome);
+        break;
+      }
+
       case "water_fall": {
         this.systems.entityGrounding.noteWaterFall(
           typeof data.monsterId === "number" ? data.monsterId : null,
@@ -1982,6 +1987,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.systems.playerWeaponOverlay.dispose();
     this.systems.entityGrounding.dispose();
     this.systems.waterSplash.dispose();
+    this.systems.mapEffects.dispose();
     Object.values(this.systems.tileMaterials.materials).forEach((material) => material.dispose());
   }
 
@@ -2030,6 +2036,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     // sinking, riding, shadows), then hang the weapons on the posed hero.
     this.systems.entityGrounding.update();
     this.systems.waterSplash.update(deltaSeconds);
+    this.systems.mapEffects.update(deltaSeconds);
     this.systems.playerWeaponOverlay.sync();
     this.systems.directionPrompts.syncDirectionPromptOverlayVisibility();
     this.systems.directionPrompts.directionPromptOverlay?.update(

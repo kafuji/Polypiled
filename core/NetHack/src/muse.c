@@ -1612,12 +1612,14 @@ mbhitm(struct monst *mtmp, struct obj *otmp)
             if (Antimagic) {
                 monstseesu(M_SEEN_MAGR); /* monsters notice hero resisting */
                 shieldeff(u.ux, u.uy);
+                nh3d_force_bolt(u.ux, u.uy, NH3D_FORCE_BOLT_RESISTED);
                 Soundeffect(se_boing, 40);
                 pline("Boing!");
                 learnit = TRUE;
             } else if (rnd(20) < 10 + u.uac &&
                        !(gb.buzzer && !gb.buzzer->mwandexp)) {
                 monstunseesu(M_SEEN_MAGR); /* mons see hero not resisting */
+                nh3d_force_bolt(u.ux, u.uy, NH3D_FORCE_BOLT_HIT);
                 pline_The("wand hits you!");
                 tmp = d(2, 12);
                 if (Half_spell_damage)
@@ -1625,21 +1627,25 @@ mbhitm(struct monst *mtmp, struct obj *otmp)
                 losehp(tmp, "wand", KILLED_BY_AN);
                 learnit = TRUE;
             } else {
+                nh3d_force_bolt(u.ux, u.uy, NH3D_FORCE_BOLT_MISSED);
                 pline_The("wand misses you.");
             }
             stop_occupation();
             nomul(0);
         } else if (resists_magm(mtmp)) {
             shieldeff(mtmp->mx, mtmp->my);
+            nh3d_force_bolt(mtmp->mx, mtmp->my, NH3D_FORCE_BOLT_RESISTED);
             Soundeffect(se_boing, 40);
             pline("Boing!");
             learnit = TRUE;
         } else if (rnd(20) < 10 + find_mac(mtmp)) {
             tmp = d(2, 12);
+            nh3d_force_bolt(mtmp->mx, mtmp->my, NH3D_FORCE_BOLT_HIT);
             hit("wand", mtmp, exclam(tmp));
             (void) resist(mtmp, otmp->oclass, tmp, TELL);
             learnit = TRUE;
         } else {
+            nh3d_force_bolt(mtmp->mx, mtmp->my, NH3D_FORCE_BOLT_MISSED);
             miss("wand", mtmp);
         }
         /* need to see the wand being zapped and also the spot where the
@@ -1759,6 +1765,11 @@ mbhit(
             gb.bhitpos.x -= ddx;
             gb.bhitpos.y -= ddy;
             break;
+        }
+        /* Polypiled: let the shell draw the otherwise invisible bolt */
+        if (otyp == WAN_STRIKING && cansee(x, y)) {
+            nh3d_force_bolt(x, y, NH3D_FORCE_BOLT_FLIGHT);
+            nh_delay_output();
         }
         if (u_at(gb.bhitpos.x, gb.bhitpos.y)) {
             (*fhitm)(&gy.youmonst, obj);

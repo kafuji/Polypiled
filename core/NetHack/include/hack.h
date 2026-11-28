@@ -576,6 +576,14 @@ extern void nh3d_hero_blow(coordxy, coordxy, boolean off_hand,
    water; drowned is set when a monster goes under for good */
 extern void nh3d_fell_into_water(struct monst *, coordxy, coordxy,
                                  boolean drowned);
+/* Polypiled: a force bolt (wand of striking, spell of force bolt) has no
+   glyph of its own; report each square of its flight the hero can see and
+   where it lands, so the shell can draw it (see NH3D_FORCE_BOLT_*) */
+#define NH3D_FORCE_BOLT_FLIGHT 0
+#define NH3D_FORCE_BOLT_HIT 1
+#define NH3D_FORCE_BOLT_RESISTED 2
+#define NH3D_FORCE_BOLT_MISSED 3
+extern void nh3d_force_bolt(coordxy, coordxy, int outcome);
 /* Polypiled: the hero attacked something (by_hero) or something attacked
    the hero; counted for the shell's music (win/shim/nh3d_knowledge.c) */
 extern void nh3d_note_engagement(boolean by_hero);

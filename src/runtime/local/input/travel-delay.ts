@@ -15,7 +15,8 @@ export interface RuntimeTravelDependencies {
   >;
   readonly mapCallbacks: Pick<
     RuntimeMapCallbacks,
-    "playerPosition"
+    "effectGlyphSerial"
+    | "playerPosition"
     | "playerPositionMovementSerial"
   >;
   readonly mouseInput: Pick<
@@ -28,6 +29,12 @@ export interface RuntimeTravelDependencies {
   >;
 }
 
+/**
+ * How long each animation step of a beam, explosion or other map effect stays
+ * on screen. NetHack's window contract asks for 50ms per delay_output().
+ */
+export const EFFECT_STEP_DELAY_MS = 50;
+
 /** Travel delay and movement deduplication state. */
 export class RuntimeTravel {
   declare travelSpeedDelayMs: number;
@@ -35,6 +42,9 @@ export class RuntimeTravel {
   declare lastAppliedDelayOutputPosition: any;
   declare lastAppliedDelayOutputAtMs: any;
   declare lastAppliedDelayOutputMovementSerial: any;
+  declare lastSeenEffectGlyphSerial: number;
+  declare effectDelayChainActive: boolean;
+  declare lastEffectDelayAtMs: number;
 
   constructor(private readonly deps: RuntimeTravelDependencies) {
     this.travelSpeedDelayMs = 60;
@@ -42,9 +52,48 @@ export class RuntimeTravel {
     this.lastAppliedDelayOutputPosition = null;
     this.lastAppliedDelayOutputAtMs = null;
     this.lastAppliedDelayOutputMovementSerial = null;
+    this.lastSeenEffectGlyphSerial = 0;
+    this.effectDelayChainActive = false;
+    this.lastEffectDelayAtMs = 0;
+  }
+
+  /**
+   * A delay that follows a beam or explosion glyph is an effect animation
+   * step, not a travel step. It must always wait, or the whole beam is drawn
+   * and erased inside one frame and never seen. Consecutive delays with no new
+   * glyph in between (an explosion holds its frame for two) count as part of
+   * the same effect.
+   */
+  private takeEffectDelay(): boolean {
+    const serial = Number(this.deps.mapCallbacks.effectGlyphSerial) || 0;
+    const sawNewEffectGlyph = serial !== this.lastSeenEffectGlyphSerial;
+    this.lastSeenEffectGlyphSerial = serial;
+    const nowMs = Date.now();
+    if (sawNewEffectGlyph) {
+      this.effectDelayChainActive = true;
+      this.lastEffectDelayAtMs = nowMs;
+      return true;
+    }
+    if (
+      this.effectDelayChainActive &&
+      nowMs - this.lastEffectDelayAtMs <= EFFECT_STEP_DELAY_MS * 4
+    ) {
+      // Only the delay straight after an effect frame extends it.
+      this.effectDelayChainActive = false;
+      return true;
+    }
+    this.effectDelayChainActive = false;
+    return false;
   }
 
   handleShimDelayOutput() {
+    if (this.takeEffectDelay()) {
+      // Headless (Node) play has nobody watching; do not slow it down.
+      if (typeof requestAnimationFrame !== "function") return 0;
+      return new Promise((resolve) =>
+        setTimeout(resolve, EFFECT_STEP_DELAY_MS),
+      );
+    }
     const nowMs = Date.now();
     const latestTurn = this.deps.status.readLatestStatusInteger("BL_TIME");
     const posX = Number.isFinite(this.deps.mapCallbacks.playerPosition?.x)
