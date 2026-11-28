@@ -344,6 +344,9 @@ class LocalNetHackRuntime {
       case "shim_water_fall":
         return this.systems.mapCallbacks.handleShimWaterFall(args);
 
+      case "shim_force_bolt":
+        return this.systems.mapCallbacks.handleShimForceBolt(args);
+
       case "shim_knowledge_frame":
         return this.systems.mapCallbacks.handleShimKnowledgeFrame(args);
 

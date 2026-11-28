@@ -16,6 +16,7 @@ import type { RuntimeTileRefresh } from "./tile-refresh";
 import type { RuntimePositionInput } from "../input/position-selection";
 import type { RuntimeUnderPlayerItems } from "./under-player-items";
 import type { RuntimePostActionRefresh } from "./post-action-refresh";
+import { getGlyphKind } from "../../../game/glyphs/registry";
 
 export interface RuntimeMapCallbacksDependencies {
   readonly coordinator: Pick<
@@ -77,11 +78,15 @@ export class RuntimeMapCallbacks {
   declare gameMap: Map<any, any>;
   declare playerPosition: { x: number; y: number };
   declare playerPositionMovementSerial: number;
+  /** Counts beam and explosion glyphs drawn on the map, so the output delay
+   * that follows one can be told apart from a travel-step delay. */
+  declare effectGlyphSerial: number;
 
   constructor(private readonly deps: RuntimeMapCallbacksDependencies) {
     this.gameMap = new Map();
     this.playerPosition = { x: 0, y: 0 };
     this.playerPositionMovementSerial = 0;
+    this.effectGlyphSerial = 0;
   }
 
   queueMapGlyphUpdate(tile) {
@@ -206,6 +211,10 @@ export class RuntimeMapCallbacks {
       }
 
       if (this.deps.windows.isMapWindow(printWin)) {
+        const printedKind = getGlyphKind(printGlyph);
+        if (printedKind === "zap" || printedKind === "explode") {
+          this.effectGlyphSerial += 1;
+        }
         const key = `${x},${y}`;
         const previousTileData = this.gameMap.get(key);
         const previousMonsterId =
@@ -551,6 +560,30 @@ export class RuntimeMapCallbacks {
       x: Math.trunc(rawX),
       y: Math.trunc(rawY),
       drowned: Math.trunc(Number(rawDrowned)) === 1,
+    });
+    return 0;
+  }
+
+  // Polypiled: a force bolt the hero can see crosses (x, y) (outcome 0) or
+  // lands on whoever stands there: 1 hits, 2 resisted, 3 missed (zap.c,
+  // muse.c via winshim.c nh3d_force_bolt()). It has no glyph, so a flight
+  // step counts as an effect frame for the output delay that follows.
+  handleShimForceBolt(args) {
+    const [rawX, rawY, rawOutcome] = args as number[];
+    if (!Number.isFinite(rawX) || !Number.isFinite(rawY)) return 0;
+    const outcomeCode = Math.trunc(Number(rawOutcome));
+    if (outcomeCode === 0) this.effectGlyphSerial += 1;
+    if (!this.deps.coordinator.eventHandler) return 0;
+    const outcome =
+      outcomeCode === 1 ? "hit"
+        : outcomeCode === 2 ? "resisted"
+          : outcomeCode === 3 ? "missed"
+            : "flight";
+    this.deps.coordinator.emit({
+      type: "force_bolt",
+      x: Math.trunc(rawX),
+      y: Math.trunc(rawY),
+      outcome,
     });
     return 0;
   }

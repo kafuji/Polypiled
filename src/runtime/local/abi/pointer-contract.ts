@@ -91,6 +91,7 @@ export class RuntimePointerContract {
         shim_combat_feedback: [4],
         shim_hero_blow: [4],
         shim_water_fall: [4],
+        shim_force_bolt: [4],
         shim_knowledge_frame: [1],
         shim_floor_here: [1],
         shim_monster_glance: [1],

@@ -198,6 +198,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
             if (disguised_mimic && !disguised_as_mon(mtmp))
                 seemimic(mtmp);
             shieldeff(mtmp->mx, mtmp->my);
+            nh3d_force_bolt(mtmp->mx, mtmp->my, NH3D_FORCE_BOLT_RESISTED);
             pline("Boing!");
             /* 5.0: used to 'break' to avoid setting learn_it here */
         } else if (u.uswallow || rnd(20) < 10 + find_mac(mtmp)) {
@@ -208,9 +209,11 @@ bhitm(struct monst *mtmp, struct obj *otmp)
                 dmg *= 2;
             if (otyp == SPE_FORCE_BOLT)
                 dmg = spell_damage_bonus(dmg);
+            nh3d_force_bolt(mtmp->mx, mtmp->my, NH3D_FORCE_BOLT_HIT);
             hit(zap_type_text, mtmp, exclam(dmg));
             (void) resist(mtmp, otmp->oclass, dmg, TELL);
         } else {
+            nh3d_force_bolt(mtmp->mx, mtmp->my, NH3D_FORCE_BOLT_MISSED);
             if (!disguised_mimic)
                 miss(zap_type_text, mtmp);
             learn_it = FALSE;
@@ -3947,6 +3950,12 @@ bhit(
         }
 
         if (weapon == ZAPPED_WAND) {
+            /* Polypiled: let the shell draw the otherwise invisible bolt */
+            if ((obj->otyp == WAN_STRIKING || obj->otyp == SPE_FORCE_BOLT)
+                && cansee(x, y)) {
+                nh3d_force_bolt(x, y, NH3D_FORCE_BOLT_FLIGHT);
+                nh_delay_output();
+            }
             /* cancellation/opening/locking/striking/probing */
             zap_map(x, y, obj);
             /* terrain might have changed (exposed secret door|corridor) */

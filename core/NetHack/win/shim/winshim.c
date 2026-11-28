@@ -200,6 +200,14 @@ nh3d_fell_into_water(struct monst *mon, coordxy x, coordxy y,
 }
 
 void
+nh3d_force_bolt(coordxy x, coordxy y, int outcome)
+{
+    if (!isok(x, y) || !cansee(x, y))
+        return;
+    nh3d_queue_shim_notification("shim_force_bolt", x, y, outcome, 0);
+}
+
+void
 nh3d_hero_dodged(void)
 {
     nh3d_note_engagement(FALSE); /* a monster's blow misses the hero */

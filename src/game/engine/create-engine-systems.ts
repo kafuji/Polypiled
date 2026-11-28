@@ -43,6 +43,7 @@ import { HeldWeapon } from "./rendering/held-weapon";
 import { PlayerWeaponOverlay } from "./rendering/player-weapon-overlay";
 import { EntityGrounding } from "./rendering/entity-grounding";
 import { WaterSplash } from "./effects/water-splash";
+import { MapEffects } from "./effects/map-effects";
 import { useGameStore } from "../../state/gameStore";
 import { Camera } from "./camera/camera";
 import { PositionSelection } from "./input/position-selection";
@@ -115,6 +116,7 @@ export interface EngineSystems {
   readonly playerWeaponOverlay: PlayerWeaponOverlay;
   readonly entityGrounding: EntityGrounding;
   readonly waterSplash: WaterSplash;
+  readonly mapEffects: MapEffects;
   readonly camera: Camera;
   readonly positionSelection: PositionSelection;
   readonly inputCommands: InputCommands;
@@ -193,6 +195,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     get tileRendering() { return tileRendering; },
     get vultureWalls() { return vultureWalls; },
     get worldClassification() { return worldClassification; },
+    get mapEffects() { return mapEffects; },
   });
   const worldClassification: WorldClassification = new WorldClassification({
     get engineState() { return engineState; },
@@ -522,6 +525,10 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
   });
   const waterSplash: WaterSplash = new WaterSplash({
     get renderPipeline() { return renderPipeline; },
+  });
+  const mapEffects: MapEffects = new MapEffects({
+    get renderPipeline() { return renderPipeline; },
+    get terminalRendering() { return terminalRendering; },
   });
   const entityGrounding: EntityGrounding = new EntityGrounding({
     get camera() { return camera; },
@@ -1006,6 +1013,7 @@ export function createEngineSystems(coordinator: EngineCoordinator): EngineSyste
     playerWeaponOverlay,
     entityGrounding,
     waterSplash,
+    mapEffects,
     camera,
     positionSelection,
     inputCommands,
